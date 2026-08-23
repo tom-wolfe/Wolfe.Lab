@@ -1,0 +1,9 @@
+[user]
+	name = Tom Wolfe
+	email = trwolfe13@gmail.com
+[init]
+	defaultBranch = main
+[core]
+	autocrlf = input
+[push]
+	autoSetupRemote = true
