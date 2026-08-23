@@ -1,0 +1,3 @@
+{{ if ne .machine "server" -}}
+Library/LaunchAgents/**
+{{ end -}}
