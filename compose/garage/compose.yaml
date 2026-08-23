@@ -1,0 +1,25 @@
+name: garage
+
+services:
+  garage:
+    # Pinned. Bump deliberately — check the changelog for metadata format
+    # migrations before jumping versions.
+    image: dxflrs/garage:v2.3.0
+    container_name: garage
+    restart: unless-stopped
+
+    # GARAGE_RPC_SECRET and GARAGE_ADMIN_TOKEN live outside the repo —
+    # see README.md for the one-time bootstrap that creates this file.
+    env_file:
+      - /Users/tomwolfe/Docker/garage/garage.env
+
+    volumes:
+      # Config is code — lives in this repo, mounted read-only.
+      - ./garage.toml:/etc/garage.toml:ro
+      # State is data — lives outside it, like every other stack.
+      - /Users/tomwolfe/Docker/garage/meta:/var/lib/garage/meta
+      - /Users/tomwolfe/Docker/garage/data:/var/lib/garage/data
+
+    ports:
+      - "3900:3900" # S3 API
+      - "3903:3903" # Admin API
