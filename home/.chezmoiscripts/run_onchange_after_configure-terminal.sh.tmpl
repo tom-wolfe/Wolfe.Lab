@@ -1,0 +1,12 @@
+#!/bin/bash
+# Re-run when the profile changes: {{ include "dot_config/terminal/Clean.terminal" | sha256sum }}
+
+set -euo pipefail
+
+if ! defaults read com.apple.Terminal "Window Settings" 2>/dev/null | grep -qE '^\s*Clean\s*='; then
+  open "$HOME/.config/terminal/Clean.terminal"
+  sleep 2  # give Terminal.app a moment to finish importing
+fi
+
+defaults write com.apple.Terminal "Default Window Settings" -string "Clean"
+defaults write com.apple.Terminal "Startup Window Settings" -string "Clean"

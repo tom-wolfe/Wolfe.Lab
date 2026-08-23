@@ -1,0 +1,81 @@
+# =========================================================
+# All machines
+# =========================================================
+# Utilities
+cask "1password"
+cask "google-chrome"
+cask "google-drive"
+
+# Developer Tools
+cask "claude-code"
+cask "docker-desktop"
+brew "gh"
+brew "git"
+brew "mas"
+cask "visual-studio-code"
+brew "mkcert"
+brew "opentofu"
+brew "sqlite"
+# TODO: NVM
+# TODO: dotnet
+
+# Drivers
+cask "displaylink"
+
+{{ if ne .machine "server" -}}
+# =========================================================
+# Desktop machines (personal + work)
+# =========================================================
+
+# Utilities
+cask "airbuddy"
+cask "vorssaint"
+
+# Productivity
+cask "claude"
+cask "chatgpt"
+cask "obsidian"
+
+# Media
+cask "spotify"
+
+# Social
+cask "discord"
+
+# Developer Tools
+brew "cloc"
+cask "jetbrains-toolbox"
+{{ end -}}
+
+{{ if eq .machine "server" or eq .machine "personal" -}}
+# =========================================================
+# Devices I own
+# =========================================================
+cask "daisydisk"
+cask "paste"
+cask "nordvpn"
+{{ end -}}
+
+{{ if eq .machine "personal" -}}
+# =========================================================
+# Personal only
+# =========================================================
+cask "affinity"
+brew "ollama"
+{{ end -}}
+
+{{ if eq .machine "work" -}}
+# =========================================================
+# Work only
+# =========================================================
+cask "slack"
+{{ end -}}
+
+{{ if eq .machine "server" -}}
+# =========================================================
+# Server only
+# =========================================================
+cask "daisydisk"
+cask "transmission"
+npm "obsidian-headless"
+{{ end -}}
