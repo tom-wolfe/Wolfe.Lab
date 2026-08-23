@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN""http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
 
@@ -25,10 +25,10 @@
   </dict>
 
   <key>StandardOutPath</key>
-  <string>/tmp/obsidian-headless-sync-main.log</string>
+  <string>/Users/tomwolfe/Library/Logs/obsidian-headless-sync-main.log</string>
 
   <key>StandardErrorPath</key>
-  <string>/tmp/obsidian-headless-sync-main.err</string>
+  <string>/Users/tomwolfe/Library/Logs/obsidian-headless-sync-main.err</string>
 
   <key>EnvironmentVariables</key>
   <dict>
