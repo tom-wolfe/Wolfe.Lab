@@ -11,14 +11,12 @@ automated by chezmoi — bootstrap is just: merge, `chezmoi update` on the mini.
 | --- | --- |
 | Secrets (`~/Docker/garage/garage.env`) | `run_once_before_bootstrap-garage-secrets` |
 | Container | `run_onchange_after_deploy-compose` (like every stack) |
-| Cluster layout, buckets, keys | `run_onchange_after_provision-garage` |
+| Cluster layout (one-time) | `run_once_after_init-garage-layout` |
+| Buckets, keys, grants | OpenTofu — `tofu/bootstrap` seeds the state store; everything else is ordinary tofu resources |
 
-**Adding a bucket** = add it to the `BUCKETS` array in the provision script.
-Each bucket gets a `<name>-key` with read+write; new credentials land in
-`~/Docker/garage/credentials/<name>-key.env` (mode 600). The one manual step
-chezmoi can't do: move them into 1Password —
-`ssh macmini cat '~/Docker/garage/credentials/<name>-key.env'` — then delete
-the file if you prefer the vault to be the only copy.
+**Adding a bucket** = a `garage_bucket` (+ `garage_key` + `garage_bucket_key`)
+resource in the relevant tofu project. Storage configuration lives in tofu;
+chezmoi only bootstraps what must exist before the admin API answers.
 
 ## Operational notes
 
