@@ -21,6 +21,17 @@ Monorepo for my machine and homelab configuration.
 
 If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
 
+### Manual sign-ins (not automatable)
+
+Auth state is device-bound by design; these are the once-per-machine rituals:
+
+- [ ] **1Password** — first, always: unlocks SSH/git, and everything below
+- [ ] **App Store** — required before `mas` apps in the Brewfile will install
+- [ ] **Google Drive** — personal + server (vault backups depend on it)
+- [ ] **`gh auth login`** — per-machine token, stays out of the repo
+- [ ] **Obsidian Sync** — per vault; check the "Vault configuration" sync toggles
+- [ ] Browser profiles, Slack (work), App Store SSO authorization for org repos as needed
+
 ## Day-to-day
 
 ```sh
