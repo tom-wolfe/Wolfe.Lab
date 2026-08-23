@@ -6,6 +6,7 @@
 cask "1password"
 cask "google-chrome"
 cask "google-drive"
+cask "vorssaint"
 
 # Developer Tools
 brew "chezmoi"
@@ -31,7 +32,6 @@ cask "displaylink"
 
 # Utilities
 cask "airbuddy"
-cask "vorssaint"
 
 # Productivity
 cask "claude"
