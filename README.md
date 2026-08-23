@@ -15,7 +15,7 @@ Monorepo for my machine and homelab configuration.
 1. Install 1Password and sign in (its SSH agent provides git auth).
 2. Run:
    ```sh
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply trwolfe13/Wolfe.Lab
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
    ```
 3. You'll be asked what kind of machine it is (`personal` / `work` / `server`), which controls the apps that get installed.
 

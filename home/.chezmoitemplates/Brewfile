@@ -1,12 +1,14 @@
 # =========================================================
 # All machines
 # =========================================================
+
 # Utilities
 cask "1password"
 cask "google-chrome"
 cask "google-drive"
 
 # Developer Tools
+brew "chezmoi"
 cask "claude-code"
 cask "docker-desktop"
 brew "dotnet@10"
@@ -51,6 +53,7 @@ cask "jetbrains-toolbox"
 # =========================================================
 # My machines
 # =========================================================
+
 cask "daisydisk"
 cask "nordvpn"
 mas  "Paste", id: 967805235
@@ -60,6 +63,7 @@ mas  "Paste", id: 967805235
 # =========================================================
 # Personal only
 # =========================================================
+
 cask "affinity"
 mas  "forScore", id: 363738376
 brew "ollama"
@@ -71,6 +75,7 @@ mas  "WhatsApp", id: 310633997
 # =========================================================
 # Work only
 # =========================================================
+
 mas  "Microsoft Excel", id: 462058435
 mas  "Microsoft Outlook", id: 985367838
 mas  "Microsoft OneNote", id: 784801555
@@ -84,6 +89,7 @@ cask "slack"
 # =========================================================
 # Server only
 # =========================================================
+
 mas  "AutoMounter", id: 1160435653
 cask "transmission"
 npm  "obsidian-headless"
