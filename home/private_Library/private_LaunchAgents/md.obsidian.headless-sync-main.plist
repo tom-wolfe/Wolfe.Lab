@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN""http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <key>Label</key>
+  <string>md.obsidian.headless-sync-main</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/tomwolfe/.nvm/versions/node/v22.22.2/bin/ob</string>
+    <string>sync</string>
+    <string>--path</string>
+    <string>/Users/tomwolfe/Library/CloudStorage/GoogleDrive-trwolfe13@gmail.com/My Drive/Obsidian/Main</string>
+    <string>--continuous</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/obsidian-headless-sync-main.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/obsidian-headless-sync-main.err</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/tomwolfe/.nvm/versions/node/v22.22.2/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+</dict>
+</plist>
