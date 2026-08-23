@@ -1,5 +1,6 @@
-Host 192.168.0.154
-  HostName 192.168.0.154
+Host macmini
+  HostName macmini.local
+  User tomwolfe
 
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
