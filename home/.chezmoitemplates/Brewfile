@@ -75,7 +75,6 @@ cask "slack"
 # =========================================================
 # Server only
 # =========================================================
-cask "daisydisk"
 cask "transmission"
 npm "obsidian-headless"
 {{ end -}}
