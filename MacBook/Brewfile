@@ -1,6 +1,7 @@
 # Utilities
 cask "1password"
 cask "airbuddy"
+cask "daisydisk"
 cask "google-chrome"
 cask "google-drive"
 cask "nordvpn"
