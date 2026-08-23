@@ -7,7 +7,7 @@ Monorepo for my machine and homelab configuration.
 | Path | Purpose |
 | --- | --- |
 | `home/` | chezmoi source: dotfiles, Brewfile, and setup scripts |
-| `compose/` | *(planned)* docker compose stacks for the Mac mini |
+| `compose/` | docker compose stacks for the Mac mini — applied by `chezmoi update` on the server |
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 
 ## New machine bootstrap

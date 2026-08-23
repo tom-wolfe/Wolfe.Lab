@@ -1,0 +1,65 @@
+name: jellyfin
+
+services:
+  jellyfin:
+    # Pinned. Migrated from the native macOS app at 10.11.8; upgraded to
+    # 10.11.11 (latest stable) on 2026-08-18.
+    # Bump deliberately — see "Upgrading" in README.md.
+    image: jellyfin/jellyfin:10.11.11
+    container_name: jellyfin
+    restart: unless-stopped
+
+    # ---------------------------------------------------------------------
+    # THE ONE RULE: container paths must equal host paths.
+    #
+    # Jellyfin stores ABSOLUTE paths in its database, not relative ones:
+    #   * the 7 library roots live at <datadir>/root/default/<Name>
+    #   * ~2,700 artwork rows point at <datadir>/metadata/People/...
+    #   * every media item points at /Volumes/Data1/... or /Volumes/Data2/...
+    #
+    # The usual Docker idiom (mount the data dir at /config) would invalidate
+    # all of those, and Jellyfin would rebuild the library from scratch —
+    # losing watch state, favourites and collections, because item IDs are
+    # derived from paths. So instead of remapping the paths, we reproduce
+    # them exactly inside the container and override Jellyfin's directory
+    # environment variables to match. Nothing in the database is rewritten.
+    #
+    # Consequence: do NOT "tidy" these paths. Changing either the volume
+    # targets or the JELLYFIN_*_DIR values breaks the library.
+    # ---------------------------------------------------------------------
+    environment:
+      JELLYFIN_DATA_DIR: "/Users/tomwolfe/Library/Application Support/jellyfin"
+      JELLYFIN_CONFIG_DIR: "/Users/tomwolfe/Library/Application Support/jellyfin/config"
+      JELLYFIN_LOG_DIR: "/Users/tomwolfe/Library/Application Support/jellyfin/log"
+      JELLYFIN_CACHE_DIR: "/Users/tomwolfe/Library/Application Support/jellyfin/cache"
+      # The container has no /etc/localtime worth mounting: the host's is a
+      # symlink into /var/db/timezone, which dangles inside a Linux container.
+      TZ: Europe/London
+
+    volumes:
+      # Jellyfin's own state: config, SQLite DB, metadata/artwork, plugins,
+      # library roots. Stays where the native app left it — see the rule above.
+      - type: bind
+        source: "/Users/tomwolfe/Library/Application Support/jellyfin"
+        target: "/Users/tomwolfe/Library/Application Support/jellyfin"
+
+      # Media. Read-WRITE on purpose: the Movies, Shows, Adult and Collections
+      # libraries have SaveLocalMetadata enabled, so Jellyfin writes .nfo files
+      # and artwork next to the media. Mounting these :ro would silently break
+      # metadata saving and subtitle downloads.
+      - type: bind
+        source: /Volumes/Data1
+        target: /Volumes/Data1
+      - type: bind
+        source: /Volumes/Data2
+        target: /Volumes/Data2
+
+    ports:
+      - "8096:8096"
+      # Client auto-discovery. Published for completeness, but it does NOT
+      # work through Docker Desktop on macOS — LAN broadcast packets don't
+      # reach the VM. Point clients at http://macmini.local:8096 by hand.
+      - "7359:7359/udp"
+
+    # The image ships its own healthcheck (curl against $HEALTHCHECK_URL),
+    # so there is deliberately no healthcheck block here.
