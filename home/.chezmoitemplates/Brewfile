@@ -47,9 +47,9 @@ brew "cloc"
 cask "jetbrains-toolbox"
 {{ end -}}
 
-{{ if eq .machine "server" or eq .machine "personal" -}}
+{{ if or (eq .machine "server") (eq .machine "personal") -}}
 # =========================================================
-# Devices I own
+# My machines
 # =========================================================
 cask "daisydisk"
 cask "paste"
