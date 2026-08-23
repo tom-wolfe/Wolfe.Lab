@@ -20,8 +20,8 @@ for plist in "$HOME"/Library/LaunchAgents/*.plist; do
     for _ in $(seq 1 20); do
       launchctl print "gui/$uid/$label" >/dev/null 2>&1 || break
       sleep 0.5
-    #done
-  #fi
+    done
+  fi
 
   if ! launchctl bootstrap "gui/$uid" "$plist"; then
     echo "ERROR: bootstrap failed for $label" >&2
