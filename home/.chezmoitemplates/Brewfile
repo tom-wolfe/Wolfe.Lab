@@ -11,7 +11,6 @@ cask "vorssaint"
 # Developer Tools
 brew "chezmoi"
 cask "claude-code"
-cask "docker-desktop"
 brew "dotnet@10"
 brew "gh"
 brew "git"
@@ -35,13 +34,13 @@ vscode "streetsidesoftware.code-spell-checker"
 vscode "vscode-icons-team.vscode-icons"
 vscode "yzhang.markdown-all-in-one"
 
-# Drivers
-cask "displaylink"
-
 {{ if ne .machine "server" -}}
 # =========================================================
 # Desktop machines (personal + work)
 # =========================================================
+
+# Drivers
+cask "displaylink"
 
 # Utilities
 cask "airbuddy"
@@ -59,6 +58,7 @@ cask "discord"
 
 # Developer Tools
 brew "cloc"
+cask "docker-desktop"
 cask "jetbrains-toolbox"
 {{ end -}}
 
