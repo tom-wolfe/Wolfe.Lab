@@ -1,0 +1,91 @@
+# =========================================================
+# All machines
+# =========================================================
+# Utilities
+cask "1password"
+cask "google-chrome"
+cask "google-drive"
+
+# Developer Tools
+cask "claude-code"
+cask "docker-desktop"
+brew "dotnet@10"
+brew "gh"
+brew "git"
+brew "mas"
+brew "mkcert"
+brew "nvm"
+brew "opentofu"
+brew "sqlite"
+cask "visual-studio-code"
+
+# Drivers
+cask "displaylink"
+
+{{ if ne .machine "server" -}}
+# =========================================================
+# Desktop machines (personal + work)
+# =========================================================
+
+# Utilities
+cask "airbuddy"
+cask "vorssaint"
+
+# Productivity
+cask "claude"
+cask "chatgpt"
+cask "obsidian"
+
+# Media
+cask "spotify"
+
+# Social
+cask "discord"
+
+# Developer Tools
+brew "cloc"
+cask "jetbrains-toolbox"
+{{ end -}}
+
+{{ if or (eq .machine "server") (eq .machine "personal") -}}
+# =========================================================
+# My machines
+# =========================================================
+cask "daisydisk"
+cask "nordvpn"
+mas  "Paste", id: 967805235
+{{ end -}}
+
+{{ if eq .machine "personal" -}}
+# =========================================================
+# Personal only
+# =========================================================
+cask "affinity"
+mas  "forScore", id: 363738376
+brew "ollama"
+mas  "Things", id: 904280696
+mas  "WhatsApp", id: 310633997
+{{ end -}}
+
+{{ if eq .machine "work" -}}
+# =========================================================
+# Work only
+# =========================================================
+mas  "Microsoft Excel", id: 462058435
+mas  "Microsoft Outlook", id: 985367838
+mas  "Microsoft OneNote", id: 784801555
+mas  "Microsoft PowerPoint", id: 462062816
+mas  "Microsoft Word", id: 462054704
+mas  "OneDrive", id: 823766827
+cask "slack"
+{{ end -}}
+
+{{ if eq .machine "server" -}}
+# =========================================================
+# Server only
+# =========================================================
+mas  "AutoMounter", id: 1160435653
+cask "transmission"
+npm  "obsidian-headless"
+
+{{ end -}}

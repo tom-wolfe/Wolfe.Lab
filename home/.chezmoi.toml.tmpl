@@ -1,0 +1,11 @@
+{{- $machine := promptChoiceOnce . "machine" "What kind of machine is this" (list "personal" "work" "server") -}}
+
+{{/* When the monorepo working copy exists, use it as the chezmoi source
+     instead of the default clone in ~/.local/share/chezmoi */ -}}
+{{- $repo := joinPath .chezmoi.homeDir "Development/Wolfe/Wolfe.Lab" -}}
+{{- if stat $repo }}
+sourceDir = {{ $repo | quote }}
+{{- end }}
+
+[data]
+    machine = {{ $machine | quote }}
