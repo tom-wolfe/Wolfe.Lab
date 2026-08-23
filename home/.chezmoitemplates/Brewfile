@@ -11,6 +11,7 @@ cask "vorssaint"
 # Developer Tools
 brew "chezmoi"
 cask "claude-code"
+cask "dotnet-sdk"
 brew "gh"
 brew "git"
 brew "mas"
@@ -58,7 +59,6 @@ cask "discord"
 # Developer Tools
 brew "cloc"
 cask "docker-desktop"
-cask "dotnet-sdk"
 cask "jetbrains-toolbox"
 {{ end -}}
 
@@ -104,7 +104,6 @@ cask "slack"
 # =========================================================
 
 mas  "AutoMounter", id: 1160435653
-cask "dotnet-runtime"
 npm  "obsidian-headless"
 cask "transmission"
 
