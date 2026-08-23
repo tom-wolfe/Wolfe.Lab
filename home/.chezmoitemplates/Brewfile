@@ -104,7 +104,7 @@ cask "slack"
 # =========================================================
 
 mas  "AutoMounter", id: 1160435653
-cask "dotnet-runtime@10"
+cask "dotnet-runtime"
 npm  "obsidian-headless"
 cask "transmission"
 
