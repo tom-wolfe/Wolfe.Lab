@@ -8,6 +8,10 @@ elif [ -x /usr/local/bin/brew ]; then
   eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+# The dotnet-sdk cask installs to /usr/local/bin, which non-interactive SSH
+# sessions don't have on PATH (path_helper only runs for login shells).
+export PATH="$PATH:/usr/local/bin"
+
 # update -g installs if missing, updates if present
 dotnet tool update -g centralisedpackageconverter
 dotnet tool update -g nschema

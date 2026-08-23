@@ -5,6 +5,10 @@
 
 set -uo pipefail
 
+# Docker Desktop's CLI lives in /usr/local/bin, which non-interactive SSH
+# sessions don't have on PATH (path_helper only runs for login shells).
+export PATH="$PATH:/usr/local/bin"
+
 ZONE="home"
 CAPACITY="500G"
 

@@ -11,6 +11,10 @@ if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
+# Docker Desktop's CLI lives in /usr/local/bin, which non-interactive SSH
+# sessions don't have on PATH (path_helper only runs for login shells).
+export PATH="$PATH:/usr/local/bin"
+
 # Set by chezmoi for scripts; fall back for manual runs
 CHEZMOI_WORKING_TREE="${CHEZMOI_WORKING_TREE:-$(chezmoi source-path)/..}"
 
