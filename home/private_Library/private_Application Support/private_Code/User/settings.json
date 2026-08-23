@@ -1,0 +1,31 @@
+{
+    "editor.fontFamily": "'Monaco', 'Cascadia Code', Consolas, 'Courier New', monospace",
+    "editor.fontLigatures": true,
+    "workbench.iconTheme": "vscode-icons",
+    "editor.tabSize": 2,
+    "terminal.integrated.enablePersistentSessions": false,
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "vscode.css-language-features"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "git.openRepositoryInParentFolders": "always",
+    "files.eol": "\n",
+    "[search-result]": {
+        "editor.lineNumbers": "on"
+    },
+    "editor.fontSize": 13,
+    "explorer.confirmDelete": false,
+    "terminal.integrated.initialHint": false,
+    "terminal.integrated.fontFamily": "Monaco",
+    "terminal.integrated.fontSize": 14,
+    "chat.disableAIFeatures": true,
+    "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
+    "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose",
+    "claudeCode.preferredLocation": "panel",
+    "git.confirmSync": false,
+}

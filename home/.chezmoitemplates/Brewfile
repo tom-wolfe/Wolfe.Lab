@@ -22,6 +22,19 @@ brew "opentofu"
 brew "sqlite"
 cask "visual-studio-code"
 
+# VS Code Extensions
+vscode "anthropic.claude-code"
+vscode "ecmel.vscode-html-css"
+vscode "editorconfig.editorconfig"
+vscode "github.vscode-github-actions"
+vscode "github.vscode-pull-request-github"
+vscode "mikestead.dotenv"
+vscode "ms-azuretools.vscode-containers"
+vscode "ms-dotnettools.vscode-dotnet-runtime"
+vscode "streetsidesoftware.code-spell-checker"
+vscode "vscode-icons-team.vscode-icons"
+vscode "yzhang.markdown-all-in-one"
+
 # Drivers
 cask "displaylink"
 
