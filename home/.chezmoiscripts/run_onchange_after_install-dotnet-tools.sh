@@ -13,5 +13,11 @@ dotnet tool update -g centralisedpackageconverter
 dotnet tool update -g nschema
 dotnet tool update -g ritten
 
-# Static zsh completion, regenerated whenever this script re-runs
-"$HOME/.dotnet/tools/nschema" completion zsh > "$(brew --prefix)/share/zsh/site-functions/_nschema"
+# Static zsh completion, regenerated whenever this script re-runs.
+# nschema emits a sourcing-style script; compinit needs a #compdef first line.
+{
+  echo "#compdef nschema"
+  "$HOME/.dotnet/tools/nschema" completion zsh
+  echo '_nschema_complete "$@"'
+} > "$(brew --prefix)/share/zsh/site-functions/_nschema"
+rm -f "$HOME"/.zcompdump*  # compinit caches bindings; force a rebuild

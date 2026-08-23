@@ -1,5 +1,7 @@
 export PATH="$HOME/.local/bin:$PATH"
 
+# Initialise zsh completion, then the bash-compat shim for tools that need it
+autoload -Uz compinit && compinit
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/tofu tofu
 
