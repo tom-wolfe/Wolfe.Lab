@@ -3,11 +3,31 @@
 # Reload when agents change:
 # {{ include "private_Library/private_LaunchAgents/md.obsidian.headless-sync-dnd.plist" | sha256sum }}
 # {{ include "private_Library/private_LaunchAgents/md.obsidian.headless-sync-main.plist" | sha256sum }}
-set -euo pipefail
-shopt -s nullglob
-uid=$(id -u)
-for plist in "$HOME"/Library/LaunchAgents/*.plist; do
-  launchctl bootout "gui/$uid" "$plist" 2>/dev/null || true   # unload if loaded
-  launchctl bootstrap "gui/$uid" "$plist"                     # load fresh
-done
+#set -uo pipefail
+#shopt -s nullglob
+
+#uid=$(id -u)
+#failed=0
+
+# Assumes each plist's filename matches its Label (true for ours)
+#for plist in "$HOME"/Library/LaunchAgents/*.plist; do
+  #label=$(basename "$plist" .plist)
+  #echo "reloading $label"
+
+  #if launchctl print "gui/$uid/$label" >/dev/null 2>&1; then
+    #launchctl bootout "gui/$uid/$label"
+    # bootout only *starts* teardown; wait for it to finish (max ~10s)
+    #for _ in $(seq 1 20); do
+      #launchctl print "gui/$uid/$label" >/dev/null 2>&1 || break
+      #sleep 0.5
+    #done
+  #fi
+
+  #if ! launchctl bootstrap "gui/$uid" "$plist"; then
+    #echo "ERROR: bootstrap failed for $label" >&2
+    #failed=1
+  #fi
+#done
+
+#exit $failed
 {{ end -}}
