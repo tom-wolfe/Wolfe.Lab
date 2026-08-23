@@ -19,8 +19,10 @@ brew "mas"
 brew "mkcert"
 brew "nvm"
 brew "opentofu"
+brew "shellcheck"
 brew "sqlite"
 cask "visual-studio-code"
+brew "yq"
 
 # VS Code Extensions
 vscode "anthropic.claude-code"
@@ -105,6 +107,7 @@ cask "slack"
 # =========================================================
 
 mas  "AutoMounter", id: 1160435653
+brew "lazydocker"
 npm  "obsidian-headless"
 cask "transmission"
 
