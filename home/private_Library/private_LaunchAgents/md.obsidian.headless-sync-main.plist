@@ -8,7 +8,8 @@
 
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/tomwolfe/.nvm/versions/node/v22.22.2/bin/ob</string>
+    <string>/Users/tomwolfe/.local/bin/nvm-run</string>
+    <string>ob</string>
     <string>sync</string>
     <string>--path</string>
     <string>/Users/tomwolfe/Library/CloudStorage/GoogleDrive-trwolfe13@gmail.com/My Drive/Obsidian/Main</string>
@@ -33,7 +34,7 @@
   <key>EnvironmentVariables</key>
   <dict>
     <key>PATH</key>
-    <string>/Users/tomwolfe/.nvm/versions/node/v22.22.2/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
   </dict>
 
 </dict>
