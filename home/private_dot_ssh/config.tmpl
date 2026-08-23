@@ -1,0 +1,14 @@
+Host macmini
+  HostName macmini.local
+  User tomwolfe
+
+{{ if eq .machine "server" -}}
+# Headless git: use the repo deploy key, never the 1Password UI agent.
+Host github.com
+  IdentityAgent none
+  IdentityFile ~/.ssh/github_deploy
+  IdentitiesOnly yes
+
+{{ end -}}
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
