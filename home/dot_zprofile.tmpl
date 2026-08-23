@@ -2,7 +2,7 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # .NET SDK tools; DOTNET_ROOT lets tool apphosts find brew's keg runtime
 export PATH="$PATH:$HOME/.dotnet/tools"
-command -v dotnet >/dev/null && export DOTNET_ROOT="$(dirname "$(dirname "$(readlink -f "$(command -v dotnet)")")")/libexec"
+# command -v dotnet >/dev/null && export DOTNET_ROOT="$(dirname "$(dirname "$(readlink -f "$(command -v dotnet)")")")/libexec"
 
 {{ if ne .machine "server" -}}
 # JetBrains Toolbox scripts
