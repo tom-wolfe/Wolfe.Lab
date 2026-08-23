@@ -9,15 +9,15 @@ cask "google-drive"
 # Developer Tools
 cask "claude-code"
 cask "docker-desktop"
+brew "dotnet@10"
 brew "gh"
 brew "git"
 brew "mas"
-cask "visual-studio-code"
 brew "mkcert"
+brew "nvm"
 brew "opentofu"
 brew "sqlite"
-# TODO: NVM
-# TODO: dotnet
+cask "visual-studio-code"
 
 # Drivers
 cask "displaylink"
@@ -52,8 +52,8 @@ cask "jetbrains-toolbox"
 # My machines
 # =========================================================
 cask "daisydisk"
-cask "paste"
 cask "nordvpn"
+mas  "Paste", id: 967805235
 {{ end -}}
 
 {{ if eq .machine "personal" -}}
@@ -61,13 +61,22 @@ cask "nordvpn"
 # Personal only
 # =========================================================
 cask "affinity"
+mas  "forScore", id: 363738376
 brew "ollama"
+mas  "Things", id: 904280696
+mas  "WhatsApp", id: 310633997
 {{ end -}}
 
 {{ if eq .machine "work" -}}
 # =========================================================
 # Work only
 # =========================================================
+mas  "Microsoft Excel", id: 462058435
+mas  "Microsoft Outlook", id: 985367838
+mas  "Microsoft OneNote", id: 784801555
+mas  "Microsoft PowerPoint", id: 462062816
+mas  "Microsoft Word", id: 462054704
+mas  "OneDrive", id: 823766827
 cask "slack"
 {{ end -}}
 
@@ -75,6 +84,8 @@ cask "slack"
 # =========================================================
 # Server only
 # =========================================================
+mas  "AutoMounter", id: 1160435653
 cask "transmission"
-npm "obsidian-headless"
+npm  "obsidian-headless"
+
 {{ end -}}
