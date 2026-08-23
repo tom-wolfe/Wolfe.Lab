@@ -1,17 +1,24 @@
 {{ if eq .machine "server" -}}
 #!/bin/bash
-# Reload when agents change:
-# {{ include "private_Library/private_LaunchAgents/md.obsidian.headless-sync-dnd.plist" | sha256sum }}
-# {{ include "private_Library/private_LaunchAgents/md.obsidian.headless-sync-main.plist" | sha256sum }}
+# Reload the launch agents managed in this repo when their plists change:
+{{ range glob (joinPath .chezmoi.sourceDir "private_Library/private_LaunchAgents/*.plist") -}}
+# {{ base . }}: {{ include . | sha256sum }}
+{{ end -}}
 set -uo pipefail
-shopt -s nullglob
 
 uid=$(id -u)
 failed=0
 
-# Assumes each plist's filename matches its Label (true for ours)
-for plist in "$HOME"/Library/LaunchAgents/*.plist; do
-  label=$(basename "$plist" .plist)
+# Only our own agents — third-party agents in the same folder are left alone.
+# Assumes each plist's filename matches its Label (true for ours).
+agents=()
+{{ range glob (joinPath .chezmoi.sourceDir "private_Library/private_LaunchAgents/*.plist") -}}
+agents+=("{{ base . }}")
+{{ end -}}
+
+for name in "${agents[@]}"; do
+  plist="$HOME/Library/LaunchAgents/$name"
+  label="${name%.plist}"
   echo "reloading $label"
 
   if launchctl print "gui/$uid/$label" >/dev/null 2>&1; then
