@@ -1,4 +1,4 @@
-# Wolfe.Config
+# Wolfe.Lab
 
 Monorepo for my machine and homelab configuration.
 
@@ -15,11 +15,11 @@ Monorepo for my machine and homelab configuration.
 1. Install 1Password and sign in (its SSH agent provides git auth).
 2. Run:
    ```sh
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply trwolfe13/Wolfe.Config
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply trwolfe13/Wolfe.Lab
    ```
 3. You'll be asked what kind of machine it is (`personal` / `work` / `server`), which controls the apps that get installed.
 
-If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Config`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
+If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
 
 ## Day-to-day
 

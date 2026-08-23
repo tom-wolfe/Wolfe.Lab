@@ -2,7 +2,7 @@
 
 {{/* When the monorepo working copy exists, use it as the chezmoi source
      instead of the default clone in ~/.local/share/chezmoi */ -}}
-{{- $repo := joinPath .chezmoi.homeDir "Development/Wolfe/Wolfe.Config" -}}
+{{- $repo := joinPath .chezmoi.homeDir "Development/Wolfe/Wolfe.Lab" -}}
 {{- if stat $repo }}
 sourceDir = {{ $repo | quote }}
 {{- end }}
