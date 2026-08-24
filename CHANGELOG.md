@@ -4,6 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.3.1] - 2026-08-25
+
+### Fixed
+
+- Node LTS is now installed and aliased as nvm's default by chezmoi. The server script also reinstalls global npm tools into the new version.
+- `nvm-run` now warns loudly when it falls back to the default alias instead of hiding it.
+
+
 ## [0.3.0] - 2026-08-24
 
 ### Added

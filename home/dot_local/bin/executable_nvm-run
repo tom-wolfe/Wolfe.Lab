@@ -3,8 +3,12 @@
 # For launchd agents and other contexts that don't get a login shell.
 export NVM_DIR="$HOME/.nvm"
 source /opt/homebrew/opt/nvm/nvm.sh --no-use
-nvm use --lts >/dev/null 2>&1 || nvm use default >/dev/null 2>&1 || {
-  echo "nvm-run: no usable node version (tried --lts, default)" >&2
-  exit 1
+nvm use --lts >/dev/null 2>&1 || {
+  nvm use default >/dev/null 2>&1 || {
+    echo "nvm-run: no usable node version (tried --lts, default)" >&2
+    exit 1
+  }
+  # A silent fallback here once hid an EOL v20 for weeks — say so loudly.
+  echo "nvm-run: WARNING: no LTS installed, fell back to default ($(node --version))" >&2
 }
 exec "$@"

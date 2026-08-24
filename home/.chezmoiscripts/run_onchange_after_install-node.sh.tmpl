@@ -1,0 +1,29 @@
+#!/bin/bash
+# Keep a current Node LTS installed and make it nvm's default, fleet-wide.
+#
+# Why this exists: `nvm use` only SELECTS among installed versions — it never
+# installs. With no LTS present, nvm-run's `nvm use --lts` failed silently
+# and fell back to the `default` alias, which still pointed at EOL v20 —
+# crashing obsidian-headless (needs >=22 for global WebSocket) on 2026-08-24.
+# This script closes both doors: the LTS is actually installed, and `default`
+# is an alias that tracks lts/* rather than a fossilized version.
+#
+# A new LTS line doesn't re-trigger a run_onchange script by itself — bump
+# this date to force a rerun everywhere: 2026-08-24
+
+# NOTE: no `set -u` — nvm.sh reads unset variables by design and dies under it.
+set -eo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+mkdir -p "$NVM_DIR"
+source /opt/homebrew/opt/nvm/nvm.sh --no-use
+
+nvm install --lts
+nvm alias default 'lts/*'
+
+{{ if eq .machine "server" -}}
+# Global npm packages live per node version, so a new LTS starts empty —
+# put the server's tools back. (obsidian-headless: public npm, needs >=22.)
+nvm use 'lts/*' >/dev/null
+npm ls -g obsidian-headless >/dev/null 2>&1 || npm install -g obsidian-headless
+{{ end -}}
