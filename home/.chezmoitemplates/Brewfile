@@ -49,7 +49,7 @@ cask "displaylink"
 
 # Utilities
 cask "airbuddy"
-cask "TheBoredTeam/boring-notch/boring-notch"
+cask "TheBoredTeam/boring-notch/boring-notch", trusted: true
 
 # Productivity
 cask "claude"
