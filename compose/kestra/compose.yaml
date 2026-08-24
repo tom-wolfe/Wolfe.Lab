@@ -1,0 +1,77 @@
+name: kestra
+
+# Job scheduler for the lab (see README.md). Two deliberate absences:
+#   * No Docker socket mount — Kestra never touches the host's Docker.
+#     Host-side work leaves through ONE door: SSH to the host under a
+#     forced-command key that only runs allowlisted jobs (~/.local/bin/lab-job).
+#   * No flows here — flows are code, managed by tofu/kestra.
+
+services:
+  postgres:
+    # Pinned. Bump deliberately — Postgres major upgrades need pg_upgrade or
+    # dump/restore; the data dir is not forward-compatible across majors.
+    image: postgres:17.6
+    container_name: kestra-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: kestra
+      POSTGRES_DB: kestra
+
+    # POSTGRES_PASSWORD lives outside the repo — generated once by the
+    # bootstrap-kestra-secrets chezmoi script. See README.md.
+    env_file:
+      - ${KESTRA_STATE:-/Users/tomwolfe/Docker/kestra}/postgres.env
+
+    volumes:
+      # State is data — lives outside the repo, like every other stack.
+      - ${KESTRA_STATE:-/Users/tomwolfe/Docker/kestra}/postgres:/var/lib/postgresql/data
+
+    # Internal only — deliberately no published ports.
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kestra -d kestra"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kestra:
+    # Pinned for repeatability. To upgrade: bump this tag, then
+    # `docker compose up -d`. Check the release notes for migrations first.
+    image: kestra/kestra:v1.3.34
+    container_name: kestra
+    restart: unless-stopped
+
+    command: server standalone
+
+    environment:
+      # Config is code — the mounted application.yaml below. Secrets reach it
+      # as ${...} Micronaut placeholders resolved from the env_file.
+      MICRONAUT_CONFIG_FILES: /app/confs/application.yaml
+      # The host's /etc/localtime is a symlink into /var/db/timezone, which
+      # dangles inside a Linux container — set TZ instead (jellyfin pattern).
+      TZ: Europe/London
+      # Keep the JVM polite on a shared mini. Raise if executions queue up.
+      JAVA_OPTS: "-Xms256m -Xmx1g"
+
+    # KESTRA_DB_PASSWORD, KESTRA_BASIC_AUTH_PASSWORD, KESTRA_ENCRYPTION_KEY
+    # and SECRET_* flow secrets — generated outside the repo, see README.md.
+    env_file:
+      - ${KESTRA_STATE:-/Users/tomwolfe/Docker/kestra}/kestra.env
+
+    volumes:
+      - ./application.yaml:/app/confs/application.yaml:ro
+      # Internal storage: execution logs, task outputs, file uploads.
+      - ${KESTRA_STATE:-/Users/tomwolfe/Docker/kestra}/storage:/app/storage
+
+    ports:
+      # Host 8180, not the container's default 8080 — too contested a port
+      # to spend on one specific service.
+      - "8180:8080"
+
+    # The image ships no curl/wget for a healthcheck; the management port
+    # (8081) stays unpublished and unchecked. Postgres gates startup instead.
+    depends_on:
+      postgres:
+        condition: service_healthy

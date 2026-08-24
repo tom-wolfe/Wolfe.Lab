@@ -1,4 +1,5 @@
 {{ if ne .machine "server" -}}
 Library/LaunchAgents
 Library/LaunchAgents/**
+.local/bin/lab-job
 {{ end -}}

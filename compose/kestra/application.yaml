@@ -1,0 +1,41 @@
+# Kestra server configuration — mounted read-only into the container via
+# MICRONAUT_CONFIG_FILES. Everything secret is a ${...} placeholder resolved
+# from the env_file at startup; a missing variable fails the boot loudly
+# rather than starting an unconfigured server.
+
+datasources:
+  postgres:
+    url: jdbc:postgresql://postgres:5432/kestra
+    driver-class-name: org.postgresql.Driver
+    username: kestra
+    password: ${KESTRA_DB_PASSWORD}
+
+kestra:
+  server:
+    basic-auth:
+      enabled: true
+      # Kestra requires an email-shaped username.
+      username: trwolfe13@gmail.com
+      password: ${KESTRA_BASIC_AUTH_PASSWORD}
+      # The webhook endpoint skips basic auth so CI can poke flows; each
+      # webhook's own key (in the flow YAML) is the auth on that path.
+      open-urls:
+        - "/api/v1/main/executions/webhook/"
+
+  repository:
+    type: postgres
+  queue:
+    type: postgres
+
+  storage:
+    type: local
+    local:
+      base-path: /app/storage
+
+  # Encrypts SECRET-type inputs/outputs at rest in Postgres.
+  encryption:
+    secret-key: ${KESTRA_ENCRYPTION_KEY}
+
+  # Don't seed the demo namespace.
+  tutorial-flows:
+    enabled: false

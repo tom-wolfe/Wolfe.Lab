@@ -1,0 +1,38 @@
+#!/bin/bash
+# Forced-command dispatcher for the Kestra job-bridge key (see compose/kestra/README.md).
+# sshd runs this INSTEAD of whatever the client asked for;
+# the request arrives in $SSH_ORIGINAL_COMMAND and is treated as a NAME, never executed.
+# Names resolve to scripts in the repo's jobs/ directory, so adding a job is
+# one commit (jobs/<name>.sh + its flow) — this file never changes.
+
+set -uo pipefail
+
+# Non-interactive SSH sessions miss path_helper: Homebrew and Docker
+# Desktop's CLI (/usr/local/bin) aren't on PATH.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# No login keychain in SSH sessions — Docker's osxkeychain credential helper
+# fails even for anonymous pulls. Use the credsStore-free config instead.
+export DOCKER_CONFIG="$HOME/.docker-headless"
+
+job="${SSH_ORIGINAL_COMMAND:-}"
+
+# Names are [a-z0-9-] only — anything else (path separators, dots, empty)
+# is rejected before it goes near the filesystem.
+case "$job" in
+  *[!a-z0-9-]* | "")
+    echo "lab-job: invalid job name '$job'" >&2
+    exit 64
+    ;;
+esac
+
+# The repo checkout chezmoi already keeps fresh on this machine.
+jobs_dir="$(chezmoi source-path)/../jobs"
+script="$jobs_dir/$job.sh"
+
+if [ ! -f "$script" ]; then
+  echo "lab-job: unknown job '$job' (no $script)" >&2
+  exit 64
+fi
+
+exec bash "$script"

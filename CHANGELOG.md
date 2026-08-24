@@ -4,6 +4,20 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.2.0] - 2026-08-24
+
+### Added
+
+- `compose/kestra`: Kestra job scheduler (+ Postgres) on the mini, replacing launchd's scheduling
+- `tofu/kestra`: every flow as YAML in the repo, applied declaratively
+- SSH job bridge: Kestra reaches the host only through a forced-command key (`restrict,command=lab-job`) that resolves job names to `jobs/*.sh` in the repo checkout
+- Flows: `chezmoi-update` (hourly + CI-pokeable webhook), `obsidian-sync-main` and `obsidian-sync-dnd` (one-shot passes every 10 minutes, replacing the launch agents after cutover)
+- Headless `DOCKER_CONFIG` (`~/.docker-headless`, no osxkeychain credsStore) so registry pulls work in SSH sessions without the login keychain
+
+### Changed
+
+- Runtime secrets are now materialized from 1Password, never generated on-machine. (Forgejo and Jellyfin's admin passwords are DB state, not env secrets.)
+
 ## [0.1.1] - 2026-08-24
 
 ### Fixed

@@ -12,6 +12,14 @@ keeping the existing library, watch history and artwork exactly as they were.
 | Media | `/Volumes/Data1` and `/Volumes/Data2` (both USB, mounted at the same paths) |
 | Backups | `~/Docker/jellyfin/backups` |
 
+## Where account passwords live
+
+In `jellyfin.db`, not in any env file — recreating the container never
+touches them, and restoring a backup restores them. Keep the canonical copy
+in 1Password; only a from-scratch data reset (setup wizard) ever asks for a
+password again, and then you re-enter the vaulted one — Jellyfin has no CLI
+to set it for you.
+
 ## Why the paths look strange
 
 This is the one thing to understand before editing anything.

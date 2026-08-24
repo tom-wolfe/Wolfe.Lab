@@ -13,6 +13,7 @@ nothing is exposed to the internet.
 | `:2222` | Forgejo SSH (git clone/push; container port 22) | SSH key registered in Forgejo profile | `compose/forgejo` |
 | `:3900` | Garage — S3 API | 1P `Garage tofu-state-key` (per-bucket keys) | `compose/garage` |
 | `:3903` | Garage — admin API | 1P `Garage S3 Admin Token` | `compose/garage` |
+| `:8180` | Kestra — web UI + API | basic auth: 1P `Kestra Admin`; webhook path key-authed | `compose/kestra` |
 | `:8096` | Jellyfin — web + clients | Jellyfin accounts | `compose/jellyfin` |
 
 Notes:

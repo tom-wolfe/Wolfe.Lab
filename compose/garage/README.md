@@ -9,7 +9,7 @@ automated by chezmoi — bootstrap is just: merge, `chezmoi update` on the mini.
 
 | Concern | Handled by |
 | --- | --- |
-| Secrets (`~/Docker/garage/garage.env`) | `run_once_before_bootstrap-garage-secrets` |
+| Secrets (`~/Docker/garage/garage.env`) | `run_once_before_bootstrap-garage-secrets` — materialized from 1Password (`Garage RPC Secret`, `Garage S3 Admin Token`), never generated: the vault is the origin, so a wiped env file comes back with the same values |
 | Container | `run_onchange_after_deploy-compose` (like every stack) |
 | Cluster layout (one-time) | `run_once_after_init-garage-layout` |
 | Buckets, keys, grants | OpenTofu — `tofu/bootstrap` seeds the state store; everything else is ordinary tofu resources |

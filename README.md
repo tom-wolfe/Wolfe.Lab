@@ -8,6 +8,7 @@ Monorepo for my machine and homelab configuration.
 | --- | --- |
 | `home/` | chezmoi source: dotfiles, Brewfile, and setup scripts |
 | `compose/` | docker compose stacks for the Mac mini — applied by `chezmoi update` on the server |
+| `jobs/` | host-side job scripts, run on the mini by Kestra through the lab-job SSH bridge |
 | `tofu/` | OpenTofu projects — state store bootstrap, Forgejo repositories |
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 | `ENDPOINTS.md` | every service address in the lab |

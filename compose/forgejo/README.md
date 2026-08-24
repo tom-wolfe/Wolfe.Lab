@@ -59,6 +59,23 @@ Then lock it down, since this is a LAN server that doesn't need public signups:
    is idempotent)
 3. `docker compose up -d`
 
+## Where the admin password lives
+
+In the SQLite DB inside `~/Docker/forgejo/data` — not in any env file. So
+recreating the *container* never touches it, and restoring a backup restores
+it. Keep the canonical copy in 1Password (an ordinary Login item) and treat
+the DB as the cache: if they ever diverge (say, a from-scratch reinstall
+where you typed something new), resync the DB **to** the vault, not the
+vault to the DB:
+
+```sh
+docker exec forgejo forgejo admin user change-password \
+  --username tom-wolfe --password "$(op read 'op://Personal/<your forgejo login item>/password')"
+```
+
+(GUI session, since `op` needs it; check `--help` first if the image has
+moved — this is the recovery path, not something that runs routinely.)
+
 Set `FORGEJO__service__REQUIRE_SIGNIN_VIEW: "true"` as well if you don't want
 repos browsable by anyone on the LAN without logging in.
 
