@@ -20,6 +20,7 @@ brew "mas"
 brew "mkcert"
 brew "nvm"
 brew "opentofu"
+brew "rclone"
 brew "shellcheck"
 brew "sqlite"
 cask "visual-studio-code"
@@ -48,6 +49,7 @@ cask "displaylink"
 
 # Utilities
 cask "airbuddy"
+cask "TheBoredTeam/boring-notch/boring-notch"
 
 # Productivity
 cask "claude"
