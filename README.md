@@ -30,6 +30,17 @@ If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.
 Auth state is device-bound by design; these are the once-per-machine rituals:
 
 - [ ] **1Password** — first, always: unlocks SSH/git, and everything below
+- [ ] **Full Disk Access** (server) — grant to **Terminal** (the op CLI discovers
+      the desktop app by reading its TCC-protected group container; without this
+      it silently falls back to manual sign-ins) and to **remote users** via
+      Sharing → Remote Login (the Kestra job bridge runs over SSH and touches
+      protected paths like `~/Library/CloudStorage`)
+- [ ] **1Password service account** (server) — create at 1password.com
+      (Developer → Service Accounts), read-only grant on the **Wolfe.Lab vault
+      only**, and place the token at
+      `~/Docker/1password/service-account-token` (chmod 600). The bootstrap
+      scripts prefer it over the desktop-app session — prompt-free and works
+      over SSH; revoke/rotate from 1password.com any time
 - [ ] **App Store** — required before `mas` apps in the Brewfile will install
 - [ ] **Google Drive** — personal + server (vault backups depend on it)
 - [ ] **`gh auth login`** — per-machine token, stays out of the repo

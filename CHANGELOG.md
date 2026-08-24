@@ -4,6 +4,21 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.3.0] - 2026-08-24
+
+### Added
+
+- 1Password Service Account support. 1Password now authenticates using a service account, if the token for one is saved at `~/Docker/1password/service-account-token` (chmod 600). (Service account has also been configured on the server)
+
+### Changed
+
+- The Postgres health check now does `pg_isready` then continues with a `SELECT 1` to test the database is actually reachable. 
+
+### Fixed
+
+- The timezone setting to match to the host didn't work, so just set the timezone literally.
+- Run Postgres as the host user so it works properly.
+
 ## [0.2.4] - 2026-08-24
 
 ### Fixed

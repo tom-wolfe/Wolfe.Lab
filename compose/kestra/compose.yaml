@@ -14,6 +14,15 @@ services:
     container_name: kestra-db
     restart: unless-stopped
 
+    # Run as the host user (must match `id -u`/`id -g` on the mini). 
+    # On Docker Desktop's VirtioFS, the entrypoint's chown to the image's
+    # internal postgres uid races the metadata cache: the init-phase temp
+    # server dies with "data directory has wrong ownership" AFTER creating
+    # the user but BEFORE creating the database, and the restart then skips
+    # init forever (2026-08-24, twice). As the real owner, no chown happens
+    # and the ownership check is satisfied on every boot.
+    user: "501:20"
+
     environment:
       POSTGRES_USER: kestra
       POSTGRES_DB: kestra
@@ -30,7 +39,11 @@ services:
     # Internal only — deliberately no published ports.
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kestra -d kestra"]
+      # Not just pg_isready — it only checks the server answers, and reports
+      # healthy even when the database doesn't exist (seen 2026-08-24 after
+      # an interrupted first-boot initdb). The psql probe proves the actual
+      # database accepts queries; local socket connections are trusted.
+      test: ["CMD-SHELL", "pg_isready -U kestra -d kestra && psql -U kestra -d kestra -tAc 'SELECT 1' >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 5
