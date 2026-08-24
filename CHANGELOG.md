@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.2.3] - 2026-08-24
+
+### Fixed
+
+- The bootstrap kestra secrets script had a logic error in it that caused the env file to get written before the SSH key existed, so it was left blank. 
+
 ## [0.2.2] - 2026-08-24
 
 ### Fixed
