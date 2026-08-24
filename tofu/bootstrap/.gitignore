@@ -1,0 +1,5 @@
+# This project's state is disposable and must never be committed —
+# it would contain the state-store credentials in plaintext.
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
