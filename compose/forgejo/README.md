@@ -70,7 +70,7 @@ vault to the DB:
 
 ```sh
 docker exec forgejo forgejo admin user change-password \
-  --username tom-wolfe --password "$(op read 'op://Personal/<your forgejo login item>/password')"
+  --username tom-wolfe --password "$(op read 'op://Wolfe.Lab/<your forgejo login item>/password')"
 ```
 
 (GUI session, since `op` needs it; check `--help` first if the image has

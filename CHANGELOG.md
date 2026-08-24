@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.2.1] - 2026-08-24
+
+### Fixed
+
+- The 1Password secrets now reference the correct vault name of `Wolfe.Lab` instead of `Personal`.
+
 ## [0.2.0] - 2026-08-24
 
 ### Added
