@@ -52,6 +52,13 @@ services:
       FORGEJO__picture__DISABLE_GRAVATAR: "true"
       FORGEJO__cron__ENABLED: "true"
 
+      # NOT a /etc/localtime bind mount: on macOS that's a symlink into the
+      # VERSIONED /var/db/timezone/tz/<tzdata>/ tree. Docker bakes the
+      # resolved path into the container, and the next Apple tzdata update
+      # deletes it — the container then fails to start with "error while
+      # creating mount source path ... operation not permitted" (2026-08-24).
+      TZ: Europe/London
+
     volumes:
       # Everything stateful lives here: repos, config, SQLite DB, avatars, LFS.
       #
@@ -60,8 +67,6 @@ services:
       # inside the working tree, where they'd be one `git add -A` away from
       # being committed. Override with FORGEJO_DATA if you relocate it.
       - ${FORGEJO_DATA:-/Users/tomwolfe/Docker/forgejo/data}:/data
-      # Keep container clock/timezone aligned with the host.
-      - /etc/localtime:/etc/localtime:ro
 
     ports:
       - "3000:3000"
