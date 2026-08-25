@@ -77,4 +77,16 @@ resource "forgejo_repository" "repo" {
   mirror_interval = each.value.mode == "mirror" ? var.mirror_interval : null
   private         = each.value.private
   auth_token      = each.value.private ? local.github_tokens[each.value.owner] : null
+
+  # svalabs provider (still in 1.6.0) re-plans these computed blocks as
+  # unknown on every run, producing perpetual no-op updates whose PATCH can
+  # 500 on repos with wikis ("'' is not a valid branch name"). Upstream:
+  # svalabs/terraform-provider-forgejo#132, #169. Remove once fixed.
+  #
+  # NB: if a repo is deleted outside tofu, refresh errors instead of
+  # re-creating — intentional per upstream #111. Recover with:
+  #   tofu state rm 'forgejo_repository.repo["<name>"]'
+  lifecycle {
+    ignore_changes = [internal_tracker, permissions]
+  }
 }

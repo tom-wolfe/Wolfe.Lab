@@ -12,6 +12,11 @@ resource "forgejo_repository" "wolfe_lab" {
   clone_addr = "https://github.com/tom-wolfe/Wolfe.Lab.git"
   mirror     = false
   private    = false
+
+  # Same perpetual-diff workaround as mirrors.tf — see comment there.
+  lifecycle {
+    ignore_changes = [internal_tracker, permissions]
+  }
 }
 
 resource "forgejo_repository_push_mirror" "wolfe_lab_github" {
