@@ -110,6 +110,7 @@ cask "slack"
 # =========================================================
 
 mas  "AutoMounter", id: 1160435653
+brew "docker-compose"
 brew "lazydocker"
 npm  "obsidian-headless"
 cask "transmission"

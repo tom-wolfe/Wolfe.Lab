@@ -23,7 +23,12 @@ for stack_dir in "$CHEZMOI_WORKING_TREE"/compose/*/; do
   [ -f "$stack_dir/compose.yaml" ] || continue
   stack=$(basename "$stack_dir")
   echo "converging stack: $stack"
-  if ! docker compose --project-directory "$stack_dir" up -d --remove-orphans; then
+  # Standalone docker-compose (Homebrew), not `docker compose`: the plugin
+  # form resolves through $DOCKER_CONFIG/cli-plugins — which the headless
+  # config the job bridge uses deliberately doesn't have — never through
+  # PATH. The standalone binary is an ordinary PATH-resolved command that
+  # behaves the same in every session type.
+  if ! docker-compose --project-directory "$stack_dir" up -d --remove-orphans; then
     echo "ERROR: stack $stack failed to converge" >&2
     failed=1
   fi

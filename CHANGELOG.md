@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.5.2] - 2026-08-25
+
+### Removed
+
+- `DOCKER_HOST` hack that never fixed anything.
+
+### Fixed
+
+- Compose stacks actually converge through the Kestra bridge now. `docker compose` is a CLI plugin resolved through `$DOCKER_CONFIG/cli-plugins` (never PATH), and Docker Desktop on macOS ships its plugins only in `~/.docker/cli-plugins`.
+
 ## [0.5.1] - 2026-08-25
 
 ### Fixed

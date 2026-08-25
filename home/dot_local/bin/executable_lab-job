@@ -15,15 +15,6 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 # fails even for anonymous pulls. Use the credsStore-free config instead.
 export DOCKER_CONFIG="$HOME/.docker-headless"
 
-# That config has no contexts store, so without help the CLI falls back to
-# /var/run/docker.sock — a root-owned symlink that only exists while Docker
-# Desktop's "Allow the default Docker socket to be used" setting holds
-# (reboots clear /var/run; Desktop updates can reset the setting). The GUI
-# session never notices because ~/.docker's desktop-linux context points at
-# the user-level socket Desktop always listens on. Pin that socket here so
-# bridge jobs don't depend on the privileged symlink existing.
-export DOCKER_HOST="unix://$HOME/.docker/run/docker.sock"
-
 job="${SSH_ORIGINAL_COMMAND:-}"
 
 # Names are [a-z0-9-] only — anything else (path separators, dots, empty)
