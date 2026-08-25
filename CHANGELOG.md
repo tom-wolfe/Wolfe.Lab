@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.3.2] - 2026-08-25
+
+### Removed
+
+- Removed old launchd `ob sync` scripts now that sync is done through Kestra instead.
+
 ## [0.3.1] - 2026-08-25
 
 ### Fixed
