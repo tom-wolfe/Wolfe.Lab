@@ -64,17 +64,31 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
 - The push mirror keeps the GitHub copy of Wolfe.Lab current on every
   commit, so everything that pulls from GitHub (the mini's chezmoi, the
   bootstrap one-liner, deploy keys) keeps working unchanged.
-- Private mirrors store their PAT inside Forgejo per-repo. After rotating
-  a PAT in 1Password, `tofu apply` pushes the new token out.
+- Private mirrors store their PAT inside Forgejo per-repo, but Forgejo only
+  consumes it at migration time — there is no API to update mirror
+  credentials, so a `tofu apply` after rotating a PAT "succeeds" while the
+  mirror keeps pulling with the dead token (2026-08-25). To rotate: update
+  1Password, then set the new token in each repo's Settings -> Mirror
+  Settings -> Authorization in the Forgejo UI, then run `tofu apply` once so
+  state catches up (that apply is a harmless server-side no-op).
 - No state locking (Garage lacks conditional writes): one operator, one
   machine at a time.
 
 ## Known provider issues (svalabs/forgejo 1.6.0)
 
-- **`tofu plan` always shows ~34 in-place "changes"** — the provider marks
-  computed attributes (avatar_url, clone_url, ...) unknown on every plan.
-  Cosmetic: applying them changes nothing real. Judge plans by the
-  add/replace/destroy counts, not the change count.
+- **Perpetual in-place "changes" on every repo** — the provider re-plans the
+  computed `internal_tracker`/`permissions` blocks as unknown on every run
+  (upstream #132, #169), and the resulting no-op PATCH can 500 on repos with
+  wikis ("'' is not a valid branch name"). Suppressed with
+  `lifecycle.ignore_changes` in `mirrors.tf`/`primary.tf`; plans are clean
+  now. Remove the workaround once fixed upstream.
+- **Deleting a repo outside tofu breaks refresh** ("Repository with ID N not
+  found") — intentional per upstream #111. Recover with
+  `tofu state rm 'forgejo_repository.repo["<name>"]'`, then apply to
+  recreate.
+- **`auth_token` updates are silent no-ops** — the provider accepts the
+  change but Forgejo has no API for it (see the rotation note above). It
+  should arguably be flagged RequiresReplace; not yet reported upstream.
 - **Creates sometimes error with "invalid result object" and drop the new
   repo from state.** The repo IS created on Forgejo; adopt it instead of
   retrying:
@@ -83,4 +97,5 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
   `tofu untaint 'forgejo_repository.repo["<name>"]'` rather than letting it
   replace.
 
-Both worth an upstream issue at svalabs/terraform-provider-forgejo.
+The "invalid result object" crash and the `auth_token` no-op are still worth
+upstream issues at svalabs/terraform-provider-forgejo.
