@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.4.0] - 2026-08-25
+
+### Added
+
+- Lots of git aliases: `git undo` unwinds the last commit, `git main` puts you back on latest main, `git sweep` removes merged branches, and `git catchup` applies the latest changes from `main`.
+
+### Changes
+
+- Git fetch now automatically prunes.
+
 ## [0.3.2] - 2026-08-25
 
 ### Removed
