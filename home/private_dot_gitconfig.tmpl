@@ -47,3 +47,4 @@
 	main = !git switch main && git pull --prune
 	sweep = !git fetch --prune && git branch -vv | awk '/: gone]/ {print $1}' | xargs git branch -D
 	catchup = !git fetch origin && git merge origin/main
+	aliases = config --get-regexp ^alias\\.

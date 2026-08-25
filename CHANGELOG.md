@@ -4,6 +4,18 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.5.0] - 2026-08-25
+
+### Added
+
+- Added new `git aliases` alias for outputting existing aliases.
+- There is a new `forgejo.scripts/import.sh` script used to import some old repositories. Kept for posterity.
+
+### Changed
+
+- Forgejo PRs should now default to Squash.
+- Forgejo instance is now named `WolfeForge`.
+
 ## [0.4.1] - 2026-08-25
 
 ### Fixed

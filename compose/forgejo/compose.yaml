@@ -9,8 +9,18 @@ services:
     restart: unless-stopped
 
     environment:
+      # NOT a /etc/localtime bind mount: on macOS that's a symlink into the
+      # VERSIONED /var/db/timezone/tz/<tzdata>/ tree. Docker bakes the
+      # resolved path into the container, and the next Apple tzdata update
+      # deletes it — the container then fails to start with "error while
+      # creating mount source path ... operation not permitted" (2026-08-24).
+      TZ: Europe/London
+
       USER_UID: 1000
       USER_GID: 1000
+
+      FORGEJO____APP_NAME: WolfeForge
+      FORGEJO____APP_SLOGAN: I write code and stuff.
 
       # --- Identity / URLs -------------------------------------------------
       # ROOT_URL must match how you reach the server in the browser, otherwise
@@ -47,17 +57,16 @@ services:
       FORGEJO__service__DISABLE_REGISTRATION: "true"
       FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
 
-      # Don't phone home or render remote avatars from a box on your LAN.
       FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
-      FORGEJO__picture__DISABLE_GRAVATAR: "true"
       FORGEJO__cron__ENABLED: "true"
 
-      # NOT a /etc/localtime bind mount: on macOS that's a symlink into the
-      # VERSIONED /var/db/timezone/tz/<tzdata>/ tree. Docker bakes the
-      # resolved path into the container, and the next Apple tzdata update
-      # deletes it — the container then fails to start with "error while
-      # creating mount source path ... operation not permitted" (2026-08-24).
-      TZ: Europe/London
+      # --- Repositories ----------------------------------------------------
+      # Enable push-to-create for users and orgs (the org/user must already exist).
+      FORGEJO__repository__ENABLE_PUSH_CREATE_USER: "true"
+      FORGEJO__repository__ENABLE_PUSH_CREATE_ORG: "true"
+
+      # --- Pull Requests ---------------------------------------------------
+      FORGEJO__pull-request__DEFAULT_MERGE_STYLE: "squash"
 
     volumes:
       # Everything stateful lives here: repos, config, SQLite DB, avatars, LFS.
