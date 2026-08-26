@@ -77,6 +77,14 @@ resource "forgejo_repository" "repo" {
   mirror_interval = each.value.mode == "mirror" ? var.mirror_interval : null
   private         = each.value.private
   auth_token      = each.value.private ? local.github_tokens[each.value.owner] : null
+  
+  has_actions       = each.value.mode != "mirror"
+  has_issues        = each.value.mode != "mirror" 
+  has_packages      = each.value.mode != "mirror"
+  has_projects      = each.value.mode != "mirror"
+  has_pull_requests = each.value.mode != "mirror"
+  has_releases      = each.value.mode != "mirror"
+  has_wiki          = each.value.mode != "mirror"
 
   # svalabs provider (still in 1.6.0) re-plans these computed blocks as
   # unknown on every run, producing perpetual no-op updates whose PATCH can
@@ -87,6 +95,6 @@ resource "forgejo_repository" "repo" {
   # re-creating — intentional per upstream #111. Recover with:
   #   tofu state rm 'forgejo_repository.repo["<name>"]'
   lifecycle {
-    ignore_changes = [internal_tracker]
+    ignore_changes = [internal_tracker, permissions]
   }
 }
