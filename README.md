@@ -69,7 +69,7 @@ Auth state is device-bound by design; these are the once-per-machine rituals:
 ```sh
 chezmoi diff       # preview what apply would change
 chezmoi apply      # apply dotfiles + run scripts (brew bundle runs when the Brewfile changed)
-chezmoi update     # pull the repo and apply
+chezmoi update --init   # pull the repo and apply (--init: regenerate config if its template changed)
 chezmoi add ~/.zshrc   # start managing a new dotfile
 ```
 

@@ -5,4 +5,8 @@
 # lab-job, which provides PATH and the headless DOCKER_CONFIG.
 set -euo pipefail
 
-exec chezmoi update --no-tty
+# --init: regenerate the config when .chezmoi.toml.tmpl changes — the
+# config is derived state, and without this chezmoi warns and applies with
+# stale data forever. Headless-safe because the template only uses
+# promptChoiceOnce, which reuses the stored answers instead of prompting.
+exec chezmoi update --init --no-tty
