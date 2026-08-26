@@ -4,15 +4,31 @@ Monorepo for my machine and homelab configuration.
 
 ## Layout
 
+Vertically sliced: everything the lab runs is one directory at the repo
+root, whatever mix of compose, tofu, flows and scripts it needs — even
+chezmoi is a slice, holding the declarative machine plane (`home/`) beside
+its tick job.
+
 | Path | Purpose |
 | --- | --- |
-| `home/` | chezmoi source: dotfiles, Brewfile, and setup scripts |
-| `compose/` | docker compose stacks for the Mac mini — applied by `chezmoi update` on the server |
-| `jobs/` | host-side job scripts, run on the mini by Kestra through the lab-job SSH bridge |
-| `tofu/` | OpenTofu projects — state store bootstrap, Forgejo repositories |
+| `<name>/` | one slice per thing the lab runs: a compose stack + configs and/or Kestra jobs (`flows/<job>/` directories, `flow.yaml` + `script.sh` paired), a `tofu/` root where the service has API resources, one README |
+| `chezmoi/home/` | the chezmoi source — dotfiles, Brewfile, install + secrets-bootstrap scripts: everything *declarative* about a machine (`.chezmoiroot` points here) |
+| `setup.sh` | fresh-server bring-up — the one imperative bootstrap (Kestra can't deploy itself into existence) |
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 | `ENDPOINTS.md` | every service address in the lab |
 | `CHANGELOG.md` | what changed, when — Keep a Changelog format |
+
+## How deployment works
+
+Chezmoi declares; Kestra acts. The `chezmoi-update` flow is the CD tick:
+every 15 minutes it pulls the repo and converges machine config, and each
+service's `deploy-<svc>` flow chains on its SUCCESS — pull → config →
+deploys, always in that order. `docker-compose up -d` is convergent, so
+between changes the deploys are no-ops; a merged compose change lands
+within one tick. Kestra itself has no deploy flow (it can't safely replace
+its own executor) — see `kestra/README.md` for the manual upgrade path.
+All flows are applied from `kestra/tofu/` — kestra's tofu root manages
+flows the way forgejo's manages repositories and garage's manages buckets.
 
 ## New machine bootstrap
 
@@ -22,6 +38,7 @@ Monorepo for my machine and homelab configuration.
    sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
    ```
 3. You'll be asked what kind of machine it is (`personal` / `work` / `server`), which controls the apps that get installed.
+4. Servers additionally: run `chezmoi apply` a second time (authorized_keys can only template the job-bridge key after the first apply materializes it), then `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Kestra — the script header documents the details.
 
 If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
 
@@ -56,4 +73,4 @@ chezmoi update     # pull the repo and apply
 chezmoi add ~/.zshrc   # start managing a new dotfile
 ```
 
-Edit the Brewfile at `home/.chezmoitemplates/Brewfile`, then `chezmoi apply` — the install script re-runs whenever its rendered content changes.
+Edit the Brewfile at `chezmoi/home/.chezmoitemplates/Brewfile`, then `chezmoi apply` — the install script re-runs whenever its rendered content changes.

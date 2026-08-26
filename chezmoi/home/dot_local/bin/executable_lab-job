@@ -1,0 +1,44 @@
+#!/bin/bash
+# Forced-command dispatcher for the Kestra job-bridge key (see
+# kestra/README.md). sshd runs this INSTEAD of whatever the client
+# asked for; the request arrives in $SSH_ORIGINAL_COMMAND and is treated as
+# a NAME, never executed. Names are two-segment `slice/job` paths resolving
+# to <slice>/flows/<job>/script.sh — one directory per job under the
+# slice's flows/ marker, its flow.yaml beside it — so adding a job is one
+# commit (one new directory in the owning slice) and this file never
+# changes. Only scripts under a flows/ directory are reachable.
+
+set -uo pipefail
+
+# Non-interactive SSH sessions miss path_helper: Homebrew and Docker
+# Desktop's CLI (/usr/local/bin) aren't on PATH.
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+# No login keychain in SSH sessions — Docker's osxkeychain credential helper
+# fails even for anonymous pulls. Use the credsStore-free config instead.
+export DOCKER_CONFIG="$HOME/.docker-headless"
+
+job="${SSH_ORIGINAL_COMMAND:-}"
+
+# Exactly two [a-z0-9-] segments joined by one slash. The alphabet contains
+# no dots, so `..` is unrepresentable — traversal is ruled out by grammar,
+# not by inspection.
+if ! [[ "$job" =~ ^[a-z0-9-]+/[a-z0-9-]+$ ]]; then
+  echo "lab-job: invalid job name '$job'" >&2
+  exit 64
+fi
+
+slice="${job%/*}"
+name="${job#*/}"
+
+# The repo checkout chezmoi already keeps fresh on this machine. The
+# source root is chezmoi/home inside it (.chezmoiroot), hence two levels up.
+repo="$(chezmoi source-path)/../.."
+
+script="$repo/$slice/flows/$name/script.sh"
+if [ -f "$script" ]; then
+  exec bash "$script"
+fi
+
+echo "lab-job: unknown job '$job' (no $slice/flows/$name/script.sh in the repo)" >&2
+exit 64

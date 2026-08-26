@@ -1,0 +1,30 @@
+id: obsidian-sync-main
+namespace: lab
+description: |
+  One-shot sync of the Main Obsidian vault from Google Drive. Replaces the
+  md.obsidian.headless-sync-main launch agent's `--continuous` watcher with
+  a scheduled pass every 10 minutes — trading a little latency for logs,
+  retries, and failure visibility. Host side:
+  obsidian-sync/flows/main/script.sh via the lab-job bridge.
+
+# A slow pass must finish before the next one starts.
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: sync
+    type: io.kestra.plugin.fs.ssh.Command
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - obsidian-sync/main
+
+triggers:
+  - id: every-10-min
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "*/10 * * * *"
+    timezone: Europe/London

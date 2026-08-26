@@ -9,12 +9,12 @@ nothing is exposed to the internet.
 | --- | --- | --- | --- |
 | `:22` | SSH (macOS Remote Login) | 1Password SSH key via `~/.ssh/authorized_keys` | chezmoi (`private_dot_ssh`) |
 | `:5900` | Screen Sharing | macOS account | System Settings |
-| `:3000` | Forgejo — web UI + API | Forgejo account; API: 1P `Forgejo API Token` | `compose/forgejo` |
-| `:2222` | Forgejo SSH (git clone/push; container port 22) | SSH key registered in Forgejo profile | `compose/forgejo` |
-| `:3900` | Garage — S3 API | 1P `Garage tofu-state-key` (per-bucket keys) | `compose/garage` |
-| `:3903` | Garage — admin API | 1P `Garage S3 Admin Token` | `compose/garage` |
-| `:8180` | Kestra — web UI + API | basic auth: 1P `Kestra Admin`; webhook path key-authed | `compose/kestra` |
-| `:8096` | Jellyfin — web + clients | Jellyfin accounts | `compose/jellyfin` |
+| `:3000` | Forgejo — web UI + API | Forgejo account; API: 1P `Forgejo API Token` | `forgejo` |
+| `:2222` | Forgejo SSH (git clone/push; container port 22) | SSH key registered in Forgejo profile | `forgejo` |
+| `:3900` | Garage — S3 API | 1P `Garage tofu-state-key` (per-bucket keys) | `garage` |
+| `:3903` | Garage — admin API | 1P `Garage S3 Admin Token` | `garage` |
+| `:8180` | Kestra — web UI + API | basic auth: 1P `Kestra Admin`; webhook path key-authed | `kestra` |
+| `:8096` | Jellyfin — web + clients | Jellyfin accounts | `jellyfin` |
 
 Notes:
 

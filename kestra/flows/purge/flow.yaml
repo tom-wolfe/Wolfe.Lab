@@ -1,0 +1,27 @@
+id: purge-executions
+namespace: lab
+description: |
+  Nightly janitor: purge execution history (with its logs, metrics and
+  internal storage) older than 30 days. The 15-minute tick and its deploy
+  fan-out generate a few hundred mostly-no-op executions a day; without this
+  they accumulate in postgres forever. Runs entirely inside Kestra — no host
+  job, no lab-job involvement. Lives in the kestra slice because it IS
+  kestra: self-maintenance, not a lab workload — the slice's no-flows rule
+  is specifically about deploys (see README.md).
+
+tasks:
+  - id: purge
+    type: io.kestra.plugin.core.execution.PurgeExecutions
+    endDate: "{{ now() | dateAdd(-30, 'DAYS') }}"
+    # Terminal states only — never touch running/paused/queued executions.
+    states:
+      - SUCCESS
+      - WARNING
+      - FAILED
+      - KILLED
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 4 * * *"
+    timezone: Europe/London

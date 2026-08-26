@@ -1,0 +1,89 @@
+name: forgejo
+
+services:
+  server:
+    # Pinned for repeatability. To upgrade: bump this tag, then `docker compose up -d`.
+    # Never skip a major version — see "Upgrading" in README.md.
+    image: codeberg.org/forgejo/forgejo:16.0.2
+    container_name: forgejo
+    restart: unless-stopped
+
+    environment:
+      # NOT a /etc/localtime bind mount: on macOS that's a symlink into the
+      # VERSIONED /var/db/timezone/tz/<tzdata>/ tree. Docker bakes the
+      # resolved path into the container, and the next Apple tzdata update
+      # deletes it — the container then fails to start with "error while
+      # creating mount source path ... operation not permitted" (2026-08-24).
+      TZ: Europe/London
+
+      USER_UID: 1000
+      USER_GID: 1000
+
+      FORGEJO____APP_NAME: WolfeForge
+      FORGEJO____APP_SLOGAN: I write code and stuff.
+
+      # --- Identity / URLs -------------------------------------------------
+      # ROOT_URL must match how you reach the server in the browser, otherwise
+      # clone URLs and OAuth redirects come out wrong.
+      FORGEJO__server__DOMAIN: macmini.local
+      FORGEJO__server__ROOT_URL: http://macmini.local:3000/
+      FORGEJO__server__HTTP_PORT: 3000
+
+      # SSH is handled by the OpenSSH daemon built into the image, which always
+      # binds container port 22 (see /etc/s6/openssh/run) and cannot be turned
+      # off by configuration. Do NOT set START_SSH_SERVER=true — that starts a
+      # *second* SSH server on the same port and the container crash-loops.
+      # SSH_PORT is only what Forgejo advertises in clone URLs; the host
+      # publishes 2222 -> 22 below.
+      FORGEJO__server__SSH_DOMAIN: macmini.local
+      FORGEJO__server__SSH_PORT: "2222"
+
+      # --- Database --------------------------------------------------------
+      FORGEJO__database__DB_TYPE: sqlite3
+      FORGEJO__database__PATH: /data/gitea/forgejo.db
+
+      # --- Home-server hardening -------------------------------------------
+      # NOTE: deliberately no FORGEJO__security__INSTALL_LOCK here.
+      # The image runs `environment-to-ini` on every start, which stamps every
+      # FORGEJO__* variable over app.ini. INSTALL_LOCK is one-time state that
+      # the installer writes, not config — pinning it via env means the value
+      # the installer just saved gets reverted on the restart that follows,
+      # Forgejo then sees an installed DB with an unlocked install, aborts
+      # fatally mid-request (ERR_CONNECTION_RESET in the browser) and loops
+      # back to the install page forever. Leave it to app.ini.
+      #
+      # Keep registration open until the admin account exists, then set this to
+      # "true" and `docker compose up -d`. This one IS safe to env-manage.
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+      FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
+
+      FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
+      FORGEJO__cron__ENABLED: "true"
+
+      # --- Repositories ----------------------------------------------------
+      # Enable push-to-create for users and orgs (the org/user must already exist).
+      FORGEJO__repository__ENABLE_PUSH_CREATE_USER: "true"
+      FORGEJO__repository__ENABLE_PUSH_CREATE_ORG: "true"
+
+      # --- Pull Requests ---------------------------------------------------
+      FORGEJO__pull-request__DEFAULT_MERGE_STYLE: "squash"
+
+    volumes:
+      # Everything stateful lives here: repos, config, SQLite DB, avatars, LFS.
+      #
+      # Deliberately an ABSOLUTE path outside this git repo. A relative ./data
+      # would put SSH host private keys, JWT signing keys and the database
+      # inside the working tree, where they'd be one `git add -A` away from
+      # being committed. Override with FORGEJO_DATA if you relocate it.
+      - ${FORGEJO_DATA:-/Users/tomwolfe/Docker/forgejo/data}:/data
+
+    ports:
+      - "3000:3000"
+      - "2222:22"
+
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
