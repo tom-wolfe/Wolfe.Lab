@@ -77,24 +77,29 @@ resource "forgejo_repository" "repo" {
   mirror_interval = each.value.mode == "mirror" ? var.mirror_interval : null
   private         = each.value.private
   auth_token      = each.value.private ? local.github_tokens[each.value.owner] : null
-  
+
   has_actions       = each.value.mode != "mirror"
-  has_issues        = each.value.mode != "mirror" 
+  has_issues        = each.value.mode != "mirror"
   has_packages      = each.value.mode != "mirror"
   has_projects      = each.value.mode != "mirror"
   has_pull_requests = each.value.mode != "mirror"
   has_releases      = each.value.mode != "mirror"
   has_wiki          = each.value.mode != "mirror"
 
-  # svalabs provider (still in 1.6.0) re-plans these computed blocks as
-  # unknown on every run, producing perpetual no-op updates whose PATCH can
-  # 500 on repos with wikis ("'' is not a valid branch name"). Upstream:
-  # svalabs/terraform-provider-forgejo#132, #169. Remove once fixed.
+  # svalabs provider (still in 1.6.0) re-plans this computed block as
+  # unknown on every run, producing perpetual no-op updates. Worse, ANY
+  # update the provider sends — no-op or real — PATCHes the full repo
+  # object including an empty wiki_branch, which 500s on repos with wikis
+  # ("'' is not a valid branch name"; seen for real on Hamelin 2026-08-27).
+  # Workaround for a stuck update: make the same change out-of-band with a
+  # minimal API PATCH that omits wiki_branch, then apply — clean no-op.
+  # Upstream: svalabs/terraform-provider-forgejo#132, #169. Remove once
+  # fixed.
   #
   # NB: if a repo is deleted outside tofu, refresh errors instead of
   # re-creating — intentional per upstream #111. Recover with:
   #   tofu state rm 'forgejo_repository.repo["<name>"]'
   lifecycle {
-    ignore_changes = [internal_tracker, permissions]
+    ignore_changes = [internal_tracker]
   }
 }

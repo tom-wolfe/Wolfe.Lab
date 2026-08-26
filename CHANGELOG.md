@@ -4,7 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## [0.6.1] - 2026-08-26
+## [0.7.2] - 2026-08-27
+
+### Fixed
+
+- Pull mirrors no longer trigger Actions runs: every feature unit (actions, issues, PRs, wiki, packages, projects, releases) is now off on all 33 mirrors — mirrors are read-only copies, GitHub owns their features. Declared in `mirrors.tf`; Hamelin needed the change applied via a minimal API PATCH because the provider's full-object PATCH 500s on repos with wikis (empty `wiki_branch` = branch rename to `""` — now documented in the forgejo README with the workaround).
+- Removed `permissions` from `ignore_changes` (computed-only in the current provider; OpenTofu flags it as redundant).
+
+## [0.7.1] - 2026-08-26
 
 ### Fixed
 

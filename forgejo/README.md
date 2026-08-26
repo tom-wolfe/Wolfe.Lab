@@ -321,11 +321,25 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
 ### Known provider issues (svalabs/forgejo 1.6.0)
 
 - **Perpetual in-place "changes" on every repo** — the provider re-plans the
-  computed `internal_tracker`/`permissions` blocks as unknown on every run
-  (upstream #132, #169), and the resulting no-op PATCH can 500 on repos with
-  wikis ("'' is not a valid branch name"). Suppressed with
-  `lifecycle.ignore_changes` in `mirrors.tf`/`primary.tf`; plans are clean
-  now. Remove the workaround once fixed upstream.
+  computed `internal_tracker` block as unknown on every run (upstream #132,
+  #169). Suppressed with `lifecycle.ignore_changes` in
+  `mirrors.tf`/`primary.tf`; plans are clean now. Remove the workaround once
+  fixed upstream.
+- **Any update 500s on repos with wikis** ("'' is not a valid branch name")
+  — the provider PATCHes the full repo object including an empty
+  `wiki_branch`, which Forgejo treats as a branch rename to `""`. This hits
+  *real* changes too, not just the no-op ones (seen flipping the feature
+  units off on Hamelin, 2026-08-27). Workaround: make the same change
+  out-of-band with a minimal PATCH that omits `wiki_branch` —
+
+  ```sh
+  curl -X PATCH -H "Authorization: token $(op read 'op://Wolfe.Lab/Forgejo API Token/credential')" \
+    -H 'Content-Type: application/json' -d '{"has_actions":false}' \
+    http://macmini.local:3000/api/v1/repos/<owner>/<name>
+  ```
+
+  — then `tofu apply`: refresh sees reality matching config, clean no-op
+  (the same recover-by-hand-then-apply pattern as PAT rotation above).
 - **Deleting a repo outside tofu breaks refresh** ("Repository with ID N not
   found") — intentional per upstream #111. Recover with
   `tofu state rm 'forgejo_repository.repo["<name>"]'`, then apply to
