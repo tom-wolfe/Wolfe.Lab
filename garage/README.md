@@ -23,8 +23,12 @@ bootstrap only creates what must exist before the admin API answers.
   bind mount) — after editing, restart:
   `ssh macmini "docker-compose --project-directory .local/share/chezmoi/garage restart"`
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
-- Backup = `meta/` (small, critical) + `data/` (the objects). Cold-copy
-  pattern as per forgejo's backup.sh; scheduling TODO.
+- Backup = `meta/` (small, critical) + `data/` (the objects): the
+  `backup-garage` flow (`flows/backup/`) does a nightly cold copy at 02:50
+  — stop, tar both, start, keep the last 10 in
+  `/Volumes/Data1/backups/garage` (refuses to run if the drive isn't
+  mounted). `garage.env` is deliberately not included — the vault is its
+  origin.
 
 ## Upgrading
 

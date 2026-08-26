@@ -20,20 +20,3 @@ resource "kestra_flow" "all" {
   namespace = yamldecode(file("${local.repo}/${each.value}"))["namespace"]
   content   = file("${local.repo}/${each.value}")
 }
-
-# One-time renames from the pre-slice layout (this root was tofu/kestra,
-# flows keyed as flows/<name>.yaml). Delete after the first apply.
-moved {
-  from = kestra_flow.all["flows/chezmoi-update.yaml"]
-  to   = kestra_flow.all["chezmoi/flows/update/flow.yaml"]
-}
-
-moved {
-  from = kestra_flow.all["flows/obsidian-sync-main.yaml"]
-  to   = kestra_flow.all["obsidian-sync/flows/main/flow.yaml"]
-}
-
-moved {
-  from = kestra_flow.all["flows/obsidian-sync-dnd.yaml"]
-  to   = kestra_flow.all["obsidian-sync/flows/dnd/flow.yaml"]
-}

@@ -1,0 +1,32 @@
+id: backup-jellyfin
+namespace: lab
+description: |
+  Nightly cold backup of jellyfin's state — config, database, library
+  roots and plugins; metadata/cache/logs excluded (TMDB re-fetches
+  artwork). Stop → tar → start, ~30s downtime at 03:35, clear of the
+  tick's quarter-hour columns and staggered against the other backups.
+  Keeps the last 10 in /Volumes/Data1/backups/jellyfin, each with the
+  image tag it was taken under; fails loudly if the drive isn't mounted
+  rather than writing to the internal disk. Host side:
+  jellyfin/flows/backup/script.sh via the lab-job bridge.
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: backup
+    type: io.kestra.plugin.fs.ssh.Command
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - jellyfin/backup
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "35 3 * * *"
+    timezone: Europe/London

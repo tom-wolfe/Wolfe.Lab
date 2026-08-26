@@ -122,12 +122,14 @@ the mini.
 ## Backup
 
 Everything stateful is under `~/Docker/kestra/`. `flows/backup/script.sh` dumps
-the database to a dated file in `~/Docker/kestra/backups/` — run it by
+the database to a dated file in `/Volumes/Data1/backups/kestra/` (refusing
+to run if the drive isn't mounted — which also gates upgrades: no drive, no
+pre-upgrade dump, no upgrade) — run it by
 hand, or through the bridge as `kestra/backup`; `scripts/upgrade.sh` calls
-it (labelled `pre-<version>`) before every upgrade. It's flow-ready: a
-scheduled backup is one `flows/backup/flow.yaml` away, beside its script, and
-that's safe where a
-deploy flow isn't — a dump never restarts the executor. Retention is
-deliberately undecided until that schedule exists. Cold backup of the whole
+it (labelled `pre-<version>`) before every upgrade, and the `backup-kestra`
+flow runs it nightly at 03:20 — live, no downtime, which is what makes a
+backup flow safe here where a deploy flow isn't: a dump never restarts the
+executor. Retention: the last 10 scheduled dumps are kept; the labelled
+pre-upgrade dumps are never pruned. Cold backup of the whole
 state: stop the stack, copy the directory. The flows themselves need no
 backup — they're in this repo.

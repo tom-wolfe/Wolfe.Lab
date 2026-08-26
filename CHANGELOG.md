@@ -11,6 +11,23 @@ rather than versioned — the lab is continuous, not released.
 - Chezmoi now `init`s before updating.
 - Removed untracked `permissions` attributes causing warnings on the forgejo tofu stack.
 
+## [0.7.0] - 2026-08-26
+
+### Added
+
+- Nightly scheduled backups, staggered clear of the tick's quarter-hour columns. All land on the external drive at `/Volumes/Data1/backups/<thing>`; each keeps the last 10, and kestra's `pre-<version>` upgrade dumps are exempt from pruning.
+- `backup-garage` 02:50 (cold copy of `meta/` + `data/`), 
+- `backup-forgejo` 03:05 (cold copy of `data/`, ~30s downtime, image tag recorded beside each archive), 
+- `backup-kestra` 03:20 (live `pg_dump`, no downtime). 
+- `backup-jellyfin` 03:35 (cold copy of config + database + library roots + plugins. 
+- The cold backups guard against the deploy race: if the stack is restarted mid-tar, the archive is discarded and the run fails loudly rather than keeping a suspect copy. 
+- Forgejo's and Jellyfin's backup scripts now live in-repo (`<svc>/flows/backup/script.sh`).
+
+### Changed
+
+- The tick now runs `chezmoi update --init`: the config file is derived state, so regenerate it when its template changes instead of warning on every apply forever. Headless-safe because the config template only uses `promptChoiceOnce`.
+- Removed the one-time `moved` blocks from `kestra/tofu/flows.tf` now the first post-restructure apply has migrated the state keys.
+
 ## [0.6.0] - 2026-08-26
 
 ### Changed

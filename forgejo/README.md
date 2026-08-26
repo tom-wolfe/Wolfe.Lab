@@ -10,12 +10,12 @@ source of truth for every repository in the lab (push-mirrored to GitHub).
 | Image | `codeberg.org/forgejo/forgejo` pinned in `compose.yaml` |
 | State | `~/Docker/forgejo/data` (bind mount → `/data` in the container) |
 | Database | SQLite at `~/Docker/forgejo/data/gitea/forgejo.db` |
-| Backups | `~/Docker/forgejo/backups` |
+| Backups | `/Volumes/Data1/backups/forgejo` (external drive; nightly) |
 
 This slice holds everything forgejo-shaped:
 
 - `compose.yaml` — the stack definition (no secrets)
-- `flows/deploy/` — the deploy pipeline: `flow.yaml` + `script.sh` (below)
+- `flows/` — the deploy pipeline and the nightly backup (`flow.yaml` + `script.sh` each, below)
 - `tofu/` — every repository as code (below)
 - `scripts/` — utilities (`import.sh`, the old-repo importer)
 
@@ -122,7 +122,7 @@ upgrade runs irreversible database migrations, and rolling back to an older
 image after that will fail.
 
 ```sh
-cd ~/Docker/forgejo && ./backup.sh   # snapshot before touching anything
+"$(chezmoi source-path)/../../forgejo/flows/backup/script.sh"   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let deploy-forgejo converge it or, by hand:
 cd "$(chezmoi source-path)/../../forgejo"
@@ -148,17 +148,25 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 
 ## Backup
 
+Runs itself: the `backup-forgejo` flow fires nightly at 03:05
+(`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
+
 ```sh
-cd ~/Docker/forgejo && ./backup.sh
+"$(chezmoi source-path)/../../forgejo/flows/backup/script.sh"
 ```
 
-Writes a timestamped tarball to `~/Docker/forgejo/backups/` and keeps the last
-10. It stops the container first — a live SQLite file copied mid-write can be
-inconsistent — and starts it again afterwards, so expect ~30s of downtime.
+Writes a timestamped tarball to `/Volumes/Data1/backups/forgejo/` (with the
+image tag recorded beside it in `.image.txt`) and keeps the last 10. It
+refuses to run if `Data1` isn't mounted — an unmounted `/Volumes` path on
+macOS silently writes to the internal disk. It stops the container first —
+a live SQLite file copied mid-write can be inconsistent — and starts it
+again afterwards, so expect ~30s of downtime. If a concurrent deploy
+restarts the stack mid-tar, the archive is discarded and the run fails
+loudly rather than keeping a suspect copy.
 
 Because `data/` is an ordinary folder, Time Machine already covers it too, but
 only the cold-copy caveat above makes those snapshots trustworthy; prefer
-`backup.sh` before anything risky.
+the backup script before anything risky.
 
 ### Restore
 
@@ -166,13 +174,14 @@ only the cold-copy caveat above makes those snapshots trustworthy; prefer
 cd "$(chezmoi source-path)/../../forgejo"
 docker-compose down
 rm -rf ~/Docker/forgejo/data                   # or move it aside first
-tar -xzf ~/Docker/forgejo/backups/forgejo-YYYYmmdd-HHMMSS.tar.gz \
+tar -xzf /Volumes/Data1/backups/forgejo/forgejo-YYYYmmdd-HHMMSS.tar.gz \
     -C ~/Docker/forgejo
 docker-compose up -d
 ```
 
 Make sure the image tag in `compose.yaml` matches the version the backup was
-taken with, or Forgejo may refuse to start against an older schema.
+taken with (recorded beside each archive in `.image.txt`), or Forgejo may
+refuse to start against an older schema.
 
 ## After a reboot
 

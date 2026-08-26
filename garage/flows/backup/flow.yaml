@@ -1,0 +1,31 @@
+id: backup-garage
+namespace: lab
+description: |
+  Nightly cold backup of garage's meta/ (LMDB, small, critical) and data/
+  (the objects — currently just tofu state). Stop → tar → start, brief
+  downtime at 02:50, clear of the tick's quarter-hour columns and
+  staggered against the other backups. Keeps the last 10 in
+  /Volumes/Data1/backups/garage; fails loudly if the drive isn't mounted
+  rather than writing to the internal disk. Host side:
+  garage/flows/backup/script.sh via the lab-job bridge.
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: backup
+    type: io.kestra.plugin.fs.ssh.Command
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - garage/backup
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "50 2 * * *"
+    timezone: Europe/London

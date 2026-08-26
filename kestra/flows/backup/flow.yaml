@@ -1,0 +1,32 @@
+id: backup-kestra
+namespace: lab
+description: |
+  Nightly pg_dump of the kestra database — live, no downtime (pg_dump
+  takes an MVCC-consistent snapshot), which is why this is the one backup
+  that never stops its stack, and why a backup flow is safe here where a
+  deploy flow isn't. 03:20, staggered against the cold backups. Dumps land
+  in /Volumes/Data1/backups/kestra (fails loudly if the drive isn't
+  mounted); the last 10 scheduled dumps are kept, and pre-upgrade dumps
+  (labelled by upgrade.sh) are never pruned. Host side: kestra/flows/backup/script.sh via the lab-job
+  bridge.
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: backup
+    type: io.kestra.plugin.fs.ssh.Command
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - kestra/backup
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "20 3 * * *"
+    timezone: Europe/London

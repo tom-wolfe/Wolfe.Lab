@@ -10,7 +10,7 @@ keeping the existing library, watch history and artwork exactly as they were.
 | State | `~/Library/Application Support/jellyfin` (bind mounted at the **same path** inside the container) |
 | Database | SQLite at `~/Library/Application Support/jellyfin/data/jellyfin.db` |
 | Media | `/Volumes/Data1` and `/Volumes/Data2` (both USB, mounted at the same paths) |
-| Backups | `~/Docker/jellyfin/backups` |
+| Backups | `/Volumes/Data1/backups/jellyfin` (external drive; nightly) |
 
 ## Deployment
 
@@ -128,9 +128,7 @@ State lives outside the container, so upgrades are a tag bump. **Back up first**
 image afterwards will fail.
 
 ```sh
-cd ~/Development/Wolfe.Tools/jellyfin && ./backup.sh   # snapshot first
-                                 # (backup.sh still lives in Wolfe.Tools —
-                                 # retirement pending)
+"$(chezmoi source-path)/../../jellyfin/flows/backup/script.sh"   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let deploy-jellyfin converge it or, by hand:
 cd "$(chezmoi source-path)/../../jellyfin"
@@ -147,14 +145,21 @@ curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep 
 
 ## Backup
 
+Runs itself: the `backup-jellyfin` flow fires nightly at 03:35
+(`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
+
 ```sh
-./backup.sh                  # config + database + library roots + plugins
-./backup.sh --with-metadata  # the above plus ~670 MB of posters/fanart
+"$(chezmoi source-path)/../../jellyfin/flows/backup/script.sh"                  # config + database + library roots + plugins
+"$(chezmoi source-path)/../../jellyfin/flows/backup/script.sh" --with-metadata  # the above plus ~670 MB of posters/fanart
 ```
 
-Writes a timestamped tarball to `~/Docker/jellyfin/backups/` and keeps the last
-10. It stops the container first — SQLite copied mid-write can be inconsistent —
-so expect ~30s of downtime.
+Writes a timestamped tarball to `/Volumes/Data1/backups/jellyfin/` (with the
+image tag recorded beside it in `.image.txt`) and keeps the last 10. It
+refuses to run if `Data1` isn't mounted — an unmounted `/Volumes` path on
+macOS silently writes to the internal disk. It stops the container first —
+SQLite copied mid-write can be inconsistent — so expect ~30s of downtime; if
+a concurrent deploy restarts the stack mid-tar, the archive is discarded and
+the run fails loudly rather than keeping a suspect copy.
 
 The default skips `metadata/` deliberately: it's ~670 MB of artwork that TMDB
 will re-fetch, and the internal SSD only has ~46 GB free. What it does capture is
@@ -167,7 +172,7 @@ the library definitions.
 cd "$(chezmoi source-path)/../../jellyfin"
 docker-compose down
 mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
-tar -xzf ~/Docker/jellyfin/backups/jellyfin-YYYYmmdd-HHMMSS.tar.gz \
+tar -xzf /Volumes/Data1/backups/jellyfin/jellyfin-YYYYmmdd-HHMMSS.tar.gz \
     -C ~/Library/Application\ Support/
 docker-compose up -d
 ```

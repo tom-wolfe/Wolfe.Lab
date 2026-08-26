@@ -1,0 +1,31 @@
+id: backup-forgejo
+namespace: lab
+description: |
+  Nightly cold backup of forgejo's data directory (stop → tar → start,
+  ~30s downtime — hence 03:05, clear of the tick's quarter-hour columns
+  and staggered against the other backups). Keeps the last 10 in
+  /Volumes/Data1/backups/forgejo, each with the image tag it was taken
+  under; fails loudly if the drive isn't mounted rather than writing to
+  the internal disk. Host side: forgejo/flows/backup/script.sh via the
+  lab-job bridge.
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: backup
+    type: io.kestra.plugin.fs.ssh.Command
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - forgejo/backup
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "5 3 * * *"
+    timezone: Europe/London
