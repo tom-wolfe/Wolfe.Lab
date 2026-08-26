@@ -87,6 +87,6 @@ resource "forgejo_repository" "repo" {
   # re-creating — intentional per upstream #111. Recover with:
   #   tofu state rm 'forgejo_repository.repo["<name>"]'
   lifecycle {
-    ignore_changes = [internal_tracker, permissions]
+    ignore_changes = [internal_tracker]
   }
 }

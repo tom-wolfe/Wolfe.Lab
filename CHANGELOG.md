@@ -9,6 +9,7 @@ rather than versioned — the lab is continuous, not released.
 ### Fixed
 
 - Chezmoi now `init`s before updating.
+- Removed untracked `permissions` attributes causing warnings on the forgejo tofu stack.
 
 ## [0.6.0] - 2026-08-26
 
