@@ -103,6 +103,12 @@ on every image build.
   config (including all snippets) without touching the running instance.
 - The repo mount is read-only and safe: the repo contains `op://`
   references, never secret material.
+- The deploy's `--build` works headless only because of two chezmoi-managed
+  pieces: buildx symlinked into `~/.docker-headless/cli-plugins/` (compose
+  needs it or falls back to the legacy builder), and the null credential
+  helper `docker-credential-headless` that the headless config names —
+  without it, macOS defaults to the osxkeychain helper and any uncached
+  base-image pull dies on the locked login keychain (CHANGELOG 0.9.1).
 - Port 3000/8096/8180 publishes stay for now — automation (kestra flows,
   tofu providers, the job bridge docs) targets `macmini.local:<port>` and
   keeps working when the front door doesn't.

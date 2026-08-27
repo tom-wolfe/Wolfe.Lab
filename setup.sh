@@ -18,10 +18,15 @@ repo="$(cd "$(dirname "$0")" && pwd)"
 
 converge() {
   echo "==> $1"
-  docker-compose --project-directory "$repo/$1" up -d --remove-orphans
+  docker-compose --project-directory "$repo/$1" up -d --remove-orphans "${@:2}"
 }
 
-# Garage first — it hosts the tofu state everything else's IaC backends onto.
+# Caddy first — its compose OWNS the shared `lab` network that every other
+# stack references as `external`, so nothing else can even `up` until this
+# has created it. (--build: the image is a local xcaddy build.)
+converge caddy --build
+
+# Garage next — it hosts the tofu state everything else's IaC backends onto.
 converge garage
 "$repo/garage/scripts/init-layout.sh"
 

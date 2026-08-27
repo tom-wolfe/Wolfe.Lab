@@ -9,6 +9,9 @@ rather than versioned — the lab is continuous, not released.
 ### Fixed
 
 - Chezmoi should now use the 1Password service account for fetching credentials.
+- `setup.sh` now converges caddy FIRST (with `--build`) — its compose owns the shared `lab` network, and every other stack's `external: true` reference fails until it exists.
+- The wildcard certificate actually issues now: libdns/netlify v1.2.0 types a DNS zone's `domain` as string (via Netlify's stale open-api models), but for domains REGISTERED THROUGH Netlify the live API returns an object there.
+- Headless builds work through the job bridge — the same macOS-headless trap as 0.5.x/0.6.0, on the build path instead of pull, needing TWO fixes. (1) `~/.docker-headless/cli-plugins/docker-buildx` is now a chezmoi-managed symlink to Docker Desktop's plugin: without buildx, compose falls back to the legacy builder outright. (2) The headless Docker config now declares `credsStore: "headless"`, a chezmoi-managed null helper in `~/.docker-headless/bin` (on lab-job's PATH, first) that answers every lookup with "not found" so registry access proceeds anonymously. WHY the bare `{}` config wasn't enough: with no credsStore, the Docker CLI's platform *default* on macOS is osxkeychain whenever that binary is on PATH — so any not-yet-cached image (like a build's base image) hit the locked login keychain (`error getting credentials … keychain cannot be accessed`). Existing stacks never noticed because their pinned images were already local.
 
 ## [0.9.0] - 2026-08-27
 

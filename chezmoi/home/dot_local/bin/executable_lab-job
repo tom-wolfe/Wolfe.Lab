@@ -11,8 +11,10 @@
 set -uo pipefail
 
 # Non-interactive SSH sessions miss path_helper: Homebrew and Docker
-# Desktop's CLI (/usr/local/bin) aren't on PATH.
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+# Desktop's CLI (/usr/local/bin) aren't on PATH. The headless bin dir
+# comes FIRST — it holds docker-credential-headless, the null helper the
+# headless Docker config names as its credsStore.
+export PATH="$HOME/.docker-headless/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 # No login keychain in SSH sessions — Docker's osxkeychain credential helper
 # fails even for anonymous pulls. Use the credsStore-free config instead.

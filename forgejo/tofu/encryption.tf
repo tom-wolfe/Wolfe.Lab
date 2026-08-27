@@ -29,10 +29,6 @@ terraform {
 
     state {
       method = method.aes_gcm.state
-
-      fallback {
-        method = method.unencrypted.migrate
-      }
     }
 
     plan {
