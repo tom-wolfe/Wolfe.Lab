@@ -2,4 +2,8 @@
 Library/LaunchAgents
 Library/LaunchAgents/**
 .local/bin/lab-job
+Docker
+Docker/**
+.docker-headless
+.docker-headless/**
 {{ end -}}

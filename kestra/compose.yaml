@@ -27,8 +27,10 @@ services:
       POSTGRES_USER: kestra
       POSTGRES_DB: kestra
 
-    # POSTGRES_PASSWORD lives outside the repo — generated once by the
-    # bootstrap-kestra-secrets chezmoi script. See README.md.
+    # POSTGRES_PASSWORD lives outside the repo — a chezmoi-owned create_
+    # template (chezmoi/home/Docker/kestra/), written from 1Password only
+    # when the file is missing. Never generated: the vault is the origin.
+    # See README.md.
     env_file:
       - ${KESTRA_STATE:-/Users/tomwolfe/Docker/kestra}/postgres.env
 
@@ -69,7 +71,8 @@ services:
       JAVA_OPTS: "-Xms256m -Xmx1g"
 
     # KESTRA_DB_PASSWORD, KESTRA_BASIC_AUTH_PASSWORD, KESTRA_ENCRYPTION_KEY
-    # and SECRET_* flow secrets — generated outside the repo, see README.md.
+    # and SECRET_* flow secrets — materialized from 1Password by a chezmoi
+    # create_ template (chezmoi/home/Docker/kestra/), see README.md.
     env_file:
       - ${KESTRA_STATE:-/Users/tomwolfe/Docker/kestra}/kestra.env
 
@@ -83,8 +86,21 @@ services:
       # to spend on one specific service.
       - "8180:8080"
 
+    # BOTH networks: naming any network drops the implicit default one, 
+    # and postgres lives only there. `default` keeps the database reachable, 
+    # `lab` puts the UI behind the Caddy front door.
+    networks:
+      - default
+      - lab
+
     # The image ships no curl/wget for a healthcheck; the management port
     # (8081) stays unpublished and unchecked. Postgres gates startup instead.
     depends_on:
       postgres:
         condition: service_healthy
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

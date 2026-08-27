@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.9.0] - 2026-08-27
+
+### Added
+
+- **The front door**: new `caddy` slice — Caddy (custom build with the Netlify DNS-01 module) terminating TLS on `:443` with a single `*.lab.twolfe.dev` wildcard certificate (one cert on purpose: per-name certs would publish every internal hostname to Certificate Transparency logs). The wildcard DNS record lives in `caddy/tofu` (netlify provider — a provider, not a slice; public per-service records will live in the owning slice's tofu). Routes are slice-owned: each service contributes a `caddy.caddyfile` picked up by an import glob, same contract as `flows/` and the job bridge. Services now answer at `https://<name>.lab.twolfe.dev` (see ENDPOINTS.md); port publishes stay as the automation path and fallback.
+- Shared `lab` Docker network, owned by the caddy slice; forgejo, kestra, jellyfin and garage join it (kestra keeps `default` too — postgres lives there).
+- **State encryption**: OpenTofu client-side encryption (PBKDF2 + AES-GCM) on every Garage-backed tofu root — Garage has no SSE, and state holds secrets. New `caddy` root is born enforced; `forgejo` and `kestra` carry an unencrypted fallback until their first post-change state write, then the fallback comes out (see each `encryption.tf`). Passphrase: 1P `tofu-state-passphrase`. The garage root is exempt — its state is local and deliberately disposable.
+
+### Changed
+
+- Forgejo's identity is now `https://forgejo.lab.twolfe.dev/` (ROOT_URL, DOMAIN, SSH_DOMAIN) — links and clone URLs advertise the proxied name; `macmini.local:3000` still works via the published port.
+- The secrets-bootstrap scripts (garage, kestra — and caddy's, which never shipped) collapsed into chezmoi `create_` templates under `chezmoi/home/Docker/`: same semantics (1Password is the origin, the env file is a cache, written only when missing), one declarative layer instead of a script writing a file. Verified: chezmoi never evaluates a `create_` template whose target exists, so `op`/internet stay bootstrap-only dependencies — and the update flow now exports the mini's 1P service account so a headless tick can re-materialize a deleted cache. The kestra script never actually generated anything (the vault-is-origin fix predates this); the stale compose comment claiming it did is gone too.
+
 ## [0.7.2] - 2026-08-27
 
 ### Fixed

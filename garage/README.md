@@ -8,7 +8,7 @@ State lives at `~/Docker/garage/{meta,data}` on the mini; config is
 
 | Concern | Handled by |
 | --- | --- |
-| Secrets (`~/Docker/garage/garage.env`) | `run_once_before_bootstrap-garage-secrets` (chezmoi) — materialized from 1Password (`Garage RPC Secret`, `Garage S3 Admin Token`), never generated: the vault is the origin, so a wiped env file comes back with the same values |
+| Secrets (`~/Docker/garage/garage.env`) | chezmoi `create_` template (`chezmoi/home/Docker/garage/`) — materialized from 1Password (`garage-rpc-secret`, `garage-s3-admin-token`), never generated: the vault is the origin, so a wiped env file comes back with the same values. Only evaluated while the file is missing — `op` is a bootstrap dependency, not a tick dependency |
 | Container | the `deploy-garage` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
 | Cluster layout (one-time) | `scripts/init-layout.sh`, invoked by `setup.sh` |
 | Buckets, keys, grants | OpenTofu — this slice's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |
@@ -46,8 +46,8 @@ the state.
 ### Run once
 
 ```sh
-# Admin token: generated on the mini by chezmoi (bootstrap-garage-secrets),
-# stored in 1Password. First time: ssh macmini cat ~/Docker/garage/garage.env
+# Admin token: 1Password `garage-s3-admin-token` (the mini caches it at
+# ~/Docker/garage/garage.env via a chezmoi create_ template)
 export TF_VAR_garage_admin_token=...   # or inject via `op run`
 
 cd tofu

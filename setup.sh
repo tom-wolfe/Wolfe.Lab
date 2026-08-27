@@ -40,7 +40,7 @@ Stacks are up. Remaining one-time steps:
        op run --env-file=secrets.env -- tofu init
        op run --env-file=secrets.env -- tofu apply
 
-  2. Log in at http://macmini.local:8180 (1P: Kestra Admin) and watch the
+  2. Log in at http://macmini.local:8180 (1P: kestra-admin) and watch the
      first chezmoi-update tick go green — the deploy flows chain from it,
      and from then on the lab converges itself.
 EOF

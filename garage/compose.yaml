@@ -9,7 +9,8 @@ services:
     restart: unless-stopped
 
     # GARAGE_RPC_SECRET and GARAGE_ADMIN_TOKEN live outside the repo —
-    # see README.md for the one-time bootstrap that creates this file.
+    # a chezmoi-owned create_ template (chezmoi/home/Docker/garage/),
+    # written from 1Password only when the file is missing. See README.md.
     env_file:
       - /Users/tomwolfe/Docker/garage/garage.env
 
@@ -23,3 +24,12 @@ services:
     ports:
       - "3900:3900" # S3 API
       - "3903:3903" # Admin API
+
+    networks:
+      - lab
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

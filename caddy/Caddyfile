@@ -1,0 +1,32 @@
+# The lab's front door: one container on 443 terminating TLS for
+# *.lab.twolfe.dev and routing by hostname to containers on the shared
+# `lab` network.
+#
+# Routes do NOT live in this file. Each slice contributes a
+# <slice>/caddy.caddyfile next to its compose file — a named host matcher
+# plus a handle block — picked up by the import glob below from the repo
+# mount. Adding a service never edits this slice (the same contract as
+# flows/ and the job bridge). See README.md for the snippet shape.
+
+{
+	# Every certificate via DNS-01 against Netlify: no inbound 80/443 from
+	# the internet, and wildcard-capable. The token is NETLIFY_TOKEN from
+	# caddy.env (materialized by the chezmoi bootstrap, origin 1Password).
+	acme_dns netlify {env.NETLIFY_TOKEN}
+	email trwolfe13@gmail.com
+}
+
+# ONE wildcard certificate, not one per service. Per-name certificates are
+# logged publicly in Certificate Transparency — every internal hostname
+# would be visible to anyone watching crt.sh. The wildcard keeps the
+# service list private; the cost is the matcher/handle shape in snippets
+# instead of bare site blocks.
+*.lab.twolfe.dev {
+	import lab/*/caddy.caddyfile
+
+	# Matcher-less handle matches anything the snippets didn't claim.
+	# Must stay LAST: handle blocks run in order, first match wins.
+	handle {
+		respond "no such service" 404
+	}
+}

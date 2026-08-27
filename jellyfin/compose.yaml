@@ -58,8 +58,18 @@ services:
       - "8096:8096"
       # Client auto-discovery. Published for completeness, but it does NOT
       # work through Docker Desktop on macOS — LAN broadcast packets don't
-      # reach the VM. Point clients at http://macmini.local:8096 by hand.
+      # reach the VM. Point clients at https://jellyfin.lab.twolfe.dev (or
+      # http://macmini.local:8096 as fallback) by hand.
       - "7359:7359/udp"
+
+    networks:
+      - lab
 
     # The image ships its own healthcheck (curl against $HEALTHCHECK_URL),
     # so there is deliberately no healthcheck block here.
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

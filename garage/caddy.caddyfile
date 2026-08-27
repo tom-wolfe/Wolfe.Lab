@@ -1,0 +1,10 @@
+# This slice's route through the front door — see forgejo/caddy.caddyfile
+# for the shape's rationale. Path-style S3 only: vhost-style buckets
+# (bucket.s3.lab...) would need a *.s3.lab wildcard cert and a root_domain
+# change in garage.toml — deliberately not wired up yet. The admin API
+# (:3903) stays off the proxy: it's token-authed plumbing for tofu, reached
+# via macmini.local.
+@garage host s3.lab.twolfe.dev
+handle @garage {
+	reverse_proxy garage:3900
+}

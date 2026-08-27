@@ -270,10 +270,10 @@ Forgejo cannot convert between mirror and regular in place, so a mode flip
 ### One-time setup
 
 1. Create the 1Password items named in `tofu/secrets.env`:
-   - `Forgejo API Token` — Forgejo -> Settings -> Applications -> Generate
+   - `forgejo-api-token` — Forgejo -> Settings -> Applications -> Generate
      Token (read/write repository scope).
-   - `GitHub PAT tom-wolfe`, `GitHub PAT nschema-org`,
-     `GitHub PAT DisasterCare` — fine-grained, Contents: read-only, resource
+   - `github-tom-wolfe-pat`, `github-nschema-org-pat`,
+     `github-disastercare-pat` — fine-grained, Contents: read-only, resource
      owner = that account/org, all (or selected private) repos. Orgs must
      allow fine-grained PATs (org Settings -> Personal access tokens).
    - `GitHub PAT Wolfe.Lab push` — fine-grained, Contents: read/write,
@@ -333,7 +333,7 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
   out-of-band with a minimal PATCH that omits `wiki_branch` —
 
   ```sh
-  curl -X PATCH -H "Authorization: token $(op read 'op://Wolfe.Lab/Forgejo API Token/credential')" \
+  curl -X PATCH -H "Authorization: token $(op read 'op://Wolfe.Lab/forgejo-api-token/credential')" \
     -H 'Content-Type: application/json' -d '{"has_actions":false}' \
     http://macmini.local:3000/api/v1/repos/<owner>/<name>
   ```

@@ -1,0 +1,7 @@
+# This slice's route through the front door — see forgejo/caddy.caddyfile
+# for the shape's rationale. kestra:8080 is the CONTAINER port; the 8180
+# publish on the host is unrelated to this path.
+@kestra host kestra.lab.twolfe.dev
+handle @kestra {
+	reverse_proxy kestra:8080
+}

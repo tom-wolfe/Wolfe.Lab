@@ -1,0 +1,60 @@
+name: caddy
+
+services:
+  caddy:
+    # Built locally from ./Dockerfile (stock Caddy lacks the Netlify DNS
+    # module). The tag matches the pinned Caddy version; never pushed.
+    build: .
+    image: lab/caddy:2.10
+    container_name: caddy
+    restart: unless-stopped
+
+    environment:
+      # Host /etc/localtime is a symlink into /var/db/timezone — dangles
+      # inside a Linux container. Set TZ instead (jellyfin pattern).
+      TZ: Europe/London
+
+    # NETLIFY_TOKEN for ACME DNS-01 — a chezmoi-owned create_ template
+    # (chezmoi/home/Docker/caddy/): written from 1Password only when the
+    # file is missing, cached forever after. See README.md.
+    env_file:
+      - /Users/tomwolfe/Docker/caddy/caddy.env
+
+    volumes:
+      # Config is code — lives in this repo, mounted read-only.
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+
+      # The whole repo checkout, read-only: the Caddyfile's import glob
+      # pulls each slice's caddy.caddyfile from here. Safe to mount — the
+      # repo deliberately contains no secret material, only op:// refs.
+      - ..:/etc/caddy/lab:ro
+
+      # State is data — lives outside the repo, like every other stack.
+      # /data holds certificates and ACME account keys: losing it is
+      # rate-limit pain, not disaster, but don't.
+      - /Users/tomwolfe/Docker/caddy/data:/data
+      - /Users/tomwolfe/Docker/caddy/config:/config
+
+    ports:
+      - "80:80" # HTTP -> HTTPS redirect (Caddy automatic)
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+
+    networks:
+      - lab
+
+    healthcheck:
+      # Caddy's admin API, on by default at localhost:2019 inside the
+      # container. The image is Alpine, so busybox wget is present.
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  # THIS slice owns the shared edge network; every proxied slice joins it
+  # with `external: true`. Consequence: caddy must be deployed once before
+  # any slice that references the network — see README.md deploy order.
+  lab:
+    name: lab

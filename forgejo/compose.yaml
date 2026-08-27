@@ -24,9 +24,14 @@ services:
 
       # --- Identity / URLs -------------------------------------------------
       # ROOT_URL must match how you reach the server in the browser, otherwise
-      # clone URLs and OAuth redirects come out wrong.
-      FORGEJO__server__DOMAIN: macmini.local
-      FORGEJO__server__ROOT_URL: http://macmini.local:3000/
+      # clone URLs and OAuth redirects come out wrong. That's now the Caddy
+      # front door (TLS at caddy, plain HTTP on the lab network behind it).
+      # http://macmini.local:3000 still WORKS via the published port — it's
+      # the automation path (kestra flows, tofu providers) and the fallback
+      # if the front door is down — but links and clone URLs advertise the
+      # proxied name.
+      FORGEJO__server__DOMAIN: forgejo.lab.twolfe.dev
+      FORGEJO__server__ROOT_URL: https://forgejo.lab.twolfe.dev/
       FORGEJO__server__HTTP_PORT: 3000
 
       # SSH is handled by the OpenSSH daemon built into the image, which always
@@ -35,7 +40,7 @@ services:
       # *second* SSH server on the same port and the container crash-loops.
       # SSH_PORT is only what Forgejo advertises in clone URLs; the host
       # publishes 2222 -> 22 below.
-      FORGEJO__server__SSH_DOMAIN: macmini.local
+      FORGEJO__server__SSH_DOMAIN: forgejo.lab.twolfe.dev
       FORGEJO__server__SSH_PORT: "2222"
 
       # --- Database --------------------------------------------------------
@@ -81,9 +86,18 @@ services:
       - "3000:3000"
       - "2222:22"
 
+    networks:
+      - lab
+
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/healthz"]
       interval: 30s
       timeout: 5s
       retries: 5
       start_period: 60s
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

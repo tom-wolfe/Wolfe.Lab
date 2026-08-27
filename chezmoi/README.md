@@ -9,9 +9,10 @@ deployment (the next green tick converges everything — the deploys are
 idempotent no-ops when nothing changed).
 
 The whole chezmoi story lives in this slice: `home/` is the *source* — the
-declarative machine plane itself (dotfiles, Brewfile, install and
-secrets-bootstrap scripts; `.chezmoiroot` points chezmoi at it) — and
-`flows/update/` is the job that runs it on the server.
+declarative machine plane itself (dotfiles, Brewfile, install scripts, and
+the `create_` secret-cache templates under `home/Docker/`; `.chezmoiroot`
+points chezmoi at it) — and `flows/update/` is the job that runs it on the
+server.
 
 ## The poke (not yet wired)
 

@@ -27,3 +27,9 @@ variable "github_token_disastercare" {
   type      = string
   sensitive = true
 }
+
+variable "state_passphrase" {
+  description = "State encryption passphrase"
+  type        = string
+  sensitive   = true
+}

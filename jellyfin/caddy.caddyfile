@@ -1,0 +1,6 @@
+# This slice's route through the front door — see forgejo/caddy.caddyfile
+# for the shape's rationale.
+@jellyfin host jellyfin.lab.twolfe.dev
+handle @jellyfin {
+	reverse_proxy jellyfin:8096
+}

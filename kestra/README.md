@@ -42,8 +42,8 @@ Kestra runs in a container and deliberately cannot touch the host — no
 Docker socket, no host mounts beyond its own state. Host-side work leaves
 through one audited door:
 
-1. A dedicated ed25519 keypair (the `Kestra Job Bridge` 1Password item,
-   materialized onto the mini by the bootstrap script — never in the repo).
+1. A dedicated ed25519 keypair (the `kestra-job-bridge` 1Password item,
+   materialized onto the mini by chezmoi — never in the repo).
 2. `~/.ssh/authorized_keys` (chezmoi-managed) binds that key with
    `restrict,command="~/.local/bin/lab-job"` — no pty, no forwarding, and
    sshd runs the dispatcher *instead of* whatever was requested.
@@ -82,32 +82,34 @@ op run --env-file=secrets.env -- tofu apply
 
 ## Secrets: 1Password is the origin
 
-No secret is generated on the machine. You create them in the vault; the
-bootstrap script materializes them into env files under `~/Docker/kestra/`
-with `op read`. Wipe that directory and re-bootstrap and the *same* secrets
-come back — recreating infrastructure can never lock you out, and there's
-nothing to copy back into the vault afterwards.
+No secret is generated on the machine. You create them in the vault;
+chezmoi `create_` templates (`chezmoi/home/Docker/kestra/`) materialize
+them into files under `~/Docker/kestra/`. The templates are only evaluated
+while a file is MISSING — `op` and the internet are bootstrap dependencies,
+not tick dependencies. Wipe the directory and `chezmoi apply` and the
+*same* secrets come back — recreating infrastructure can never lock you
+out, and there's nothing to copy back into the vault afterwards.
 
-Items (Wolfe.Lab vault — API Credential type unless noted; generate values
-in 1Password, letters+digits to keep env files quote-free):
+Items (Wolfe.Lab vault; generate values in 1Password, letters+digits to
+keep env files quote-free):
 
 | Item | Fields | Notes |
 | --- | --- | --- |
-| `Kestra Admin` | `username` = trwolfe13@gmail.com, `credential` | UI login; also used by this slice's `tofu/` root |
-| `Kestra Postgres` | `credential` | kestra ↔ postgres, never typed by a human |
-| `Kestra Encryption Key` | `credential` | **exactly 32 chars** |
-| `Kestra Job Bridge` | SSH Key item, ed25519 | 1Password generates it |
+| `kestra-admin` | Login item: `username` = trwolfe13@gmail.com, `password` | UI login; also used by this slice's `tofu/` root |
+| `Kestra Postgres` | Password item: `password` | kestra ↔ postgres, never typed by a human |
+| `kestra-encryption-key` | API Credential item: `credential` | **exactly 32 chars** |
+| `kestra-job-bridge` | SSH Key item, ed25519 | 1Password generates it |
 
 ## First-time setup (on the mini, GUI session — `op` needs it)
 
 1. Create the four 1Password items above.
-2. `chezmoi apply` — bootstrap materializes `~/Docker/kestra/` (env files,
-   SSH keypair) and `~/.docker-headless/config.json`.
+2. `chezmoi apply` — materializes `~/Docker/kestra/` (env files, SSH
+   keypair) and `~/.docker-headless/config.json` via `create_` templates.
 3. `chezmoi apply` **again** — authorized_keys templates the public key in
    (it didn't exist during the first render).
 4. `./setup.sh` from the repo root brings every stack up (Kestra can't
    deploy itself into existence — this is the one manual bring-up).
-5. Log in at http://macmini.local:8180 with `Kestra Admin` and apply the
+5. Log in at http://macmini.local:8180 with `kestra-admin` and apply the
    flows: see "The flow applier" above.
 
 ## Cutover from launchd (done)
