@@ -1,5 +1,5 @@
-id: purge-executions
-namespace: lab
+id: purge
+namespace: lab.kestra
 description: |
   Nightly janitor: purge execution history (with its logs, metrics and
   internal storage) older than 30 days. The 15-minute tick and its deploy
@@ -8,6 +8,17 @@ description: |
   job, no lab-job involvement. Lives in the kestra slice because it IS
   kestra: self-maintenance, not a lab workload — the slice's no-flows rule
   is specifically about deploys (see README.md).
+
+  Deliberately in lab.kestra rather than the `system` namespace: `system`
+  is outside the `lab.` prefix that system/alert-failed watches, so a flow
+  parked there is exempt from alerting. The alerter is the only thing that
+  needs that exemption; the janitor failing means postgres grows unbounded,
+  which is slow but not silent-forever.
+
+labels:
+  job: maintenance
+  # Low: unbounded growth is a slow burn, not a page.
+  alert: low
 
 tasks:
   - id: purge

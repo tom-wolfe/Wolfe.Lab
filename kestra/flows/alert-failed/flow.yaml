@@ -1,0 +1,72 @@
+id: alert-failed
+namespace: system
+description: |
+  One flow, every failure. Fires on any execution under the `lab.` prefix
+  reaching FAILED or WARNING and pushes it to Pushover — so a slice added
+  next year is covered the moment its namespace starts with `lab.`, with no
+  edit here. That prefix match is the entire reason the namespaces are
+  hierarchical; a flat namespace would need this flow amended per slice.
+
+  WHY `system` (the only flow in the lab outside `lab.*`): the trigger
+  below watches `lab.` — so parking the alerter outside that prefix is what
+  stops it triggering on its own failure and looping. It is not here
+  because it's "system-ish"; it's here because it must not see itself.
+  Corollary: NOTHING alerts when this flow fails. Its own red runs are
+  visible only in the UI, which is the price of not building an alerter for
+  the alerter. The heartbeat in lab.chezmoi/update is the outside check.
+
+  Severity comes from each flow's `alert:` label, not from a list here —
+  same reason as the prefix: new flows classify themselves.
+    high -> Pushover priority 1  (bypasses quiet hours; backups, certs)
+    low  -> Pushover priority -1 (tray, no buzz; deploys, ticks, syncs)
+  The tick fans out four deploys every 15 minutes, so a persistently broken
+  deploy is ~380 notifications a day. That is how alerting gets muted and
+  becomes worthless. The high/low split is the crude first defence; if low
+  is still too noisy, the real fix is to alert on the TRANSITION into
+  failure (query the previous execution's state via the Kestra API) rather
+  than on every failed run.
+
+tasks:
+  - id: notify
+    type: io.kestra.plugin.core.http.Request
+    uri: https://api.pushover.net/1/messages.json
+    method: POST
+    contentType: application/x-www-form-urlencoded
+    formData:
+      token: "{{ secret('PUSHOVER_TOKEN') }}"
+      user: "{{ secret('PUSHOVER_USER') }}"
+      title: "{{ trigger.namespace }}/{{ trigger.flowId }} {{ trigger.state }}"
+      message: |
+        Failed task: {{ trigger.firstFailedTaskId | default('unknown') }}
+        Execution: {{ trigger.executionId }}
+      # `default('low')` matters: an unlabelled flow must still alert, just
+      # quietly — never fail the alerter itself over a missing label.
+      priority: "{{ (trigger.executionLabels.alert | default('low')) == 'high' ? '1' : '-1' }}"
+      url: "https://kestra.lab.twolfe.dev/ui/main/executions/{{ trigger.namespace }}/{{ trigger.flowId }}/{{ trigger.executionId }}"
+      url_title: Open execution
+
+triggers:
+  - id: any-lab-failure
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: failed-under-lab
+      # `where` is a PREDICATE on each incoming execution. The other form,
+      # `flows:`, is a BARRIER (wait until all listed flows have run) — the
+      # deploy flows use that one to chain on the tick. Do not mix them up:
+      # `flows:` with several entries would mean "alert once every slice has
+      # failed", which is not alerting.
+      #
+      # Enum values are from the plugin schema, not the prose docs, which
+      # say PREFIX/EQUALS — those are wrong for this version. `filters`
+      # default to operand AND.
+      where:
+        - id: lab-namespace-failed
+          filters:
+            - field: NAMESPACE
+              type: STARTS_WITH
+              value: "lab."
+            - field: STATE
+              type: IN
+              values:
+                - FAILED
+                - WARNING

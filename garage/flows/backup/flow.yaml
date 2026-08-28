@@ -1,5 +1,5 @@
-id: backup-garage
-namespace: lab
+id: backup
+namespace: lab.garage
 description: |
   Nightly cold backup of garage's meta/ (LMDB, small, critical) and data/
   (the objects — currently just tofu state). Stop → tar → start, brief
@@ -8,6 +8,10 @@ description: |
   /Volumes/Data1/backups/garage; fails loudly if the drive isn't mounted
   rather than writing to the internal disk. Host side:
   garage/flows/backup/script.sh via the lab-job bridge.
+
+labels:
+  job: backup
+  alert: high
 
 concurrency:
   limit: 1

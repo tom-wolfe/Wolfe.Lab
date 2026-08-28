@@ -1,5 +1,5 @@
-id: backup-kestra
-namespace: lab
+id: backup
+namespace: lab.kestra
 description: |
   Nightly pg_dump of the kestra database — live, no downtime (pg_dump
   takes an MVCC-consistent snapshot), which is why this is the one backup
@@ -7,8 +7,12 @@ description: |
   deploy flow isn't. 03:20, staggered against the cold backups. Dumps land
   in /Volumes/Data1/backups/kestra (fails loudly if the drive isn't
   mounted); the last 10 scheduled dumps are kept, and pre-upgrade dumps
-  (labelled by upgrade.sh) are never pruned. Host side: kestra/flows/backup/script.sh via the lab-job
-  bridge.
+  (labelled by upgrade.sh) are never pruned. Host side:
+  kestra/flows/backup/script.sh via the lab-job bridge.
+
+labels:
+  job: backup
+  alert: high
 
 concurrency:
   limit: 1

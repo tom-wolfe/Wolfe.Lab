@@ -1,9 +1,13 @@
-id: obsidian-sync-dnd
-namespace: lab
+id: dnd
+namespace: lab.obsidian
 description: |
   One-shot sync of the Dungeons & Dragons Obsidian vault from Google Drive.
-  See obsidian-sync-main for the design; this is its twin, offset by five
+  See lab.obsidian/main for the design; this is its twin, offset by five
   minutes so the two passes never contend for Drive at the same moment.
+
+labels:
+  job: sync
+  alert: low
 
 concurrency:
   limit: 1
@@ -18,7 +22,7 @@ tasks:
     authMethod: PUBLIC_KEY
     privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
-      - obsidian-sync/dnd
+      - obsidian/dnd
 
 triggers:
   - id: every-10-min-offset

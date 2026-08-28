@@ -14,8 +14,8 @@ keeping the existing library, watch history and artwork exactly as they were.
 
 ## Deployment
 
-The `deploy-jellyfin` flow in Kestra converges this stack after every green
-`chezmoi-update` tick — merge a compose change and it lands within one tick
+The `lab.jellyfin/deploy` flow in Kestra converges this stack after every green
+`lab.chezmoi/update` tick — merge a compose change and it lands within one tick
 (≤15 min). Manual converge: run the flow from the Kestra UI, or on the mini:
 
 ```sh
@@ -130,7 +130,7 @@ image afterwards will fail.
 ```sh
 "$(chezmoi source-path)/../../jellyfin/flows/backup/script.sh"   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
-# either let deploy-jellyfin converge it or, by hand:
+# either let lab.jellyfin/deploy converge it or, by hand:
 cd "$(chezmoi source-path)/../../jellyfin"
 docker-compose pull
 docker-compose up -d
@@ -145,7 +145,7 @@ curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep 
 
 ## Backup
 
-Runs itself: the `backup-jellyfin` flow fires nightly at 03:35
+Runs itself: the `lab.jellyfin/backup` flow fires nightly at 03:35
 (`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
 
 ```sh
@@ -224,7 +224,10 @@ Neither of these was caused by the move, and neither was changed:
   in December 2025. Jellyfin 10.11 uses `jellyfin.db` and never reads these;
   they're excluded from backups and safe to delete.
 
-Also worth noting: `/Volumes/Data1` is **99% full** (31 GB free of 1.8 TB).
+Also worth noting: keep an eye on free space on `/Volumes/Data1` — it holds
+the media libraries *and* every slice's nightly backups (10 archives each).
+There is no automated check yet; that arrives with the monitoring slice
+(see `ROADMAP.md`).
 
 ## Notes
 

@@ -1,12 +1,20 @@
-id: chezmoi-update
-namespace: lab
+id: update
+namespace: lab.chezmoi
 description: |
   The CD game tick: pull Wolfe.Lab and converge machine config with chezmoi
   apply. This flow never deploys anything — each service's deploy flow
-  (deploy-<svc>) chains on this one reaching SUCCESS, so the order is always
-  pull -> config -> deploys, and a broken config converge pauses deployment
-  until the next green tick. Host side: chezmoi/flows/update/script.sh,
-  reached through the forced-command SSH bridge.
+  (lab.<slice>/deploy) chains on this one reaching SUCCESS, so the order is
+  always pull -> config -> deploys, and a broken config converge pauses
+  deployment until the next green tick. Host side:
+  chezmoi/flows/update/script.sh, reached through the forced-command SSH
+  bridge.
+
+labels:
+  job: tick
+  # Low: one red tick is noise — it self-heals 15 minutes later. A tick that
+  # stays red is what matters, and the heartbeat task below catches that
+  # from OUTSIDE the lab (see the task comment).
+  alert: low
 
 # A tick landing mid-run queues instead of overlapping.
 concurrency:
@@ -24,6 +32,31 @@ tasks:
     commands:
       - chezmoi/update
 
+  # The dead man's switch. Every alert path in this lab lives INSIDE Kestra
+  # and therefore shares Kestra's fate: container down, postgres wedged,
+  # mini powered off, and silence looks exactly like health. This ping is
+  # the one signal that leaves the building — healthchecks.io alerts when
+  # it STOPS arriving, which is the only way "the lab is off" ever reaches
+  # a phone. It runs only if converge succeeded (a failed task ends the
+  # execution), so a red tick withholds the heartbeat too.
+  #
+  # The check itself — schedule, grace, notification channels — is declared
+  # in chezmoi/tofu/checks.tf, not clicked into the healthchecks.io UI.
+  # Pinged by SLUG, so the URL is composed here rather than stored: the
+  # secret is a project-wide ping key, and `lab-chezmoi-update` is this
+  # check's slug. Adding a second check needs no new secret.
+  - id: heartbeat
+    type: io.kestra.plugin.core.http.Request
+    uri: "https://hc-ping.com/{{ secret('HEALTHCHECKS_PING_KEY') }}/lab-chezmoi-update"
+    method: GET
+    # The watchdog must never break what it watches. Without this a wrong
+    # slug (404) or a healthchecks.io outage (5xx) fails the tick, and a red
+    # tick pauses every deploy — an external service would then be gating
+    # this lab's CD. Swallowing the status is safe because it cannot hide a
+    # broken heartbeat: if these pings aren't landing, healthchecks.io
+    # reports the tick as down, which is exactly the alert we want.
+    allowFailed: true
+
 triggers:
   # Steady-state reconciliation: the mini never drifts more than 15 minutes
   # behind main. Until the poke below is wired up, this is also the only
@@ -34,7 +67,7 @@ triggers:
     timezone: Europe/London
 
   # The poke — NOT YET WIRED, by choice, because the Actions runner will exist:
-  #   POST http://macmini.local:8180/api/v1/main/executions/webhook/lab/chezmoi-update/<key>
+  #   POST http://macmini.local:8180/api/v1/main/executions/webhook/lab.chezmoi/update/<key>
   # The key is the only auth on this path (it's basic-auth-exempt); it can
   # start this flow and nothing else. LAN-only, like everything here.
   - id: poke

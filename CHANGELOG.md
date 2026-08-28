@@ -4,6 +4,40 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.10.0] - 2026-08-28
+
+### Added
+
+- Added a new `amendf` git alias that combines `git amend && git pushf` to 
+  amend a commit that's already been pushed.
+- **Alerting — every flow failure now reaches a phone.** One flow does it:
+  `system/alert-failed` pushes to Pushover. Severity comes from each flow's
+  `alert:` label.
+- **A dead man's switch.** `lab.chezmoi/update` pings healthchecks.io as its
+  final task. The ping stopping is the only signal that leaves the building.
+- **`chezmoi/tofu/`** — declaring the tick's healthchecks.io check (schedule, 
+  grace, channels)
+- `ROADMAP.md`: what's next and why, including the items deliberately
+  deferred (self-hosted secrets, k8s) and why.
+
+### Changed
+
+- `obsidian-sync` is now `obsidian`.
+- **Flows are namespaced per slice.** `lab.<slice>/<job>` replaces the
+  single flat `lab` namespace that had the slice baked into the flow id:
+- Flows carry `job:` and `alert:` labels. The cross-cutting axis (every
+  backup, every deploy) is a label filter.
+- The webhook poke URL moved with the tick:
+  `…/executions/webhook/lab.chezmoi/update/<key>`.
+- The janitor is `lab.kestra/purge`, not a `system` flow: `system` sits
+  outside the prefix the alerter watches, and only the alerter needs that
+  exemption.
+
+### Fixed
+
+- The kestra secrets table still called the postgres item `Kestra Postgres`.
+  0.9.2 fixed the templates to `kestra-postgres` but not the doc.
+
 ## [0.9.2] - 2026-08-28
 
 ### Changed
@@ -91,7 +125,7 @@ rather than versioned — the lab is continuous, not released.
 - `tofu/kestra` + `jobs/` became one directory per job (`<slice>/flows/<job>/flow.yaml` + `script.sh` side by side.
 - **Chezmoi declares, Kestra acts**: the `run_onchange` deploy hook is gone. Each service now has a `deploy-<svc>` Kestra flow chaining on `chezmoi-update` SUCCESS.
 - The chezmoi tick runs every 15 minutes (was hourly). With no post-merge poke yet, the tick is the only delivery path.
-- `lab-job` names are now two-segment `slice/job` paths (e.g. `forgejo/deploy`, `obsidian-sync/main`) resolved to `<slice>/flows/<job>/script.sh` at the repo root. Job names no longer need to be globally unique.
+- `lab-job` names are now two-segment `slice/job` paths (e.g. `forgejo/deploy`, `obsidian/main`) resolved to `<slice>/flows/<job>/script.sh` at the repo root. Job names no longer need to be globally unique.
 - Garage cluster layout init moved out of chezmoi (`run_once` deleted) into `garage/scripts/init-layout.sh`, invoked by the new `setup.sh`.
 
 ### Added

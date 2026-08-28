@@ -1,4 +1,4 @@
-# obsidian-sync
+# obsidian
 
 One-shot syncs of the Obsidian vaults from Google Drive: `main/` and
 `dnd/`, each a scheduled pass every 10 minutes, offset by five so the two

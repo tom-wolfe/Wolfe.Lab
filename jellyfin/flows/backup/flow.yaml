@@ -1,5 +1,5 @@
-id: backup-jellyfin
-namespace: lab
+id: backup
+namespace: lab.jellyfin
 description: |
   Nightly cold backup of jellyfin's state — config, database, library
   roots and plugins; metadata/cache/logs excluded (TMDB re-fetches
@@ -9,6 +9,10 @@ description: |
   image tag it was taken under; fails loudly if the drive isn't mounted
   rather than writing to the internal disk. Host side:
   jellyfin/flows/backup/script.sh via the lab-job bridge.
+
+labels:
+  job: backup
+  alert: high
 
 concurrency:
   limit: 1

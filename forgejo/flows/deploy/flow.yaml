@@ -1,11 +1,15 @@
-id: deploy-forgejo
-namespace: lab
+id: deploy
+namespace: lab.forgejo
 description: |
   Converge the forgejo compose stack from the repo checkout. Chains on every
-  green chezmoi-update tick (the tick is what pulls the repo), so a merged
-  compose change lands within one tick; between changes each run is a no-op
-  thanks to compose's own config-hash convergence. Host side:
+  green tick (the tick is what pulls the repo), so a merged compose change
+  lands within one tick; between changes each run is a no-op thanks to
+  compose's own config-hash convergence. Host side:
   forgejo/flows/deploy/script.sh via the lab-job bridge.
+
+labels:
+  job: deploy
+  alert: low
 
 # A slow converge (image pull, migration) must finish before the next
 # tick's attempt starts.
@@ -25,16 +29,18 @@ tasks:
       - forgejo/deploy
 
 triggers:
-  # Fires after each SUCCESSful chezmoi-update execution: pull -> config ->
-  # deploys, always in that order — and a broken config converge pauses
-  # deployment entirely (the next green tick catches everything up).
-  # tofu apply validates flow YAML server-side; if this precondition syntax
-  # drifts in a future Kestra, the apply will say so.
+  # Fires after each SUCCESSful tick execution: pull -> config -> deploys,
+  # always in that order — and a broken config converge pauses deployment
+  # entirely (the next green tick catches everything up).
+  # NOTE the namespace/flowId here are the tick's IDENTITY, and an exact
+  # match: a Flow trigger that matches nothing does not error, it silently
+  # never fires. If the tick is ever renamed, every deploy flow moves with
+  # it in the same commit, and you verify by watching one tick fan out.
   - id: after-tick
     type: io.kestra.plugin.core.trigger.Flow
     preconditions:
       id: chezmoi-tick-green
       flows:
-        - namespace: lab
-          flowId: chezmoi-update
+        - namespace: lab.chezmoi
+          flowId: update
           states: [SUCCESS]

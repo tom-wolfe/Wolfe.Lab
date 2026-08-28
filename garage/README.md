@@ -9,7 +9,7 @@ State lives at `~/Docker/garage/{meta,data}` on the mini; config is
 | Concern | Handled by |
 | --- | --- |
 | Secrets (`~/Docker/garage/garage.env`) | chezmoi `create_` template (`chezmoi/home/Docker/garage/`) — materialized from 1Password (`garage-rpc-secret`, `garage-s3-admin-token`), never generated: the vault is the origin, so a wiped env file comes back with the same values. Only evaluated while the file is missing — `op` is a bootstrap dependency, not a tick dependency |
-| Container | the `deploy-garage` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
+| Container | the `lab.garage/deploy` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
 | Cluster layout (one-time) | `scripts/init-layout.sh`, invoked by `setup.sh` |
 | Buckets, keys, grants | OpenTofu — this slice's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |
 
@@ -24,7 +24,7 @@ bootstrap only creates what must exist before the admin API answers.
   `ssh macmini "docker-compose --project-directory .local/share/chezmoi/garage restart"`
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
-  `backup-garage` flow (`flows/backup/`) does a nightly cold copy at 02:50
+  `lab.garage/backup` flow (`flows/backup/`) does a nightly cold copy at 02:50
   — stop, tar both, start, keep the last 10 in
   `/Volumes/Data1/backups/garage` (refuses to run if the drive isn't
   mounted). `garage.env` is deliberately not included — the vault is its
@@ -34,7 +34,7 @@ bootstrap only creates what must exist before the admin API answers.
 
 Read the release notes first — metadata formats migrate and downgrades are
 not supported. Bump the image tag, merge; the tick ships it and
-`deploy-garage` converges it.
+`lab.garage/deploy` converges it.
 
 ## The tofu state store (`tofu/`)
 

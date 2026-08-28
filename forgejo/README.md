@@ -28,8 +28,8 @@ container itself, so the image can be replaced freely.
 
 ## Deployment
 
-The `deploy-forgejo` flow in Kestra converges this stack after every green
-`chezmoi-update` tick — merge a compose change and it lands within one tick
+The `lab.forgejo/deploy` flow in Kestra converges this stack after every green
+`lab.chezmoi/update` tick — merge a compose change and it lands within one tick
 (≤15 min). Manual converge: run the flow from the Kestra UI, or on the mini:
 
 ```sh
@@ -124,7 +124,7 @@ image after that will fail.
 ```sh
 "$(chezmoi source-path)/../../forgejo/flows/backup/script.sh"   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
-# either let deploy-forgejo converge it or, by hand:
+# either let lab.forgejo/deploy converge it or, by hand:
 cd "$(chezmoi source-path)/../../forgejo"
 docker-compose pull
 docker-compose up -d
@@ -148,7 +148,7 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 
 ## Backup
 
-Runs itself: the `backup-forgejo` flow fires nightly at 03:05
+Runs itself: the `lab.forgejo/backup` flow fires nightly at 03:05
 (`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
 
 ```sh

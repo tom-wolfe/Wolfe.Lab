@@ -17,12 +17,13 @@ its tick job.
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 | `ENDPOINTS.md` | every service address in the lab |
 | `CHANGELOG.md` | what changed, when — Keep a Changelog format |
+| `ROADMAP.md` | what's next and why — including what's deliberately deferred |
 
 ## How deployment works
 
-Chezmoi declares; Kestra acts. The `chezmoi-update` flow is the CD tick:
+Chezmoi declares; Kestra acts. The `lab.chezmoi/update` flow is the CD tick:
 every 15 minutes it pulls the repo and converges machine config, and each
-service's `deploy-<svc>` flow chains on its SUCCESS — pull → config →
+service's `lab.<slice>/deploy` flow chains on its SUCCESS — pull → config →
 deploys, always in that order. `docker-compose up -d` is convergent, so
 between changes the deploys are no-ops; a merged compose change lands
 within one tick. Kestra itself has no deploy flow (it can't safely replace

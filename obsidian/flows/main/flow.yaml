@@ -1,11 +1,17 @@
-id: obsidian-sync-main
-namespace: lab
+id: main
+namespace: lab.obsidian
 description: |
   One-shot sync of the Main Obsidian vault from Google Drive. Replaces the
   md.obsidian.headless-sync-main launch agent's `--continuous` watcher with
   a scheduled pass every 10 minutes — trading a little latency for logs,
   retries, and failure visibility. Host side:
-  obsidian-sync/flows/main/script.sh via the lab-job bridge.
+  obsidian/flows/main/script.sh via the lab-job bridge.
+
+labels:
+  job: sync
+  # Low: a missed pass costs ≤10 minutes of latency and the next one
+  # catches up. Persistent failure shows as a wall of red in the UI.
+  alert: low
 
 # A slow pass must finish before the next one starts.
 concurrency:
@@ -21,7 +27,7 @@ tasks:
     authMethod: PUBLIC_KEY
     privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
-      - obsidian-sync/main
+      - obsidian/main
 
 triggers:
   - id: every-10-min

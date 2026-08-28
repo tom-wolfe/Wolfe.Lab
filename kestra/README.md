@@ -1,9 +1,10 @@
 # kestra
 
 [Kestra](https://kestra.io) schedules the lab's *jobs* — the chezmoi tick,
-the per-service deploy flows, the Obsidian vault syncs, the janitor. It is
+the per-service deploy flows, the Obsidian vault syncs, the janitor, the
+failure alerter. It is
 not a service manager: long-running services are compose slices at the
-repo root, each converged by its own `deploy-<svc>` flow chained on the
+repo root, each converged by its own `lab.<slice>/deploy` flow chained on the
 tick. Kestra replaces the *scheduling* half of launchd, not the
 *supervision* half.
 
@@ -19,9 +20,11 @@ Deliberate, and the reason this slice has `scripts/upgrade.sh` instead:
 a deploy flow for kestra would have Kestra replace its own executor
 mid-execution — the SSH task's client dies with the container, killing the
 very run that triggered it. The prohibition is *deploy-specific*: this
-slice does own its housekeeping flows (`flows/purge/flow.yaml`, the nightly
-execution-history janitor; a scheduled backup later), because those run
-inside Kestra or dump data — neither replaces the executor. Every other
+slice does own its housekeeping flows — `flows/purge/` (the nightly
+execution-history janitor), `flows/backup/` (the nightly pg_dump) and
+`flows/alert-failed/` (the lab's failure alerter, which is Kestra machinery
+rather than a lab workload) — because those run inside Kestra or dump data;
+none replaces the executor. Every other
 slice's churn can't touch this stack; on the rare occasion kestra itself
 changes, you upgrade it by hand:
 
@@ -49,7 +52,7 @@ through one audited door:
    sshd runs the dispatcher *instead of* whatever was requested.
 3. `lab-job` treats the requested command as a job *name* — exactly two
    `[a-z0-9-]` segments joined by one slash, e.g. `forgejo/deploy` or
-   `obsidian-sync/main` — and resolves it to
+   `obsidian/main` — and resolves it to
    `<slice>/flows/<job>/script.sh` in this repo's checkout on the mini
    (the one the tick keeps fresh).
    The alphabet has no dots, so traversal is unrepresentable. Unknown or
@@ -80,6 +83,81 @@ op run --env-file=secrets.env -- tofu apply
 `flows.tf` picks the YAML up automatically, and lab-job resolves
 `<slice>/<name>` to the script from the repo checkout.
 
+### Naming: one shape in three places
+
+A flow's identity is `<namespace>/<id>`, and both halves fall out of where
+the flow lives:
+
+```
+forgejo/flows/deploy/flow.yaml   the path
+lab.forgejo / deploy             the flow — namespace / id
+forgejo/deploy                   the lab-job name the flow invokes
+```
+
+One string, three contexts: `<slice>` becomes `lab.<slice>`, the job
+directory becomes the flow id. Nothing to decide when you add the thirtieth
+flow.
+
+Namespaces stay FLAT — `lab.<slice>`, never `lab.services.forgejo`. A
+deeper tree forces a taxonomy call per slice (is caddy infrastructure or a
+service? is obsidian automation?) that this repo has refused to make since
+the 0.6.0 restructure; the flat form is derivable and needs no judgement.
+
+The YAML remains the source of truth: `flows.tf` reads `id` and `namespace`
+out of the file rather than inferring them from the path, so a rename shows
+up in the plan. The convention above is a convention — nothing enforces it.
+
+The cross-cutting axis is **labels**, not more namespace:
+
+| Label | Values | Purpose |
+| --- | --- | --- |
+| `job` | `deploy`, `backup`, `sync`, `cert`, `tick`, `maintenance` | filtering flows and executions in the UI |
+| `alert` | `high`, `low` | severity routing in `system/alert-failed` |
+
+So "show me every backup" is a label filter, and you never have to choose
+between organising by slice and organising by function.
+
+What namespaces do *not* buy here: namespace-level secrets, variables,
+plugin defaults and RBAC are all Enterprise features. `secret('LAB_SSH_KEY')`
+resolves from an instance-wide `SECRET_*` environment variable whatever the
+namespace. What they do buy is UI grouping and the prefix match below.
+
+## Alerting
+
+Two mechanisms, layered deliberately, because they fail in different ways.
+
+**Inside the lab — `system/alert-failed`.** One flow, triggered by
+`NAMESPACE STARTS_WITH "lab."` and `STATE IN [FAILED, WARNING]`. Every flow
+in every slice is covered, including slices that don't exist yet: that
+prefix match is the entire payoff of hierarchical namespaces. Severity
+comes from each flow's `alert:` label — high becomes Pushover priority 1
+(bypasses quiet hours), low becomes -1 (tray, no buzz) — so a failed backup
+wakes you and a failed deploy doesn't. The flow's own header explains why
+it sits in `system` and what that costs.
+
+**Outside the lab — the heartbeat.** `lab.chezmoi/update` pings
+healthchecks.io as its final task. Everything above runs inside Kestra and
+therefore shares Kestra's fate: container down, postgres wedged, mini
+powered off, and silence looks exactly like health. The ping stopping is the
+only signal that leaves the building. The check is declared in
+`chezmoi/tofu/` (schedule, grace, channels) — it belongs to the slice that
+owns the tick, not to this one. The ping is `allowFailed`, deliberately: an
+external service must never be able to fail the tick and pause every
+deploy.
+
+**Verify both after the first apply.** A Flow trigger that matches nothing
+does not error — it silently never fires, which is indistinguishable from a
+healthy lab:
+
+1. Fail any `lab.*` flow on purpose (point a deploy at a bad job name, or
+   kill a running execution). A notification should arrive in seconds.
+2. Do it **twice**. Two failures must produce two notifications. One
+   notification means the precondition is batching over its default time
+   window — set an explicit short `timeWindow`, or fall back to the older
+   per-execution `conditions:` form.
+3. Pause the tick for longer than the grace period and confirm
+   healthchecks.io actually emails you.
+
 ## Secrets: 1Password is the origin
 
 No secret is generated on the machine. You create them in the vault;
@@ -96,13 +174,15 @@ keep env files quote-free):
 | Item | Fields | Notes |
 | --- | --- | --- |
 | `kestra-admin` | Login item: `username` = trwolfe13@gmail.com, `password` | UI login; also used by this slice's `tofu/` root |
-| `Kestra Postgres` | Password item: `password` | kestra ↔ postgres, never typed by a human |
+| `kestra-postgres` | Password item: `password` | kestra ↔ postgres, never typed by a human |
 | `kestra-encryption-key` | API Credential item: `credential` | **exactly 32 chars** |
 | `kestra-job-bridge` | SSH Key item, ed25519 | 1Password generates it |
+| `pushover` | API Credential item: `credential` = application token, `username` = user key | the lab's only notification transport |
+| `healthchecks-ping-key` | API Credential item: `credential` = the project ping key | dead man's switch; one key covers every check |
 
 ## First-time setup (on the mini, GUI session — `op` needs it)
 
-1. Create the four 1Password items above.
+1. Create the six 1Password items above.
 2. `chezmoi apply` — materializes `~/Docker/kestra/` (env files, SSH
    keypair) and `~/.docker-headless/config.json` via `create_` templates.
 3. `chezmoi apply` **again** — authorized_keys templates the public key in
@@ -115,7 +195,7 @@ keep env files quote-free):
 ## Cutover from launchd (done)
 
 The `md.obsidian.headless-sync-*` launch agents are gone — replaced by the
-`obsidian-sync` automation's one-shot passes every 10 minutes. The pattern,
+`obsidian` automation's one-shot passes every 10 minutes. The pattern,
 for the next launchd retirement: delete the plist from source, add the
 target to `chezmoi/home/.chezmoiremove` (deleting a source file only makes chezmoi
 *stop managing* the target), and `launchctl bootout` the loaded agent on
@@ -128,7 +208,7 @@ the database to a dated file in `/Volumes/Data1/backups/kestra/` (refusing
 to run if the drive isn't mounted — which also gates upgrades: no drive, no
 pre-upgrade dump, no upgrade) — run it by
 hand, or through the bridge as `kestra/backup`; `scripts/upgrade.sh` calls
-it (labelled `pre-<version>`) before every upgrade, and the `backup-kestra`
+it (labelled `pre-<version>`) before every upgrade, and the `lab.kestra/backup`
 flow runs it nightly at 03:20 — live, no downtime, which is what makes a
 backup flow safe here where a deploy flow isn't: a dump never restarts the
 executor. Retention: the last 10 scheduled dumps are kept; the labelled
