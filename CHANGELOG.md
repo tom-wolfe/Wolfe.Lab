@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.10.2] - 2026-08-29
+
+### Changed
+
+- **The flow naming convention is enforced**, not just documented. A
+  `lifecycle.precondition` on `kestra_flow` asserts that each flow's declared
+  `namespace`/`id` match what its path requires (`<slice>/flows/<job>/` ->
+  `lab.<slice>/<job>`).
+- Every task now has a timeout.
+
 ## [0.10.1] - 2026-08-28
 
 ### Changed

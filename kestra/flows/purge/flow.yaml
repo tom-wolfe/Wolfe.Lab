@@ -23,6 +23,7 @@ labels:
 tasks:
   - id: purge
     type: io.kestra.plugin.core.execution.PurgeExecutions
+    timeout: PT30M
     endDate: "{{ now() | dateAdd(-30, 'DAYS') }}"
     # Terminal states only — never touch running/paused/queued executions.
     states:

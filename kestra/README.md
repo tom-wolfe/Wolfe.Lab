@@ -122,6 +122,33 @@ plugin defaults and RBAC are all Enterprise features. `secret('LAB_SSH_KEY')`
 resolves from an instance-wide `SECRET_*` environment variable whatever the
 namespace. What they do buy is UI grouping and the prefix match below.
 
+## Timeouts
+
+Every flow has one. A hang is worse than a failure: it produces no failure
+state, so nothing in "Alerting" below can see it — the task just shows as
+running, whatever chains off it never fires, and `concurrency: QUEUE` stacks
+another execution every interval behind it. A timed-out task FAILS, which
+turns an invisible hang into a notification. (Cost us a 10-minute silent
+stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
+
+| Flow | Timeout | Bound by |
+| --- | --- | --- |
+| `lab.chezmoi/update` | PT10M | must sit under the 15-minute tick interval |
+| `lab.obsidian/main`, `/dnd` | PT8M | must sit under their 10-minute schedule |
+| backups | PT15M | ~45x the slowest observed run (forgejo, ~20s) |
+| deploys | PT20M | a cold image pull is the unbounded case |
+| `lab.caddy/renew-certs` | PT15M | lego waits 90s for DNS propagation first |
+| `lab.kestra/purge` | PT30M | a first purge after a backlog deletes a lot |
+| `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |
+
+**A timeout on an SSH task reports a stall; it does not abort one.** Killing
+a Kestra execution kills the SSH client, not the process on the mini — so a
+timed-out backup keeps running host-side, and it is the script's own `EXIT`
+trap, not Kestra, that restarts a stopped stack. If you need the host
+process dead, `pkill` it on the mini. This is why the backup ceilings are
+set wide rather than tight: firing one early gains nothing and costs a
+false page.
+
 ## Alerting
 
 Two mechanisms, layered deliberately, because they fail in different ways.
@@ -151,7 +178,13 @@ secret that fails to resolve.)
 
 **Verify both after the first apply.** A Flow trigger that matches nothing
 does not error — it silently never fires, which is indistinguishable from a
-healthy lab:
+healthy lab. Re-run this whenever the trigger or the label scheme changes.
+
+*Passed 2026-08-28* against Kestra v1.3.34: the trigger fires, it does NOT
+batch (two failures produced two notifications), and an unlabelled flow
+alerts at low priority rather than failing the alerter. The throwaway test
+flow is below.
+
 
 1. Fail any `lab.*` flow on purpose (point a deploy at a bad job name, or
    kill a running execution). A notification should arrive in seconds.
@@ -160,7 +193,21 @@ healthy lab:
    window — set an explicit short `timeWindow`, or fall back to the older
    per-execution `conditions:` form.
 3. Pause the tick for longer than the grace period and confirm
-   healthchecks.io actually emails you.
+   healthchecks.io actually notifies you.
+
+The throwaway used for 1 and 2 — create it in the UI, not the repo, so it
+touches nothing real; delete it afterwards, since tofu won't manage it:
+
+```yaml
+id: alert-test
+namespace: lab.test
+labels:
+  alert: high
+tasks:
+  - id: boom
+    type: io.kestra.plugin.core.execution.Fail
+    errorMessage: Testing system/alert-failed
+```
 
 ## Secrets: 1Password is the origin
 

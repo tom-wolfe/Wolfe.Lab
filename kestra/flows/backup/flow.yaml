@@ -21,6 +21,10 @@ concurrency:
 tasks:
   - id: backup
     type: io.kestra.plugin.fs.ssh.Command
+    # Slowest observed backup is ~20s (forgejo, 2026-08-29); this is ~45x
+    # that. See ../../kestra/README.md "Timeouts" for why it's set this wide
+    # and what a timeout does and doesn't abort.
+    timeout: PT15M
     host: host.docker.internal
     port: "22"
     username: tomwolfe
