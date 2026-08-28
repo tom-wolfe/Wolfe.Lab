@@ -7,21 +7,17 @@
 # plus a handle block — picked up by the import glob below from the repo
 # mount. Adding a service never edits this slice (the same contract as
 # flows/ and the job bridge). See README.md for the snippet shape.
+#
+# Certificates do NOT live here either: caddy is a pure proxy. The
+# renew-certs job (flows/renew-certs/) obtains and renews the wildcard via
+# lego + DNS-01 and reloads caddy; this file just loads the result from
+# the read-only /certs mount. One wildcard cert on purpose — per-name
+# certs would list every internal hostname in public Certificate
+# Transparency logs.
 
-{
-	# Every certificate via DNS-01 against Netlify: no inbound 80/443 from
-	# the internet, and wildcard-capable. The token is NETLIFY_TOKEN from
-	# caddy.env (materialized by the chezmoi bootstrap, origin 1Password).
-	acme_dns netlify {env.NETLIFY_TOKEN}
-	email trwolfe13@gmail.com
-}
-
-# ONE wildcard certificate, not one per service. Per-name certificates are
-# logged publicly in Certificate Transparency — every internal hostname
-# would be visible to anyone watching crt.sh. The wildcard keeps the
-# service list private; the cost is the matcher/handle shape in snippets
-# instead of bare site blocks.
 *.lab.twolfe.dev {
+	tls /certs/_.lab.twolfe.dev.crt /certs/_.lab.twolfe.dev.key
+
 	import lab/*/caddy.caddyfile
 
 	# Matcher-less handle matches anything the snippets didn't claim.

@@ -23,8 +23,11 @@ converge() {
 
 # Caddy first — its compose OWNS the shared `lab` network that every other
 # stack references as `external`, so nothing else can even `up` until this
-# has created it. (--build: the image is a local xcaddy build.)
-converge caddy --build
+# has created it. The certificate must exist BEFORE caddy starts (the
+# Caddyfile loads it from files), hence renew-certs first — convergent,
+# a no-op when the cert is already current.
+"$repo/caddy/flows/renew-certs/script.sh"
+converge caddy
 
 # Garage next — it hosts the tofu state everything else's IaC backends onto.
 converge garage

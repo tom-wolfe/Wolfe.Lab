@@ -2,10 +2,7 @@ name: caddy
 
 services:
   caddy:
-    # Built locally from ./Dockerfile (stock Caddy lacks the Netlify DNS
-    # module). The tag matches the pinned Caddy version; never pushed.
-    build: .
-    image: lab/caddy:2.10
+    image: caddy:2.10
     container_name: caddy
     restart: unless-stopped
 
@@ -13,12 +10,6 @@ services:
       # Host /etc/localtime is a symlink into /var/db/timezone — dangles
       # inside a Linux container. Set TZ instead (jellyfin pattern).
       TZ: Europe/London
-
-    # NETLIFY_TOKEN for ACME DNS-01 — a chezmoi-owned create_ template
-    # (chezmoi/home/Docker/caddy/): written from 1Password only when the
-    # file is missing, cached forever after. See README.md.
-    env_file:
-      - /Users/tomwolfe/Docker/caddy/caddy.env
 
     volumes:
       # Config is code — lives in this repo, mounted read-only.
@@ -29,9 +20,14 @@ services:
       # repo deliberately contains no secret material, only op:// refs.
       - ..:/etc/caddy/lab:ro
 
-      # State is data — lives outside the repo, like every other stack.
-      # /data holds certificates and ACME account keys: losing it is
-      # rate-limit pain, not disaster, but don't.
+      # The wildcard certificate, written by the renew-certs job (lego
+      # state lives in ~/Docker/caddy/lego — that's the ACME account and
+      # key material: state, backed up like all state). Caddy cannot
+      # START without these files — setup.sh runs the job first.
+      - /Users/tomwolfe/Docker/caddy/lego/certificates:/certs:ro
+
+      # Caddy runtime state. Modest now that ACME moved out; kept because
+      # state is data and lives outside the repo, like every other stack.
       - /Users/tomwolfe/Docker/caddy/data:/data
       - /Users/tomwolfe/Docker/caddy/config:/config
 

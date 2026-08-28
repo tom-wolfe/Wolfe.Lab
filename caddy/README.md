@@ -7,12 +7,14 @@ addresses are names (`https://jellyfin.lab.twolfe.dev`), not ports
 
 This slice deliberately owns ONLY the shared edge concerns:
 
-- the Caddy container and its build (stock Caddy has no DNS providers —
-  the `Dockerfile` compiles in `caddy-dns/netlify` for DNS-01);
+- the Caddy container — the STOCK image, a pure proxy: it terminates TLS
+  and routes, and does nothing else;
 - the `lab` Docker network every proxied service joins;
 - the `*.lab.twolfe.dev` wildcard DNS record (`tofu/`) — it points at the
   front door itself, so the front door owns it;
-- the wildcard certificate.
+- the wildcard certificate, obtained and renewed OUTSIDE caddy by the
+  `renew-certs` job (`flows/renew-certs/`): lego solves DNS-01 against
+  Netlify nightly and reloads caddy when the cert changes.
 
 Routes and public DNS names do NOT live here — see the contract below.
 Netlify is a *provider*, not a slice: any slice needing a DNS record
@@ -75,11 +77,14 @@ sugar for browsers, not plumbing.
    tick dependencies. Rotation: delete the file, `chezmoi apply` again
    (GUI session, or any session on the mini — the update flow exports the
    1P service account for headless runs).
-4. **First deploy**: `caddy/deploy` via the job bridge (or
-   `docker-compose up -d --build` in this directory on the mini). Must
-   happen ONCE before redeploying any proxied slice — this compose
-   creates the `lab` network the others reference as external.
-5. **Re-up the proxied slices** (forgejo, kestra, jellyfin, garage) so
+4. **First certificate**: run `flows/renew-certs/script.sh` on the mini
+   (or `caddy/renew-certs` via the bridge). Caddy loads the cert from
+   files and cannot START without them — setup.sh encodes this ordering.
+5. **First deploy**: `caddy/deploy` via the job bridge (or
+   `docker-compose up -d` in this directory on the mini). Must happen
+   ONCE before redeploying any proxied slice — this compose creates the
+   `lab` network the others reference as external.
+6. **Re-up the proxied slices** (forgejo, kestra, jellyfin, garage) so
    their containers join the network. Compose recreates them — brief
    downtime each.
 
@@ -89,26 +94,27 @@ that resolve to RFC1918 space. Allowlist `twolfe.dev` in the router.
 
 ## Upgrading
 
-Bump BOTH `FROM` lines in `Dockerfile` (same version!) and the `image:`
-tag in `compose.yaml`, then `docker compose up -d --build`. Check the
-Caddy release notes; the netlify module is rebuilt from its default branch
-on every image build.
+Caddy: bump the `image:` pin in `compose.yaml`, redeploy. lego: bump the
+image tag in `flows/renew-certs/script.sh`, and check the lego release
+notes — a major bump can change the CLI (v4→v5 did).
 
 ## Operational notes
 
-- Certificates and the ACME account key live in `~/Docker/caddy/data` —
-  state, backed up like all state. Losing it means re-issuing certs
-  (Let's Encrypt rate limits apply), not disaster.
+- Certificate, key and ACME account live in `~/Docker/caddy/lego` —
+  state, backed up like all state. Losing it means re-issuing (Let's
+  Encrypt rate limits apply), not disaster. `~/Docker/caddy/data` is
+  caddy's own runtime state, modest now that ACME moved out.
+- Renewal health is a Kestra concern: the nightly `renew-certs` run is
+  a no-op until lego's ARI window opens, so a red run means the chain
+  broke with weeks of certificate lifetime still banked.
 - `docker exec caddy caddy validate --config /etc/caddy/Caddyfile` checks
   config (including all snippets) without touching the running instance.
 - The repo mount is read-only and safe: the repo contains `op://`
   references, never secret material.
-- The deploy's `--build` works headless only because of two chezmoi-managed
-  pieces: buildx symlinked into `~/.docker-headless/cli-plugins/` (compose
-  needs it or falls back to the legacy builder), and the null credential
-  helper `docker-credential-headless` that the headless config names —
-  without it, macOS defaults to the osxkeychain helper and any uncached
-  base-image pull dies on the locked login keychain (CHANGELOG 0.9.1).
+- Headless pulls of uncached images (a bumped caddy or lego pin, through
+  the bridge) work because of the null credential helper the headless
+  Docker config names — without it, macOS defaults to the osxkeychain
+  helper and the locked login keychain kills the pull (CHANGELOG 0.9.1).
 - Port 3000/8096/8180 publishes stay for now — automation (kestra flows,
   tofu providers, the job bridge docs) targets `macmini.local:<port>` and
   keeps working when the front door doesn't.

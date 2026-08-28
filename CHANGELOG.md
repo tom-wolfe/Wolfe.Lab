@@ -4,6 +4,22 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.9.2] - 2026-08-28
+
+### Changed
+
+- **SSL maintenance moved out of caddy**: certificates now come from a nightly `renew-certs` Kestra job.
+- The caddy container no longer carries any secret: `caddy.env` (NETLIFY_TOKEN) is consumed only by the renew-certs job.
+
+### Removed
+
+- `caddy/Dockerfile`, the xcaddy build, and the libdns patch apparatus — the stock `caddy:2.10` image is enough now that caddy does no ACME. The headless buildx/credential machinery stays (general-purpose; uncached pulls still need the null helper).
+
+### Fixed
+
+- The two kestra env templates disagreed on the postgres item after the kebab-case renames (`Kestra Postgres` vs `kestra-postgres`) — the next rotation or fresh bootstrap would have failed on whichever name no longer existed. Both now read `kestra-postgres`.
+- `forgejo/tofu` and `kestra/tofu` state encryption is now `enforced = true` (migrations done): tofu refuses unencrypted state instead of silently accepting it, and the leftover migration-era `unencrypted` method declarations are gone.
+
 ## [0.9.1] - 2026-08-27
 
 ### Fixed

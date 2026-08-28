@@ -1,0 +1,31 @@
+id: renew-certs
+namespace: lab
+description: |
+  Nightly issue-or-renew of the *.lab.twolfe.dev wildcard certificate via
+  lego (DNS-01 against Netlify), reloading caddy when it changes. lego's
+  ARI-driven `run` makes this a no-op most nights — but running daily means
+  a broken renewal chain shows up as a red run WEEKS before the cert
+  actually expires. 03:50: clear of the tick's quarter-hour columns,
+  after the backups (02:50–03:35), before the janitor (04:00). Host side:
+  caddy/flows/renew-certs/script.sh via the lab-job bridge.
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: renew
+    type: io.kestra.plugin.fs.ssh.Command
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - caddy/renew-certs
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "50 3 * * *"
+    timezone: Europe/London
