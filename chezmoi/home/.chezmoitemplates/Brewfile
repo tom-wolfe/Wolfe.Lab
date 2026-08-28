@@ -46,6 +46,7 @@ vscode "yzhang.markdown-all-in-one"
 
 # Drivers
 cask "displaylink"
+cask "betterdisplay"
 
 # Utilities
 cask "airbuddy"

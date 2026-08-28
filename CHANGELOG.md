@@ -42,6 +42,16 @@ rather than versioned — the lab is continuous, not released.
 - Forgejo's identity is now `https://forgejo.lab.twolfe.dev/` (ROOT_URL, DOMAIN, SSH_DOMAIN) — links and clone URLs advertise the proxied name; `macmini.local:3000` still works via the published port.
 - The secrets-bootstrap scripts (garage, kestra — and caddy's, which never shipped) collapsed into chezmoi `create_` templates under `chezmoi/home/Docker/`: same semantics (1Password is the origin, the env file is a cache, written only when missing), one declarative layer instead of a script writing a file. Verified: chezmoi never evaluates a `create_` template whose target exists, so `op`/internet stay bootstrap-only dependencies — and the update flow now exports the mini's 1P service account so a headless tick can re-materialize a deleted cache. The kestra script never actually generated anything (the vault-is-origin fix predates this); the stale compose comment claiming it did is gone too.
 
+## [0.8.0]
+
+### Added
+
+- Added [BetterDisplay](https://formulae.brew.sh/cask/betterdisplay) to Chezmoi, installed on desktops only.
+
+### Fixed
+
+- Installed BetterDisplay to hopefully try and stop monitors moving around every time I plug them into the dock.
+
 ## [0.7.2] - 2026-08-27
 
 ### Fixed
