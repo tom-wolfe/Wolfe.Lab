@@ -1,0 +1,57 @@
+id: heartbeat
+namespace: lab.chezmoi
+description: |
+  The dead man's switch: ping healthchecks.io after every green tick.
+  healthchecks.io alerts when the pings STOP — the only way "the lab is
+  off" (Kestra down, postgres wedged, mini unplugged) ever reaches a phone,
+  because every other alert path in this lab is itself a Kestra flow and
+  dies with Kestra.
+
+  WHY THIS IS A SEPARATE FLOW rather than a task on lab.chezmoi/update:
+  a watchdog must not be able to break the thing it watches. As a task it
+  could fail the tick — an unresolvable secret, a DNS blip, a healthchecks
+  outage — and a red tick chains to nothing, so all four deploy flows stop
+  firing. An external service would be gating this lab's CD. Chained here
+  instead, the worst a broken ping can do is fail itself.
+  (`allowFailed` is not sufficient for this: it only tolerates HTTP status
+  >= 400, not connection errors and not a secret that won't resolve — which
+  is exactly how this broke the first time, 2026-08-28.)
+
+  Deliberately NOT allowFailed, for the same reason: here a 404 SHOULD go
+  red. It means the ping key or the slug is wrong, and this flow failing is
+  now a safe, alertable signal instead of a lab-wide outage.
+
+  The check itself — schedule, grace, notification channels — is declared in
+  chezmoi/tofu/checks.tf. Pinged by slug, so the URL is composed from a
+  project-wide ping key and `lab-chezmoi-update` is this check's slug.
+
+labels:
+  job: heartbeat
+  # High: the whole point of this flow is noticing silence. If it is failing,
+  # healthchecks.io will report the tick as down and you want to know it was
+  # the pinger, not the tick.
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: ping
+    type: io.kestra.plugin.core.http.Request
+    # One HTTP call. If it can't finish in a minute the endpoint is gone,
+    # which is exactly what this flow should go red about.
+    timeout: PT1M
+    uri: "https://hc-ping.com/{{ secret('HEALTHCHECKS_PING_KEY') }}/lab-chezmoi-update"
+    method: GET
+
+triggers:
+  # Same precondition as every deploy flow — see forgejo/flows/deploy.
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: chezmoi-tick-green
+      flows:
+        - namespace: lab.chezmoi
+          flowId: update
+          states: [SUCCESS]

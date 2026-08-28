@@ -141,9 +141,13 @@ therefore shares Kestra's fate: container down, postgres wedged, mini
 powered off, and silence looks exactly like health. The ping stopping is the
 only signal that leaves the building. The check is declared in
 `chezmoi/tofu/` (schedule, grace, channels) — it belongs to the slice that
-owns the tick, not to this one. The ping is `allowFailed`, deliberately: an
-external service must never be able to fail the tick and pause every
-deploy.
+owns the tick, not to this one. It is a *separate flow*
+(`lab.chezmoi/heartbeat`) chained on the tick's SUCCESS, not a task on the
+tick — a watchdog must not be able to break what it watches. As a task, an
+unresolvable secret or a healthchecks.io outage turns the tick red, and a red
+tick chains to nothing, so every deploy stops. (`allowFailed` does not cover
+this: it tolerates HTTP status >= 400 only, not connection errors and not a
+secret that fails to resolve.)
 
 **Verify both after the first apply.** A Flow trigger that matches nothing
 does not error — it silently never fires, which is indistinguishable from a
@@ -164,7 +168,20 @@ No secret is generated on the machine. You create them in the vault;
 chezmoi `create_` templates (`chezmoi/home/Docker/kestra/`) materialize
 them into files under `~/Docker/kestra/`. The templates are only evaluated
 while a file is MISSING — `op` and the internet are bootstrap dependencies,
-not tick dependencies. Wipe the directory and `chezmoi apply` and the
+not tick dependencies.
+
+> **Adding a secret to a `create_` template does nothing on a machine that
+> already has the file.** `chezmoi apply` will not re-render it, and there is
+> no warning: the new `SECRET_*` line simply never reaches the container, and
+> the first flow to call `secret()` for it fails at runtime. To roll one out:
+> delete `~/Docker/kestra/kestra.env` on the mini, `chezmoi update` (which
+> needs `OP_SERVICE_ACCOUNT_TOKEN` — see below), then recreate the container
+> so it re-reads the env file. Kestra reads `SECRET_*` at boot only.
+>
+> Interactive `chezmoi` on the mini needs the service-account token in the
+> environment. `.zprofile` exports it on servers, so a login shell is fine;
+> if you're in something that didn't source it:
+> `export OP_SERVICE_ACCOUNT_TOKEN="$(cat ~/Docker/1password/service-account-token)"` Wipe the directory and `chezmoi apply` and the
 *same* secrets come back — recreating infrastructure can never lock you
 out, and there's nothing to copy back into the vault afterwards.
 

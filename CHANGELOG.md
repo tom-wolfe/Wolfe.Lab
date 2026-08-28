@@ -4,6 +4,31 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.10.1] - 2026-08-28
+
+### Changed
+
+- **The heartbeat is its own flow** (`lab.chezmoi/heartbeat`), chained on the
+  tick's SUCCESS instead of being a task on the tick.
+
+### Added
+
+- **Task timeouts, where the bound is justifiable.** A hung task is worse
+  than a failed one: no logs, no failure, no alert, and with
+  `concurrency: QUEUE` another execution stacks up every interval behind it.
+
+### Fixed
+
+- **`lab-job` closes stdin for every job** (`exec bash "$script" </dev/null`).
+  A forced-command job is non-interactive by definition, but the stdin
+  Kestra's SSH task hands it is a channel nobody writes to or closes — so
+  anything that prompts waits forever.
+- **Interactive `chezmoi` on the mini.** `onepassword.mode = "service"` means
+  every `onepasswordRead` needs `OP_SERVICE_ACCOUNT_TOKEN`, but only the
+  tick's job script exported it — so `ssh macmini.local && chezmoi update`,
+  the documented recovery path, failed exactly when you'd reach for it.
+  `.zprofile` now exports it on servers.
+
 ## [0.10.0] - 2026-08-28
 
 ### Added

@@ -39,7 +39,16 @@ repo="$(chezmoi source-path)/../.."
 
 script="$repo/$slice/flows/$name/script.sh"
 if [ -f "$script" ]; then
-  exec bash "$script"
+  # stdin CLOSED for every job, in one place rather than per script. A job
+  # reached through a forced command is non-interactive by definition, and
+  # the channel Kestra's SSH task provides is one nobody ever writes to or
+  # closes — so anything that reads stdin waits forever, silently, with no
+  # logs and no failure. Kestra shows a running task; the tick never
+  # finishes; deploys never chain; QUEUE stacks another execution every 15
+  # minutes. With </dev/null the same prompt is an instant EOF error, which
+  # is visible, alertable, and self-clearing. (Cost us 2026-08-28:
+  # `chezmoi update --init --no-tty` blocked on a prompt for 10+ minutes.)
+  exec bash "$script" </dev/null
 fi
 
 echo "lab-job: unknown job '$job' (no $slice/flows/$name/script.sh in the repo)" >&2

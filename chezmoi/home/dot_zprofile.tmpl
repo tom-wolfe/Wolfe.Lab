@@ -7,3 +7,15 @@ export PATH="$PATH:$HOME/.dotnet/tools"
 # JetBrains Toolbox scripts
 export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 {{ end -}}
+
+{{ if eq .machine "server" -}}
+# 1Password service account. chezmoi runs with onepassword.mode = "service",
+# so EVERY onepasswordRead needs this token — including an interactive
+# `chezmoi update` over SSH, which is the documented recovery path when the
+# tick is broken (and which failed for exactly this reason, 2026-08-28).
+# The tick's job script exports it independently and must keep doing so:
+# lab-job runs a non-interactive, non-login shell that never reads this file.
+if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$HOME/Docker/1password/service-account-token" ]; then
+  export OP_SERVICE_ACCOUNT_TOKEN="$(cat "$HOME/Docker/1password/service-account-token")"
+fi
+{{ end -}}
