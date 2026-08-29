@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.11.2] - 2026-08-29
+
+### Fixed
+
+- Kestra upgrade script can now be run over ssh.
+
 ## [0.11.1] - 2026-08-29
 
 ### Fixed

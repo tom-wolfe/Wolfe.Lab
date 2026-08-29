@@ -16,6 +16,14 @@
 # pg_upgrade or dump/restore — the data dir is not forward-compatible.
 set -euo pipefail
 
+# Docker Desktop's CLI lives in /usr/local/bin, which a non-interactive SSH
+# session doesn't have on PATH — path_helper only runs for login shells, so
+# a bare `ssh macmini.local <this script>` gets /usr/bin:/bin:/usr/sbin:/sbin
+# and dies on `docker: command not found` before it reaches the backup. Every
+# flows/*/script.sh already does this; this one was missed because it is
+# documented as an interactive command.
+export PATH="$PATH:/usr/local/bin"
+
 slice="$(cd "$(dirname "$0")/.." && pwd)"
 
 pinned="$(sed -n 's|^ *image: kestra/kestra:||p' "$slice/compose.yaml" | tr -d ' ')"
