@@ -28,6 +28,18 @@ services:
     networks:
       - lab
 
+    healthcheck:
+      # EXEC form only — this image has no shell at all, so the CMD-SHELL
+      # form (and any `sh -c` wrapper) fails with "executable file not
+      # found". `/garage status` talks to the running node over RPC using
+      # the config it already has, and exits non-zero if the node is not
+      # answering.
+      test: ["CMD", "/garage", "status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 5
+
 networks:
   # The shared edge network — owned and created by the caddy slice, which
   # must be deployed once before this stack. See caddy/README.md.

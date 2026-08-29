@@ -93,8 +93,21 @@ services:
       - default
       - lab
 
-    # The image ships no curl/wget for a healthcheck; the management port
-    # (8081) stays unpublished and unchecked. Postgres gates startup instead.
+    healthcheck:
+      # The image DOES ship curl (an older comment here claimed otherwise),
+      # and Micronaut's management port answers /health. The port stays
+      # unpublished — this reaches it from inside the container, which is
+      # the only place it is exposed.
+      #
+      # 127.0.0.1 rather than localhost, for the reason caddy's healthcheck
+      # documents at length.
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8081/health"]
+      interval: 30s
+      timeout: 10s
+      # Generous: a JVM boot plus any pending Flyway migrations. Too short
+      # and a slow upgrade looks like a failure.
+      start_period: 180s
+      retries: 5
     depends_on:
       postgres:
         condition: service_healthy

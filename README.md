@@ -31,6 +31,30 @@ its own executor) — see `kestra/README.md` for the manual upgrade path.
 All flows are applied from `kestra/tofu/` — kestra's tofu root manages
 flows the way forgejo's manages repositories and garage's manages buckets.
 
+## How monitoring works
+
+Five layers, deliberately, because they fail in different ways. The rule
+that orders them: **a watcher must not share the fate of the thing it
+watches.**
+
+| Layer | Watches | Dies when |
+| --- | --- | --- |
+| `system/alert-failed` | every `lab.*` flow failure → Pushover | Kestra does |
+| Beszel agent | the mini's CPU, memory, disks (incl. `/Volumes/Data1`), containers | the mini does |
+| `lab.beszel/health` | the Beszel hub itself — a dead monitor looks like a healthy lab | Kestra does |
+| healthchecks.io | the tick still pings → **the only observer outside the building** | never (it's SaaS) |
+| `lab.chezmoi/heartbeat` | sends that ping, chained on the tick so it can't break it | Kestra does |
+
+Everything except healthchecks.io runs inside the lab, so a dead mini is
+silence from all of them — and silence is indistinguishable from health.
+That is the entire reason the dead man's switch is off-site, and the reason
+a future Uptime Kuma (ROADMAP item 2) would *add* to this list rather than
+replace anything in it.
+
+Two things nothing currently catches: a container that is up but wedged
+(only a request finds that — Uptime Kuma's job), and a flow that hangs
+rather than fails, which is why every flow carries a `timeout`.
+
 ## New machine bootstrap
 
 1. Install 1Password and sign in (its SSH agent provides git auth).

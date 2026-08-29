@@ -28,7 +28,41 @@ Accepted trade-off: Tailscale's coordination server is a cloud dependency.
 Headscale is rejected — if the lab is down you can't reach the lab to fix
 it.
 
-### 2. Offsite backup — restic to Backblaze B2
+### 2. Uptime Kuma — a `kuma/` slice
+
+Endpoint checks, which is the one shape of failure nothing here currently
+sees. Beszel is agent-based: it reports that a host is loaded or a container
+has stopped. It cannot tell you a container is *up and wedged* — and that
+gap is not hypothetical, it is exactly how caddy's healthcheck sat red for
+33 hours while caddy served traffic perfectly. A request is the only thing
+that finds that class of fault.
+
+Two customers, and they are different jobs:
+
+- **off-stack projects** — the actual ask, and nothing in the lab does it
+  today. Outbound HTTP checks; the lab still exposes nothing inbound.
+- **lab services** — `jellyfin.lab.twolfe.dev` and friends, answering
+  through the front door rather than merely running.
+
+**What it is NOT: an outside observer.** Kuma in the lab shares the lab's
+fate — mini off, Kuma off, silence that looks like health. That is the whole
+reason `chezmoi/tofu/` puts the tick's dead man's switch on healthchecks.io,
+and Kuma does not replace it. Nor does it replace `lab.beszel/health`:
+something has to watch the watcher, and a watcher that watches itself isn't
+one.
+
+Costs, named now rather than discovered later: it would be the **second**
+slice whose configuration is UI-only (no OpenTofu provider), after beszel —
+a pattern worth watching if a third ever appears. Its SQLite state adds a
+backup flow. Small, though — nowhere near the Immich-class surface below.
+
+Placed here because it is cheap and the need is real, but note the tension
+with the ordering principle at the top: offsite backup below is pure risk
+reduction against the lab's biggest remaining single point of failure (one
+copy, one drive, one machine), whereas this both adds visibility *and* adds
+a thing to fail. Swapping the two would be defensible.
+
+### 3. Offsite backup — restic to Backblaze B2
 
 Native restic encryption (repo password from 1Password, same
 vault-is-the-origin pattern as everything else). Not only offsite: the
@@ -37,14 +71,14 @@ content-addressed dedup plus compression collapses those to roughly one
 snapshot plus deltas. It fixes the space problem and the no-second-copy
 problem in one move. `garage/rclone.env` already proves the S3 plumbing.
 
-### 3. Obsidian vaults into git
+### 4. Obsidian vaults into git
 
 Replaces Google Drive as the vaults' storage with an hourly commit-and-push
 job to Forgejo. Better on every axis: history, dedup, rides the existing
 `lab.forgejo/backup`, and it drops the `~/Library/CloudStorage` dependency
 that's the reason sshd needs "Full Disk Access for remote users" granted.
 
-### 4. Renovate as a Kestra flow
+### 5. Renovate as a Kestra flow
 
 Roughly nine pinned images across the slices (kestra, postgres, caddy,
 forgejo, jellyfin, garage, lego, beszel). Renovate runs fine as a container
@@ -52,7 +86,7 @@ task — it does **not** need the Actions runner — and it automates the "bump
 the pin via a normal PR first" ritual `kestra/README.md` currently asks for
 by hand.
 
-### 5. Forgejo Actions runner
+### 6. Forgejo Actions runner
 
 The big structural unlock, and still the plan of record from phase 3:
 CI, the changelog check (Forgejo issue #10), plan-on-PR and apply-on-merge.
