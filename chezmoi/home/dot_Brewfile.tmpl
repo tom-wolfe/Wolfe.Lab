@@ -115,6 +115,8 @@ cask "slack"
 # =========================================================
 
 mas  "AutoMounter", id: 1160435653
+# `restart_service: :changed` restarts the agent whenever brew installs/upgrades it
+brew "henrygd/beszel/beszel-agent", restart_service: :changed
 brew "docker-compose"
 brew "lazydocker"
 npm  "obsidian-headless"
