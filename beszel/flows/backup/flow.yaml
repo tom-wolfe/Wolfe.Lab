@@ -4,7 +4,7 @@ description: |
   Nightly cold backup of the hub's SQLite database — stop → tar → start,
   a few seconds' downtime at 02:35, clear of the tick's quarter-hour
   columns and staggered ahead of garage's 02:50. Keeps the last 10 in
-  /Volumes/Data1/backups/beszel; fails loudly if the drive isn't mounted
+  /Volumes/Data2/backups/beszel; fails loudly if the drive isn't mounted
   rather than writing to the internal disk. Host side:
   beszel/flows/backup/script.sh via the lab-job bridge.
 

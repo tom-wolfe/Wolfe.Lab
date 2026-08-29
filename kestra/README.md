@@ -270,7 +270,7 @@ the mini.
 ## Backup
 
 Everything stateful is under `~/Docker/kestra/`. `flows/backup/script.sh` dumps
-the database to a dated file in `/Volumes/Data1/backups/kestra/` (refusing
+the database to a dated file in `/Volumes/Data2/backups/kestra/` (refusing
 to run if the drive isn't mounted — which also gates upgrades: no drive, no
 pre-upgrade dump, no upgrade) — run it by
 hand, or through the bridge as `kestra/backup`; `scripts/upgrade.sh` calls

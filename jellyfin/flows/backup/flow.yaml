@@ -5,7 +5,7 @@ description: |
   roots and plugins; metadata/cache/logs excluded (TMDB re-fetches
   artwork). Stop → tar → start, ~30s downtime at 03:35, clear of the
   tick's quarter-hour columns and staggered against the other backups.
-  Keeps the last 10 in /Volumes/Data1/backups/jellyfin, each with the
+  Keeps the last 10 in /Volumes/Data2/backups/jellyfin, each with the
   image tag it was taken under; fails loudly if the drive isn't mounted
   rather than writing to the internal disk. Host side:
   jellyfin/flows/backup/script.sh via the lab-job bridge.

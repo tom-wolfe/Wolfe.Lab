@@ -10,7 +10,7 @@ keeping the existing library, watch history and artwork exactly as they were.
 | State | `~/Library/Application Support/jellyfin` (bind mounted at the **same path** inside the container) |
 | Database | SQLite at `~/Library/Application Support/jellyfin/data/jellyfin.db` |
 | Media | `/Volumes/Data1` and `/Volumes/Data2` (both USB, mounted at the same paths) |
-| Backups | `/Volumes/Data1/backups/jellyfin` (external drive; nightly) |
+| Backups | `/Volumes/Data2/backups/jellyfin` (external drive; nightly) |
 
 ## Deployment
 
@@ -153,7 +153,7 @@ Runs itself: the `lab.jellyfin/backup` flow fires nightly at 03:35
 "$(chezmoi source-path)/../../jellyfin/flows/backup/script.sh" --with-metadata  # the above plus ~670 MB of posters/fanart
 ```
 
-Writes a timestamped tarball to `/Volumes/Data1/backups/jellyfin/` (with the
+Writes a timestamped tarball to `/Volumes/Data2/backups/jellyfin/` (with the
 image tag recorded beside it in `.image.txt`) and keeps the last 10. It
 refuses to run if `Data1` isn't mounted — an unmounted `/Volumes` path on
 macOS silently writes to the internal disk. It stops the container first —
@@ -172,7 +172,7 @@ the library definitions.
 cd "$(chezmoi source-path)/../../jellyfin"
 docker-compose down
 mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
-tar -xzf /Volumes/Data1/backups/jellyfin/jellyfin-YYYYmmdd-HHMMSS.tar.gz \
+tar -xzf /Volumes/Data2/backups/jellyfin/jellyfin-YYYYmmdd-HHMMSS.tar.gz \
     -C ~/Library/Application\ Support/
 docker-compose up -d
 ```

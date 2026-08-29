@@ -31,7 +31,7 @@ fi
 # disk, so writing there would silently "succeed" onto the small SSD and be
 # shadowed when the drive next mounts. This also gates upgrades: upgrade.sh
 # calls this first, so no drive = no pre-upgrade dump = no upgrade.
-vol="/Volumes/Data1"
+vol="/Volumes/Data2"
 if ! mount | grep -q " on $vol ("; then
   echo "backup: $vol is not mounted — refusing to write to the internal disk" >&2
   exit 1

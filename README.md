@@ -48,7 +48,7 @@ watches.**
 Everything except healthchecks.io runs inside the lab, so a dead mini is
 silence from all of them — and silence is indistinguishable from health.
 That is the entire reason the dead man's switch is off-site, and the reason
-a future Uptime Kuma (ROADMAP item 2) would *add* to this list rather than
+a future Uptime Kuma (see `ROADMAP.md`) would *add* to this list rather than
 replace anything in it.
 
 Two things nothing currently catches: a container that is up but wedged

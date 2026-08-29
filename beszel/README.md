@@ -28,7 +28,7 @@ obvious-looking move and it silently produces useless numbers.
 Docker Desktop on macOS runs containers inside a Linux VM. A container's
 view of the filesystem is that VM's, not the mini's — so a containerised
 exporter monitoring "disk" reports on a virtual disk nobody cares about.
-`/Volumes/Data1`, the 1.8 TB drive holding every backup this lab takes,
+`/Volumes/Data1`, the 1.8 TB drive holding most of the media library,
 does not exist in there at all; bind-mounting it doesn't help either,
 because VirtioFS mounts land in the default ignore list. Host metrics have
 to come from a process on the host, and Beszel's agent is cross-platform
@@ -268,7 +268,7 @@ restoring a backup, which is why the backup records its image tag.
 ## Backup
 
 `flows/backup/script.sh` stops the hub, tars `~/Docker/beszel/data` to
-`/Volumes/Data1/backups/beszel/`, and starts it again — the last 10 kept,
+`/Volumes/Data2/backups/beszel/`, and starts it again — the last 10 kept,
 each with the image tag it was taken under, refusing to run if the drive
 isn't mounted. Nightly at 02:35 via `lab.beszel/backup`, staggered ahead of
 garage's 02:50.
@@ -287,6 +287,6 @@ Both MacBooks want the same agent, and the work is genuinely small: drop
 Brewfile entry out of the server section, and point `HUB_URL` at the mini.
 The blocker is that last part — a laptop off the LAN can't reach
 `localhost:8090` or `macmini.local`, and exposing the hub is not on the
-table. Tailscale (roadmap item 2) makes the mini reachable from anywhere as
+table. The Tailscale item on the roadmap makes the mini reachable as
 a stable `100.x` address, and that's the whole migration. Until then this
 slice watches one machine, which is the one with the disks.

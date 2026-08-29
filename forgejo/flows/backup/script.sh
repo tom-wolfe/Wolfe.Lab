@@ -18,7 +18,7 @@ root="$(dirname "$data")"
 # an unmounted /Volumes path on macOS is just a directory on the internal
 # disk, so writing there would silently "succeed" onto the small SSD and be
 # shadowed when the drive next mounts. Checked BEFORE stopping the stack.
-vol="/Volumes/Data1"
+vol="/Volumes/Data2"
 if ! mount | grep -q " on $vol ("; then
   echo "backup: $vol is not mounted — refusing to write to the internal disk" >&2
   exit 1

@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.11.3] - 2026-08-29
+
+### Changed
+
+- **Backups moved to `/Volumes/Data2`.** All five backup scripts and their
+  mount guards now target the second physical drive. Data1 held 1.5 TB of
+  media *and* every backup, so a single drive failure took both; they are
+  now decorrelated. Not a second copy — the drives share an enclosure — but
+  a cheap improvement while restic/B2 is still on the roadmap.
+
 ## [0.11.2] - 2026-08-29
 
 ### Fixed

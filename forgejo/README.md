@@ -10,7 +10,7 @@ source of truth for every repository in the lab (push-mirrored to GitHub).
 | Image | `codeberg.org/forgejo/forgejo` pinned in `compose.yaml` |
 | State | `~/Docker/forgejo/data` (bind mount → `/data` in the container) |
 | Database | SQLite at `~/Docker/forgejo/data/gitea/forgejo.db` |
-| Backups | `/Volumes/Data1/backups/forgejo` (external drive; nightly) |
+| Backups | `/Volumes/Data2/backups/forgejo` (external drive; nightly) |
 
 This slice holds everything forgejo-shaped:
 
@@ -155,7 +155,7 @@ Runs itself: the `lab.forgejo/backup` flow fires nightly at 03:05
 "$(chezmoi source-path)/../../forgejo/flows/backup/script.sh"
 ```
 
-Writes a timestamped tarball to `/Volumes/Data1/backups/forgejo/` (with the
+Writes a timestamped tarball to `/Volumes/Data2/backups/forgejo/` (with the
 image tag recorded beside it in `.image.txt`) and keeps the last 10. It
 refuses to run if `Data1` isn't mounted — an unmounted `/Volumes` path on
 macOS silently writes to the internal disk. It stops the container first —
@@ -174,7 +174,7 @@ the backup script before anything risky.
 cd "$(chezmoi source-path)/../../forgejo"
 docker-compose down
 rm -rf ~/Docker/forgejo/data                   # or move it aside first
-tar -xzf /Volumes/Data1/backups/forgejo/forgejo-YYYYmmdd-HHMMSS.tar.gz \
+tar -xzf /Volumes/Data2/backups/forgejo/forgejo-YYYYmmdd-HHMMSS.tar.gz \
     -C ~/Docker/forgejo
 docker-compose up -d
 ```
