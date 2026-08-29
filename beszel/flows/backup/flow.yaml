@@ -1,0 +1,42 @@
+id: backup
+namespace: lab.beszel
+description: |
+  Nightly cold backup of the hub's SQLite database — stop → tar → start,
+  a few seconds' downtime at 02:35, clear of the tick's quarter-hour
+  columns and staggered ahead of garage's 02:50. Keeps the last 10 in
+  /Volumes/Data1/backups/beszel; fails loudly if the drive isn't mounted
+  rather than writing to the internal disk. Host side:
+  beszel/flows/backup/script.sh via the lab-job bridge.
+
+  Worth backing up even though metrics history is expendable: the SAME
+  database holds the registered systems, every alert threshold and the
+  Pushover notification URL, and none of that is in tofu because Beszel
+  has no provider. This archive is the only copy of that configuration.
+
+labels:
+  job: backup
+  # High: a backup is silent until the day you need it. Nothing downstream
+  # notices a missing archive, so the alert IS the safety net.
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: backup
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT15M
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - beszel/backup
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "35 2 * * *"
+    timezone: Europe/London

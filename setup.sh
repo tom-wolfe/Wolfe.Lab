@@ -10,7 +10,9 @@
 #   2. sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
 #      — run `chezmoi apply` a second time: authorized_keys can only template
 #      the job-bridge public key after the first apply has materialized it.
-#   3. Docker Desktop installed (Brewfile) and running.
+#   3. Docker Desktop installed and running. NOT from the Brewfile — the
+#      cask sits in the non-server branch, so install it by hand here
+#      (`brew install --cask docker-desktop`; it requires macOS >= 14).
 # Then, from this repo's checkout:  ./setup.sh
 set -euo pipefail
 
@@ -36,6 +38,11 @@ converge garage
 converge forgejo
 converge jellyfin
 
+# Beszel's hub. Its AGENT is not started here — that's a Homebrew formula
+# from the Brewfile, and it can't enrol until the hub has minted a token
+# for it anyway. See beszel/README.md "Bootstrap" for that hand-off.
+converge beszel
+
 # Kestra last: once it's up and the flows are registered, it takes over.
 converge kestra
 
@@ -51,4 +58,13 @@ Stacks are up. Remaining one-time steps:
   2. Log in at http://macmini.local:8180 (1P: kestra-admin) and watch the
      first lab.chezmoi/update tick go green — the deploy flows chain from it,
      and from then on the lab converges itself.
+
+  3. Enrol the monitoring agent — the one bootstrap that can't be ordered
+     ahead of time, because the hub mints the token the agent needs:
+       http://macmini.local:8090 -> create the superuser
+       Settings -> Tokens -> copy the universal token and public key into
+         a 1Password item `beszel-agent` (credential / username)
+       chezmoi apply && brew services list
+     Then set thresholds and the Pushover URL in the hub — it ships none,
+     so nothing alerts until you do. Full runbook: beszel/README.md.
 EOF

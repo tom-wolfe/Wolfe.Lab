@@ -12,7 +12,7 @@ its tick job.
 | Path | Purpose |
 | --- | --- |
 | `<name>/` | one slice per thing the lab runs: a compose stack + configs and/or Kestra jobs (`flows/<job>/` directories, `flow.yaml` + `script.sh` paired), a `tofu/` root where the service has API resources, one README |
-| `chezmoi/home/` | the chezmoi source — dotfiles, Brewfile, install + secrets-bootstrap scripts: everything *declarative* about a machine (`.chezmoiroot` points here) |
+| `chezmoi/home/` | the chezmoi source — dotfiles, the Brewfile, secrets-bootstrap templates: everything *declarative* about a machine (`.chezmoiroot` points here) |
 | `setup.sh` | fresh-server bring-up — the one imperative bootstrap (Kestra can't deploy itself into existence) |
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 | `ENDPOINTS.md` | every service address in the lab |
@@ -69,9 +69,14 @@ Auth state is device-bound by design; these are the once-per-machine rituals:
 
 ```sh
 chezmoi diff       # preview what apply would change
-chezmoi apply      # apply dotfiles + run scripts (brew bundle runs when the Brewfile changed)
+chezmoi apply      # apply dotfiles + run scripts (laptops: installs missing brew packages)
 chezmoi update --init   # pull the repo and apply (--init: regenerate config if its template changed)
 chezmoi add ~/.zshrc   # start managing a new dotfile
 ```
 
-Edit the Brewfile at `chezmoi/home/.chezmoitemplates/Brewfile`, then `chezmoi apply` — the install script re-runs whenever its rendered content changes.
+Edit the Brewfile at `chezmoi/home/dot_Brewfile.tmpl`. chezmoi renders it to
+`~/.Brewfile` and stops there — it *declares* the package set, it does not
+install it. On a laptop the apply-time script installs whatever is missing;
+on the mini that's the `lab.chezmoi/packages` flow, with
+`lab.chezmoi/packages-upgrade` moving versions nightly. See
+`chezmoi/README.md`.

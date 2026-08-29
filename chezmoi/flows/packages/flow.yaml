@@ -1,0 +1,51 @@
+id: packages
+namespace: lab.chezmoi
+description: |
+  Converge the machine's declared package set from ~/.Brewfile — install
+  what's missing, and deliberately nothing else. Chained on every green
+  tick (the tick is what renders ~/.Brewfile), so a new Brewfile entry
+  lands within 15 minutes, the same latency as a compose change.
+
+  This is the "chezmoi declares, Kestra acts" split applied to the machine
+  plane, and it is the same move 0.6.0 made when the compose deploy hook
+  was deleted from chezmoi. The Brewfile used to live INSIDE a
+  `run_onchange_` script, so `brew bundle` ran when that script's hash
+  changed — and since `brew bundle` upgrades outdated formulae by default,
+  every version bump on the mini was triggered by whatever unrelated edit
+  happened to touch the Brewfile. A new VS Code extension swept the whole
+  toolchain; a quiet month would have frozen it. Installing and upgrading
+  are now separate flows with separate reasons to run.
+
+  Upgrades are lab.chezmoi/packages-upgrade, nightly. Host side:
+  chezmoi/flows/packages/script.sh via the lab-job bridge.
+
+labels:
+  job: deploy
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: converge
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT20M
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - chezmoi/packages
+
+triggers:
+  # See forgejo/flows/deploy/flow.yaml for the design notes.
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: chezmoi-tick-green
+      flows:
+        - namespace: lab.chezmoi
+          flowId: update
+          states: [SUCCESS]

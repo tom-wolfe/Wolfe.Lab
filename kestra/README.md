@@ -111,7 +111,7 @@ The cross-cutting axis is **labels**, not more namespace:
 
 | Label | Values | Purpose |
 | --- | --- | --- |
-| `job` | `deploy`, `backup`, `sync`, `cert`, `tick`, `maintenance` | filtering flows and executions in the UI |
+| `job` | `deploy`, `backup`, `sync`, `cert`, `tick`, `maintenance`, `heartbeat`, `health` | filtering flows and executions in the UI |
 | `alert` | `high`, `low` | severity routing in `system/alert-failed` |
 
 So "show me every backup" is a label filter, and you never have to choose
@@ -139,6 +139,8 @@ stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
 | deploys | PT20M | a cold image pull is the unbounded case |
 | `lab.caddy/renew-certs` | PT15M | lego waits 90s for DNS propagation first |
 | `lab.kestra/purge` | PT30M | a first purge after a backlog deletes a lot |
+| `lab.chezmoi/packages` | PT20M | a cold cask or mas download; a satisfied run is ~1s |
+| `lab.chezmoi/packages-upgrade` | PT45M | deliberately generous — see below |
 | `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |
 
 **A timeout on an SSH task reports a stall; it does not abort one.** Killing

@@ -4,6 +4,36 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [Unreleased]
+
+### Added
+
+- **The lab watches its own hardware — a `beszel/` slice.** CPU, memory,
+  disk, network and per-container stats, with history and threshold alerts.
+- **The free-space check.** `/Volumes/Data1` and `/Volumes/Data2` are monitored
+  via `EXTRA_FILESYSTEMS`.
+- **`lab.beszel/health`** — a liveness probe for the monitor itself.
+- **`lab.beszel/backup`** — nightly cold tar of the hub's SQLite database at 02:35.
+- Added a Caddyfile extension to VS Code that offers syntax highlighting. It's old, but seems to work.
+- Added the Docker DX (official) VS Vode extension.
+- Added Proton Mail to my personal devices.
+
+### Changed
+
+- **The Brewfile declares; it no longer installs.** It moves out of
+  `.chezmoitemplates` and renders to `~/.Brewfile`.
+- A new `lab.chezmoi/packages` flow is chained on the tick, and installs what's missing.
+- A new `lab.chezmoi/packages-upgrade` flow runs nightly at 04:20, and moves versions forward.
+- Chezmoi apply now installs the brewfile every time on non-server devices.
+
+### Fixed
+
+- **Caddy's healthcheck had never once passed** (`FailingStreak: 3933`).
+  busybox `wget` resolves `localhost` to `::1` first, and caddy's admin API
+  binds `127.0.0.1` only. Caddy was serving fine throughout — nothing in
+  this lab reads Docker healthchecks, which is the gap `lab.beszel/health`
+  closes.
+
 ## [0.10.2] - 2026-08-29
 
 ### Changed

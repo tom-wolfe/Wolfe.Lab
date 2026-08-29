@@ -1,0 +1,54 @@
+id: health
+namespace: lab.beszel
+description: |
+  Who watches the watcher. Polls the hub's own health endpoint and goes red
+  if it doesn't answer, which is the one failure Beszel structurally cannot
+  report about itself.
+
+  Beszel alerts when an AGENT stops reporting; nothing alerts when the HUB
+  stops listening — and a dead hub looks exactly like a healthy lab, since
+  the deploy flows are convergent no-ops that stay green whatever state the
+  container is actually in. Adding a monitoring tool that nobody monitors
+  would be precisely the trap the roadmap's ordering principle warns about,
+  so the hub gets an alerting liveness probe on the day it arrives.
+
+  Reached over the `lab` Docker network as beszel:8090, NOT via
+  beszel.lab.twolfe.dev: a liveness probe that fails when public DNS fails
+  would page about Netlify, not about the lab. Names are for humans (see
+  caddy/README.md).
+
+  Deliberately NOT allowFailed. A non-2xx or a refused connection is
+  exactly the event this flow exists to raise.
+
+  This is also the first Docker healthcheck in the lab that anything reads.
+  `compose.yaml` declares one, but Docker healthchecks are inert here —
+  caddy's has been failing 3,900 times in a row without a whisper. The
+  check that alerts is the one written in Kestra.
+
+labels:
+  job: health
+  # High: this flow going red means the lab stopped watching its own disks,
+  # memory and temperature. Silent failure of a monitor is the failure mode
+  # worth waking up for.
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: probe
+    type: io.kestra.plugin.core.http.Request
+    # One HTTP call on the local Docker network. If it can't finish in a
+    # minute the hub is wedged, which is what this flow should go red about.
+    timeout: PT1M
+    uri: http://beszel:8090/api/health
+    method: GET
+
+triggers:
+  - id: quarter-hourly
+    type: io.kestra.plugin.core.trigger.Schedule
+    # 7, 22, 37, 52 — offset from the tick's quarter-hour columns and from
+    # both obsidian schedules, so a slow minute is never four flows' fault.
+    cron: "7-59/15 * * * *"
+    timezone: Europe/London

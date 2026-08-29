@@ -2,8 +2,13 @@
 Library/LaunchAgents
 Library/LaunchAgents/**
 .local/bin/lab-job
+.config/beszel
+.config/beszel/**
 Docker
 Docker/**
 .docker-headless
 .docker-headless/**
+{{ end -}}
+{{ if eq .machine "server" -}}
+.chezmoiscripts/install-packages.sh
 {{ end -}}

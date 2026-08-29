@@ -17,6 +17,7 @@ front door is down.
 | `https://kestra.lab.twolfe.dev`  | Kestra                      | `kestra:8080`  |
 | `https://jellyfin.lab.twolfe.dev` | Jellyfin                     | `jellyfin:8096` |
 | `https://s3.lab.twolfe.dev`      | Garage S3 (path-style only) | `garage:3900`  |
+| `https://beszel.lab.twolfe.dev`  | Beszel monitoring hub       | `beszel:8090`  |
 
 ## macmini.local
 
@@ -30,12 +31,16 @@ front door is down.
 | `:2222` | Forgejo SSH (git clone/push; container port 22) | SSH key registered in Forgejo profile | `forgejo` |
 | `:3900` | Garage — S3 API | 1P `garage-tofu-state-key` (per-bucket keys) | `garage` |
 | `:3903` | Garage — admin API | 1P `garage-s3-admin-token` | `garage` |
+| `:8090` | Beszel — hub UI + API | Beszel superuser account; `/api/health` is unauthenticated | `beszel` |
 | `:8180` | Kestra — web UI + API | basic auth: 1P `kestra-admin`; webhook path key-authed | `kestra` |
 | `:8096` | Jellyfin — web + clients | Jellyfin accounts | `jellyfin` |
 
 Notes:
 
 - Garage RPC (`:3901`) is internal to the container — deliberately not published.
+- The Beszel agent is a HOST process, not a container. It binds
+  `127.0.0.1:45876` only and nothing connects to it — it dials the hub
+  outbound — so it is deliberately not a LAN endpoint.
 - Jellyfin's discovery port (`7359/udp`) is published but non-functional through Docker Desktop's VM; 
   point clients at `jellyfin.lab.twolfe.dev` (or `macmini.local:8096`) manually.
 - SSH sessions (port 22) don't get the login keychain or `path_helper` — Docker registry pulls and 

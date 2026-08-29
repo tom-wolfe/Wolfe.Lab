@@ -1,0 +1,58 @@
+name: beszel
+
+services:
+  beszel:
+    # Pinned. Bump deliberately — the hub is a PocketBase app and its
+    # SQLite schema migrates forward on boot, so a downgrade after a
+    # migration means restoring a backup, not re-pulling the old tag.
+    image: henrygd/beszel:0.18.8
+    container_name: beszel
+    restart: unless-stopped
+
+    environment:
+      # Only used to build links in outbound notifications — so it must be
+      # the name a PHONE can open, not a container-network address.
+      APP_URL: https://beszel.lab.twolfe.dev
+      # Host /etc/localtime is a symlink into /var/db/timezone — dangles
+      # inside a Linux container. Set TZ instead (jellyfin pattern).
+      TZ: Europe/London
+
+    volumes:
+      # State is data — lives outside the repo, like every other stack.
+      # This one directory is the WHOLE hub: the SQLite database holding
+      # metrics history, registered systems, alert thresholds and the
+      # notification URLs. Unlike every other slice, none of that is
+      # declarable in tofu (there is no Beszel provider) — see README.md.
+      - /Users/tomwolfe/Docker/beszel/data:/beszel_data
+
+    ports:
+      # Published because the AGENT needs it: the agent is a host process
+      # (see README.md) and dials the hub at http://localhost:8090. Going
+      # via beszel.lab.twolfe.dev instead would make host monitoring depend
+      # on public DNS, so the lab would stop watching itself the moment the
+      # internet went down — exactly when you want to be watching.
+      - "8090:8090"
+
+    networks:
+      - lab
+
+    healthcheck:
+      # 127.0.0.1, NOT localhost. The image's shell resolves `localhost` to
+      # ::1 first, and servers that bind only 0.0.0.0/127.0.0.1 then refuse
+      # the connection — a healthcheck that can never pass and that nothing
+      # alerts on. Caddy's has been red since it was written for exactly
+      # this reason (see caddy/compose.yaml).
+      test: ["CMD", "/beszel", "health", "--url", "http://127.0.0.1:8090"]
+      # Deliberately slow: the docs warn these cost measurable CPU, and
+      # nothing reads the result anyway — `lab.beszel/health` is what
+      # actually alerts. This is here for `docker ps` at the terminal.
+      interval: 120s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

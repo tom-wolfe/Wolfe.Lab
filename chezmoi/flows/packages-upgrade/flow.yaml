@@ -1,0 +1,46 @@
+id: packages-upgrade
+namespace: lab.chezmoi
+description: |
+  Move Homebrew versions forward on the mini, nightly at 04:20 — clear of
+  the tick's quarter-hour columns and of the backup train that ends with
+  lab.kestra/purge at 04:00.
+
+  This flow exists because Homebrew offers nothing to pin to. `brew "foo"`
+  means whatever the current formula is; casks and mas have no version
+  selection at all; old bottles are deleted upstream. Unlike a Docker tag
+  there is no immutable artifact to name, so the repo's usual "bump the pin
+  via a PR first" discipline has nothing to bite on. The honest alternative
+  is a scheduled upgrade that is VISIBLE when it breaks — which is what
+  this is, and why it alerts.
+
+  `brew pin <formula>` on the mini is the escape hatch: `brew upgrade`
+  skips pinned packages, so anything that must not move can be held.
+
+  Host side: chezmoi/flows/packages-upgrade/script.sh via the lab-job
+  bridge.
+
+labels:
+  job: maintenance
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: upgrade
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT45M
+    host: host.docker.internal
+    port: "22"
+    username: tomwolfe
+    authMethod: PUBLIC_KEY
+    privateKey: "{{ secret('LAB_SSH_KEY') }}"
+    commands:
+      - chezmoi/packages-upgrade
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "20 4 * * *"
+    timezone: Europe/London

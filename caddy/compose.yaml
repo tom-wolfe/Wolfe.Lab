@@ -40,9 +40,18 @@ services:
       - lab
 
     healthcheck:
-      # Caddy's admin API, on by default at localhost:2019 inside the
+      # Caddy's admin API, on by default at 127.0.0.1:2019 inside the
       # container. The image is Alpine, so busybox wget is present.
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:2019/config/"]
+      #
+      # 127.0.0.1, NOT localhost. busybox resolves `localhost` to ::1 first
+      # (the image's /etc/hosts lists both), and caddy's admin API binds
+      # 127.0.0.1 only — so the v6 attempt is refused and the check can
+      # never pass. This was wrong from the day it was written: caddy was
+      # serving fine throughout while its healthcheck sat at a FailingStreak
+      # of 3,933, and nothing anywhere reported it, because Docker
+      # healthchecks are inert in this lab. `lab.beszel/health` is the shape
+      # that actually alerts.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:2019/config/"]
       interval: 30s
       timeout: 5s
       retries: 5
