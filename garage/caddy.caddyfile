@@ -4,7 +4,7 @@
 # change in garage.toml — deliberately not wired up yet. The admin API
 # (:3903) stays off the proxy: it's token-authed plumbing for tofu, reached
 # via macmini.local.
-@garage host s3.lab.twolfe.dev
+@garage host s3.lab.twolfe.dev s3.ts.twolfe.dev
 handle @garage {
 	reverse_proxy garage:3900
 }

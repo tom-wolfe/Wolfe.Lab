@@ -20,3 +20,15 @@ variable "lab_ipv4" {
   type        = string
   default     = "192.168.0.7"
 }
+
+variable "lab_tailscale_ipv4" {
+  description = <<-EOT
+    The mini's Tailscale address — target of the *.ts wildcard record.
+    Stable for the life of the node key (disabling key expiry on the mini
+    is part of the tailscale slice's bootstrap, and this variable is why
+    it matters); a re-enrolment that mints a new address means updating
+    this and re-applying.
+  EOT
+  type        = string
+  default     = "100.89.210.32"
+}

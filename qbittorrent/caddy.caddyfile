@@ -2,9 +2,9 @@
 # for the shape's rationale. The upstream is GLUETUN, not qbittorrent:
 # qbittorrent shares gluetun's network namespace (see compose.yaml), so
 # on the lab network its web UI answers at the gluetun container's name.
-# NB: qBittorrent validates the Host header — this hostname must be in
+# NB: qBittorrent validates the Host header — BOTH hostnames must be in
 # its WebUI "Server domains" setting (a bootstrap step in README.md).
-@qbittorrent host qbittorrent.lab.twolfe.dev
+@qbittorrent host qbittorrent.lab.twolfe.dev qbittorrent.ts.twolfe.dev
 handle @qbittorrent {
 	reverse_proxy gluetun:8080
 }

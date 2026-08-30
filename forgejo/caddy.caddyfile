@@ -3,7 +3,7 @@
 # matcher/handle shape rather than a site block: one wildcard cert keeps
 # service names out of Certificate Transparency logs). The upstream is the
 # container name on the shared `lab` network, NOT the published port.
-@forgejo host forgejo.lab.twolfe.dev
+@forgejo host forgejo.lab.twolfe.dev forgejo.ts.twolfe.dev
 handle @forgejo {
 	reverse_proxy forgejo:3000
 }

@@ -5,7 +5,7 @@
 # PocketBase pushes live updates over Server-Sent Events, which is an
 # ordinary long-lived HTTP response — reverse_proxy handles it with no
 # extra config, but it is why a proxy read timeout must never be added here.
-@beszel host beszel.lab.twolfe.dev
+@beszel host beszel.lab.twolfe.dev beszel.ts.twolfe.dev
 handle @beszel {
 	reverse_proxy beszel:8090
 }

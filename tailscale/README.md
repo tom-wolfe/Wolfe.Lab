@@ -13,9 +13,10 @@ Three things already written down wait on it:
   the edge/DNS design in `caddy/README.md`;
 - forgejo's portless clone URL waits on a dedicated IP with a free port
   22 (`forgejo/compose.yaml` records the decision);
-- `100.64.0.0/10` isn't RFC1918, so the router's DNS-rebind filter has no
-  objection to it and the DHCP-advertised-resolver workaround
-  (`caddy/README.md`) can eventually be retired.
+- `100.64.0.0/10` isn't RFC1918, so the router's DNS-rebind filter has
+  no objection to the `*.ts` names — they need no workaround at all.
+  (The `*.lab` workaround in `caddy/README.md` stays: those names still
+  resolve to RFC1918 space, by design — see below.)
 
 ## Decisions
 
@@ -89,19 +90,20 @@ In order. Step 1 is the precondition and happens at the desk.
 
 ## After it works — follow-ups, each its own change
 
-1. **Repoint the wildcard**: `lab_ipv4` in `caddy/tofu` → the mini's
-   100.x address. That is the remote-access migration: `*.lab` names
-   then answer wherever the tailnet reaches — and stop answering for
-   LAN devices that are NOT on it (the TV's Jellyfin app, guests).
-   Decide that trade deliberately, and apply it at the desk: if the
-   tunnel is flaky, name resolution for the whole lab goes with it.
-2. **Retire the router workaround**: with `*.lab` resolving into
-   100.64/10 the rebind filter has nothing to object to, so the
-   DHCP-advertised 1.1.1.1/8.8.8.8 can revert to default. Verify at the
-   desk before touching it.
-3. **Enroll the laptops in beszel** — WebSocket mode was chosen exactly
-   so agents could dial the hub across the tailnet
-   (`chezmoi/home/dot_config/beszel/`). Status alerts OFF for machines
-   that are allowed to sleep.
-4. **Later era**: per-service sidecar IPs — forgejo's port-22 clone URL
+1. **Repoint the wildcard — SUPERSEDED (Tom's call, 2026-08-31).**
+   Instead of repointing `*.lab` at the Tailscale address — which would
+   have cut off non-tailnet LAN devices (a TV Jellyfin app, guests) —
+   the lab runs TWO wildcards: `*.lab` stays on the LAN address,
+   `*.ts.twolfe.dev` points at 100.x. Every device has an option; one
+   cert carries both SANs; every route snippet matches both names. The
+   mechanics live in the caddy slice (`tofu/records.tf` records the
+   decision). Consequence: the router's DHCP-DNS workaround STAYS —
+   `*.lab` still resolves to RFC1918 — and both it and the dual
+   wildcard retire together if local DNS on a Pi ever lands
+   (ROADMAP.md).
+2. **Enroll the laptops in beszel — built 2026-08-31**, see
+   beszel/README.md "The laptops": agents dial the hub at the mini's
+   MagicDNS name over the tailnet. Status alerts OFF for machines that
+   are allowed to sleep.
+3. **Later era**: per-service sidecar IPs — forgejo's port-22 clone URL
    is the first customer.

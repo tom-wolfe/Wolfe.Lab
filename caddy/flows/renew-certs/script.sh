@@ -37,6 +37,15 @@ fi
 #    Encrypt validates from its own resolvers on the real internet, where
 #    Netlify's NS1 fleet propagates in seconds (measured <20s); 90s is
 #    comfortable margin, deterministic, and immune to the proxy.
+#
+# Changing the DOMAIN LIST below does not reissue by itself: lego keys
+# its stored state by the FIRST domain's filename and its convergence
+# logic is about expiry, not SANs — do not assume an edited list forces
+# a new certificate. The deterministic path: move the
+# _.lab.twolfe.dev.* files out of ~/Docker/caddy/lego/certificates and
+# re-run this job. Fresh issuance, same filenames (first domain), so the
+# Caddyfile's tls paths never change. Verify with:
+#   openssl x509 -in ~/Docker/caddy/lego/certificates/_.lab.twolfe.dev.crt -noout -text | grep DNS
 docker run --rm \
   --env-file "$env_file" \
   -v "$lego_dir:/state" \
@@ -47,6 +56,7 @@ docker run --rm \
   --email trwolfe13@gmail.com \
   --dns netlify \
   --domains '*.lab.twolfe.dev' \
+  --domains '*.ts.twolfe.dev' \
   --path /state \
   --dns.propagation.wait 90s
 

@@ -112,9 +112,10 @@ route.
    one is set. Log in at `macmini.local:8080` and set, in
    Settings → Web UI:
    - a permanent password → mirror it to 1P `qbittorrent-webui`;
-   - `qbittorrent.lab.twolfe.dev` in **Server domains** — qBittorrent
-     validates the Host header, so the caddy route 401s until this is
-     set (the `macmini.local:8080` fallback keeps working regardless);
+   - `qbittorrent.lab.twolfe.dev,qbittorrent.ts.twolfe.dev` in
+     **Server domains** — qBittorrent validates the Host header, so the
+     caddy routes 401 until this is set (the `macmini.local:8080`
+     fallback keeps working regardless);
    and in Settings → Downloads, the default save path — a
    `/Volumes/Data1/...` path; the drives are mounted at their host
    paths, so what qbittorrent writes is what jellyfin sees.

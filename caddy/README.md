@@ -10,11 +10,15 @@ This slice deliberately owns ONLY the shared edge concerns:
 - the Caddy container — the STOCK image, a pure proxy: it terminates TLS
   and routes, and does nothing else;
 - the `lab` Docker network every proxied service joins;
-- the `*.lab.twolfe.dev` wildcard DNS record (`tofu/`) — it points at the
-  front door itself, so the front door owns it;
-- the wildcard certificate, obtained and renewed OUTSIDE caddy by the
-  `renew-certs` job (`flows/renew-certs/`): lego solves DNS-01 against
-  Netlify nightly and reloads caddy when the cert changes.
+- the two wildcard DNS records (`tofu/`): `*.lab.twolfe.dev` → the
+  mini's LAN address, `*.ts.twolfe.dev` → its Tailscale address. Same
+  door, two ways in — `.lab` for anything in the house, `.ts` for
+  tailnet devices anywhere (see tofu/records.tf for the decision). Both
+  point at the front door itself, so the front door owns them;
+- the wildcard certificate — ONE cert carrying both wildcard SANs —
+  obtained and renewed OUTSIDE caddy by the `renew-certs` job
+  (`flows/renew-certs/`): lego solves DNS-01 against Netlify nightly and
+  reloads caddy when the cert changes.
 
 Routes and public DNS names do NOT live here — see the contract below.
 Netlify is a *provider*, not a slice: any slice needing a DNS record
@@ -30,11 +34,15 @@ Everything happens in the service's own slice; this one is never edited.
 2. Drop a `<slice>/caddy.caddyfile` next to the compose file:
 
    ```
-   @myservice host myservice.lab.twolfe.dev
+   @myservice host myservice.lab.twolfe.dev myservice.ts.twolfe.dev
    handle @myservice {
        reverse_proxy myservice:1234
    }
    ```
+
+   Both hostnames, always — `.lab` is the LAN path, `.ts` the tailnet
+   path, and one handle serves both. A service whose app validates the
+   Host header (qbittorrent) must whitelist both.
 
    The upstream is the CONTAINER name and port, not the host publish.
    The matcher/handle shape (rather than a site block) is because snippets

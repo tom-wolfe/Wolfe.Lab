@@ -2,7 +2,10 @@
 
 Every service address in the lab. Hosts resolve via mDNS on the LAN;
 `*.lab.twolfe.dev` names resolve via public DNS (wildcard record → the
-mini, owned by `caddy/tofu`). Nothing is exposed to the internet.
+mini's LAN address, owned by `caddy/tofu`). Every hostname below also
+has a `*.ts.twolfe.dev` twin resolving to the mini's Tailscale address —
+same front door, for tailnet devices anywhere; prefer it off the LAN.
+Nothing is exposed to the internet.
 
 ## Hostnames (via the Caddy front door)
 

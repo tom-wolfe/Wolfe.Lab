@@ -1,6 +1,8 @@
 # The lab's front door: one container on 443 terminating TLS for
-# *.lab.twolfe.dev and routing by hostname to containers on the shared
-# `lab` network.
+# *.lab.twolfe.dev (the LAN path) and *.ts.twolfe.dev (the tailnet
+# path — same names, reachable wherever Tailscale is), routing by
+# hostname to containers on the shared `lab` network. Two ways in, one
+# door — see tofu/records.tf for the decision.
 #
 # Routes do NOT live in this file. Each slice contributes a
 # <slice>/caddy.caddyfile next to its compose file — a named host matcher
@@ -9,13 +11,14 @@
 # flows/ and the job bridge). See README.md for the snippet shape.
 #
 # Certificates do NOT live here either: caddy is a pure proxy. The
-# renew-certs job (flows/renew-certs/) obtains and renews the wildcard via
+# renew-certs job (flows/renew-certs/) obtains and renews ONE cert with
+# both wildcard SANs via
 # lego + DNS-01 and reloads caddy; this file just loads the result from
 # the read-only /certs mount. One wildcard cert on purpose — per-name
 # certs would list every internal hostname in public Certificate
 # Transparency logs.
 
-*.lab.twolfe.dev {
+*.lab.twolfe.dev, *.ts.twolfe.dev {
 	tls /certs/_.lab.twolfe.dev.crt /certs/_.lab.twolfe.dev.key
 
 	import lab/*/caddy.caddyfile

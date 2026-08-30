@@ -282,11 +282,20 @@ The agent has nothing to back up — its entire configuration is the
 
 ## Later: the laptops
 
-Both MacBooks want the same agent, and the work is genuinely small: drop
-`.config/beszel` from the server-only branch of `.chezmoiignore`, move the
-Brewfile entry out of the server section, and point `HUB_URL` at the mini.
-The blocker is that last part — a laptop off the LAN can't reach
-`localhost:8090` or `macmini.local`, and exposing the hub is not on the
-table. The Tailscale item on the roadmap makes the mini reachable as
-a stable `100.x` address, and that's the whole migration. Until then this
-slice watches one machine, which is the one with the disks.
+Built 2026-08-31, once Tailscale landed — and it was exactly the small
+change predicted: `.config/beszel` left the server-only branch of
+`.chezmoiignore`, the Brewfile entry moved to the all-machines section,
+and `HUB_URL` became machine-aware — `localhost:8090` on the mini,
+`http://macmini.tailf823b8.ts.net:8090` on the laptops. The MagicDNS name
+is deliberate: Tailscale resolves and routes it itself, at home or away,
+so laptop monitoring depends only on the tailnet — never on public DNS or
+the front door (the same reasoning as localhost on the mini). Same
+universal token for every machine; no new vault item.
+
+To enrol a laptop: `chezmoi apply` (materializes the env, installs and
+starts the agent via the Brewfile), then watch it appear in the hub.
+Then set its thresholds in the hub UI — and leave **Status alerts OFF**
+for laptops: a machine that is allowed to sleep is not a failure, and a
+Status alert would page on every lid-close (the same rule the roadmap
+sets for the Studio). The token must be PERSISTENT in the hub's settings
+or enrolment fails with a stale vault copy — see the template.

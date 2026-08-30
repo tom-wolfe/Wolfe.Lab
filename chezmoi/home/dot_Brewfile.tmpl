@@ -26,6 +26,8 @@ brew "shellcheck"
 brew "sqlite"
 cask "visual-studio-code"
 brew "yq"
+# `restart_service: :changed` restarts the agent whenever brew installs/upgrades it
+brew "henrygd/beszel/beszel-agent", restart_service: :changed, trusted: true
 
 # VS Code Extensions
 vscode "anthropic.claude-code"
@@ -114,8 +116,6 @@ cask "slack"
 # =========================================================
 
 mas  "AutoMounter", id: 1160435653
-# `restart_service: :changed` restarts the agent whenever brew installs/upgrades it
-brew "henrygd/beszel/beszel-agent", restart_service: :changed, trusted: true
 brew "docker-compose"
 brew "lazydocker"
 npm  "obsidian-headless"
