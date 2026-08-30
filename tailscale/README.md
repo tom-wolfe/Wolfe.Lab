@@ -75,8 +75,16 @@ In order. Step 1 is the precondition and happens at the desk.
    expiry.
 5. Verify from a laptop, ideally off the LAN (phone hotspot):
    `tailscale status`, then `tailscale ping macmini` — expect `direct`,
-   not `via DERP`. A DERP path that persists means NAT traversal is
-   still broken, which is what step 1 was for. The CLI lives at
+   not `via DERP`. But don't trust a DERP verdict from `tailscale ping`
+   alone: it gives up after ~10 seconds, and through carrier CGNAT the
+   upgrade can take longer (measured 2026-08-30 on Three — DERP for the
+   whole ping window, direct under sustained traffic). Judge with
+   `ping -c 30 <100.x address>` then `tailscale status | grep macmini`.
+   DERP that survives THAT means traversal is broken — step 1
+   territory, or a network that eats UDP (`tailscale netcheck` showing
+   `UDP: false`). Escape hatch if some network ever needs it: the mini
+   listens on UDP 41641, so a static forward on the router makes the
+   home side unconditionally reachable. The CLI lives at
    `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
 
 ## After it works — follow-ups, each its own change

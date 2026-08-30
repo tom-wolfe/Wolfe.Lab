@@ -72,7 +72,7 @@ managed `kestra_flow`. State lives in Garage
 UI are reverted by the next apply; the repo is the source of truth.
 
 ```sh
-cd tofu
+cd kestra/tofu
 op run --env-file=secrets.env -- tofu init
 op run --env-file=secrets.env -- tofu plan
 op run --env-file=secrets.env -- tofu apply

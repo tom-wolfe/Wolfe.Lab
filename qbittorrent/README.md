@@ -79,6 +79,11 @@ Consequences worth knowing:
   OpenVPN service credential. If the dashboard only offers an access
   token, the key falls out of
   `curl -s -u token:<TOKEN> https://api.nordvpn.com/v1/users/services/credentials | jq -r .nordlynx_private_key`.
+  Shape check before saving — this has bitten once (2026-08-30): the KEY
+  is 44 base64 chars ending `=`; the dashboard's access TOKEN is 64 hex
+  chars, and gluetun rejects it as `wgtypes: incorrect key size: 48`.
+  The item keeps that token in a separate `token` field — it is what
+  mints a fresh key at rotation time.
 - **`qbittorrent-webui`** (Login item) — a **copy, not the origin**.
   qBittorrent's web UI password is set in the UI and stored as a hash in
   its own qBittorrent.conf; there is no env or file to materialize it
