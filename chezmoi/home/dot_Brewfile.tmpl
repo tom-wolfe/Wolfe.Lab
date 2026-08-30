@@ -7,6 +7,7 @@ cask "1password"
 cask "1password-cli"
 cask "google-chrome"
 cask "google-drive"
+cask "tailscale-app"
 cask "vorssaint"
 
 # Developer Tools
@@ -78,7 +79,6 @@ cask "jetbrains-toolbox"
 # =========================================================
 
 cask "daisydisk"
-cask "nordvpn"
 cask "proton-mail"
 mas  "Paste", id: 967805235
 {{ end -}}
@@ -90,9 +90,11 @@ mas  "Paste", id: 967805235
 
 cask "affinity"
 mas  "forScore", id: 363738376
+cask "nordvpn"
 brew "ollama"
 mas  "Things", id: 904280696
 mas  "WhatsApp", id: 310633997
+cask "raspberry-pi-imager"
 {{ end -}}
 
 {{ if eq .machine "work" -}}
@@ -101,9 +103,6 @@ mas  "WhatsApp", id: 310633997
 # =========================================================
 
 mas  "Microsoft Excel", id: 462058435
-mas  "Microsoft Outlook", id: 985367838
-mas  "Microsoft OneNote", id: 784801555
-mas  "Microsoft PowerPoint", id: 462062816
 mas  "Microsoft Word", id: 462054704
 mas  "OneDrive", id: 823766827
 cask "slack"
@@ -120,6 +119,5 @@ brew "henrygd/beszel/beszel-agent", restart_service: :changed, trusted: true
 brew "docker-compose"
 brew "lazydocker"
 npm  "obsidian-headless"
-cask "transmission"
 
 {{ end -}}

@@ -18,6 +18,7 @@ front door is down.
 | `https://jellyfin.lab.twolfe.dev` | Jellyfin                     | `jellyfin:8096` |
 | `https://s3.lab.twolfe.dev`      | Garage S3 (path-style only) | `garage:3900`  |
 | `https://beszel.lab.twolfe.dev`  | Beszel monitoring hub       | `beszel:8090`  |
+| `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI      | `gluetun:8080` |
 
 ## macmini.local
 
@@ -34,6 +35,7 @@ front door is down.
 | `:8090` | Beszel — hub UI + API | Beszel superuser account; `/api/health` is unauthenticated | `beszel` |
 | `:8180` | Kestra — web UI + API | basic auth: 1P `kestra-admin`; webhook path key-authed | `kestra` |
 | `:8096` | Jellyfin — web + clients | Jellyfin accounts | `jellyfin` |
+| `:8080` | qBittorrent — web UI (via gluetun's namespace) | qBittorrent account (1P `qbittorrent-webui` is a copy) | `qbittorrent` |
 
 Notes:
 

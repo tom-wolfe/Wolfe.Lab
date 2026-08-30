@@ -1,0 +1,126 @@
+name: qbittorrent
+
+services:
+  gluetun:
+    # Pinned. Bump deliberately — this container is the slice's security
+    # boundary, and gluetun's env var names and defaults genuinely change
+    # between minor versions; read the release notes first.
+    image: qmcgaw/gluetun:v3.41.3
+    container_name: gluetun
+    restart: unless-stopped
+
+    # ---------------------------------------------------------------------
+    # The VPN tunnel lives in THIS container's network namespace, and
+    # qbittorrent joins it below (network_mode: service:gluetun). Two
+    # consequences that are the whole design:
+    #
+    #   * Kill switch by construction. gluetun's firewall allows egress
+    #     through the tunnel only (plus the Docker network and the input
+    #     port listed here). If NordVPN is down, qbittorrent is OFFLINE,
+    #     not leaking onto the real interface — stronger than anything the
+    #     host Nord app's kill switch offered.
+    #   * Everything else on the mini uses the real interface. Only what
+    #     shares this namespace is tunnelled; the host is off Nord.
+    # ---------------------------------------------------------------------
+
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    environment:
+      VPN_SERVICE_PROVIDER: nordvpn
+      # NordLynx is WireGuard by another name.
+      VPN_TYPE: wireguard
+      SERVER_COUNTRIES: United Kingdom
+      # Allow inbound to qbittorrent's web UI from the non-VPN side —
+      # caddy on the lab network, and the host publish below. Everything
+      # else inbound stays dropped, including BitTorrent peers: NordVPN
+      # offers no port forwarding, so inbound peers are unreachable by
+      # provider choice anyway (see README.md).
+      FIREWALL_INPUT_PORTS: "8080"
+      # Host /etc/localtime is a symlink into /var/db/timezone — dangles
+      # inside a Linux container. Set TZ instead (jellyfin pattern).
+      TZ: Europe/London
+
+    # WIREGUARD_PRIVATE_KEY — materialized from 1Password by a chezmoi
+    # create_ template; see "Secrets" in README.md.
+    env_file:
+      - /Users/tomwolfe/Docker/qbittorrent/gluetun.env
+
+    volumes:
+      # Server-list cache. Disposable — gluetun ships an embedded list and
+      # refreshes this itself — which is why the backup excludes it.
+      - /Users/tomwolfe/Docker/qbittorrent/gluetun:/gluetun
+
+    ports:
+      # Web UI fallback (macmini.local:8080), same convention as every
+      # other slice. Published on gluetun because it owns the namespace.
+      - "8080:8080"
+
+    networks:
+      - lab
+
+    # The image ships its own healthcheck (a connectivity probe through
+    # the tunnel), so there is deliberately no healthcheck block here.
+    # Nothing alerts on it — the lab rule — but `docker ps` showing
+    # gluetun unhealthy IS the tunnel being down.
+
+  qbittorrent:
+    # Pinned (linuxserver's fully-qualified tag: qBittorrent 5.2.3,
+    # libtorrent 2.0.14, image build ls474). A libtorrentv1 variant
+    # exists if seeding behaviour ever demands it. Bump deliberately —
+    # see "Upgrading" in README.md.
+    image: linuxserver/qbittorrent:5.2.3_v2.0.14-ls474
+    container_name: qbittorrent
+    restart: unless-stopped
+
+    # No network identity of its own — every packet goes through gluetun
+    # or nowhere. That is the point of the slice; do not "fix" it by
+    # giving qbittorrent its own networks, ports or aliases.
+    network_mode: "service:gluetun"
+
+    depends_on:
+      gluetun:
+        condition: service_healthy
+        # A RECREATED gluetun is a NEW network namespace, and qbittorrent
+        # would otherwise keep the dead one and sit silently offline.
+        # restart: true makes compose restart qbittorrent whenever it
+        # recreates gluetun. (A plain crash-restart reuses the same
+        # container and namespace — that case needs nothing.)
+        restart: true
+
+    environment:
+      # linuxserver images take the runtime user as env rather than
+      # `user:` — same 501:20 as kestra/compose.yaml, for the same
+      # VirtioFS ownership reasons.
+      PUID: "501"
+      PGID: "20"
+      TZ: Europe/London
+      # The image's default, pinned here because caddy.caddyfile, the
+      # FIREWALL_INPUT_PORTS value and the publish above all assume it.
+      WEBUI_PORT: "8080"
+      # Deliberately no TORRENTING_PORT: inbound peers can't reach it
+      # through Nord regardless, so the default is as good as any.
+
+    # No env-based auth: qBittorrent's web UI password is set IN the UI
+    # and hashed into its own config — see "Secrets" in README.md for
+    # what that does to the 1Password pattern.
+
+    volumes:
+      # qBittorrent's own state: qBittorrent.conf, categories, and
+      # BT_backup/ (.torrent files + fastresume). State is data — lives
+      # outside the repo like every slice.
+      - /Users/tomwolfe/Docker/qbittorrent/config:/config
+      # Media drives at their HOST paths (jellyfin's ONE RULE, for the
+      # same reason): qbittorrent stores absolute save paths in its
+      # fastresume data, and jellyfin must see the path a download
+      # landed at. The usual /downloads remap would break both.
+      - /Volumes/Data1:/Volumes/Data1
+      - /Volumes/Data2:/Volumes/Data2
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

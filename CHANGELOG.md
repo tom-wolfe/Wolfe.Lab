@@ -4,6 +4,30 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [Unreleased]
+
+### Added
+
+- **Torrenting moves into a container behind gluetun — a `qbittorrent/`
+  slice.** The host NordVPN app tunnelled *everything* the mini did (git,
+  brew, ACME, Pushover, the healthchecks ping) because macOS Nord has no
+  split tunnelling — so the fix inverts it: only the torrent client is
+  tunnelled now, with a kill switch by construction, and the host is off
+  Nord entirely.
+- **`lab.qbittorrent/backup`** — nightly cold tar of the client's state
+  at 02:20, ahead of the existing backup train.
+- **Tailscale on all three Macs** — the `tailscale-app` cask in the
+  all-machines Brewfile section, and a `tailscale/` README recording the
+  decisions: standalone app over the tailscaled formula, MagicDNS on, no
+  subnet router, no exit node, no tofu root yet.
+
+### Changed
+
+- `nordvpn` is now a personal-machine cask only, and `transmission`
+  leaves the server Brewfile (the qbittorrent slice replaces it). Brew
+  never uninstalls on its own — the at-desk removal steps are in
+  qbittorrent/README.md.
+
 ## [0.11.3] - 2026-08-29
 
 ### Changed
