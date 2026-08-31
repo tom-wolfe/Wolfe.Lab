@@ -23,6 +23,9 @@ services:
       FORGEJO__service__DISABLE_REGISTRATION: "true"
       FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
       FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
+      # Webhooks may only target EXTERNAL addresses by default (SSRF
+      # guard), and the poke targets kestra on the lab network.
+      FORGEJO__webhook__ALLOWED_HOST_LIST: kestra
       TZ: Europe/London
       USER_UID: 1000
       USER_GID: 1000
