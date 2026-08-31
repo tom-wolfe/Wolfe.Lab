@@ -4,7 +4,7 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## [Unreleased]
+## [0.13.0] - 2026-08-31
 
 ### Added
 
@@ -20,6 +20,7 @@ rather than versioned — the lab is continuous, not released.
   their drives.** On reboot, Docker restarts containers before macOS has
   mounted the external drives, so both deploy scripts now carry a mount 
   guard.
+- Make 1Password service mode server-only.
 
 ## [0.12.0] - 2026-08-30
 

@@ -10,5 +10,7 @@ sourceDir = {{ $repo | quote }}
 [data]
     machine = {{ $machine | quote }}
 
+{{ if eq $machine "server" }}
 [onepassword]
     mode = "service"
+{{- end }}
