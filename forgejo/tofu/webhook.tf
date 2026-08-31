@@ -23,11 +23,14 @@
 # model that lets it sit committed in the flow file. No HMAC secret:
 # Kestra wouldn't verify it.
 #
-# Known race, accepted: the tick pulls from the GITHUB mirror, and the
-# push-mirror (primary.tf, sync_on_commit) runs at the same moment this
-# fires — a poked tick can pull seconds too early and see nothing new.
-# The next tick catches it; repointing the mini's checkout at the primary
-# retires the race and the GitHub dependency together (runbook item).
+# No mirror race: the mini's checkout pulls the PRIMARY, anonymously
+# over loopback HTTP (http://localhost:3000/..., the repo is public —
+# primary.tf). A poked tick therefore sees the very push that fired this
+# webhook. Consequence, accepted eyes-open: forgejo down means the tick
+# can't pull and goes red — visible and alerting, per the
+# make-failure-visible principle, and the deploy flows still run
+# manually to resurrect it. Fresh machines still bootstrap from the
+# GitHub mirror (setup.sh), then repoint.
 
 locals {
   tick             = yamldecode(file("${path.module}/../../chezmoi/flows/update/flow.yaml"))

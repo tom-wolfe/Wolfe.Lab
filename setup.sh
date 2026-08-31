@@ -14,6 +14,14 @@
 #      cask sits in the non-server branch, so install it by hand here
 #      (`brew install --cask docker-desktop`; it requires macOS >= 14).
 # Then, from this repo's checkout:  ./setup.sh
+#
+# AFTER forgejo is up, repoint the chezmoi checkout at the primary — the
+# bootstrap above necessarily clones the GitHub mirror, but CD should not
+# depend on it (and the poke fires against the primary's push, so pulling
+# the mirror races it):
+#   git -C ~/.local/share/chezmoi remote set-url origin http://localhost:3000/tom-wolfe/Wolfe.Lab.git
+# Anonymous loopback HTTP: the repo is public (forgejo/tofu/primary.tf),
+# and the tick only ever pulls.
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")" && pwd)"

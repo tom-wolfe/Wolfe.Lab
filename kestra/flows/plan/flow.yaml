@@ -1,0 +1,30 @@
+id: plan
+namespace: lab.kestra
+description: |
+  Plans the Kestra Tofu stack after each auto-apply.
+
+labels:
+  job: plan
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: plan
+    type: io.kestra.plugin.fs.ssh.Command
+    allowFailure: true
+    timeout: PT10M
+    commands:
+      - kestra/plan
+
+triggers:
+  - id: after-apply
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: kestra-apply-green
+      flows:
+        - namespace: lab.kestra
+          flowId: apply
+          states: [SUCCESS]
