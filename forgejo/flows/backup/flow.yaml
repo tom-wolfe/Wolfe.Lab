@@ -1,7 +1,6 @@
 id: backup
 namespace: lab.forgejo
-description: |
-  Nightly cold backup of forgejo's data directory.
+description: Nightly cold backup of forgejo's data directory.
 
 labels:
   job: backup
@@ -15,11 +14,6 @@ tasks:
   - id: backup
     type: io.kestra.plugin.fs.ssh.Command
     timeout: PT15M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
       - forgejo/backup
 

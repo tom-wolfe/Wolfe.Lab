@@ -19,9 +19,9 @@ fi
 mkdir -p "$vol/backups/forgejo"
 backup="$vol/backups/forgejo/forgejo-$(date +%Y%m%d-%H%M%S).tar.gz"
 
-docker-compose --project-directory "$slice" stop
+docker compose --project-directory "$slice" stop
 # Whatever happens below, never leave the stack down.
-trap 'docker-compose --project-directory "$slice" start >/dev/null' EXIT
+trap 'docker compose --project-directory "$slice" start >/dev/null' EXIT
 
 # Record the image the backup was taken with — restoring onto a newer
 # image can fail on migrated schema (see README "Restore").

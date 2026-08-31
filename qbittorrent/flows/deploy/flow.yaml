@@ -1,11 +1,6 @@
 id: deploy
 namespace: lab.qbittorrent
-description: |
-  Converge the qbittorrent compose stack (gluetun + qbittorrent) from
-  the repo checkout. Chains on every green tick (the tick is what pulls
-  the repo); between changes each run is a no-op thanks to compose's
-  config-hash convergence. Host side:
-  qbittorrent/flows/deploy/script.sh via the lab-job bridge.
+description: Deploys the qbittorrent compose stack on a green Chezmoi tick.
 
 labels:
   job: deploy
@@ -17,15 +12,10 @@ concurrency:
 
 tasks:
   - id: converge
-    type: io.kestra.plugin.fs.ssh.Command
+    type: io.kestra.plugin.scripts.shell.Commands
     timeout: PT20M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
-      - qbittorrent/deploy
+      - /Users/tomwolfe/.local/share/chezmoi/scripts/deploy.sh qbittorrent /Volumes/Data1 /Volumes/Data2
 
 triggers:
   # See forgejo/flows/deploy/flow.yaml for the design notes.

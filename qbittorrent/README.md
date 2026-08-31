@@ -99,7 +99,7 @@ route.
 
 1. Create `nordvpn-wireguard` in the Wolfe.Lab vault (see Secrets).
 2. On the mini: `chezmoi apply` — materializes `gluetun.env`.
-3. Deploy: `qbittorrent/deploy` via the bridge, or wait for the tick.
+3. Deploy: trigger `lab.qbittorrent/deploy` in Kestra, or wait for the tick.
 4. Verify the tunnel from inside the namespace (the LSIO image has curl;
    gluetun's own image is shell-less):
    `docker exec qbittorrent curl -s https://ipinfo.io/ip` — expect a

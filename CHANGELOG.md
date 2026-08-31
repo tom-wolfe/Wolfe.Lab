@@ -9,6 +9,28 @@ rather than versioned — the lab is continuous, not released.
 ### Added
 
 - **A `dns/` root.** With the Proton Mail DNS records imported from Netlify.
+- **OpenTofu CD.** `lab.<slice>/plan` runs on every green tick, reporting drift.
+  `lab.<slice>/apply` is always a human in the Kestra UI, because the unofficial providers have had real write bugs. The exception: `kestra/tofu` auto-applies — first-party provider, repo-recoverable resources.
+- **The poke.** Push-to-main webhook from Forgejo to the tick.
+
+### Changed
+
+- **Kestra is trusted with the Docker socket.** Decision recorded in
+  kestra/README.md "The trust model": Kestra is the platform, and PR review
+  is the gate now.
+- **The SSH boilerplate is gone from every flow.** Forced plugin defaults in
+  `kestra/application.yaml` define the bridge connection once; no flow can
+  point that task type anywhere else.
+- The jellyfin/qbittorrent drive guard becomes a sentinel-file check inside
+  the shared deploy script (`mount | grep` can't see host mounts from a
+  container).
+- **Plan and apply are shared pipelines too** (`scripts/plan.sh`,
+  `scripts/apply.sh`): `lab-job` falls back to `scripts/<job>.sh <slice>`
+  when a slice has no script of its own, so the tofu flows ship no
+  per-slice scripts at all.
+- **One compose invocation: everything says `docker compose`.** The headless
+  config gains the compose plugin symlink (the buildx pattern), so the
+  plugin form now resolves in bridge sessions.
 
 ## [0.14.0] - 2026-08-31
 

@@ -26,9 +26,9 @@ fi
 mkdir -p "$vol/backups/qbittorrent"
 backup="$vol/backups/qbittorrent/qbittorrent-$(date +%Y%m%d-%H%M%S).tar.gz"
 
-docker-compose --project-directory "$slice" stop
+docker compose --project-directory "$slice" stop
 # Whatever happens below, never leave the stack down.
-trap 'docker-compose --project-directory "$slice" start >/dev/null' EXIT
+trap 'docker compose --project-directory "$slice" start >/dev/null' EXIT
 
 # Record the image the archive pairs with (restore like-for-like first;
 # the config schema moves forward across versions).

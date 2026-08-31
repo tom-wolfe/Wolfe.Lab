@@ -19,9 +19,9 @@ bootstrap only creates what must exist before the admin API answers.
 
 ## Operational notes
 
-- `garage.toml` changes are NOT picked up by `docker-compose up -d` (it's a
+- `garage.toml` changes are NOT picked up by `docker compose up -d` (it's a
   bind mount) — after editing, restart:
-  `ssh macmini "docker-compose --project-directory .local/share/chezmoi/garage restart"`
+  `ssh macmini "docker compose --project-directory .local/share/chezmoi/garage restart"`
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
   `lab.garage/backup` flow (`flows/backup/`) does a nightly cold copy at 02:50

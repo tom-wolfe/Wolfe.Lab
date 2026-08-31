@@ -1,0 +1,29 @@
+id: apply
+namespace: lab.kestra
+description: Applies the Kestra Tofu stack on a green Chezmoi tick.
+
+labels:
+  job: apply
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: apply
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT30M
+    commands:
+      - kestra/apply
+
+triggers:
+  # See forgejo/flows/deploy/flow.yaml for the design notes.
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: chezmoi-tick-green
+      flows:
+        - namespace: lab.chezmoi
+          flowId: update
+          states: [SUCCESS]

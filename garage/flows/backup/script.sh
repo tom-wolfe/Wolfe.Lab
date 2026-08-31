@@ -26,9 +26,9 @@ fi
 mkdir -p "$vol/backups/garage"
 backup="$vol/backups/garage/garage-$(date +%Y%m%d-%H%M%S).tar.gz"
 
-docker-compose --project-directory "$slice" stop
+docker compose --project-directory "$slice" stop
 # Whatever happens below, never leave the stack down.
-trap 'docker-compose --project-directory "$slice" start >/dev/null' EXIT
+trap 'docker compose --project-directory "$slice" start >/dev/null' EXIT
 
 # Record the image — metadata formats migrate forward only.
 docker inspect garage --format '{{.Config.Image}}' > "$backup.image.txt"

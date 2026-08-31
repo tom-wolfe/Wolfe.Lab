@@ -25,11 +25,6 @@ tasks:
     # that. See ../../kestra/README.md "Timeouts" for why it's set this wide
     # and what a timeout does and doesn't abort.
     timeout: PT15M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
       - kestra/backup
 

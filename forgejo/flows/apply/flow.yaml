@@ -1,0 +1,18 @@
+id: apply
+namespace: lab.forgejo
+description: Manual. Deploys the Forgejo Tofu stack.
+
+labels:
+  job: apply
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: apply
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT30M
+    commands:
+      - forgejo/apply

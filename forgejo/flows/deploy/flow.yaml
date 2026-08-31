@@ -1,33 +1,21 @@
 id: deploy
 namespace: lab.forgejo
-description: |
-  Converge the forgejo compose stack from the repo checkout. Chains on every
-  green tick (the tick is what pulls the repo), so a merged compose change
-  lands within one tick; between changes each run is a no-op thanks to
-  compose's own config-hash convergence. Host side:
-  forgejo/flows/deploy/script.sh via the lab-job bridge.
+description: Deploys the Forgejo compose stack on a green Chezmoi tick.
 
 labels:
   job: deploy
   alert: low
 
-# A slow converge (image pull, migration) must finish before the next
-# tick's attempt starts.
 concurrency:
   limit: 1
   behavior: QUEUE
 
 tasks:
   - id: converge
-    type: io.kestra.plugin.fs.ssh.Command
+    type: io.kestra.plugin.scripts.shell.Commands
     timeout: PT20M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
-      - forgejo/deploy
+      - /Users/tomwolfe/.local/share/chezmoi/scripts/deploy.sh forgejo
 
 triggers:
   # Fires after each SUCCESSful tick execution: pull -> config -> deploys,

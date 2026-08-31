@@ -196,7 +196,7 @@ as `garage/tofu` — run once, harvest the outputs, store them.
 > chicken-and-egg means you cannot recover it by simply re-running the tick.
 
 1. **Bring the hub up.** `./setup.sh` from the repo root does it, or on the
-   mini `docker-compose --project-directory <this dir> up -d`. Caddy must
+   mini `docker compose --project-directory <this dir> up -d`. Caddy must
    already have been deployed once (it owns the `lab` network).
 2. **Create the superuser.** First visit to http://macmini.local:8090
    prompts for it. Put it in 1Password as you would any login.

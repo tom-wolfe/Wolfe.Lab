@@ -114,13 +114,20 @@ task — it does **not** need the Actions runner — and it automates the "bump
 the pin via a normal PR first" ritual `kestra/README.md` currently asks for
 by hand.
 
-### 6. Forgejo Actions runner
+### 6. Forgejo Actions runner — CI only
 
-The big structural unlock, and still the plan of record from phase 3:
-CI, the changelog check (Forgejo issue #10), plan-on-PR and apply-on-merge.
-It also closes a real correctness gap — Garage has no state locking, so
-concurrent `tofu apply`s are currently prevented by operator discipline
-alone, and the runner becomes the serialization point.
+Rescoped 2026-08-31: CD went to Kestra (plan-on-tick, apply-on-tap,
+kestra's root auto — kestra/README.md "OpenTofu CD"), applies are
+serialized by being Kestra flows, and the runner **never applies** — the
+old "two apply sources" hazard is resolved by decree rather than
+sequencing. What remains is review quality: lint (#4, #6), plan-on-PR
+(#8) and the changelog check (#10). Two flags for that design pass:
+plan-on-PR needs provider credentials, and handing op secrets to a
+workflow that pre-merge code can edit is the classic
+`pull_request_target` foot-gun — theoretical while every PR is Tom's
+own, but it should be named in the workflow design. And the runner must
+not hold the Docker socket: that trust was extended to Kestra, which
+runs only merged code — never to the component that touches PRs.
 
 ### 7. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 
@@ -165,6 +172,70 @@ Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
 **Beszel: add it with Status alerts OFF**, exactly like the laptops. A
 workstation that is off is not a failure, and a Status alert would page on
 every shutdown.
+
+### 8. A config plane — Garage for configuration, 1Password Connect for secrets
+
+Designed 2026-08-31 (the poke's webhook URL forced the config half; the
+rotation dance pulled the secrets half up out of "Deliberately
+deferred" the same day). Two halves because they are the same move —
+resolution goes LAN-local while every reference keeps its shape — and
+they are separable builds, each landing when its own pressure arrives:
+the Garage half on the SECOND cross-slice value, the Connect half the
+next time secret rotation actually bites.
+
+**The config half.** Today `forgejo/tofu` constructs the tick's webhook
+URL from the tick's flow file and kestra's compose file — the
+monorepo-as-stack-reference move. It works, and it fails loudly — but it
+is still a *consumer's guess* at a URL whose format belongs to the
+kestra slice, port 8080 and all.
+
+The pattern, when that second value appears: a dedicated `config` bucket
+in Garage. The OWNING slice's tofu root publishes named values as S3
+objects — kestra/tofu would derive `tick_webhook_url` from the files it
+already reads, and it auto-applies on the tick, so the publisher is
+never more than fifteen minutes stale. Consumers list-then-read (a list
+tolerates absence where a read errors) and `count` the dependent
+resource on presence, so a root deploying before its dependency simply
+omits the wiring and picks it up on a later plan: partial deployment
+breaks bootstrap cycles, and the plan-on-tick nag makes the eventual
+consistency visible instead of silent. Two caveats, named at design
+time. The failure mode INVERTS — absent config is a green plan that
+deploys nothing, so every consumer carries a tofu `check` making absence
+at least a named warning (the `chezmoi/tofu` pattern). And published
+config is declared truth, not liveness — proving someone answers is
+monitoring's job (the Kuma item), not this one's.
+
+Why Garage and not the vault: configuration and secrets are different
+jobs. 1Password is the origin of *secrets*, is a cloud round-trip — the
+whole reason `create_` templates evaluate once instead of pinging it
+every tick — and changing a value there means the delete-and-recreate
+dance. Garage is LAN-local (every plan already polls it), sits below
+every would-be publisher in the bootstrap order (using Kestra's own KV
+store would recreate the very circularity this breaks), and costs no new
+service.
+
+**The secrets half: 1Password Connect**, an ordinary compose slice (two
+containers, credentials file minted once from the account). It is a
+*sync cache* — the cloud vault stays the origin, which is what separates
+it from OpenBao's circularity: a dead Connect degrades to today's
+behavior, never to a locked-out lab. The payoff is that the `op` CLI
+targets Connect via `OP_CONNECT_HOST`/`OP_CONNECT_TOKEN`, so every
+`op://` reference in every secrets.env and every `onepasswordRead`
+template keeps exactly its current shape — the resolver changes, not the
+references. With the vault answering from the LAN, the env files become
+ONE shape: ordinary converged chezmoi templates, re-evaluated every
+tick, and the `create_` pattern shrinks to a single bootstrap file — the
+Connect token itself, materialized once by cloud `op`. Rotation then
+collapses into the loop that already exists: change the vault → Connect
+syncs → the tick re-renders the env file → the tick-chained deploy sees
+the change and recreates the container. Two things to verify at build,
+not assume: whether compose's config hash covers env_file CONTENTS (it
+should — `docker compose config` inlines them; if not, `deploy.sh` grows
+a hash guard, one edit now that it's a pipeline), and the precedence
+between `OP_CONNECT_*` and `OP_SERVICE_ACCOUNT_TOKEN` when both are in
+the environment, which decides the bootstrap-fallback shape. One honest
+boundary stays: kestra reads `SECRET_*` at boot and has no deploy flow,
+so *its* secret rotation keeps a manual restart.
 
 ## Undecided
 
@@ -283,20 +354,24 @@ reservation, or disabling the unused interface), not a hardware one.
 
 ## Deliberately deferred
 
-### Self-hosted secrets (1Password Connect / OpenBao)
+### Self-hosted secrets (OpenBao)
 
 The original goal was cutting the cloud dependency. The `create_` template
 pattern already achieves the operative part: `op` is a bootstrap
-dependency, not a tick dependency, and rotation is delete-the-file-and-
-apply. OpenBao would add an unseal ritual and a genuine bootstrap
-circularity — lab down, can't reach secrets, can't bring lab up. Small
-remaining gain, real added fragility. Revisit if the calculus changes.
+dependency, not a tick dependency. 1Password Connect left this section
+2026-08-31 for the config plane (item 8), pulled by a different goal —
+rotation ergonomics, not cloud-cutting; as a sync cache it dodges the
+circularity below. OpenBao stays deferred: it would *own* the secrets,
+adding an unseal ritual and a genuine bootstrap circularity — lab down,
+can't reach secrets, can't bring lab up. Small remaining gain, real
+added fragility. Revisit if the calculus changes.
 
 ### Kubernetes + Argo CD (`k8s/`)
 
 Kept as a learning goal, not as a solution to a current problem. The lab
-has a working pull-based CD loop and a clean security model — no
-*container* gets the Docker socket, one audited SSH door — and Kubernetes on
+has a working pull-based CD loop and a deliberate trust model — Kestra
+holds the socket as the platform (decision 2026-08-31, kestra/README.md),
+one SSH transport for host work — and Kubernetes on
 a single mini via Docker Desktop is a lot of machinery for one node that
 would dissolve the vertical-slice model into manifests. Worth doing if the
 point is to learn it; worth being honest that it isn't fixing anything.

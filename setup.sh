@@ -20,7 +20,7 @@ repo="$(cd "$(dirname "$0")" && pwd)"
 
 converge() {
   echo "==> $1"
-  docker-compose --project-directory "$repo/$1" up -d --remove-orphans "${@:2}"
+  docker compose --project-directory "$repo/$1" up -d --remove-orphans "${@:2}"
 }
 
 # Caddy first — its compose OWNS the shared `lab` network that every other

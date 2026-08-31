@@ -22,27 +22,17 @@ tasks:
   - id: converge
     type: io.kestra.plugin.fs.ssh.Command
     timeout: PT10M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
       - chezmoi/update
 
 triggers:
-  # Steady-state reconciliation: the mini never drifts more than 15 minutes
-  # behind main. Until the poke below is wired up, this is also the only
-  # delivery path.
+  # Steady-state reconciliation
   - id: tick
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "*/15 * * * *"
     timezone: Europe/London
 
-  # The poke — NOT YET WIRED, by choice, because the Actions runner will exist:
-  #   POST http://macmini.local:8180/api/v1/main/executions/webhook/lab.chezmoi/update/<key>
-  # The key is the only auth on this path (it's basic-auth-exempt); it can
-  # start this flow and nothing else. LAN-only, like everything here.
+  # Manual poke. Forgejo POSTs here on every push to main.
   - id: poke
     type: io.kestra.plugin.core.trigger.Webhook
     key: 94544df19d6b7541659285d276b89094cea04710ff40b213

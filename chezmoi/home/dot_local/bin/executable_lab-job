@@ -51,5 +51,15 @@ if [ -f "$script" ]; then
   exec bash "$script" </dev/null
 fi
 
-echo "lab-job: unknown job '$job' (no $slice/flows/$name/script.sh in the repo)" >&2
+# Shared pipelines: a job with no script of its own falls back to
+# scripts/<job>.sh at the repo root, passed the slice — the deploy.sh
+# pattern on the bridge side. One implementation for a job shape (plan,
+# apply), and a slice overrides it by simply having flows/<job>/script.sh.
+# Still merged code only; the grammar above still rules the name.
+pipeline="$repo/scripts/$name.sh"
+if [ -f "$pipeline" ]; then
+  exec bash "$pipeline" "$slice" </dev/null
+fi
+
+echo "lab-job: unknown job '$job' (no $slice/flows/$name/script.sh or scripts/$name.sh in the repo)" >&2
 exit 64

@@ -1,0 +1,28 @@
+id: plan
+namespace: lab.chezmoi
+description: Plans the Chezmoi Tofu stack on every green tick, reporting drift.
+labels:
+  job: plan
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: plan
+    type: io.kestra.plugin.fs.ssh.Command
+    allowFailure: true
+    timeout: PT10M
+    commands:
+      - chezmoi/plan
+
+triggers:
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: chezmoi-tick-green
+      flows:
+        - namespace: lab.chezmoi
+          flowId: update
+          states: [SUCCESS]

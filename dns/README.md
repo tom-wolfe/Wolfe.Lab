@@ -67,10 +67,13 @@ blocks are no-ops for records already in state — and can be deleted.
 
 ## Operational notes
 
-- Plans and applies run from a workstation:
-  `cd tofu && op run --env-file=secrets.env -- tofu plan`. Same
-  1Password items as the other roots (`netlify-pat`,
-  `tofu-state-passphrase`, garage state key) — nothing new to create.
+- Plans run themselves: `lab.dns/plan` on every green tick, warning on
+  drift or a pending change; applying is `lab.dns/apply`, triggered by a
+  human in the Kestra UI after reading the plan — the OpenTofu CD model,
+  kestra/README.md. (A workstation `op run … tofu plan` still works for
+  development; applies go through the flow.) Same 1Password items as the
+  other roots (`netlify-pat`, `tofu-state-passphrase`, garage state key)
+  — nothing new to create.
 - TTLs are declared at 300 because that is what the Proton setup
   created; declared explicitly so a hand-edit in the Netlify UI shows
   up as drift in the next plan rather than silently winning.

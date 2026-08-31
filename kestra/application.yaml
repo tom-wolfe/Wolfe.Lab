@@ -39,3 +39,46 @@ kestra:
   # Don't seed the demo namespace.
   tutorial-flows:
     enabled: false
+
+  plugins:
+    configurations:
+      # Docker task runners may mount volumes (off by default upstream).
+      # Every mount they're given is listed in the defaults below.
+      - type: io.kestra.plugin.scripts.runner.docker.Docker
+        values:
+          volume-enabled: true
+
+    defaults:
+      # The job bridge's connection details, in ONE place instead of five
+      # lines in every flow. `forced` cuts both ways deliberately: flows
+      # can't drift from these values, and a flow can't point the SSH task
+      # at a different host or key — the bridge is the only place this
+      # task type can go.
+      - type: io.kestra.plugin.fs.ssh.Command
+        forced: true
+        values:
+          host: host.docker.internal
+          port: "22"
+          username: tomwolfe
+          authMethod: PUBLIC_KEY
+          privateKey: "{{ secret('LAB_SSH_KEY') }}"
+
+      # Container jobs (the deploy flows): a docker CLI image talking to
+      # the host daemon through the socket. The repo checkout is mounted
+      # AT ITS HOST PATH on purpose — `docker compose` in the task
+      # container creates SIBLING containers on the host daemon, so every
+      # bind source a compose file resolves must be a path the daemon can
+      # see. /Volumes is mounted read-only for the deploy guard: an
+      # unmounted drive is a shadow directory, visible as such from here
+      # (see scripts/deploy.sh).
+      # Not forced: a flow that needs a different image or an extra mount
+      # states its own values and keeps these.
+      - type: io.kestra.plugin.scripts.shell.Commands
+        values:
+          containerImage: docker:28-cli
+          taskRunner:
+            type: io.kestra.plugin.scripts.runner.docker.Docker
+            volumes:
+              - /var/run/docker.sock:/var/run/docker.sock
+              - /Users/tomwolfe/.local/share/chezmoi:/Users/tomwolfe/.local/share/chezmoi:ro
+              - /Volumes:/Volumes:ro

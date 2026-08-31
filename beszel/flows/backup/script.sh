@@ -29,9 +29,9 @@ fi
 mkdir -p "$vol/backups/beszel"
 backup="$vol/backups/beszel/beszel-$(date +%Y%m%d-%H%M%S).tar.gz"
 
-docker-compose --project-directory "$slice" stop
+docker compose --project-directory "$slice" stop
 # Whatever happens below, never leave the stack down.
-trap 'docker-compose --project-directory "$slice" start >/dev/null' EXIT
+trap 'docker compose --project-directory "$slice" start >/dev/null' EXIT
 
 # Record the image — PocketBase migrates the schema forward on boot, so a
 # restored archive has to be paired with the version that wrote it.

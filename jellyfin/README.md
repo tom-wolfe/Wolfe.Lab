@@ -78,11 +78,11 @@ Forgejo's does — it has to stay where the native app left it.
 ```sh
 cd "$(chezmoi source-path)/../../jellyfin"
 
-docker-compose ps            # status
-docker-compose logs -f       # follow logs
-docker-compose restart       # restart
-docker-compose down          # stop (data is untouched)
-docker-compose up -d         # start
+docker compose ps            # status
+docker compose logs -f       # follow logs
+docker compose restart       # restart
+docker compose down          # stop (data is untouched)
+docker compose up -d         # start
 ```
 
 ## Known limitations of running this in Docker on macOS
@@ -132,9 +132,9 @@ image afterwards will fail.
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let lab.jellyfin/deploy converge it or, by hand:
 cd "$(chezmoi source-path)/../../jellyfin"
-docker-compose pull
-docker-compose up -d
-docker-compose logs -f           # watch migrations complete
+docker compose pull
+docker compose up -d
+docker compose logs -f           # watch migrations complete
 ```
 
 Check what's current:
@@ -170,11 +170,11 @@ the library definitions.
 
 ```sh
 cd "$(chezmoi source-path)/../../jellyfin"
-docker-compose down
+docker compose down
 mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
 tar -xzf /Volumes/Data2/backups/jellyfin/jellyfin-YYYYmmdd-HHMMSS.tar.gz \
     -C ~/Library/Application\ Support/
-docker-compose up -d
+docker compose up -d
 ```
 
 If you restore a metadata-less archive over a wiped directory, artwork will be
@@ -193,7 +193,7 @@ still at 10.11.8 and will refuse to open the migrated database.
 Rolling back now means restoring a pre-upgrade backup as well:
 
 ```sh
-cd "$(chezmoi source-path)/../../jellyfin" && docker-compose down
+cd "$(chezmoi source-path)/../../jellyfin" && docker compose down
 mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
 tar -xzf ~/Docker/jellyfin/backups/jellyfin-20260818-191721.tar.gz \
     -C ~/Library/Application\ Support/

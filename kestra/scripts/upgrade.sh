@@ -50,9 +50,9 @@ else
 fi
 
 echo "pulling images"
-docker-compose --project-directory "$slice" pull
+docker compose --project-directory "$slice" pull
 echo "converging to kestra/kestra:$pinned"
-docker-compose --project-directory "$slice" up -d --remove-orphans
+docker compose --project-directory "$slice" up -d --remove-orphans
 
 # Any HTTP status (401 included — the UI is behind basic auth) means the
 # server is answering; only a dead TCP/HTTP stack reports 000.

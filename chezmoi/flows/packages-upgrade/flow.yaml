@@ -31,11 +31,6 @@ tasks:
   - id: upgrade
     type: io.kestra.plugin.fs.ssh.Command
     timeout: PT45M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
       - chezmoi/packages-upgrade
 

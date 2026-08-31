@@ -24,7 +24,7 @@ its tick job.
 Chezmoi declares; Kestra acts. The `lab.chezmoi/update` flow is the CD tick:
 every 15 minutes it pulls the repo and converges machine config, and each
 service's `lab.<slice>/deploy` flow chains on its SUCCESS — pull → config →
-deploys, always in that order. `docker-compose up -d` is convergent, so
+deploys, always in that order. `docker compose up -d` is convergent, so
 between changes the deploys are no-ops; a merged compose change lands
 within one tick. Kestra itself has no deploy flow (it can't safely replace
 its own executor) — see `kestra/README.md` for the manual upgrade path.

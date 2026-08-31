@@ -25,11 +25,11 @@ The `lab.forgejo/deploy` flow in Kestra converges this stack after every green
 ```sh
 cd "$(chezmoi source-path)/../../forgejo"
 
-docker-compose ps            # status
-docker-compose logs -f       # follow logs
-docker-compose restart       # restart
-docker-compose down          # stop (data is untouched)
-docker-compose up -d         # start
+docker compose ps            # status
+docker compose logs -f       # follow logs
+docker compose restart       # restart
+docker compose down          # stop (data is untouched)
+docker compose up -d         # start
 ```
 
 ## First-run setup
@@ -51,7 +51,7 @@ Then lock it down, since this is a LAN server that doesn't need public signups:
 2. Set `FORGEJO__service__DISABLE_REGISTRATION: "true"` in `compose.yaml`
    (this one *is* safe to manage via env — it's ordinary config, and setting it
    is idempotent)
-3. `docker-compose up -d`
+3. `docker compose up -d`
 
 ## Where the admin password lives
 
@@ -187,9 +187,9 @@ image after that will fail.
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let lab.forgejo/deploy converge it or, by hand:
 cd "$(chezmoi source-path)/../../forgejo"
-docker-compose pull
-docker-compose up -d
-docker-compose logs -f               # watch migrations complete
+docker compose pull
+docker compose up -d
+docker compose logs -f               # watch migrations complete
 ```
 
 Rules worth respecting:
@@ -233,11 +233,11 @@ the backup script before anything risky.
 
 ```sh
 cd "$(chezmoi source-path)/../../forgejo"
-docker-compose down
+docker compose down
 rm -rf ~/Docker/forgejo/data                   # or move it aside first
 tar -xzf /Volumes/Data2/backups/forgejo/forgejo-YYYYmmdd-HHMMSS.tar.gz \
     -C ~/Docker/forgejo
-docker-compose up -d
+docker compose up -d
 ```
 
 Make sure the image tag in `compose.yaml` matches the version the backup was
@@ -283,7 +283,7 @@ every boot.
 
 ```sh
 docker exec forgejo grep -i INSTALL_LOCK /data/gitea/conf/app.ini   # want: true
-docker-compose logs | grep MustInstalled
+docker compose logs | grep MustInstalled
 ```
 
 **Container restart-loops with `bind: address already in use` on port 22.**
@@ -298,7 +298,7 @@ Note that a passing healthcheck does **not** rule this out — the check only
 probes HTTP, so read the logs when diagnosing:
 
 ```sh
-docker-compose logs | grep -iE 'address already in use|\[F\]|fatal'
+docker compose logs | grep -iE 'address already in use|\[F\]|fatal'
 docker inspect forgejo --format '{{.RestartCount}}'   # >0 and climbing = looping
 ```
 

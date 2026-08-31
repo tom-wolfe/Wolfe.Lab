@@ -9,17 +9,47 @@ tick. Kestra replaces the *scheduling* half of launchd, not the
 *supervision* half.
 
 Flows are code: every job is one directory — `<slice>/flows/<job>/` at the repo
-root, holding `flow.yaml` with its `script.sh` beside it — and all of them are
+root, holding `flow.yaml`, with a `script.sh` beside it only when the job
+crosses the bridge AND no shared pipeline in `scripts/` covers its shape
+— and all of them are
 applied with OpenTofu from this slice's `tofu/` root (below), not clicked
 into the UI. The UI is for watching runs, reading logs, and re-running
 failures.
+
+## The trust model
+
+**Kestra holds the Docker socket and is trusted as root over the lab —
+decision 2026-08-31 (Tom's), reversing the original stance.** Both sides
+recorded, because the reversal is the interesting part.
+
+The original cap was set when Kestra replaced a couple of launchd
+agents: no socket, no host mounts, host work only through the
+forced-command bridge — so a compromised Kestra could at worst run
+scripts already merged to main. Every step since (the tick, the deploy
+fan-out, alerting, OpenTofu CD below) promoted Kestra to being the
+platform, and the cap's costs — five lines of SSH boilerplate per flow,
+one opaque log blob per job, timeouts that report a stall but cannot end
+one — fell on exactly the thing a platform exists to do: start and stop
+containers.
+
+What holding the socket means, stated plainly: root over the daemon's
+VM, every container, and everything file-shared into it — `/Users` and
+`/Volumes`, so all state, the backups, and the op service-account token.
+**A Kestra compromise is a lab compromise, vault read included.** The
+gate is therefore what gets MERGED (and which images are pinned), not
+what Kestra can reach: PR review is the security boundary now. The
+consequences run through this file — deploys are native Docker tasks,
+the bridge survives as *transport* for work that needs the macOS host
+itself, and the forced plugin defaults in `application.yaml` pin the
+bridge's connection details instance-wide.
 
 ## Why kestra has no deploy flow
 
 Deliberate, and the reason this slice has `scripts/upgrade.sh` instead:
 a deploy flow for kestra would have Kestra replace its own executor
-mid-execution — the SSH task's client dies with the container, killing the
-very run that triggered it. The prohibition is *deploy-specific*: this
+mid-execution, killing the very run that triggered it (a sibling task
+container would survive the executor's death, but orphaned — nothing
+collects the result). The prohibition is *deploy-specific*: this
 slice does own its housekeeping flows — `flows/purge/` (the nightly
 execution-history janitor), `flows/backup/` (the nightly pg_dump) and
 `flows/alert-failed/` (the lab's failure alerter, which is Kestra machinery
@@ -39,11 +69,30 @@ converge to a version you didn't review or one the tick hasn't landed yet.
 It takes a `pg_dump` backup, pulls, converges, and health-polls :8180.
 Postgres majors additionally need pg_upgrade or dump/restore.
 
+## How container jobs work
+
+The deploy flows converge compose stacks as native Docker tasks. The
+plugin defaults in `application.yaml` give every `shell.Commands` task a
+docker CLI image, the socket, the repo checkout — mounted **at its host
+path**, so every bind source a compose file names resolves correctly on
+the daemon — and `/Volumes` read-only, which is the deploy guard's
+window onto mount state. The task container is a sibling of whatever it
+converges.
+
+`scripts/deploy.sh` at the repo root is the single shared
+implementation: smartening deployment (health gates, pre-pulls,
+skip-if-unchanged) is one edit there, not six. Per-slice variation is
+*data* — arguments for required drives (jellyfin, qbittorrent), a
+`flows/deploy/post.sh` hook for follow-up work (caddy's route reload) —
+never a fork of the script.
+
 ## How host jobs work
 
-Kestra runs in a container and deliberately cannot touch the host — no
-Docker socket, no host mounts beyond its own state. Host-side work leaves
-through one audited door:
+chezmoi, brew, the tar backups and tofu act on the macOS host itself,
+which no sibling container can reach. That work leaves through the job
+bridge — since the trust decision above, a *transport* rather than a
+security boundary, but still the tidiest way for a container to reach
+the host:
 
 1. A dedicated ed25519 keypair (the `kestra-job-bridge` 1Password item,
    materialized onto the mini by chezmoi — never in the repo).
@@ -51,17 +100,23 @@ through one audited door:
    `restrict,command="~/.local/bin/lab-job"` — no pty, no forwarding, and
    sshd runs the dispatcher *instead of* whatever was requested.
 3. `lab-job` treats the requested command as a job *name* — exactly two
-   `[a-z0-9-]` segments joined by one slash, e.g. `forgejo/deploy` or
-   `obsidian/main` — and resolves it to
-   `<slice>/flows/<job>/script.sh` in this repo's checkout on the mini
-   (the one the tick keeps fresh).
+   `[a-z0-9-]` segments joined by one slash, e.g. `obsidian/main` or
+   `dns/plan` — and resolves it in this repo's checkout on the mini (the
+   one the tick keeps fresh): the slice's own
+   `<slice>/flows/<job>/script.sh` if it exists, else the shared pipeline
+   `scripts/<job>.sh`, passed the slice — so `dns/plan` runs
+   `scripts/plan.sh dns`, and a slice overrides a pipeline by simply
+   having a script of its own.
    The alphabet has no dots, so traversal is unrepresentable. Unknown or
-   malformed names exit 64. The dispatcher itself never changes: **adding a
-   job = one commit** adding one directory (`flows/<job>/` — `script.sh` plus its
-   `flow.yaml`) to the owning slice.
+   malformed names exit 64. The dispatcher itself never changes: **adding
+   a job = one commit** — one directory (`flow.yaml`, plus a `script.sh`
+   only when no pipeline covers the job) in the owning slice.
 
-So a compromised Kestra (or a leaked webhook key) can at worst run scripts
-that were merged to main, never arbitrary commands.
+A leaked webhook key can still only start the tick; what a compromised
+Kestra can do is stated honestly in "The trust model" above. The
+bridge's connection details (host, user, key) live once, as *forced*
+plugin defaults in `application.yaml` — no flow declares them, and no
+flow can point the SSH task type anywhere else.
 
 ## The flow applier (`tofu/`)
 
@@ -77,6 +132,10 @@ op run --env-file=secrets.env -- tofu init
 op run --env-file=secrets.env -- tofu plan
 op run --env-file=secrets.env -- tofu apply
 ```
+
+Day to day nobody types that: `lab.kestra/apply` runs it on every green
+tick (see "OpenTofu CD" below). The commands remain the bootstrap path —
+the first apply is what registers the flow that takes over.
 
 **Adding a job** = one commit adding one directory to the owning slice:
 `flows/<name>/flow.yaml` (+ `flows/<name>/script.sh` if it touches the mini) —
@@ -111,11 +170,45 @@ The cross-cutting axis is **labels**, not more namespace:
 
 | Label | Values | Purpose |
 | --- | --- | --- |
-| `job` | `deploy`, `backup`, `sync`, `cert`, `tick`, `maintenance`, `heartbeat`, `health` | filtering flows and executions in the UI |
+| `job` | `deploy`, `backup`, `sync`, `cert`, `tick`, `maintenance`, `heartbeat`, `health`, `plan`, `apply` | filtering flows and executions in the UI |
 | `alert` | `high`, `low` | severity routing in `system/alert-failed` |
 
 So "show me every backup" is a label filter, and you never have to choose
 between organising by slice and organising by function.
+
+## OpenTofu CD
+
+Forgejo issue #9's answer, and the other half of what the trust model
+makes room for. Every root gets the same treatment, with one deliberate
+asymmetry:
+
+- **`lab.<slice>/plan` — continuous, chained on the tick.** Reads are
+  the safe half of unofficial providers, so they run every 15 minutes: a
+  merged change or a UI hand-edit turns the execution WARNING — a
+  low-priority push with the plan in the logs — within a tick. A pending
+  plan warns again every tick until applied or reverted. Deliberate:
+  drift should nag.
+- **`lab.<slice>/apply` — always a human**, triggered from the Kestra UI
+  after reading the plan. The providers here have had real WRITE bugs
+  (svalabs' full-object PATCH once blanked wiki branches on every real
+  update — a destroy-guard would have waved that straight through, which
+  is why the gate is a human rather than a plan-shape check). Laptop
+  applies are retired: one writer per state root, QUEUE-serialized, is
+  what stands in for the state locking Garage cannot provide. A
+  workstation `tofu plan` is still fine for development.
+- **`lab.kestra/apply` is the exception — it auto-applies on the tick.**
+  First-party provider, resources fully recoverable from this repo,
+  destroy+create is its routine rename mechanic, and auto-applying is
+  what keeps "adding a job = one commit" true with zero further taps.
+- **`garage/tofu` stays outside all of this**, manual by design: its
+  disposable state seeds the very backend the other roots stand on.
+
+The host half is the shared pipelines `scripts/plan.sh` and
+`scripts/apply.sh` — deploy.sh's pattern on the bridge side, reached by
+lab-job's pipeline fallback, so no per-slice script exists: the op
+service account, then `op run --env-file=secrets.env -- tofu …`, with
+`-detailed-exitcode` separating in-sync from pending on the plan side.
+Repo-versioned, so the tick ships changes — nothing to chezmoi-apply.
 
 What namespaces do *not* buy here: namespace-level secrets, variables,
 plugin defaults and RBAC are all Enterprise features. `secret('LAB_SSH_KEY')`
@@ -139,6 +232,8 @@ stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
 | deploys | PT20M | a cold image pull is the unbounded case |
 | `lab.caddy/renew-certs` | PT15M | lego waits 90s for DNS propagation first |
 | `lab.kestra/purge` | PT30M | a first purge after a backlog deletes a lot |
+| `lab.<slice>/plan` | PT10M | a first run downloads providers; after that, seconds |
+| `lab.<slice>/apply` | PT30M | provider write paths can be slow; a hung apply must still die |
 | `lab.chezmoi/packages` | PT20M | a cold cask or mas download; a satisfied run is ~1s |
 | `lab.chezmoi/packages-upgrade` | PT45M | deliberately generous — see below |
 | `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |
@@ -149,7 +244,9 @@ timed-out backup keeps running host-side, and it is the script's own `EXIT`
 trap, not Kestra, that restarts a stopped stack. If you need the host
 process dead, `pkill` it on the mini. This is why the backup ceilings are
 set wide rather than tight: firing one early gains nothing and costs a
-false page.
+false page. (Docker tasks — the deploys — do not share this wart: killing
+the execution kills the task container, process and all. One of the
+trust model's quieter wins.)
 
 ## Alerting
 

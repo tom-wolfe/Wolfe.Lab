@@ -19,11 +19,6 @@ tasks:
     # Must stay under the 10-minute schedule: with concurrency QUEUE, a
     # pass that outlives its interval stacks the next one behind it.
     timeout: PT8M
-    host: host.docker.internal
-    port: "22"
-    username: tomwolfe
-    authMethod: PUBLIC_KEY
-    privateKey: "{{ secret('LAB_SSH_KEY') }}"
     commands:
       - obsidian/dnd
 
