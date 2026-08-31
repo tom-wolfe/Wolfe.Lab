@@ -1,6 +1,6 @@
 # Wolfe.Lab
 
-Monorepo for my machine and homelab configuration.
+Monorepo for my machine and homelab configuration!
 
 ## Layout
 
