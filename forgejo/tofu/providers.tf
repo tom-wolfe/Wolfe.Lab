@@ -26,6 +26,14 @@ terraform {
       source  = "registry.terraform.io/adyxax/forgejo"
       version = "~> 1.2"
     }
+    # The git.twolfe.dev clone-name record (records.tf). A PROVIDER, not
+    # a slice: per-service DNS lives in the owning slice's root
+    # (caddy/README.md) — this is that rule's first per-service use.
+    netlify = {
+      # Fully-qualified: OpenTofu defaults to registry.opentofu.org.
+      source  = "registry.terraform.io/netlify/netlify"
+      version = "~> 0.4"
+    }
   }
 }
 
@@ -36,4 +44,8 @@ provider "forgejo" {
 
 provider "adyxax" {
   base_uri = "http://macmini.local:3000"
+}
+
+provider "netlify" {
+  token = var.netlify_token
 }

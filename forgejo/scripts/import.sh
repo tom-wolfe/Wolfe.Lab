@@ -1,6 +1,6 @@
 #!/bin/bash
 
-forgeBase="ssh://git@macmini.local:2222"
+forgeBase="ssh://git@git.twolfe.dev"
 
 for dir in "$1"/*/*/; do
   org=$(dirname "$dir")

@@ -105,5 +105,11 @@ In order. Step 1 is the precondition and happens at the desk.
    beszel/README.md "The laptops": agents dial the hub at the mini's
    MagicDNS name over the tailnet. Status alerts OFF for machines that
    are allowed to sleep.
-3. **Later era**: per-service sidecar IPs — forgejo's port-22 clone URL
-   is the first customer.
+3. **Per-service sidecar IPs — forgejo built 2026-08-31**, the first
+   customer as planned: a userspace `tailscale/tailscale` sidecar in the
+   forgejo container's network namespace gives it its own tailnet seat
+   with port 22 free, and clone URLs go portless at `git.twolfe.dev`
+   (an A record in forgejo/tofu at the sidecar's address — the
+   per-service neat-name pattern from the edge/DNS design). Design and
+   bootstrap in forgejo/README.md "Tailnet identity"; further customers
+   as they prove worth a dedicated address.

@@ -32,12 +32,24 @@ front door is down.
 | `:80` | Caddy — HTTP→HTTPS redirect | — | `caddy` |
 | `:443` | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below) | `caddy` |
 | `:3000` | Forgejo — web UI + API | Forgejo account; API: 1P `forgejo-api-token` | `forgejo` |
-| `:2222` | Forgejo SSH (git clone/push; container port 22) | SSH key registered in Forgejo profile | `forgejo` |
 | `:3900` | Garage — S3 API | 1P `garage-tofu-state-key` (per-bucket keys) | `garage` |
 | `:3903` | Garage — admin API | 1P `garage-s3-admin-token` | `garage` |
 | `:8090` | Beszel — hub UI + API | Beszel superuser account; `/api/health` is unauthenticated | `beszel` |
 | `:8180` | Kestra — web UI + API | basic auth: 1P `kestra-admin`; webhook path key-authed | `kestra` |
 | `:8096` | Jellyfin — web + clients | Jellyfin accounts | `jellyfin` |
+
+## git.twolfe.dev (tailnet-routed)
+
+Forgejo's own seat on the tailnet — a tailscale sidecar sharing the
+container's network namespace, so git gets a portless clone URL. The
+record (`forgejo/tofu`) points at the *sidecar's* Tailscale address, not
+the mini's: resolution needs the internet like every name here, routing
+needs the tailnet. `forgejo.tailf823b8.ts.net` is the same endpoint by
+its DNS-independent MagicDNS name (forgejo/README.md "Tailnet identity").
+
+| Address | Service | Auth | Defined in |
+| --- | --- | --- | --- |
+| `:22` | Forgejo SSH — `git@git.twolfe.dev:<user>/<repo>.git` | SSH key registered in Forgejo profile | `forgejo` |
 | `:8080` | qBittorrent — web UI (via gluetun's namespace) | qBittorrent account (1P `qbittorrent-webui` is a copy) | `qbittorrent` |
 
 Notes:

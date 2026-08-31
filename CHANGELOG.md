@@ -4,6 +4,23 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.14.0] - 2026-08-31
+
+### Added
+
+- Forgejo now gets GitHub-style searching.
+
+### Changed
+
+- **Forgejo gets its own tailnet identity.**
+  A `tailscale/tailscale` sidecar (userspace, sharing the forgejo
+  container's network namespace) puts the container on the tailnet with
+  its own address, so clone URLs become: `git@git.twolfe.dev:<user>/<repo>.git`.
+
+### Removed
+
+- Vorssaint's settings are no-longer managed. I keep changing them too much and it's annoying. 
+
 ## [0.13.0] - 2026-08-31
 
 ### Added

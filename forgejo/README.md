@@ -6,7 +6,7 @@ source of truth for every repository in the lab (push-mirrored to GitHub).
 | | |
 |---|---|
 | Web UI | http://macmini.local:3000 (also http://192.168.0.8:3000) |
-| SSH clone port | 2222 |
+| SSH clone | `git@git.twolfe.dev:<user>/<repo>.git` — portless, tailnet-only |
 | Image | `codeberg.org/forgejo/forgejo` pinned in `compose.yaml` |
 | State | `~/Docker/forgejo/data` (bind mount → `/data` in the container) |
 | Database | SQLite at `~/Docker/forgejo/data/gitea/forgejo.db` |
@@ -103,17 +103,97 @@ git clone http://macmini.local:3000/<user>/<repo>.git
 SSH — add your public key in the web UI under *Settings → SSH / GPG Keys*, then:
 
 ```sh
-git clone ssh://git@macmini.local:2222/<user>/<repo>.git
+git clone git@git.twolfe.dev:<user>/<repo>.git
 ```
 
-The non-standard port is easy to forget. Put this in `~/.ssh/config` and plain
-`git@macmini.local:user/repo.git` works:
+Portless, standard SSH, no `~/.ssh/config` tricks — the port-2222 era and
+its config workaround are gone. The name resolves to the container's own
+tailnet address (next section), so it works from any tailnet machine, on
+the LAN or off it, and from nowhere else; HTTP clone above is the
+non-tailnet fallback, and `git@forgejo.tailf823b8.ts.net:` reaches the
+same SSH endpoint by its DNS-independent MagicDNS name.
 
-```
-Host macmini.local
-    Port 2222
-    User git
-```
+## Tailnet identity
+
+Forgejo is the one service with its own seat on the tailnet, provided by
+a `tailscale/tailscale` sidecar sharing the forgejo container's network
+namespace (`network_mode: service:server`) and advertised as
+**`git.twolfe.dev`** (an A record in `tofu/records.tf` at the sidecar's
+address). The entire point is one fact: on a dedicated address, container
+port 22 is free, so clone URLs need no port. This is
+`tailscale/README.md` follow-up #3, and the end of the wait recorded in
+`compose.yaml`'s clone-URL decision.
+
+Mechanics worth knowing (the rest is comments in `compose.yaml`):
+
+- **Userspace mode.** No TUN device, no capabilities. tailscaled
+  terminates inbound tailnet connections itself and proxies each to the
+  same port on 127.0.0.1 of the shared namespace — forgejo's sshd on 22,
+  and incidentally its web server on 3000. Nothing dials *out* through
+  the sidecar, and userspace mode couldn't offer that to forgejo anyway.
+- **Why `git.twolfe.dev` and not `forgejo.lab.twolfe.dev`.** One name
+  resolves to one address, and the web name and the SSH name point at
+  *different machines*: `forgejo.lab.twolfe.dev` must keep resolving to
+  the mini so the web UI routes through caddy, and port 22 at the mini's
+  address is macOS Remote Login — the very conflict that created :2222.
+  (`forgejo.ts.twolfe.dev` has the same trap: the `*.ts` wildcard is
+  also the mini.) So SSH gets its own name — the per-service "neat
+  public name in the owning slice's tofu, pointing at a Tailscale IP"
+  pattern from `caddy/README.md`, here in its first instance. The cost:
+  resolution rides Netlify DNS, like every `.lab` name. The sidecar's
+  MagicDNS name, `forgejo.tailf823b8.ts.net`, is the same endpoint with
+  no DNS dependency — the fallback when Netlify is the broken thing.
+- **State is disposable and not backed up.** `~/Docker/forgejo/tailscale`
+  (node keys, tailnet IP) sits beside `data/`, not inside it, so the
+  nightly backup ignores it on purpose. Wipe it and re-enrol with a
+  fresh auth key: same MagicDNS name, new 100.x IP, and nothing
+  references the IP.
+
+### Bootstrap
+
+Order matters — the 1Password item must exist **before** the merge, or
+the `create_` template fails the whole `chezmoi apply` and the tick goes
+red (the beszel bootstrap warning, same shape).
+
+1. **Mint an auth key**: admin console → Settings → Keys → Auth keys →
+   Generate. Not reusable, not ephemeral, no tags. Its own expiry barely
+   matters — it's spent at enrolment and never replayed (`TS_AUTH_ONCE`).
+2. **Vault it**: item `forgejo-tailscale` in the Wolfe.Lab vault, key in
+   `credential`.
+3. **Materialize**: on the mini, `chezmoi apply` writes
+   `~/Docker/forgejo/tailscale.env`.
+4. **Merge.** The tick's deploy converges the stack and the sidecar
+   enrols. Confirm the `forgejo` node in the admin console, then
+   **disable its key expiry** — same reasoning as the mini itself: a
+   server whose node key silently expires drops off the tailnet with
+   nothing to notice.
+5. **Declare the record.** Read the sidecar's address (admin console, or
+   `tailscale status | grep forgejo` from any machine), write it in as
+   the **default** of `forgejo_tailscale_ipv4` in `tofu/variables.tf`
+   (caddy's `lab_tailscale_ipv4` pattern) and commit; then from `tofu/`:
+   `op run --env-file=secrets.env -- tofu apply`. Tripwire: **1 to add**
+   (the `git.twolfe.dev` record), 0 changed, 0 destroyed. Until the
+   default is written in, every plan of this root prompts for the
+   variable — deliberate: it means the record isn't real yet.
+6. **Repoint remotes** on each machine — the old
+   `ssh://git@macmini.local:2222/...` URLs died with the port publish:
+
+   ```sh
+   old="ssh://git@macmini.local:2222/"
+   new="git@git.twolfe.dev:"
+   find ~/Development -maxdepth 4 -type d -name .git 2>/dev/null | while read -r g; do
+     repo="${g%/.git}"
+     url="$(git -C "$repo" remote get-url origin 2>/dev/null)" || continue
+     case "$url" in
+       "$old"*) git -C "$repo" remote set-url origin "$new${url#"$old"}"
+                echo "repointed: $repo" ;;
+     esac
+   done
+   ```
+
+7. First contact from each machine accepts a new `known_hosts` entry.
+   The host keys themselves are unchanged (same `data/ssh/`) — only the
+   name is new.
 
 ## Upgrading
 
@@ -239,6 +319,17 @@ probes HTTP, so read the logs when diagnosing:
 ```sh
 docker-compose logs | grep -iE 'address already in use|\[F\]|fatal'
 docker inspect forgejo --format '{{.RestartCount}}'   # >0 and climbing = looping
+```
+
+**Tailnet SSH dead after a manual `docker restart forgejo`.** A restarted
+container is a new network namespace, and the sidecar keeps the dead one —
+qbittorrent's documented trap with the roles reversed. Compose-driven
+recreates are covered (`depends_on.restart: true`), and the backup's
+stop/start cycles both containers in dependency order; only a manual
+restart of forgejo alone needs the chaser:
+
+```sh
+docker restart forgejo-tailscale
 ```
 
 ## Repositories as code (`tofu/`)
@@ -368,6 +459,6 @@ upstream issues at svalabs/terraform-provider-forgejo.
   later add a domain or reverse proxy, update `FORGEJO__server__DOMAIN` and
   `FORGEJO__server__ROOT_URL` together, or generated clone links and redirects
   will point at the wrong host.
-- Nothing here is exposed to the internet. The ports are published on all
-  interfaces, so anything on the LAN can reach it, but no router port
-  forwarding is configured.
+- Nothing here is exposed to the internet. The `:3000` publish is on all
+  interfaces, so anything on the LAN can reach the web UI, but no router
+  port forwarding is configured; SSH is reachable only over the tailnet.
