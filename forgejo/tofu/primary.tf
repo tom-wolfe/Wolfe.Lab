@@ -1,11 +1,3 @@
-# Shape 3: Wolfe.Lab lives on Forgejo as the primary, push-mirrored to
-# GitHub as backup/showcase. clone_addr imports the full history from
-# GitHub once at creation; after that, Forgejo is the source of truth and
-# every push flows back to GitHub automatically (sync_on_commit).
-#
-# The mini's chezmoi and any GitHub-pulling machinery keep working
-# unchanged: the GitHub copy stays current via the push mirror.
-
 resource "forgejo_repository" "wolfe_lab" {
   owner      = var.forgejo_owner
   name       = "Wolfe.Lab"

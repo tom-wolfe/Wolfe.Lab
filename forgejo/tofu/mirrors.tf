@@ -5,8 +5,7 @@ locals {
     "DisasterCare" = var.github_token_disastercare
   }
 
-  # GitHub owner -> Forgejo owner. The Forgejo orgs mirror the GitHub org
-  # structure but were created with cleaner names.
+  # GitHub owner -> Forgejo owner.
   forgejo_owners = {
     "tom-wolfe"    = "tom-wolfe"
     "hamelin-org"  = "Hamelin"
@@ -19,8 +18,6 @@ locals {
   # mode = "active": writable repo, cloned ONCE from GitHub at creation.
   #
   # !! Flipping mode REPLACES the Forgejo repository (destroy + re-clone).
-  # !! Before flipping active -> mirror, push any work you care about —
-  # !! the Forgejo copy is destroyed. See README.md.
   repos = {
     # --- DisasterCare ----------------------------------------------------
     "Abodio" = { owner = "DisasterCare", private = true, mode = "mirror" }
@@ -86,19 +83,6 @@ resource "forgejo_repository" "repo" {
   has_releases      = each.value.mode != "mirror"
   has_wiki          = each.value.mode != "mirror"
 
-  # svalabs provider (still in 1.6.0) re-plans this computed block as
-  # unknown on every run, producing perpetual no-op updates. Worse, ANY
-  # update the provider sends — no-op or real — PATCHes the full repo
-  # object including an empty wiki_branch, which 500s on repos with wikis
-  # ("'' is not a valid branch name"; seen for real on Hamelin 2026-08-27).
-  # Workaround for a stuck update: make the same change out-of-band with a
-  # minimal API PATCH that omits wiki_branch, then apply — clean no-op.
-  # Upstream: svalabs/terraform-provider-forgejo#132, #169. Remove once
-  # fixed.
-  #
-  # NB: if a repo is deleted outside tofu, refresh errors instead of
-  # re-creating — intentional per upstream #111. Recover with:
-  #   tofu state rm 'forgejo_repository.repo["<name>"]'
   lifecycle {
     ignore_changes = [internal_tracker]
   }

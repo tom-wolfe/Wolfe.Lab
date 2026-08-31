@@ -1,30 +1,14 @@
 # Forgejo — home server
 
-Self-hosted git server running on the Mac mini via Docker Compose, and the
-source of truth for every repository in the lab (push-mirrored to GitHub).
+Self-hosted git server running on the Mac mini via Docker Compose.
 
 | | |
 |---|---|
 | Web UI | http://macmini.local:3000 (also http://192.168.0.8:3000) |
 | SSH clone | `git@git.twolfe.dev:<user>/<repo>.git` — portless, tailnet-only |
-| Image | `codeberg.org/forgejo/forgejo` pinned in `compose.yaml` |
 | State | `~/Docker/forgejo/data` (bind mount → `/data` in the container) |
 | Database | SQLite at `~/Docker/forgejo/data/gitea/forgejo.db` |
 | Backups | `/Volumes/Data2/backups/forgejo` (external drive; nightly) |
-
-This slice holds everything forgejo-shaped:
-
-- `compose.yaml` — the stack definition (no secrets)
-- `flows/` — the deploy pipeline and the nightly backup (`flow.yaml` + `script.sh` each, below)
-- `tofu/` — every repository as code (below)
-- `scripts/` — utilities (`import.sh`, the old-repo importer)
-
-**`~/Docker/forgejo/data`** holds everything stateful — repos, `app.ini`, the
-SQLite DB, SSH host private keys, JWT signing keys. It lives *outside* the
-git repo on purpose: those are secrets, and they'd otherwise be one
-`git add -A` away from being committed. Set `FORGEJO_DATA` to relocate it
-(both `compose.yaml` and `backup.sh` honour it). Nothing is stored in the
-container itself, so the image can be replaced freely.
 
 ## Deployment
 
@@ -47,9 +31,6 @@ docker-compose restart       # restart
 docker-compose down          # stop (data is untouched)
 docker-compose up -d         # start
 ```
-
-`restart: unless-stopped` brings the container back automatically — **but only
-once the Docker daemon is running.** See "After a reboot" below.
 
 ## First-run setup
 

@@ -3,7 +3,7 @@ terraform {
 
   backend "s3" {
     bucket                      = "tofu-state"
-    key                         = "forgejo/terraform.tfstate"
+    key                         = "dns/terraform.tfstate"
     endpoints                   = { s3 = "http://macmini.local:3900" }
     region                      = "garage"
     use_path_style              = true
@@ -12,31 +12,20 @@ terraform {
     skip_requesting_account_id  = true
     skip_metadata_api_check     = true
     skip_s3_checksum            = true
-    # use_lockfile absent because Garage lacks S3 conditional writes.
+    # use_lockfile deliberately absent — Garage lacks S3 conditional writes.
+    # Solo operator: never run applies from two machines at once.
   }
 
   required_providers {
-    forgejo = {
-      source = "registry.terraform.io/svalabs/forgejo"
-    }
-    # Push mirrors only. Svalabs doesn't support them.
-    adyxax = {
-      source  = "registry.terraform.io/adyxax/forgejo"
-      version = "~> 1.2"
-    }
+    # Same provider, same 1P item as the caddy and forgejo roots — one
+    # account-wide PAT, several roots. See README.md for why this root
+    # exists at all.
     netlify = {
+      # Fully-qualified: OpenTofu defaults to registry.opentofu.org.
       source  = "registry.terraform.io/netlify/netlify"
       version = "~> 0.4"
     }
   }
-}
-
-provider "forgejo" {
-  host = "http://macmini.local:3000"
-}
-
-provider "adyxax" {
-  base_uri = "http://macmini.local:3000"
 }
 
 provider "netlify" {

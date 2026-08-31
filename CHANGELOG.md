@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [Unreleased]
+
+### Added
+
+- **A `dns/` root.** With the Proton Mail DNS records imported from Netlify.
+
 ## [0.14.0] - 2026-08-31
 
 ### Added

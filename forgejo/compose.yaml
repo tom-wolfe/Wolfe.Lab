@@ -2,109 +2,36 @@ name: forgejo
 
 services:
   server:
-    # Pinned for repeatability. To upgrade: bump this tag, then `docker compose up -d`.
-    # Never skip a major version — see "Upgrading" in README.md.
     image: codeberg.org/forgejo/forgejo:16.0.2
     container_name: forgejo
     restart: unless-stopped
-
     environment:
-      # NOT a /etc/localtime bind mount: on macOS that's a symlink into the
-      # VERSIONED /var/db/timezone/tz/<tzdata>/ tree. Docker bakes the
-      # resolved path into the container, and the next Apple tzdata update
-      # deletes it — the container then fails to start with "error while
-      # creating mount source path ... operation not permitted" (2026-08-24).
-      TZ: Europe/London
-
-      USER_UID: 1000
-      USER_GID: 1000
-
-      FORGEJO____APP_NAME: WolfeForge
+      FORGEJO____APP_NAME: "Wolfe.Lab"
       FORGEJO____APP_SLOGAN: I write code and stuff.
-
-      # --- Identity / URLs -------------------------------------------------
-      # ROOT_URL must match how you reach the server in the browser, otherwise
-      # clone URLs and OAuth redirects come out wrong. That's now the Caddy
-      # front door (TLS at caddy, plain HTTP on the lab network behind it).
-      # http://macmini.local:3000 still WORKS via the published port — it's
-      # the automation path (kestra flows, tofu providers) and the fallback
-      # if the front door is down — but links and clone URLs advertise the
-      # proxied name.
-      FORGEJO__server__DOMAIN: forgejo.lab.twolfe.dev
-      FORGEJO__server__ROOT_URL: https://forgejo.lab.twolfe.dev/
-      FORGEJO__server__HTTP_PORT: 3000
-
-      # SSH is handled by the OpenSSH daemon built into the image, which always
-      # binds container port 22 (see /etc/s6/openssh/run) and cannot be turned
-      # off by configuration. Do NOT set START_SSH_SERVER=true — that starts a
-      # *second* SSH server on the same port and the container crash-loops.
-      #
-      # SSH_DOMAIN/SSH_PORT are only what Forgejo advertises in clone URLs.
-      # git.twolfe.dev is an A record (tofu/records.tf) at the tailscale
-      # sidecar's address below — the container's OWN tailnet seat, where
-      # container port 22 is reachable directly, so URLs are portless AND
-      # memorable. This is the "dedicated IP with a free port 22" the
-      # clone-URL decision (2026-08-28) waited for: URLs that work the
-      # same on every machine, now that every machine is on the tailnet.
-      # The ssh://macmini.local:2222 era ended with the 2222:22 publish;
-      # HTTP via :3000 remains the fallback, and the sidecar's MagicDNS
-      # name (forgejo.tailf823b8.ts.net) answers the same SSH if Netlify
-      # DNS is ever the broken thing.
-      FORGEJO__server__SSH_DOMAIN: git.twolfe.dev
-      FORGEJO__server__SSH_PORT: "22"
-
-      # --- Database --------------------------------------------------------
+      FORGEJO__cron__ENABLED: "true"
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__database__PATH: /data/gitea/forgejo.db
-
-      # --- Home-server hardening -------------------------------------------
-      # NOTE: deliberately no FORGEJO__security__INSTALL_LOCK here.
-      # The image runs `environment-to-ini` on every start, which stamps every
-      # FORGEJO__* variable over app.ini. INSTALL_LOCK is one-time state that
-      # the installer writes, not config — pinning it via env means the value
-      # the installer just saved gets reverted on the restart that follows,
-      # Forgejo then sees an installed DB with an unlocked install, aborts
-      # fatally mid-request (ERR_CONNECTION_RESET in the browser) and loops
-      # back to the install page forever. Leave it to app.ini.
-      #
-      # Keep registration open until the admin account exists, then set this to
-      # "true" and `docker compose up -d`. This one IS safe to env-manage.
-      FORGEJO__service__DISABLE_REGISTRATION: "true"
-      FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
-
-      FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
-      FORGEJO__cron__ENABLED: "true"
-
-      # --- Repositories ----------------------------------------------------
-      # Enable push-to-create for users and orgs (the org/user must already exist).
-      FORGEJO__repository__ENABLE_PUSH_CREATE_USER: "true"
-      FORGEJO__repository__ENABLE_PUSH_CREATE_ORG: "true"
-
-      # Enable GitHub-style search.
       FORGEJO__indexer__REPO_INDEXER_ENABLED: "true"
-
-      # --- Pull Requests ---------------------------------------------------
       FORGEJO__pull-request__DEFAULT_MERGE_STYLE: "squash"
-
-
-
+      FORGEJO__repository__ENABLE_PUSH_CREATE_ORG: "true"
+      FORGEJO__repository__ENABLE_PUSH_CREATE_USER: "true"
+      FORGEJO__server__DOMAIN: forgejo.lab.twolfe.dev
+      FORGEJO__server__HTTP_PORT: 3000
+      FORGEJO__server__ROOT_URL: https://forgejo.ts.twolfe.dev/
+      FORGEJO__server__SSH_DOMAIN: git.twolfe.dev
+      FORGEJO__server__SSH_PORT: "22"
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+      FORGEJO__service__ENABLE_NOTIFY_MAIL: "false"
+      FORGEJO__service__REQUIRE_SIGNIN_VIEW: "false"
+      TZ: Europe/London
+      USER_UID: 1000
+      USER_GID: 1000
     volumes:
-      # Everything stateful lives here: repos, config, SQLite DB, avatars, LFS.
-      #
-      # Deliberately an ABSOLUTE path outside this git repo. A relative ./data
-      # would put SSH host private keys, JWT signing keys and the database
-      # inside the working tree, where they'd be one `git add -A` away from
-      # being committed. Override with FORGEJO_DATA if you relocate it.
-      - ${FORGEJO_DATA:-/Users/tomwolfe/Docker/forgejo/data}:/data
-
+      - /Users/tomwolfe/Docker/forgejo/data:/data
     ports:
-      # Web/API fallback and the automation path (kestra, tofu). SSH has
-      # no host publish at all: it lives on the sidecar's tailnet address.
       - "3000:3000"
-
     networks:
       - lab
-
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/healthz"]
       interval: 30s
@@ -113,66 +40,24 @@ services:
       start_period: 60s
 
   tailscale:
-    # Pinned. Forgejo's own seat on the tailnet: this is what frees port
-    # 22 for portless clone URLs (see SSH_DOMAIN above).
     image: tailscale/tailscale:v1.102.3
     container_name: forgejo-tailscale
     restart: unless-stopped
-
-    # Joins FORGEJO's network namespace — the reverse of the
-    # qbittorrent/gluetun arrangement, where the app joins the tunnel.
-    # This direction keeps forgejo untouched: it stays on the lab
-    # network for caddy, keeps its 3000 publish and its healthcheck, and
-    # the sidecar is pure addition. In userspace mode (no TUN device, no
-    # NET_ADMIN — macOS Docker couldn't offer them cleanly anyway)
-    # tailscaled terminates inbound tailnet connections itself and dials
-    # the same port on 127.0.0.1 of the shared namespace, where
-    # forgejo's sshd (22) and web server (3000) are listening. Outbound
-    # tailnet dialling from forgejo doesn't exist in this mode; nothing
-    # needs it.
     network_mode: service:server
-
     depends_on:
       server:
         condition: service_healthy
-        # A RECREATED forgejo is a NEW network namespace, and the
-        # sidecar would otherwise keep the dead one — tailnet SSH
-        # silently down (qbittorrent/compose.yaml documents the trap;
-        # here the roles are reversed). restart: true covers
-        # compose-driven recreates; a manual `docker restart forgejo`
-        # still needs a `docker restart forgejo-tailscale` chaser.
         restart: true
-
     environment:
-      # MagicDNS name: forgejo.tailf823b8.ts.net. The ADVERTISED clone
-      # name is git.twolfe.dev — tofu/records.tf points it at this
-      # node's 100.x — and the MagicDNS name is the same endpoint with
-      # no DNS dependency, kept as the fallback.
       TS_HOSTNAME: forgejo
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: "true"
-      # Log in only when the state dir says we aren't. Without this,
-      # every container start replays TS_AUTHKEY — which EXPIRES, so the
-      # sidecar would run fine until the first restart after expiry and
-      # then crash-loop for no visible reason.
       TS_AUTH_ONCE: "true"
-
-    # TS_AUTHKEY — materialized from 1Password by a chezmoi create_
-    # template; see "Tailnet identity" in README.md. Spent at enrolment,
-    # never replayed (TS_AUTH_ONCE), so a stale key here is harmless
-    # until the state volume below is wiped.
     env_file:
       - /Users/tomwolfe/Docker/forgejo/tailscale.env
-
     volumes:
-      # Node identity (keys, tailnet IP). A SIBLING of data/, not inside
-      # it, so the nightly backup deliberately doesn't carry it: it is
-      # disposable. Wipe it, mint a fresh auth key, re-enrol — same
-      # MagicDNS name, new 100.x IP, and nothing references the IP.
       - /Users/tomwolfe/Docker/forgejo/tailscale:/var/lib/tailscale
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
-  # must be deployed once before this stack. See caddy/README.md.
   lab:
     external: true

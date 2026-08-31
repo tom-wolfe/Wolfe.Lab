@@ -22,7 +22,9 @@ This slice deliberately owns ONLY the shared edge concerns:
 
 Routes and public DNS names do NOT live here — see the contract below.
 Netlify is a *provider*, not a slice: any slice needing a DNS record
-configures it in its own tofu root.
+configures it in its own tofu root. Records that belong to the domain
+itself rather than to any slice (mail, verification) live in `dns/` —
+its README records the boundary.
 
 ## The contract: how a slice gets a hostname
 

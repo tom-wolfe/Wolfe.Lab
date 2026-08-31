@@ -10,33 +10,7 @@ a failure visible outranks anything that adds a new thing to fail.
 
 ## Next
 
-### 1. Netlify DNS — import the records that aren't managed yet
-
-`caddy/tofu` declares exactly one record, the `*.lab` wildcard. The rest of
-the `twolfe.dev` zone is now hand-made and undeclared: the Proton Mail
-migration (2026-08) added MX, SPF, DKIM and DMARC records to move primary
-email onto the domain. They work, but they are drift — invisible to a plan,
-absent from any review, and unrecoverable from this repo if the zone were
-ever lost. Cheap to fix and pure risk reduction, which is why it sits this
-high rather than with the feature work.
-
-**Import, do not recreate.** Use `import` blocks and require the plan to
-show **zero changes** before applying. Getting an MX or SPF record subtly
-wrong doesn't error, it silently stops mail or lands it in spam, and the
-feedback loop is days long. `dig MX twolfe.dev` and friends before and
-after, and compare.
-
-**It also forces a decision the current model dodges.** `caddy/README.md`
-says Netlify is a provider, not a slice, and that per-service records live
-in the owning slice's tofu root. Email records own nothing — there is no
-mail slice, and Proton is SaaS. Zone-level records (MX, SPF, DMARC, apex,
-domain verification) belong to the *domain*, not to any slice. Likeliest
-answer is a small `dns/` root owning zone-level records only, leaving the
-per-service rule untouched; whether the caddy wildcard moves there too is
-the arguable part, since `caddy/README.md` has a reasoned case for keeping
-it with the front door it points at.
-
-### 2. Uptime Kuma — a `kuma/` slice
+### 1. Uptime Kuma — a `kuma/` slice
 
 Endpoint checks, which is the one shape of failure nothing here currently
 sees. Beszel is agent-based: it reports that a host is loaded or a container
@@ -57,6 +31,11 @@ home item), Kuma there is genuinely external to the *mini* — so it catches
 "the mini is down", which today only healthchecks.io sees, and only after a
 ten-minute grace. On the mini it cannot see the one failure you most want.
 
+**Decided 2026-08-31: wait for the Pi rather than land on the mini as a
+stopgap.** No Pi exists as a managed node yet (nothing on the tailnet, rack
+kit still arriving), so this item queues behind the Pi joining the fleet —
+it does not jump the queue by compromising on placement.
+
 **What it is still NOT: an outside observer.** Kuma anywhere in the house
 shares the house's fate — power cut, router dead, silence that looks like
 health. That is the whole
@@ -76,7 +55,7 @@ reduction against the lab's biggest remaining single point of failure (one
 copy, one drive, one machine), whereas this both adds visibility *and* adds
 a thing to fail. Swapping the two would be defensible.
 
-### 3. Offsite backup — restic to Backblaze B2
+### 2. Offsite backup — restic to Backblaze B2
 
 Native restic encryption (repo password from 1Password, same
 vault-is-the-origin pattern as everything else). Not only offsite: the
@@ -85,7 +64,7 @@ content-addressed dedup plus compression collapses those to roughly one
 snapshot plus deltas. It fixes the space problem and the no-second-copy
 problem in one move. `garage/rclone.env` already proves the S3 plumbing.
 
-### 4. Jellyfin library cleanup, then the *arr stack
+### 3. Jellyfin library cleanup, then the *arr stack
 
 Two phases, and the first is the valuable one.
 
@@ -120,14 +99,14 @@ configs are small SQLite databases, nothing like the Immich case. The media
 itself is already unprotected either way — 1.6 TB of it, against 3.3 GB of
 backups — which is an argument for the offsite item above landing first.
 
-### 5. Obsidian vaults into git
+### 4. Obsidian vaults into git
 
 Replaces Google Drive as the vaults' storage with an hourly commit-and-push
 job to Forgejo. Better on every axis: history, dedup, rides the existing
 `lab.forgejo/backup`, and it drops the `~/Library/CloudStorage` dependency
 that's the reason sshd needs "Full Disk Access for remote users" granted.
 
-### 6. Renovate as a Kestra flow
+### 5. Renovate as a Kestra flow
 
 Roughly nine pinned images across the slices (kestra, postgres, caddy,
 forgejo, jellyfin, garage, lego, beszel). Renovate runs fine as a container
