@@ -10,53 +10,7 @@ a failure visible outranks anything that adds a new thing to fail.
 
 ## Next
 
-### 1. Tailscale — a `tailscale/` slice
-
-Host-level client on all three Macs via the Brewfile first; MagicDNS on; no
-subnet router. It's early in the list because three things already written
-down depend on it:
-
-- the neat public names (`jellyfin.twolfe.dev`) point at a Tailscale IP —
-  see the edge/DNS design;
-- the portless Forgejo clone URL waits on a dedicated IP with a free port
-  22 (`forgejo/compose.yaml` records that decision);
-- `100.64/10` isn't touched by the router's DNS-rebind protection, so the
-  DHCP-advertised-resolver workaround in `caddy/README.md` can come out.
-
-Per-service sidecars come later, when the Forgejo port-22 case is worth it.
-Accepted trade-off: Tailscale's coordination server is a cloud dependency.
-Headscale is rejected — if the lab is down you can't reach the lab to fix
-it.
-
-**Precondition: get the mini off NordVPN first.** Measured 2026-08-29 — the
-mini's default route is already a Nord tunnel (`utun8`, gateway `10.5.0.2`,
-NordLynx). Two consequences. Tailscale would still connect, but NAT
-traversal through a commercial VPN's shared NAT rarely hole-punches, so
-peers fall back to DERP relay: fine for SSH and web UIs, poor for the
-`jellyfin.twolfe.dev` streaming case that is one of the reasons for doing
-this at all. And *every* outbound connection the lab makes already
-traverses Nord — git pulls, brew, lego's ACME calls, Pushover, and the
-healthchecks.io ping. With a kill switch that means a Nord outage is
-indistinguishable from an internet outage at the alert.
-
-Split tunnelling is not the fix: NordVPN has **no app-level split
-tunnelling on macOS** (Apple's Big Sur networking changes; the mini runs
-the full direct-download build 10.9.0, so there is no better build to
-switch to). Their only macOS option is a browser extension, useless for a
-native app.
-
-So the fix inverts it: move the one app that needs a VPN into a container
-behind a **`gluetun` sidecar**, and take the host off Nord entirely. One
-compose slice, the download client's traffic tunnelled, everything else —
-including Tailscale — on the real interface. This is the first half of the
-media-automation item below, pulled forward because it is a precondition
-here rather than a nice-to-have there.
-
-Order matters: settle this **before** repointing the `*.lab.twolfe.dev`
-wildcard at a Tailscale address, or a flaky tunnel takes name resolution
-for the whole lab with it. And test it at the desk, not remotely.
-
-### 2. Netlify DNS — import the records that aren't managed yet
+### 1. Netlify DNS — import the records that aren't managed yet
 
 `caddy/tofu` declares exactly one record, the `*.lab` wildcard. The rest of
 the `twolfe.dev` zone is now hand-made and undeclared: the Proton Mail
@@ -82,7 +36,7 @@ per-service rule untouched; whether the caddy wildcard moves there too is
 the arguable part, since `caddy/README.md` has a reasoned case for keeping
 it with the front door it points at.
 
-### 3. Uptime Kuma — a `kuma/` slice
+### 2. Uptime Kuma — a `kuma/` slice
 
 Endpoint checks, which is the one shape of failure nothing here currently
 sees. Beszel is agent-based: it reports that a host is loaded or a container
@@ -122,7 +76,7 @@ reduction against the lab's biggest remaining single point of failure (one
 copy, one drive, one machine), whereas this both adds visibility *and* adds
 a thing to fail. Swapping the two would be defensible.
 
-### 4. Offsite backup — restic to Backblaze B2
+### 3. Offsite backup — restic to Backblaze B2
 
 Native restic encryption (repo password from 1Password, same
 vault-is-the-origin pattern as everything else). Not only offsite: the
@@ -131,7 +85,7 @@ content-addressed dedup plus compression collapses those to roughly one
 snapshot plus deltas. It fixes the space problem and the no-second-copy
 problem in one move. `garage/rclone.env` already proves the S3 plumbing.
 
-### 5. Jellyfin library cleanup, then the *arr stack
+### 4. Jellyfin library cleanup, then the *arr stack
 
 Two phases, and the first is the valuable one.
 
@@ -166,14 +120,14 @@ configs are small SQLite databases, nothing like the Immich case. The media
 itself is already unprotected either way — 1.6 TB of it, against 3.3 GB of
 backups — which is an argument for the offsite item above landing first.
 
-### 6. Obsidian vaults into git
+### 5. Obsidian vaults into git
 
 Replaces Google Drive as the vaults' storage with an hourly commit-and-push
 job to Forgejo. Better on every axis: history, dedup, rides the existing
 `lab.forgejo/backup`, and it drops the `~/Library/CloudStorage` dependency
 that's the reason sshd needs "Full Disk Access for remote users" granted.
 
-### 7. Renovate as a Kestra flow
+### 6. Renovate as a Kestra flow
 
 Roughly nine pinned images across the slices (kestra, postgres, caddy,
 forgejo, jellyfin, garage, lego, beszel). Renovate runs fine as a container
@@ -181,7 +135,7 @@ task — it does **not** need the Actions runner — and it automates the "bump
 the pin via a normal PR first" ritual `kestra/README.md` currently asks for
 by hand.
 
-### 8. Forgejo Actions runner
+### 6. Forgejo Actions runner
 
 The big structural unlock, and still the plan of record from phase 3:
 CI, the changelog check (Forgejo issue #10), plan-on-PR and apply-on-merge.
@@ -189,7 +143,7 @@ It also closes a real correctness gap — Garage has no state locking, so
 concurrent `tofu apply`s are currently prevented by operator discipline
 alone, and the runner becomes the serialization point.
 
-### 9. Local models on the Mac Studio (hardware lands ~late Sept 2026)
+### 7. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 
 Pre-ordered M5 Ultra, ~4 weeks out. **Decided: it is a second node, not the
 mini's replacement — and it is a workstation, not a server.** WiFi, powered
