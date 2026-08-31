@@ -54,6 +54,13 @@ services:
 
     command: server standalone
 
+    # The image runs as uid 1000 and the socket inside Docker Desktop's VM
+    # is root:root 0660 — without gid 0, the Docker task runner's socket
+    # connect fails as `java.net.BindException: Permission denied` (every
+    # deploy red, 2026-08-31; reproduced and fix verified on a laptop).
+    group_add:
+      - "0"
+
     environment:
       # Config is code — the mounted application.yaml below. Secrets reach it
       # as ${...} Micronaut placeholders resolved from the env_file.
