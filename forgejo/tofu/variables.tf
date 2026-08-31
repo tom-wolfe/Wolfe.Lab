@@ -53,4 +53,5 @@ variable "forgejo_tailscale_ipv4" {
     which means updating this and re-applying.
   EOT
   type        = string
+  default     = "100.115.148.4"
 }
