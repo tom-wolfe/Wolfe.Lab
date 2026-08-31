@@ -70,7 +70,11 @@ kestra:
       # bind source a compose file resolves must be a path the daemon can
       # see. /Volumes is mounted read-only for the deploy guard: an
       # unmounted drive is a shadow directory, visible as such from here
-      # (see scripts/deploy.sh).
+      # (see scripts/deploy.sh). ~/Docker is mounted read-only because
+      # `env_file:` is resolved CLIENT-side: compose must read the file,
+      # and it reads it in here — bind SOURCES resolve at the daemon, but
+      # env files do not (cost us the forgejo/garage/qbittorrent deploys
+      # on cutover night, exit 1 on a missing env file).
       # Not forced: a flow that needs a different image or an extra mount
       # states its own values and keeps these.
       - type: io.kestra.plugin.scripts.shell.Commands
@@ -81,4 +85,5 @@ kestra:
             volumes:
               - /var/run/docker.sock:/var/run/docker.sock
               - /Users/tomwolfe/.local/share/chezmoi:/Users/tomwolfe/.local/share/chezmoi:ro
+              - /Users/tomwolfe/Docker:/Users/tomwolfe/Docker:ro
               - /Volumes:/Volumes:ro
