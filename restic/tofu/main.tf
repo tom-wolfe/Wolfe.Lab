@@ -9,6 +9,10 @@ resource "b2_bucket" "restic" {
     file_name_prefix             = ""
     days_from_hiding_to_deleting = 1
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # The key restic actually uses.

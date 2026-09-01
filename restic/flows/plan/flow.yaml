@@ -4,7 +4,7 @@ description: Daily drift report for the restic Tofu stack.
 
 labels:
   job: plan
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -25,5 +25,5 @@ tasks:
 triggers:
   - id: daily
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: "40 7 * * *"
+    cron: "50 7 * * *"
     timezone: Europe/London

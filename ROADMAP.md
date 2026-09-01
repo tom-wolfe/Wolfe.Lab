@@ -55,24 +55,7 @@ reduction against the lab's biggest remaining single point of failure (one
 copy, one drive, one machine), whereas this both adds visibility *and* adds
 a thing to fail. Swapping the two would be defensible.
 
-### 2. Offsite backup — restic to Backblaze B2
-
-**Built 2026-09-01 (see `restic/README.md`); remaining work is the
-bootstrap** — B2 account, vault items, `restic init`, first seed, restore
-drill.
-
-Redesigned on the way in (Tom's call): an earlier version of this entry
-proposed restic *on top of* the tarball scheme, deduplicating the ten
-`.tar.gz` per service. That was backups chained on backups — restic now
-**replaces** tar inside the same stop windows, and the keep-10 pruning
-gave way to one retention policy in `lab.restic/offsite`. Local repo on
-Data2 for fast restores and internet-down nights, `restic copy` to B2 as
-idempotent catch-up, weekly `restic check` against both repos, and a
-dead man's switch on the offsite run. Google Drive content stays out of
-scope until it's been sorted through; Immich still waits for this to be
-proven (a restore drill), not just merged.
-
-### 3. Jellyfin library cleanup, then the *arr stack
+### 2. Jellyfin library cleanup, then the *arr stack
 
 Two phases, and the first is the valuable one.
 
@@ -107,14 +90,14 @@ configs are small SQLite databases, nothing like the Immich case. The media
 itself is already unprotected either way — 1.6 TB of it, against 3.3 GB of
 backups — which is an argument for the offsite item above landing first.
 
-### 4. Obsidian vaults into git
+### 3. Obsidian vaults into git
 
 Replaces Google Drive as the vaults' storage with an hourly commit-and-push
 job to Forgejo. Better on every axis: history, dedup, rides the existing
 `lab.forgejo/backup`, and it drops the `~/Library/CloudStorage` dependency
 that's the reason sshd needs "Full Disk Access for remote users" granted.
 
-### 5. Renovate as a Kestra flow
+### 4. Renovate as a Kestra flow
 
 Roughly nine pinned images across the slices (kestra, postgres, caddy,
 forgejo, jellyfin, garage, lego, beszel). Renovate runs fine as a container
@@ -122,7 +105,7 @@ task — it does **not** need the Actions runner — and it automates the "bump
 the pin via a normal PR first" ritual `kestra/README.md` currently asks for
 by hand.
 
-### 6. Forgejo Actions runner — CI only
+### 5. Forgejo Actions runner — CI only
 
 Rescoped 2026-08-31: CD went to Kestra (plan-on-tick, apply-on-tap,
 kestra's root auto — kestra/README.md "OpenTofu CD"), applies are
@@ -137,7 +120,7 @@ own, but it should be named in the workflow design. And the runner must
 not hold the Docker socket: that trust was extended to Kestra, which
 runs only merged code — never to the component that touches PRs.
 
-### 7. Local models on the Mac Studio (hardware lands ~late Sept 2026)
+### 6. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 
 Pre-ordered M5 Ultra, ~4 weeks out. **Decided: it is a second node, not the
 mini's replacement — and it is a workstation, not a server.** WiFi, powered
@@ -181,7 +164,7 @@ Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
 workstation that is off is not a failure, and a Status alert would page on
 every shutdown.
 
-### 8. A config plane — Garage for configuration, the 1Password exit for secrets
+### 7. A config plane — Garage for configuration, the 1Password exit for secrets
 
 Designed 2026-08-31 (the poke's webhook URL forced the config half; the
 rotation dance pulled the secrets half up out of "Deliberately
