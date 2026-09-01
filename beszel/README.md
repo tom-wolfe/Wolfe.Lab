@@ -267,13 +267,15 @@ restoring a backup, which is why the backup records its image tag.
 
 ## Backup
 
-`flows/backup/script.sh` stops the hub, tars `~/Docker/beszel/data` to
-`/Volumes/Data2/backups/beszel/`, and starts it again — the last 10 kept,
-each with the image tag it was taken under, refusing to run if the drive
+`scripts/backup.sh` — the shared pipeline; `flows/backup/backup.conf`
+declares the paths — stops the hub, snapshots `~/Docker/beszel/data`
+into the restic repo on `/Volumes/Data2` (tagged with the image it was
+taken under; `lab.restic/offsite` ships it to B2 and owns retention — see
+`restic/README.md`), and starts it again, refusing to run if the drive
 isn't mounted. Nightly at 02:35 via `lab.beszel/backup`, staggered ahead of
 garage's 02:50.
 
-The stop is not optional: PocketBase runs SQLite in WAL mode, and tarring
+The stop is not optional: PocketBase runs SQLite in WAL mode, and copying
 that live can capture a database file without the `-wal` that completes it.
 A few seconds of downtime costs a gap in one metrics series.
 

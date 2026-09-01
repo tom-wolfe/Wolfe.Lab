@@ -4,29 +4,33 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [Unreleased]
+
+- **A `restic/` root to run the offsite backup.** One repository local, one remote.
+
+### Changed
+
+- Backups now happen directly through Restic.
+- Brave browser now gets installed instead of Chrome.
+
+### Fixed
+
+- Kestra now retries Postgres connections for 5 minutes on startup.
+
 ## [0.16.0] - 2026-09-01
 
 ### Added
 
-- **Dedicated environment triggers.** Both `tick` and `push-to-main` flows now 
-  exist as real "events" to hang stuff off. Makes it a bit clearer where the
-  controls are and exposes a single point to disable ticks when needed.
-
-### Fixed
-
-- **The 1Password rate-limit outage.** OpenTofu CD's runtime `op run` exhausted 
-  the service account's daily quota. Calls have been reduced for now due to the
-  CD workflow changes, but will be resolved fully when we add the offline vault.
+- **A `restic/` root to run the offsite backup.** One repository local, one remote.
 
 ### Changed
 
-- **Applies are now imperative** pushing to main now runs `tofu apply` for all 
-  the stacks, maintaining dependency order, and running `chezmoi update` first, 
-  so the code is up-to-date before applying.
-- Important tofu resources are now marked `prevent_destroy`.
-- **Plans only run daily.** Tofu plans now run once a day, and alert on drift.
-- **One `op` invocation per pipeline** instead of two (`init` and plan/apply now
-  share a single `op run`).
+- Backups now happen directly through Restic.
+- Brave browser now gets installed instead of Chrome.
+
+### Fixed
+
+- Kestra now retries Postgres connections for 5 minutes on startup.
 
 ## [0.15.0] - 2026-08-31
 
@@ -34,7 +38,9 @@ rather than versioned — the lab is continuous, not released.
 
 - **A `dns/` root.** With the Proton Mail DNS records imported from Netlify.
 - **OpenTofu CD.** `lab.<slice>/plan` runs on every green tick, reporting drift.
-  `lab.<slice>/apply` is always a human in the Kestra UI, because the unofficial providers have had real write bugs. The exception: `kestra/tofu` auto-applies — first-party provider, repo-recoverable resources.
+  `lab.<slice>/apply` is always a human in the Kestra UI, because the unofficial 
+  providers have had real write bugs. The exception: `kestra/tofu` auto-applies 
+  — first-party provider, repo-recoverable resources.
 - **The poke.** Push-to-main webhook from Forgejo to the tick.
 
 ### Changed

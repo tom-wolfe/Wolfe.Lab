@@ -9,6 +9,7 @@ datasources:
     driver-class-name: org.postgresql.Driver
     username: kestra
     password: ${KESTRA_DB_PASSWORD}
+    initialization-fail-timeout: 300000 # 5 minutes
 
 kestra:
   server:

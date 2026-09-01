@@ -1,0 +1,25 @@
+id: heartbeat
+namespace: lab.restic
+description: Dead man's switch for the offsite backup.
+labels:
+  job: heartbeat
+  alert: high
+concurrency:
+  limit: 1
+  behavior: QUEUE
+tasks:
+  - id: ping
+    type: io.kestra.plugin.core.http.Request
+    timeout: PT1M
+    uri: "https://hc-ping.com/{{ secret('HEALTHCHECKS_PING_KEY') }}/lab-restic-offsite"
+    method: GET
+
+triggers:
+  - id: after-offsite
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: offsite-green
+      flows:
+        - namespace: lab.restic
+          flowId: offsite
+          states: [SUCCESS]

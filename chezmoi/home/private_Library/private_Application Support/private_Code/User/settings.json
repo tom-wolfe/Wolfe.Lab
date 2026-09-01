@@ -1,31 +1,48 @@
 {
-    "editor.fontFamily": "'Monaco', 'Cascadia Code', Consolas, 'Courier New', monospace",
-    "editor.fontLigatures": true,
-    "workbench.iconTheme": "vscode-icons",
-    "editor.tabSize": 2,
-    "terminal.integrated.enablePersistentSessions": false,
-    "[html]": {
-        "editor.defaultFormatter": "vscode.html-language-features"
-    },
-    "[css]": {
-        "editor.defaultFormatter": "vscode.css-language-features"
-    },
-    "[json]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "git.openRepositoryInParentFolders": "always",
-    "files.eol": "\n",
-    "[search-result]": {
-        "editor.lineNumbers": "on"
-    },
-    "editor.fontSize": 13,
-    "explorer.confirmDelete": false,
-    "terminal.integrated.initialHint": false,
-    "terminal.integrated.fontFamily": "Monaco",
-    "terminal.integrated.fontSize": 14,
-    "chat.disableAIFeatures": true,
-    "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
-    "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose",
-    "claudeCode.preferredLocation": "panel",
-    "git.confirmSync": false,
+  "chat.disableAIFeatures": true,
+  "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
+  "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose",
+  // Editor settings
+  "editor.fontFamily": "'Monaco', 'Cascadia Code', Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.tabSize": 2,
+  "editor.fontSize": 13,
+  "editor.lineNumbers": "on",
+  "editor.rulers": [
+    80
+  ],
+  "explorer.confirmDelete": false,
+  "files.eol": "\n",
+  "git.openRepositoryInParentFolders": "always",
+  "git.confirmSync": false,
+  "terminal.integrated.initialHint": false,
+  "terminal.integrated.fontFamily": "Monaco",
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.enablePersistentSessions": false,
+  "workbench.iconTheme": "vscode-icons",
+  "yaml.disableSchemaDetection": [
+    "**/docker-compose.yml",
+    "**/docker-compose.yaml",
+    "**/docker-compose.*.yml",
+    "**/docker-compose.*.yaml",
+    "**/compose.yml",
+    "**/compose.yaml",
+    "**/compose.*.yml",
+    "**/compose.*.yaml",
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml"
+  ]
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }

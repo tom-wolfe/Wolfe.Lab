@@ -134,11 +134,13 @@ route.
 
 ## Backup
 
-`lab.qbittorrent/backup`, nightly at 02:20: cold tar of `config/` —
-qBittorrent.conf (including the web UI password hash), categories, and
-BT_backup/ (.torrent files + fastresume); the parts configured in the UI
-rather than declared here. Keep-10, mount-guarded, integrity-guarded —
-the shape shared by every backup script (design notes in forgejo's).
+`lab.qbittorrent/backup`, nightly at 02:20: cold restic snapshot of
+`config/` — qBittorrent.conf (including the web UI password hash),
+categories, and BT_backup/ (.torrent files + fastresume); the parts
+configured in the UI rather than declared here. Mount-guarded,
+integrity-guarded — the shared `scripts/backup.sh` pipeline, with this
+slice's paths declared in `flows/backup/backup.conf`; retention and the
+offsite copy belong to `lab.restic/offsite` (`restic/README.md`).
 `gluetun/` is deliberately excluded: a disposable server-list cache.
 
 ## Upgrading

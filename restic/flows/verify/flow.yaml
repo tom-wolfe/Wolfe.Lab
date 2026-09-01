@@ -1,0 +1,31 @@
+id: verify
+namespace: lab.restic
+description: |
+  Weekly integrity check of both restic repositories: structural check
+  locally, plus a 5% random pack-data sample downloaded from B2 and
+  verified against the index — an unverified backup is a hope, not a
+  backup. Sundays 05:05, clear of the nightly offsite run. Host side:
+  restic/flows/verify/script.sh via the lab-job bridge.
+
+labels:
+  job: maintenance
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: verify
+    type: io.kestra.plugin.fs.ssh.Command
+    # Bounded by the 5% B2 download; generous because a slow download is
+    # not a failure. See kestra/README.md "Timeouts".
+    timeout: PT2H
+    commands:
+      - restic/verify
+
+triggers:
+  - id: weekly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "5 5 * * 0"
+    timezone: Europe/London

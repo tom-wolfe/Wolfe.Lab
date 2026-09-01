@@ -57,12 +57,20 @@ a thing to fail. Swapping the two would be defensible.
 
 ### 2. Offsite backup — restic to Backblaze B2
 
-Native restic encryption (repo password from 1Password, same
-vault-is-the-origin pattern as everything else). Not only offsite: the
-current scheme keeps **ten full tarballs per service**, and restic's
-content-addressed dedup plus compression collapses those to roughly one
-snapshot plus deltas. It fixes the space problem and the no-second-copy
-problem in one move. `garage/rclone.env` already proves the S3 plumbing.
+**Built 2026-09-01 (see `restic/README.md`); remaining work is the
+bootstrap** — B2 account, vault items, `restic init`, first seed, restore
+drill.
+
+Redesigned on the way in (Tom's call): an earlier version of this entry
+proposed restic *on top of* the tarball scheme, deduplicating the ten
+`.tar.gz` per service. That was backups chained on backups — restic now
+**replaces** tar inside the same stop windows, and the keep-10 pruning
+gave way to one retention policy in `lab.restic/offsite`. Local repo on
+Data2 for fast restores and internet-down nights, `restic copy` to B2 as
+idempotent catch-up, weekly `restic check` against both repos, and a
+dead man's switch on the offsite run. Google Drive content stays out of
+scope until it's been sorted through; Immich still waits for this to be
+proven (a restore drill), not just merged.
 
 ### 3. Jellyfin library cleanup, then the *arr stack
 

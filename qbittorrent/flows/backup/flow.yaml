@@ -1,23 +1,8 @@
 id: backup
 namespace: lab.qbittorrent
-description: |
-  Nightly cold backup of qbittorrent's state — stop → tar → start, a few
-  seconds' downtime at 02:20, clear of the tick's quarter-hour columns and
-  staggered ahead of beszel's 02:35. Keeps the last 10 in
-  /Volumes/Data2/backups/qbittorrent; fails loudly if the drive isn't
-  mounted rather than writing to the internal disk. Host side:
-  qbittorrent/flows/backup/script.sh via the lab-job bridge.
-
-  What's in it: qBittorrent.conf (including the web UI password hash —
-  the config the repo can't declare), the categories, and BT_backup/
-  (.torrent files + fastresume state). The gluetun/ server-list cache
-  beside it is deliberately excluded (disposable — gluetun regenerates
-  it).
-
+description: Nightly cold backup of qbittorrent's state.
 labels:
   job: backup
-  # High: a backup is silent until the day you need it. Nothing downstream
-  # notices a missing archive, so the alert IS the safety net.
   alert: high
 
 concurrency:

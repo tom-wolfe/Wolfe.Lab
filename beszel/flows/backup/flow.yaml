@@ -1,18 +1,6 @@
 id: backup
 namespace: lab.beszel
-description: |
-  Nightly cold backup of the hub's SQLite database — stop → tar → start,
-  a few seconds' downtime at 02:35, clear of the tick's quarter-hour
-  columns and staggered ahead of garage's 02:50. Keeps the last 10 in
-  /Volumes/Data2/backups/beszel; fails loudly if the drive isn't mounted
-  rather than writing to the internal disk. Host side:
-  beszel/flows/backup/script.sh via the lab-job bridge.
-
-  Worth backing up even though metrics history is expendable: the SAME
-  database holds the registered systems, every alert threshold and the
-  Pushover notification URL, and none of that is in tofu because Beszel
-  has no provider. This archive is the only copy of that configuration.
-
+description: Nightly cold backup of the hub's SQLite database.
 labels:
   job: backup
   # High: a backup is silent until the day you need it. Nothing downstream

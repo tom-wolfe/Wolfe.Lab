@@ -1,0 +1,40 @@
+id: offsite
+namespace: lab.restic
+description: |
+  Nightly at 04:35 — after every service backup (02:20–03:35) has
+  finished — copy new snapshots from the local restic repository
+  (/Volumes/Data2/restic) to Backblaze B2, then apply the retention
+  policy to both repos. The copy is idempotent catch-up: a missed night
+  ships on the next run. Retention lives HERE and nowhere else — the
+  per-service backup scripts snapshot and stop. Host side:
+  restic/flows/offsite/script.sh via the lab-job bridge.
+
+  lab.restic/heartbeat chains on this flow's SUCCESS and pings
+  healthchecks.io — silence from this flow is the signal that offsite
+  copies stopped, and that must be able to reach a phone even when
+  Kestra itself is the thing that died.
+
+labels:
+  job: backup
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: offsite
+    type: io.kestra.plugin.fs.ssh.Command
+    # The FIRST copy uploads the whole repo over home broadband and can
+    # legitimately run for hours; after that a night's delta is minutes.
+    # An SSH timeout reports a stall rather than aborting the host-side
+    # process — see kestra/README.md "Timeouts".
+    timeout: PT6H
+    commands:
+      - restic/offsite
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "35 4 * * *"
+    timezone: Europe/London

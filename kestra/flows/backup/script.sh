@@ -1,60 +1,87 @@
 #!/bin/bash
-# Dump the kestra database to a dated, gzipped file on the backups drive.
-# Runnable by hand, by scripts/upgrade.sh (which labels the dump), and —
-# through the lab-job bridge as `kestra/backup` — by ./flow.yaml beside it
-# (nightly, 03:20). That's safe where a deploy flow isn't: a dump never
-# restarts the executor (see README.md "Why kestra has no deploy flow").
+# Dump the kestra database into the restic repo — live, no downtime
+# (pg_dump takes an MVCC-consistent snapshot), which is what makes a
+# backup flow safe here where a deploy flow isn't (README.md "Why kestra
+# has no deploy flow"). Runnable by hand, by scripts/upgrade.sh (which
+# labels the dump), and — through the lab-job bridge as `kestra/backup` —
+# by ./flow.yaml beside it (nightly, 03:20).
 #
 #   flows/backup/script.sh [label]
 #
-# The optional label lands in the filename (upgrade.sh passes e.g.
-# `pre-v1.3.34`). Fails hard if kestra-db isn't running — a backup that
-# silently skips is worse than a red execution; the warn-and-continue
-# policy for upgrades lives in upgrade.sh, not here.
+# The optional label becomes snapshot tags (upgrade.sh passes e.g.
+# `pre-v1.3.34` → tags `pre-upgrade` + `label:pre-v1.3.34`). Fails hard
+# if kestra-db isn't running — a backup that silently skips is worse
+# than a red execution; the warn-and-continue policy for upgrades lives
+# in upgrade.sh, not here.
 #
-# Retention: the last 10 UNLABELLED (scheduled) dumps are kept; labelled
-# dumps (upgrade.sh's `pre-<version>`) are never pruned — they're rare,
+# Retention lives in lab.restic/offsite, ONE policy for every service —
+# except that anything tagged `pre-upgrade` is kept forever: rare,
 # small, and the thing you'll want when a migration goes sideways.
 set -euo pipefail
 
-# Docker Desktop's CLI lives in /usr/local/bin, which non-interactive SSH
-# sessions don't have on PATH (path_helper only runs for login shells).
-export PATH="$PATH:/usr/local/bin"
+# Non-interactive SSH sessions miss path_helper: Docker Desktop's CLI is
+# in /usr/local/bin, and restic + op come from Homebrew.
+export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
+
+slice="$(cd "$(dirname "$0")/../.." && pwd)"
+repo="$(dirname "$slice")"
+env="$repo/restic/restic.env"
+
+# The op service account, same fallback the tick uses: lab-job runs a
+# non-login shell, so .zprofile's export never happened.
+token_file="$HOME/Docker/1password/service-account-token"
+if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
+  OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")
+  export OP_SERVICE_ACCOUNT_TOKEN
+fi
 
 if [ "$(docker inspect -f '{{.State.Running}}' kestra-db 2>/dev/null)" != "true" ]; then
   echo "backup: kestra-db is not running — nothing to dump" >&2
   exit 1
 fi
 
-# Backups land on the external drive — guard hard against it being absent:
-# an unmounted /Volumes path on macOS is just a directory on the internal
-# disk, so writing there would silently "succeed" onto the small SSD and be
-# shadowed when the drive next mounts. This also gates upgrades: upgrade.sh
-# calls this first, so no drive = no pre-upgrade dump = no upgrade.
+# The restic repo lives on the external drive — an unmounted /Volumes
+# path on macOS is just a directory on the internal disk. This also
+# gates upgrades: upgrade.sh calls this first, so no drive = no
+# pre-upgrade dump = no upgrade.
 vol="/Volumes/Data2"
 if ! mount | grep -q " on $vol ("; then
   echo "backup: $vol is not mounted — refusing to write to the internal disk" >&2
   exit 1
 fi
-mkdir -p "$vol/backups/kestra"
+if [ ! -f "$vol/restic/config" ]; then
+  echo "backup: no restic repository at $vol/restic — see restic/README.md" >&2
+  exit 1
+fi
 
-label="${1:+-$1}"
-backup="$vol/backups/kestra/kestra-$(date +%Y%m%d-%H%M%S)$label.sql.gz"
+# The schema pairs with the APP image that wrote it — a dump restores
+# cleanly onto the version that made it, not necessarily an older one.
+image="$(docker inspect kestra --format '{{.Config.Image}}' 2>/dev/null || echo unknown)"
 
-# Dump to a .partial first: a `>` redirect creates its target before the
-# command runs, so a failed pg_dump would otherwise leave a truncated husk
-# that looks like a backup (same trap the bootstrap-kestra-secrets script
-# documents). Only a completed dump gets the real name.
-echo "backing up kestra db -> $backup"
-if ! docker exec kestra-db pg_dump -U kestra -d kestra | gzip > "$backup.partial"; then
-  rm -f "$backup.partial"
+tags=(--tag "service:kestra" --tag "image:$image")
+if [ -n "${1:-}" ]; then
+  # A labelled dump is never pruned — `pre-upgrade` is what the retention
+  # policy's --keep-tag matches; the label itself rides along for humans.
+  tags+=(--tag pre-upgrade --tag "label:$1")
+fi
+
+# Dump to a temp file FIRST, then snapshot it via --stdin: piping
+# pg_dump straight into restic would save a truncated-but-valid-looking
+# snapshot if pg_dump died mid-stream (the same trap the old .partial
+# dance guarded against). A failed dump exits here, before restic runs.
+tmp="$(mktemp /tmp/kestra-dump.XXXXXX)"
+trap 'rm -f "$tmp"' EXIT
+
+echo "dumping kestra db"
+if ! docker exec kestra-db pg_dump -U kestra -d kestra > "$tmp"; then
   echo "backup: pg_dump failed" >&2
   exit 1
 fi
-mv "$backup.partial" "$backup"
-echo "backup complete: $backup ($(du -h "$backup" | cut -f1))"
 
-# Prune: only the fixed-width unlabelled names — a label always appends
-# `-<label>` after the timestamp, so labelled dumps never match this glob.
-ls -1t "$vol/backups/kestra"/kestra-????????-??????.sql.gz 2>/dev/null \
-  | tail -n +11 | xargs rm -f || true
+# Plain SQL, no gzip — restic compresses (zstd) and, more importantly,
+# dedups the mostly-unchanged dump text against previous nights, which
+# gzip would scramble.
+op run --env-file="$env" -- restic backup --stdin --stdin-filename kestra.sql \
+  "${tags[@]}" < "$tmp"
+
+echo "backup complete: kestra.sql ($(du -h "$tmp" | cut -f1) dumped)"

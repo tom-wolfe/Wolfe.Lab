@@ -1,0 +1,18 @@
+id: apply
+namespace: lab.restic
+description: Manual. Deploys the restic Tofu stack.
+
+labels:
+  job: apply
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: apply
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT30M
+    commands:
+      - restic/apply

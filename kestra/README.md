@@ -88,7 +88,7 @@ never a fork of the script.
 
 ## How host jobs work
 
-chezmoi, brew, the tar backups and tofu act on the macOS host itself,
+chezmoi, brew, the restic backups and tofu act on the macOS host itself,
 which no sibling container can reach. That work leaves through the job
 bridge — since the trust decision above, a *transport* rather than a
 security boundary, but still the tidiest way for a container to reach
@@ -270,6 +270,8 @@ stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
 | `lab.kestra/tick`, `/push-to-main` | PT1M | no-op Return tasks; a hang here means Kestra itself is sick |
 | `lab.chezmoi/packages` | PT20M | a cold cask or mas download; a satisfied run is ~1s |
 | `lab.chezmoi/packages-upgrade` | PT45M | deliberately generous — see below |
+| `lab.restic/offsite` | PT6H | the FIRST copy uploads the whole repo over home broadband; after that, minutes |
+| `lab.restic/verify` | PT2H | downloads a 5% pack sample from B2; slow is not failed |
 | `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |
 
 **A timeout on an SSH task reports a stall; it does not abort one.** Killing
@@ -406,14 +408,14 @@ the mini.
 ## Backup
 
 Everything stateful is under `~/Docker/kestra/`. `flows/backup/script.sh` dumps
-the database to a dated file in `/Volumes/Data2/backups/kestra/` (refusing
-to run if the drive isn't mounted — which also gates upgrades: no drive, no
+the database into the restic repo on `/Volumes/Data2` (refusing to run if
+the drive isn't mounted — which also gates upgrades: no drive, no
 pre-upgrade dump, no upgrade) — run it by
 hand, or through the bridge as `kestra/backup`; `scripts/upgrade.sh` calls
-it (labelled `pre-<version>`) before every upgrade, and the `lab.kestra/backup`
+it (tagged `pre-upgrade`) before every upgrade, and the `lab.kestra/backup`
 flow runs it nightly at 03:20 — live, no downtime, which is what makes a
 backup flow safe here where a deploy flow isn't: a dump never restarts the
-executor. Retention: the last 10 scheduled dumps are kept; the labelled
-pre-upgrade dumps are never pruned. Cold backup of the whole
-state: stop the stack, copy the directory. The flows themselves need no
-backup — they're in this repo.
+executor. Retention is `lab.restic/offsite`'s one policy for every service
+(restic/README.md), except that `pre-upgrade` snapshots are never pruned.
+Cold backup of the whole state: stop the stack, copy the directory. The
+flows themselves need no backup — they're in this repo.

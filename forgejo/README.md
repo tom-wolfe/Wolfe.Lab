@@ -8,7 +8,7 @@ Self-hosted git server running on the Mac mini via Docker Compose.
 | SSH clone | `git@git.twolfe.dev:<user>/<repo>.git` — portless, tailnet-only |
 | State | `~/Docker/forgejo/data` (bind mount → `/data` in the container) |
 | Database | SQLite at `~/Docker/forgejo/data/gitea/forgejo.db` |
-| Backups | `/Volumes/Data2/backups/forgejo` (external drive; nightly) |
+| Backups | restic repo on `/Volumes/Data2` + B2 offsite (nightly; `restic/README.md`) |
 
 ## Deployment
 
@@ -183,7 +183,7 @@ upgrade runs irreversible database migrations, and rolling back to an older
 image after that will fail.
 
 ```sh
-"$(chezmoi source-path)/../../forgejo/flows/backup/script.sh"   # snapshot first
+"$(chezmoi source-path)/../../scripts/backup.sh" forgejo   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let lab.forgejo/deploy converge it or, by hand:
 cd "$(chezmoi source-path)/../../forgejo"
@@ -213,17 +213,18 @@ Runs itself: the `lab.forgejo/backup` flow fires nightly at 03:05
 (`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
 
 ```sh
-"$(chezmoi source-path)/../../forgejo/flows/backup/script.sh"
+"$(chezmoi source-path)/../../scripts/backup.sh" forgejo
 ```
 
-Writes a timestamped tarball to `/Volumes/Data2/backups/forgejo/` (with the
-image tag recorded beside it in `.image.txt`) and keeps the last 10. It
-refuses to run if `Data1` isn't mounted — an unmounted `/Volumes` path on
-macOS silently writes to the internal disk. It stops the container first —
-a live SQLite file copied mid-write can be inconsistent — and starts it
-again afterwards, so expect ~30s of downtime. If a concurrent deploy
-restarts the stack mid-tar, the archive is discarded and the run fails
-loudly rather than keeping a suspect copy.
+Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
+rides on it as a snapshot tag; `lab.restic/offsite` ships it to B2 and
+owns retention — see `restic/README.md`). It refuses to run if the drive
+isn't mounted — an unmounted `/Volumes` path on macOS silently writes to
+the internal disk. It stops the container first — a live SQLite file
+copied mid-write can be inconsistent — and starts it again afterwards, so
+expect ~30s of downtime. If a concurrent deploy restarts the stack
+mid-snapshot, the snapshot is discarded and the run fails loudly rather
+than keeping a suspect copy.
 
 Because `data/` is an ordinary folder, Time Machine already covers it too, but
 only the cold-copy caveat above makes those snapshots trustworthy; prefer
@@ -233,16 +234,19 @@ the backup script before anything risky.
 
 ```sh
 cd "$(chezmoi source-path)/../../forgejo"
+op run --env-file=../restic/restic.env -- restic snapshots --tag service:forgejo
 docker compose down
-rm -rf ~/Docker/forgejo/data                   # or move it aside first
-tar -xzf /Volumes/Data2/backups/forgejo/forgejo-YYYYmmdd-HHMMSS.tar.gz \
-    -C ~/Docker/forgejo
+op run --env-file=../restic/restic.env -- restic restore <id> --target /tmp/restore
+mv ~/Docker/forgejo/data ~/Docker/forgejo/data.bak
+mv /tmp/restore/Users/tomwolfe/Docker/forgejo/data ~/Docker/forgejo/data
 docker compose up -d
 ```
 
-Make sure the image tag in `compose.yaml` matches the version the backup was
-taken with (recorded beside each archive in `.image.txt`), or Forgejo may
-refuse to start against an older schema.
+(restic reproduces the snapshot's full original path under `--target`,
+hence the nested `mv`.) Make sure the image tag in `compose.yaml`
+matches the version the backup was taken with (the `image:` tag on the
+snapshot records it), or Forgejo may refuse to start against an older
+schema.
 
 ## After a reboot
 

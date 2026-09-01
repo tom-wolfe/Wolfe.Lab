@@ -25,10 +25,10 @@ bootstrap only creates what must exist before the admin API answers.
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
   `lab.garage/backup` flow (`flows/backup/`) does a nightly cold copy at 02:50
-  — stop, tar both, start, keep the last 10 in
-  `/Volumes/Data2/backups/garage` (refuses to run if the drive isn't
-  mounted). `garage.env` is deliberately not included — the vault is its
-  origin.
+  — stop, restic snapshot of both, start; `lab.restic/offsite` ships it
+  to B2 and owns retention (`restic/README.md`); refuses to run if the
+  drive isn't mounted. `garage.env` is deliberately not included — the
+  vault is its origin.
 
 ## Upgrading
 
