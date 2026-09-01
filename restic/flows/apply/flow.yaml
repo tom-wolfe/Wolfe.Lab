@@ -1,6 +1,6 @@
 id: apply
 namespace: lab.restic
-description: Manual. Deploys the restic Tofu stack.
+description: Applies the restic Tofu stack on every push to main, behind Kestra.
 
 labels:
   job: apply
@@ -16,3 +16,13 @@ tasks:
     timeout: PT30M
     commands:
       - restic/apply
+
+triggers:
+  - id: after-flow-applier
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: kestra-apply-green
+      flows:
+        - namespace: lab.kestra
+          flowId: apply
+          states: [SUCCESS]
