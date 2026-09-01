@@ -4,6 +4,30 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.16.0] - 2026-09-01
+
+### Added
+
+- **Dedicated environment triggers.** Both `tick` and `push-to-main` flows now 
+  exist as real "events" to hang stuff off. Makes it a bit clearer where the
+  controls are and exposes a single point to disable ticks when needed.
+
+### Fixed
+
+- **The 1Password rate-limit outage.** OpenTofu CD's runtime `op run` exhausted 
+  the service account's daily quota. Calls have been reduced for now due to the
+  CD workflow changes, but will be resolved fully when we add the offline vault.
+
+### Changed
+
+- **Applies are now imperative** pushing to main now runs `tofu apply` for all 
+  the stacks, maintaining dependency order, and running `chezmoi update` first, 
+  so the code is up-to-date before applying.
+- Important tofu resources are now marked `prevent_destroy`.
+- **Plans only run daily.** Tofu plans now run once a day, and alert on drift.
+- **One `op` invocation per pipeline** instead of two (`init` and plan/apply now
+  share a single `op run`).
+
 ## [0.15.0] - 2026-08-31
 
 ### Added

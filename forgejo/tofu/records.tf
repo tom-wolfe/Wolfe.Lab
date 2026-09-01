@@ -7,4 +7,8 @@ resource "netlify_dns_record" "git" {
   type     = "A"
   hostname = "git.twolfe.dev"
   value    = var.forgejo_tailscale_ipv4
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }

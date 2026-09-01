@@ -1,10 +1,10 @@
 id: plan
 namespace: lab.forgejo
-description: Plans the Forgejo Tofu stack on every green tick, reporting drift.
+description: Daily drift report for the Forgejo Tofu stack.
 
 labels:
   job: plan
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -13,21 +13,17 @@ concurrency:
 tasks:
   - id: plan
     type: io.kestra.plugin.fs.ssh.Command
-    # Drift and a genuine plan error both land as WARNING; the message in
-    # the logs tells them apart. Connection comes from the forced ssh
-    # defaults in kestra/application.yaml.
     allowFailure: true
     timeout: PT10M
     commands:
       - forgejo/plan
+  - id: gate
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.plan.exitCode == 1 }}"
+    errorMessage: Plan could not run — an outage, not drift.
 
 triggers:
-  # See forgejo/flows/deploy/flow.yaml for the design notes.
-  - id: after-tick
-    type: io.kestra.plugin.core.trigger.Flow
-    preconditions:
-      id: chezmoi-tick-green
-      flows:
-        - namespace: lab.chezmoi
-          flowId: update
-          states: [SUCCESS]
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "30 7 * * *"
+    timezone: Europe/London

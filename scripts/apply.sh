@@ -1,15 +1,6 @@
 #!/bin/bash
-# `tofu apply` for one slice's root — the apply half of OpenTofu CD
-# (kestra/README.md), shared by every lab.<slice>/apply flow, resolved
-# via lab-job's shared-pipeline fallback like plan.sh beside it.
-#
-#   apply.sh <slice>
-#
-# -auto-approve, because the approval already happened: a human triggered
-# the flow after reading lab.<slice>/plan's output — or the root is
-# kestra's, which auto-applies by decision. Nothing invokes this for
-# garage: that root is manual by design (its disposable state seeds the
-# backend the others stand on).
+# Runs `tofu apply` for a given slice.
+
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,7 +14,6 @@ if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
   export OP_SERVICE_ACCOUNT_TOKEN
 fi
 
-op run --env-file=secrets.env -- tofu init -input=false >/dev/null
-
-exec op run --env-file=secrets.env -- \
-  tofu apply -input=false -no-color -auto-approve
+# ONE op invocation, not two for rate limiting.
+exec op run --env-file=secrets.env -- sh -c \
+  'tofu init -input=false >/dev/null && exec tofu apply -input=false -no-color -auto-approve'

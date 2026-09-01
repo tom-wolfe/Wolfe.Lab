@@ -84,6 +84,7 @@ resource "forgejo_repository" "repo" {
   has_wiki          = each.value.mode != "mirror"
 
   lifecycle {
-    ignore_changes = [internal_tracker]
+    ignore_changes  = [internal_tracker]
+    prevent_destroy = true
   }
 }

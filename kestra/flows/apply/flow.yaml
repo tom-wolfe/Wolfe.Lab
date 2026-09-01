@@ -1,10 +1,10 @@
 id: apply
 namespace: lab.kestra
-description: Applies the Kestra Tofu stack on a green Chezmoi tick.
+description: Applies the Kestra Tofu stack on every push to main.
 
 labels:
   job: apply
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -18,12 +18,11 @@ tasks:
       - kestra/apply
 
 triggers:
-  # See forgejo/flows/deploy/flow.yaml for the design notes.
-  - id: after-tick
+  - id: after-push
     type: io.kestra.plugin.core.trigger.Flow
     preconditions:
-      id: chezmoi-tick-green
+      id: main-moved
       flows:
-        - namespace: lab.chezmoi
-          flowId: update
+        - namespace: lab.kestra
+          flowId: push-to-main
           states: [SUCCESS]

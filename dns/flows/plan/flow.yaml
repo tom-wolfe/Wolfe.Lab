@@ -1,10 +1,10 @@
 id: plan
 namespace: lab.dns
-description: Plans the DNS Tofu stack on every green tick, reporting drift.
+description: Daily drift report for the DNS Tofu stack.
 
 labels:
   job: plan
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -17,13 +17,13 @@ tasks:
     timeout: PT10M
     commands:
       - dns/plan
+  - id: gate
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.plan.exitCode == 1 }}"
+    errorMessage: Plan could not run — an outage, not drift.
 
 triggers:
-  - id: after-tick
-    type: io.kestra.plugin.core.trigger.Flow
-    preconditions:
-      id: chezmoi-tick-green
-      flows:
-        - namespace: lab.chezmoi
-          flowId: update
-          states: [SUCCESS]
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "20 7 * * *"
+    timezone: Europe/London

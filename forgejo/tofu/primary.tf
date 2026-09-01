@@ -5,9 +5,9 @@ resource "forgejo_repository" "wolfe_lab" {
   mirror     = false
   private    = false
 
-  # Same perpetual-diff workaround as mirrors.tf — see comment there.
   lifecycle {
-    ignore_changes = [internal_tracker]
+    ignore_changes  = [internal_tracker]
+    prevent_destroy = true
   }
 }
 

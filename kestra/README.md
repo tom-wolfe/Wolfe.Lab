@@ -176,39 +176,72 @@ The cross-cutting axis is **labels**, not more namespace:
 So "show me every backup" is a label filter, and you never have to choose
 between organising by slice and organising by function.
 
+## Trigger flows
+
+Two flows carry the lab's scheduling semantics (2026-09-01):
+
+- **`lab.kestra/tick`** — the 15-minute pulse, a pure no-op. Chaining on
+  it says "run regularly".
+- **`lab.kestra/push-to-main`** — Forgejo's push webhook lands here (the
+  poke; `forgejo/tofu/webhook.tf` derives the URL from its flow file),
+  and it converges the checkout (a subflow of `lab.chezmoi/update`)
+  before going green. Chaining on it says "run when main moves" — and
+  its SUCCESS *means* the push has landed on the mini, which is exactly
+  the guarantee the apply chain consumes. Not a pure no-op, on purpose:
+  the alternative was `apply.sh` racing the update flow with its own
+  `git pull`, freshness enforced in the wrong layer.
+
+Before the split, everything periodic chained on `lab.chezmoi/update` by
+convenience, so "needs the converged checkout" and "wants a timer" were
+indistinguishable. Now a chain is a dependency claim: deploys and
+packages chain on update because they consume what it converges; update
+runs on the tick and inside push-to-main; the apply chain hangs off
+push-to-main because applies are push-shaped.
+
 ## OpenTofu CD
 
-Forgejo issue #9's answer, and the other half of what the trust model
-makes room for. Every root gets the same treatment, with one deliberate
-asymmetry:
+Forgejo issue #9's answer — reworked 2026-09-01 after the 1Password
+rate-limit outage (CHANGELOG 0.16.0). The original design planned every
+root and auto-applied kestra's on every tick: twelve `op run`
+invocations per 15 minutes, which exhausted the service account's daily
+quota on its very first full day. CD now runs on pushes plus one daily
+report, and each pipeline makes exactly one op invocation.
 
-- **`lab.<slice>/plan` — continuous, chained on the tick.** Reads are
-  the safe half of unofficial providers, so they run every 15 minutes: a
-  merged change or a UI hand-edit turns the execution WARNING — a
-  low-priority push with the plan in the logs — within a tick. A pending
-  plan warns again every tick until applied or reverted. Deliberate:
-  drift should nag.
-- **`lab.<slice>/apply` — always a human**, triggered from the Kestra UI
-  after reading the plan. The providers here have had real WRITE bugs
-  (svalabs' full-object PATCH once blanked wiki branches on every real
-  update — a destroy-guard would have waved that straight through, which
-  is why the gate is a human rather than a plan-shape check). Laptop
-  applies are retired: one writer per state root, QUEUE-serialized, is
-  what stands in for the state locking Garage cannot provide. A
-  workstation `tofu plan` is still fine for development.
-- **`lab.kestra/apply` is the exception — it auto-applies on the tick.**
-  First-party provider, resources fully recoverable from this repo,
-  destroy+create is its routine rename mechanic, and auto-applying is
-  what keeps "adding a job = one commit" true with zero further taps.
+- **`lab.<slice>/apply` — automatic, on push to main.**
+  `lab.kestra/apply` chains on push-to-main and runs FIRST, so flow
+  changes register before the other roots apply behind it (they chain on
+  its SUCCESS). Freshness is inherited, not fetched: push-to-main only
+  goes green after converging the checkout, so by the time any apply
+  runs, the push that fired it has landed on the mini.
+
+  **This reverses the 2026-08-31 human-gate decision — Tom's call,
+  2026-09-01, both sides recorded.** The gate existed because unofficial
+  providers have real WRITE bugs (svalabs' full-object PATCH once
+  blanked wiki branches on an UPDATE). What stands in for the human now:
+  `prevent_destroy` on the resources that matter — Forgejo repositories,
+  every DNS record, the front-door wildcards — makes a destroying plan
+  FAIL the apply loudly; deleting one deliberately means removing its
+  guard in the same diff, and that pairing is the confirmation step.
+  Stated honestly: the guard covers destroys only. The update-bug class
+  it cannot catch is accepted risk, with the nightly backups as the
+  recovery — and PR review remains the actual gate, since a PR can
+  remove a guard. `kestra_flow` resources are deliberately unguarded:
+  destroy+create is their routine rename mechanic.
+- **`lab.<slice>/plan` — the daily drift report**, staggered 07:00–07:40.
+  Exit 2 (drift) lands as WARNING — a quiet morning nag until a push or
+  a manual apply converges it. Exit 1 (the plan itself broke) goes RED
+  via a gate task on the exit code: during the outage, "1Password is
+  down" rendered as drift for hours, and a plan that cannot run is an
+  outage, not a nag.
 - **`garage/tofu` stays outside all of this**, manual by design: its
   disposable state seeds the very backend the other roots stand on.
 
 The host half is the shared pipelines `scripts/plan.sh` and
 `scripts/apply.sh` — deploy.sh's pattern on the bridge side, reached by
-lab-job's pipeline fallback, so no per-slice script exists: the op
-service account, then `op run --env-file=secrets.env -- tofu …`, with
-`-detailed-exitcode` separating in-sync from pending on the plan side.
-Repo-versioned, so the tick ships changes — nothing to chezmoi-apply.
+lab-job's pipeline fallback, so no per-slice script exists. ONE `op run`
+per pipeline, deliberately: every invocation spends the service
+account's metered quota, and that budget is what ran out on 2026-09-01.
+Repo-versioned, so merges ship changes — nothing to chezmoi-apply.
 
 What namespaces do *not* buy here: namespace-level secrets, variables,
 plugin defaults and RBAC are all Enterprise features. `secret('LAB_SSH_KEY')`
@@ -234,6 +267,7 @@ stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
 | `lab.kestra/purge` | PT30M | a first purge after a backlog deletes a lot |
 | `lab.<slice>/plan` | PT10M | a first run downloads providers; after that, seconds |
 | `lab.<slice>/apply` | PT30M | provider write paths can be slow; a hung apply must still die |
+| `lab.kestra/tick`, `/push-to-main` | PT1M | no-op Return tasks; a hang here means Kestra itself is sick |
 | `lab.chezmoi/packages` | PT20M | a cold cask or mas download; a satisfied run is ~1s |
 | `lab.chezmoi/packages-upgrade` | PT45M | deliberately generous — see below |
 | `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |
@@ -256,10 +290,15 @@ Two mechanisms, layered deliberately, because they fail in different ways.
 `NAMESPACE STARTS_WITH "lab."` and `STATE IN [FAILED, WARNING]`. Every flow
 in every slice is covered, including slices that don't exist yet: that
 prefix match is the entire payoff of hierarchical namespaces. Severity
-comes from each flow's `alert:` label — high becomes Pushover priority 1
-(bypasses quiet hours), low becomes -1 (tray, no buzz) — so a failed backup
-wakes you and a failed deploy doesn't. The flow's own header explains why
-it sits in `system` and what that costs.
+comes from each flow's `alert:` label AND the state (2026-09-01): only
+FAILED + `high` becomes Pushover priority 1 (bypasses quiet hours);
+everything else is -1 (tray, no buzz). So a failed backup wakes you, a
+failed deploy doesn't, and a WARNING never does — WARNING means
+"degraded but understood" (a drift report), which is why the plan flows
+carry `alert: high` and still nag quietly. The rate-limit outage is the
+cautionary tale: erroring plans rendered as WARNINGs and hid for hours.
+The flow's own header explains why it sits in `system` and what that
+costs.
 
 **Outside the lab — the heartbeat.** `lab.chezmoi/update` pings
 healthchecks.io as its final task. Everything above runs inside Kestra and

@@ -1,10 +1,10 @@
 id: apply
 namespace: lab.dns
-description: Manual. Deploys the DNS Tofu stack.
+description: Applies the DNS Tofu stack on every push to main, behind Kestra.
 
 labels:
   job: apply
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -16,3 +16,13 @@ tasks:
     timeout: PT30M
     commands:
       - dns/apply
+
+triggers:
+  - id: after-flow-applier
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: kestra-apply-green
+      flows:
+        - namespace: lab.kestra
+          flowId: apply
+          states: [SUCCESS]

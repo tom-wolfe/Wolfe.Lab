@@ -173,7 +173,7 @@ Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
 workstation that is off is not a failure, and a Status alert would page on
 every shutdown.
 
-### 8. A config plane — Garage for configuration, 1Password Connect for secrets
+### 8. A config plane — Garage for configuration, the 1Password exit for secrets
 
 Designed 2026-08-31 (the poke's webhook URL forced the config half; the
 rotation dance pulled the secrets half up out of "Deliberately
@@ -214,28 +214,40 @@ every would-be publisher in the bootstrap order (using Kestra's own KV
 store would recreate the very circularity this breaks), and costs no new
 service.
 
-**The secrets half: 1Password Connect**, an ordinary compose slice (two
-containers, credentials file minted once from the account). It is a
-*sync cache* — the cloud vault stays the origin, which is what separates
-it from OpenBao's circularity: a dead Connect degrades to today's
-behavior, never to a locked-out lab. The payoff is that the `op` CLI
-targets Connect via `OP_CONNECT_HOST`/`OP_CONNECT_TOKEN`, so every
-`op://` reference in every secrets.env and every `onepasswordRead`
-template keeps exactly its current shape — the resolver changes, not the
-references. With the vault answering from the LAN, the env files become
-ONE shape: ordinary converged chezmoi templates, re-evaluated every
-tick, and the `create_` pattern shrinks to a single bootstrap file — the
-Connect token itself, materialized once by cloud `op`. Rotation then
-collapses into the loop that already exists: change the vault → Connect
-syncs → the tick re-renders the env file → the tick-chained deploy sees
-the change and recreates the container. Two things to verify at build,
-not assume: whether compose's config hash covers env_file CONTENTS (it
-should — `docker compose config` inlines them; if not, `deploy.sh` grows
-a hash guard, one edit now that it's a pipeline), and the precedence
-between `OP_CONNECT_*` and `OP_SERVICE_ACCOUNT_TOKEN` when both are in
-the environment, which decides the bootstrap-fallback shape. One honest
-boundary stays: kestra reads `SECRET_*` at boot and has no deploy flow,
-so *its* secret rotation keeps a manual restart.
+**The secrets half — rewritten 2026-09-01: leave 1Password for the
+Bitwarden ecosystem.** Tom's decision, on ethical grounds, with the
+rate-limit outage as the forcing function; the 1Password Connect design
+that stood here is superseded (it solved the rate limit but kept the
+vendor). Constraints fixed at decision time, so the design pass starts
+from them rather than relitigating:
+
+- **The origin stays in the cloud** (Bitwarden's), exactly as with
+  1Password today. Any server-side piece is only ever a *replica or
+  cache* — never the origin — because self-hosting the origin is the
+  bootstrap/DR circularity OpenBao was deferred over, and it is a
+  problem deliberately not taken on. Do not re-propose
+  Vaultwarden-as-origin.
+- **The human half is known-clean:** Bitwarden clients everywhere, and
+  the desktop app's SSH agent (clients ≥2024.12) replaces 1Password's
+  agent for the fleet.
+- **The machine half is the actual design pass.** Vaultwarden cannot
+  implement Secrets Manager (`bws` is not GPL-licensed), so unattended
+  reads are either `bws` against Bitwarden cloud (the official machine
+  accounts — check *its* rate limits before trusting it with the lesson
+  of 0.16.0) or `bw`/`rbw` with a local cache — rbw's agent holds the
+  vault locally, which is the Connect-shaped property: reads cost no
+  quota and survive cloud outages. A small run-style shim keeps the
+  committed env-files-of-references pattern, and chezmoi has native
+  `bitwarden`/`rbw` template functions for the `create_` templates.
+- **Migration surface, inventoried:** every vault item, every
+  `secrets.env`, the `create_` templates, the op service account (secret
+  zero changes shape), the SSH agent on three Macs, the READMEs.
+- **Sequenced after restic ships:** the offsite copy exists first, then
+  the origin moves.
+
+One honest boundary stays regardless of vendor: kestra reads `SECRET_*`
+at boot and has no deploy flow, so *its* secret rotation keeps a manual
+restart.
 
 ## Undecided
 
@@ -355,6 +367,11 @@ reservation, or disabling the unused interface), not a hardware one.
 ## Deliberately deferred
 
 ### Self-hosted secrets (OpenBao)
+
+Doubly moot since 2026-09-01: the vault exit (item 8) fixes the vendor
+question while keeping a cloud origin *by decision* — the server side is
+only ever a replica, exactly to avoid the circularity that parked
+OpenBao here. The section stays as the record of why.
 
 The original goal was cutting the cloud dependency. The `create_` template
 pattern already achieves the operative part: `op` is a bootstrap

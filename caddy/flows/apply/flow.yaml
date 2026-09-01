@@ -1,10 +1,10 @@
 id: apply
 namespace: lab.caddy
-description: Manual. Deploys the Caddy Tofu stack.
+description: Applies the Caddy Tofu stack on every push to main, behind Kestra.
 
 labels:
   job: apply
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -16,3 +16,13 @@ tasks:
     timeout: PT30M
     commands:
       - caddy/apply
+
+triggers:
+  - id: after-flow-applier
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: kestra-apply-green
+      flows:
+        - namespace: lab.kestra
+          flowId: apply
+          states: [SUCCESS]

@@ -1,10 +1,10 @@
 id: plan
 namespace: lab.caddy
-description: Plans the Caddy Tofu stack on every green tick, reporting drift.
+description: Daily drift report for the Caddy Tofu stack.
 
 labels:
   job: plan
-  alert: low
+  alert: high
 
 concurrency:
   limit: 1
@@ -13,18 +13,17 @@ concurrency:
 tasks:
   - id: plan
     type: io.kestra.plugin.fs.ssh.Command
-    # Drift and a genuine plan error both land as WARNING.
     allowFailure: true
     timeout: PT10M
     commands:
       - caddy/plan
+  - id: gate
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.plan.exitCode == 1 }}"
+    errorMessage: Plan could not run — an outage, not drift.
 
 triggers:
-  - id: after-tick
-    type: io.kestra.plugin.core.trigger.Flow
-    preconditions:
-      id: chezmoi-tick-green
-      flows:
-        - namespace: lab.chezmoi
-          flowId: update
-          states: [SUCCESS]
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 7 * * *"
+    timezone: Europe/London

@@ -1,0 +1,25 @@
+id: push-to-main
+namespace: lab.kestra
+description: Runs `chezmoi update` when someone pushes to `main` in Wolfe.Lab.
+
+labels:
+  job: tick
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: converge
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: lab.chezmoi
+    flowId: update
+    wait: true
+    transmitFailed: true
+    timeout: PT15M
+
+triggers:
+  - id: poke
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: 94544df19d6b7541659285d276b89094cea04710ff40b213

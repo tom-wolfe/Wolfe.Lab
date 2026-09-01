@@ -1,0 +1,23 @@
+id: tick
+namespace: lab.kestra
+description: A no-op flow that acts as the lab's pulse to trigger continuous stuff.
+
+labels:
+  job: tick
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: pulse
+    type: io.kestra.plugin.core.debug.Return
+    timeout: PT1M
+    format: tick
+
+triggers:
+  - id: schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "*/15 * * * *"
+    timezone: Europe/London

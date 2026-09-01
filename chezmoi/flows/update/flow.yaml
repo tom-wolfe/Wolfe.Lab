@@ -1,19 +1,11 @@
 id: update
 namespace: lab.chezmoi
-description: |
-  The CD game tick: pull Wolfe.Lab and converge machine config with chezmoi
-  apply. This flow never deploys anything — each service's deploy flow
-  (lab.<slice>/deploy) chains on this one reaching SUCCESS, so the order is
-  always pull -> config -> deploys, and a broken config converge pauses
-  deployment until the next green tick. Host side:
-  chezmoi/flows/update/script.sh, reached through the forced-command SSH
-  bridge.
+description: Runs chezmoi update, which pulls the repo, and applies the changes.
 
 labels:
   job: tick
   alert: low
 
-# A tick landing mid-run queues instead of overlapping.
 concurrency:
   limit: 1
   behavior: QUEUE
@@ -26,13 +18,11 @@ tasks:
       - chezmoi/update
 
 triggers:
-  # Steady-state reconciliation
-  - id: tick
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "*/15 * * * *"
-    timezone: Europe/London
-
-  # Manual poke. Forgejo POSTs here on every push to main.
-  - id: poke
-    type: io.kestra.plugin.core.trigger.Webhook
-    key: 94544df19d6b7541659285d276b89094cea04710ff40b213
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: tick-fired
+      flows:
+        - namespace: lab.kestra
+          flowId: tick
+          states: [SUCCESS]
