@@ -152,6 +152,18 @@ notes — a major bump can change the CLI (v4→v5 did).
 - Renewal health is a Kestra concern: the nightly `renew-certs` run is
   a no-op until lego's ARI window opens, so a red run means the chain
   broke with weeks of certificate lifetime still banked.
+- **After any certificate change, the reload must be `--force`.** A
+  plain `caddy reload` with an unchanged Caddyfile is a no-op and does
+  not re-read the certificate files. The renew-certs script does this;
+  if you ever re-issue by hand and reload yourself, so must you. The
+  proof is what caddy serves, not what's on disk:
+  `echo | openssl s_client -connect macmini.local:443 -servername code.twolfe.dev 2>/dev/null | openssl x509 -noout -text | grep DNS:`
+- **Caddy never obtains certificates itself** — `auto_https disable_certs`
+  in the Caddyfile. Before that was set, a site-address name the loaded
+  cert didn't cover made caddy start its own ACME orders for it (it
+  happened: the container was recreated a minute before a re-issued cert
+  landed). Now such a name just fails its handshake until renew-certs
+  runs and force-reloads.
 - `docker exec caddy caddy validate --config /etc/caddy/lab/caddy/Caddyfile`
   checks config (including all snippets) without touching the running
   instance. That path — the Caddyfile through the repo mount, not a

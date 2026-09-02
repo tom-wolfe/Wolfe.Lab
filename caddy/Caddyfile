@@ -29,6 +29,19 @@
 # themselves are CNAMEs to the owning slice's .ts twin, declared in that
 # slice's tofu.
 
+{
+	# Caddy must NEVER obtain certificates itself: the renew-certs job
+	# owns issuance, and the tls directive below loads the result from
+	# files. Without this, any site-address name the loaded cert doesn't
+	# cover makes caddy quietly start its own ACME orders for it — which
+	# happened 2026-09-02 when the container was recreated a minute before
+	# the re-issued cert landed (five failed orders against Let's Encrypt,
+	# retrying for up to 30 days). `disable_certs` keeps the HTTP→HTTPS
+	# redirect and drops only the certificate management; a name with no
+	# matching SAN now just fails its handshake until renew-certs runs.
+	auto_https disable_certs
+}
+
 *.lab.twolfe.dev, *.ts.twolfe.dev, code.twolfe.dev, status.twolfe.dev {
 	tls /certs/_.lab.twolfe.dev.crt /certs/_.lab.twolfe.dev.key
 

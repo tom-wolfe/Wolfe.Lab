@@ -66,6 +66,15 @@ docker run --rm \
 # it's actually running — setup.sh calls this before caddy's first start.
 # A running-but-unreloadable caddy IS a failure (the in-memory cert would
 # eventually expire), so no `|| true` here.
+#
+# --force is LOAD-BEARING. A plain `caddy reload` compares the adapted
+# config with the running one and, if identical, does nothing at all —
+# and the certificate files are only re-read as part of a real load. A
+# renewal changes the FILES, never the Caddyfile, so without --force every
+# reload here was a silent no-op and caddy would have served the old cert
+# until something else changed the config (found 2026-09-02, when a
+# re-issued cert with new SANs sat on disk while caddy kept serving the
+# previous one through two "successful" reloads).
 if [ -n "$(docker ps -q -f name='^caddy$')" ]; then
-  docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile
+  docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile --force
 fi

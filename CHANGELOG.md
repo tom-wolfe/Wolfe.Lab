@@ -4,7 +4,7 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## [Unreleased]
+## [0.18.0] - 2026-09-02
 
 ### Added
 
@@ -15,6 +15,10 @@ rather than versioned — the lab is continuous, not released.
 ### Fixed
 
 - **Caddy reads its Caddyfile through the repo mount, not a file bind.**
+- **`renew-certs` reloads caddy with `--force`.**
+- **Caddy no longer manages certificates itself** (`auto_https
+  disable_certs`). It had started its own Let's Encrypt orders for the
+  neat names when recreated a minute ahead of the re-issued cert.
 
 ## [0.17.0] - 2026-09-01
 
