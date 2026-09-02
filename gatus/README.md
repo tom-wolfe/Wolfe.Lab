@@ -177,7 +177,7 @@ that decision reverses.
    names work and the neat name doesn't.
 4. **Reload caddy's routes** — the tick-chained `lab.caddy/deploy` does
    this on its next run; by hand,
-   `docker exec caddy caddy reload --config /etc/caddy/Caddyfile`.
+   `docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile`.
 5. **Register the flows**: `cd kestra/tofu` and
    `op run --env-file=secrets.env -- tofu apply` — plan tripwire: 4 to
    add (`lab.gatus/deploy`, `health`, `plan`, `apply`), 0 to change or

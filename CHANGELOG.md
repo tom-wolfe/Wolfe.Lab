@@ -12,6 +12,10 @@ rather than versioned — the lab is continuous, not released.
   last monitoring piece we were missing.
 - **Neat names for web routes.** `status.twolfe.dev` and `code.twolfe.dev`.**
 
+### Fixed
+
+- **Caddy reads its Caddyfile through the repo mount, not a file bind.**
+
 ## [0.17.0] - 2026-09-01
 
 - **A `restic/` root to run the offsite backup.** One repository local, one remote.

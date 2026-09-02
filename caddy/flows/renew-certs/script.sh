@@ -67,5 +67,5 @@ docker run --rm \
 # A running-but-unreloadable caddy IS a failure (the in-memory cert would
 # eventually expire), so no `|| true` here.
 if [ -n "$(docker ps -q -f name='^caddy$')" ]; then
-  docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+  docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile
 fi

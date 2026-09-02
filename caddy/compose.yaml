@@ -11,13 +11,21 @@ services:
       # inside a Linux container. Set TZ instead (jellyfin pattern).
       TZ: Europe/London
 
-    volumes:
-      # Config is code — lives in this repo, mounted read-only.
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    command:
+      [
+        "caddy",
+        "run",
+        "--config",
+        "/etc/caddy/lab/caddy/Caddyfile",
+        "--adapter",
+        "caddyfile",
+      ]
 
-      # The whole repo checkout, read-only: the Caddyfile's import glob
-      # pulls each slice's caddy.caddyfile from here. Safe to mount — the
-      # repo deliberately contains no secret material, only op:// refs.
+    volumes:
+      # The whole repo checkout, read-only: the Caddyfile itself, and the
+      # import glob that pulls each slice's caddy.caddyfile from here.
+      # Safe to mount — the repo deliberately contains no secret
+      # material, only op:// refs.
       - ..:/etc/caddy/lab:ro
 
       # The wildcard certificate, written by the renew-certs job (lego

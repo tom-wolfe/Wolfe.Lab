@@ -10,6 +10,10 @@
 # mount. Adding a service never edits this slice (the same contract as
 # flows/ and the job bridge). See README.md for the snippet shape.
 #
+# This file is read in place from the repo mount (/etc/caddy/lab/caddy/
+# Caddyfile — see compose.yaml for why not a file bind), so the import
+# glob is relative to THIS directory: `..` is the repo root.
+#
 # Certificates do NOT live here either: caddy is a pure proxy. The
 # renew-certs job (flows/renew-certs/) obtains and renews ONE cert with
 # both wildcard SANs via
@@ -28,7 +32,7 @@
 *.lab.twolfe.dev, *.ts.twolfe.dev, code.twolfe.dev, status.twolfe.dev {
 	tls /certs/_.lab.twolfe.dev.crt /certs/_.lab.twolfe.dev.key
 
-	import lab/*/caddy.caddyfile
+	import ../*/caddy.caddyfile
 
 	# Matcher-less handle matches anything the snippets didn't claim.
 	# Must stay LAST: handle blocks run in order, first match wins.

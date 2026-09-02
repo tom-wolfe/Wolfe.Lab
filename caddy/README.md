@@ -152,8 +152,14 @@ notes — a major bump can change the CLI (v4→v5 did).
 - Renewal health is a Kestra concern: the nightly `renew-certs` run is
   a no-op until lego's ARI window opens, so a red run means the chain
   broke with weeks of certificate lifetime still banked.
-- `docker exec caddy caddy validate --config /etc/caddy/Caddyfile` checks
-  config (including all snippets) without touching the running instance.
+- `docker exec caddy caddy validate --config /etc/caddy/lab/caddy/Caddyfile`
+  checks config (including all snippets) without touching the running
+  instance. That path — the Caddyfile through the repo mount, not a
+  file bind at `/etc/caddy/Caddyfile` — is deliberate: a single-file bind
+  follows an inode, git replaces files by rename, and the first edit
+  after container creation left caddy holding a deleted file
+  (compose.yaml has the story). The same trap applies to any single
+  file bound into any container.
 - The repo mount is read-only and safe: the repo contains `op://`
   references, never secret material.
 - Headless pulls of uncached images (a bumped caddy or lego pin, through
