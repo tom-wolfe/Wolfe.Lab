@@ -11,8 +11,13 @@
 #      — run `chezmoi apply` a second time: authorized_keys can only template
 #      the job-bridge public key after the first apply has materialized it.
 #   3. Docker Desktop installed and running. NOT from the Brewfile — the
-#      cask sits in the non-server branch, so install it by hand here
-#      (`brew install --cask docker-desktop`; it requires macOS >= 14).
+#      cask sits in the non-server branch on purpose: the whole lab runs
+#      inside it, so an unattended cask upgrade is an outage (see the
+#      Brewfile comment). Install it by hand here
+#      (`brew install --cask docker-desktop`; it requires macOS >= 14), and
+#      upgrade it by hand too: Docker Desktop's own "Check for updates" over
+#      Screen Sharing, or `brew upgrade --cask docker-desktop` followed by
+#      `open -a Docker`, at a time you're watching.
 # Then, from this repo's checkout:  ./setup.sh
 #
 # AFTER forgejo is up, repoint the chezmoi checkout at the primary — the

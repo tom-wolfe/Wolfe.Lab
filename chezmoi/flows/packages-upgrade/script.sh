@@ -20,10 +20,8 @@ brew update
 # through bundle restarts what it upgraded.
 brew bundle install --file="$HOME/.Brewfile" --upgrade
 
-# Then everything else: dependencies and anything installed but not
-# declared. Covers both formulae and casks, and SKIPS pinned packages,
-# which is what makes `brew pin` a working escape hatch.
-brew upgrade
+# Only update formulae, because casks includes rebooting Docker.
+brew upgrade --formula
 
 # No explicit cleanup: Homebrew runs `brew cleanup` itself after an upgrade
 # unless HOMEBREW_NO_INSTALL_CLEANUP is set, which it isn't here.

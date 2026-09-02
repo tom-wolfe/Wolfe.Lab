@@ -106,13 +106,10 @@ Worth knowing before you hit them:
 
 ## After a reboot
 
-Docker Desktop is not currently set to launch at login, so nothing starts itself
-after a restart. Fix it once:
-
-*Docker Desktop → Settings → General → tick "Start Docker Desktop when you sign
-in" → Apply & restart.*
-
-Until then, after every reboot:
+Docker Desktop is set to start at login (Settings → General → "Start Docker
+Desktop when you sign in"), and the mini auto-logs-in, so the stacks come back
+on their own after a reboot. If Docker Desktop has quit for any other reason
+(it did on 2026-09-02, without a reboot), bring it back by hand:
 
 ```sh
 open -a Docker && "$(chezmoi source-path)/../../jellyfin/flows/deploy/script.sh"
