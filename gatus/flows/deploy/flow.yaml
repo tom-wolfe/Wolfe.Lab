@@ -1,0 +1,30 @@
+id: deploy
+namespace: lab.gatus
+description: |
+  Deploys the Gatus compose stack on a green Chezmoi tick.
+  Note: config edits alone need no deploy — Gatus reloads config/ on change.
+
+labels:
+  job: deploy
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: converge
+    type: io.kestra.plugin.scripts.shell.Commands
+    timeout: PT20M
+    commands:
+      - /Users/tomwolfe/.local/share/chezmoi/scripts/deploy.sh gatus
+
+triggers:
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: chezmoi-tick-green
+      flows:
+        - namespace: lab.chezmoi
+          flowId: update
+          states: [SUCCESS]

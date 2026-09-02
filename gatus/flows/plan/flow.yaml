@@ -1,0 +1,29 @@
+id: plan
+namespace: lab.gatus
+description: Daily drift report for the gatus Tofu stack (the status.twolfe.dev record).
+
+labels:
+  job: plan
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: plan
+    type: io.kestra.plugin.fs.ssh.Command
+    allowFailure: true
+    timeout: PT10M
+    commands:
+      - gatus/plan
+  - id: gate
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.plan.exitCode == 1 }}"
+    errorMessage: Plan could not run — an outage, not drift.
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 8 * * *"
+    timezone: Europe/London

@@ -1,0 +1,92 @@
+# Group "front door" — the same services asked the way a BROWSER asks:
+# by public name, over TLS, through caddy. Each check exercises the whole
+# chain — Netlify DNS resolving the wildcard, the lego-renewed certificate
+# being valid, caddy routing by Host, the upstream answering — so this is
+# the group that would have caught caddy's 33-hour red healthcheck, and
+# the one that still means the same thing after the move to the Pi.
+#
+# The certificate condition is on every check because every name shares
+# the one wildcard cert. lego renews at 30 days out (caddy/flows/
+# renew-certs), so 14 days of margin only goes red if renewal has been
+# failing for a fortnight — and that flow alerts on its own failure long
+# before. Belt and braces: an expired cert is the outage that takes
+# every name at once.
+#
+# From inside the Docker Desktop VM these names resolve to the mini's LAN
+# address and the connection loops back through the host's published
+# :443. VERIFY on first deploy that the VM can reach the host that way; if
+# the whole group is red while the browser is fine, that is the reason.
+
+endpoints:
+  - name: forgejo
+    group: front door
+    url: https://forgejo.lab.twolfe.dev/api/healthz
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == pass"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: code.twolfe.dev
+    group: front door
+    url: https://code.twolfe.dev/api/healthz
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == pass"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: kestra
+    group: front door
+    url: https://kestra.lab.twolfe.dev/
+    interval: 2m
+    conditions:
+      - "[STATUS] == any(200, 401)"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: jellyfin
+    group: front door
+    url: https://jellyfin.lab.twolfe.dev/health
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: s3
+    group: front door
+    url: https://s3.lab.twolfe.dev/
+    interval: 2m
+    conditions:
+      - "[STATUS] == 403"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: beszel
+    group: front door
+    url: https://beszel.lab.twolfe.dev/api/health
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: qbittorrent
+    group: front door
+    url: https://qbittorrent.lab.twolfe.dev/
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover

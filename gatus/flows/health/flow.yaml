@@ -1,0 +1,24 @@
+id: health
+namespace: lab.gatus
+description: Health check for Gatus. Runs every 15 minutes.
+
+labels:
+  job: health
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: probe
+    type: io.kestra.plugin.core.http.Request
+    timeout: PT1M
+    uri: http://gatus:8080/health
+    method: GET
+
+triggers:
+  - id: quarter-hourly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "11-59/15 * * * *"
+    timezone: Europe/London

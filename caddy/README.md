@@ -57,9 +57,43 @@ Everything happens in the service's own slice; this one is never edited.
    bind mount and don't change compose's config hash.
 4. Add the row in `ENDPOINTS.md`, same commit.
 
-For deliberate PUBLIC exposure (`jellyfin.twolfe.dev`), the service's own
-tofu root declares the record with the netlify provider — pattern in
-`tofu/records.tf` here, pointed at the Tailscale IP when that lands.
+## Neat names
+
+`git.twolfe.dev`, `code.twolfe.dev`, `status.twolfe.dev`: a service's
+human name at the apex, owned by the service's slice. Two shapes:
+
+- **A dedicated address** — `git.twolfe.dev` is an A record at the
+  forgejo sidecar's own tailnet IP, because SSH needs a machine where
+  port 22 is free. Nothing to do with this slice.
+- **A neat name for a web route** — `code.twolfe.dev`,
+  `status.twolfe.dev`: a **CNAME to the slice's `.ts` twin**
+  (`forgejo.ts.twolfe.dev`, `gatus.ts.twolfe.dev`), so it resolves to
+  wherever `tofu/records.tf` here points the `*.ts` wildcard and the
+  owning root never holds an IP. Tailnet path on purpose: people carry
+  the tailnet, the TV doesn't need a status page.
+
+The second shape is the one exception to "this slice is never edited",
+because an apex-level name matches no wildcard. The recipe, per name:
+
+1. The CNAME, in the owning slice's tofu root (`gatus/tofu/records.tf`
+   is the template — a root can be that small).
+2. The name in the slice's `caddy.caddyfile` host matcher.
+3. **Here:** the name in `Caddyfile`'s site address, and a `--domains`
+   line in `flows/renew-certs/script.sh`. Two lines, same commit.
+4. **Re-issue the certificate.** An edited domain list does NOT reissue
+   by itself (lego converges on expiry, not SANs — the script's comment
+   explains). At the desk: move `_.lab.twolfe.dev.*` out of
+   `~/Docker/caddy/lego/certificates`, trigger `lab.caddy/renew-certs`,
+   confirm with
+   `openssl x509 -in ~/Docker/caddy/lego/certificates/_.lab.twolfe.dev.crt -noout -text | grep DNS`.
+   Until this is done the new name answers with a certificate that
+   doesn't cover it — browsers refuse, and so does the front-door check
+   in `gatus/`.
+5. `ENDPOINTS.md`, "Neat names" table, same commit.
+
+Neat names go in public Certificate Transparency logs — that is fine for
+`code` and `status`, and it is why internal names stay under the
+wildcards.
 
 ## Names are for humans
 

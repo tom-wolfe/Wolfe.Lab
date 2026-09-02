@@ -31,11 +31,7 @@ converge() {
   docker compose --project-directory "$repo/$1" up -d --remove-orphans "${@:2}"
 }
 
-# Caddy first — its compose OWNS the shared `lab` network that every other
-# stack references as `external`, so nothing else can even `up` until this
-# has created it. The certificate must exist BEFORE caddy starts (the
-# Caddyfile loads it from files), hence renew-certs first — convergent,
-# a no-op when the cert is already current.
+# Caddy first — its compose OWNS the shared `lab` network.
 "$repo/caddy/flows/renew-certs/script.sh"
 converge caddy
 
@@ -45,11 +41,8 @@ converge garage
 
 converge forgejo
 converge jellyfin
-
-# Beszel's hub. Its AGENT is not started here — that's a Homebrew formula
-# from the Brewfile, and it can't enrol until the hub has minted a token
-# for it anyway. See beszel/README.md "Bootstrap" for that hand-off.
 converge beszel
+converge gatus
 
 # Kestra last: once it's up and the flows are registered, it takes over.
 converge kestra

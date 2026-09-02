@@ -1,0 +1,28 @@
+id: apply
+namespace: lab.gatus
+description: Applies the gatus Tofu stack on every push to main, behind Kestra.
+
+labels:
+  job: apply
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: apply
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT30M
+    commands:
+      - gatus/apply
+
+triggers:
+  - id: after-flow-applier
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: kestra-apply-green
+      flows:
+        - namespace: lab.kestra
+          flowId: apply
+          states: [SUCCESS]

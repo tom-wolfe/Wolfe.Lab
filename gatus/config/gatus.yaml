@@ -1,0 +1,42 @@
+# Gatus — everything that is NOT a check. The checks live one file per
+# group beside this one (lab.yaml, front-door.yaml, dependencies.yaml,
+# personal.yaml); GATUS_CONFIG_PATH points at the directory and Gatus
+# deep-merges all of it. Scalars may only be set in ONE file, so this is
+# the only file that sets any.
+
+ui:
+  title: Wolfe.Lab status
+  header: Wolfe.Lab
+  dashboard-heading: Wolfe.Lab
+  dashboard-subheading: Green means a request succeeded, not that a container is running.
+  default-sort-by: group
+  buttons:
+    - name: Beszel
+      link: https://beszel.lab.twolfe.dev
+    - name: Kestra
+      link: https://kestra.lab.twolfe.dev
+    - name: healthchecks.io
+      link: https://healthchecks.io
+
+storage:
+  type: sqlite
+  path: /data/gatus.db
+  maximum-number-of-results: 100000
+  maximum-number-of-events: 100000
+
+# Prometheus metrics at /metrics. Off — nothing scrapes them (Beszel is
+# the metrics tool here); turn on if a Prometheus ever appears.
+metrics: false
+
+alerting:
+  pushover:
+    application-token: ${PUSHOVER_APP_TOKEN}
+    user-key: ${PUSHOVER_USER_KEY}
+    # Normal priority when something breaks, quiet when it recovers.
+    priority: 0
+    resolved-priority: -1
+    default-alert:
+      enabled: true
+      failure-threshold: 3
+      success-threshold: 2
+      send-on-resolved: true

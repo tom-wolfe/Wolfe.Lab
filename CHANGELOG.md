@@ -4,6 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [Unreleased]
+
+### Added
+
+- **Adds Gatus as a new status page.** It does endpoint checks, which is the 
+  last monitoring piece we were missing.
+- **Neat names for web routes.** `status.twolfe.dev` and `code.twolfe.dev`.**
+
 ## [0.17.0] - 2026-09-01
 
 - **A `restic/` root to run the offsite backup.** One repository local, one remote.

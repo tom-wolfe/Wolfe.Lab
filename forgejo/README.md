@@ -75,10 +75,11 @@ repos browsable by anyone on the LAN without logging in.
 
 ## Cloning
 
-HTTP:
+HTTPS — the URL the web UI prints (`ROOT_URL`), tailnet-routed through
+caddy:
 
 ```sh
-git clone http://macmini.local:3000/<user>/<repo>.git
+git clone https://code.twolfe.dev/<user>/<repo>.git
 ```
 
 SSH — add your public key in the web UI under *Settings → SSH / GPG Keys*, then:
@@ -90,9 +91,14 @@ git clone git@git.twolfe.dev:<user>/<repo>.git
 Portless, standard SSH, no `~/.ssh/config` tricks — the port-2222 era and
 its config workaround are gone. The name resolves to the container's own
 tailnet address (next section), so it works from any tailnet machine, on
-the LAN or off it, and from nowhere else; HTTP clone above is the
-non-tailnet fallback, and `git@forgejo.tailf823b8.ts.net:` reaches the
-same SSH endpoint by its DNS-independent MagicDNS name.
+the LAN or off it, and from nowhere else. `git@forgejo.tailf823b8.ts.net:`
+reaches the same SSH endpoint by its DNS-independent MagicDNS name.
+
+Non-tailnet fallback, LAN only, no TLS:
+
+```sh
+git clone http://macmini.local:3000/<user>/<repo>.git
+```
 
 ## Tailnet identity
 
@@ -124,6 +130,13 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   resolution rides Netlify DNS, like every `.lab` name. The sidecar's
   MagicDNS name, `forgejo.tailf823b8.ts.net`, is the same endpoint with
   no DNS dependency — the fallback when Netlify is the broken thing.
+- **And the web gets `code.twolfe.dev`** (added 2026-09-02), the same
+  pattern from the other side: a CNAME to `forgejo.ts.twolfe.dev` in
+  `tofu/records.tf`, so it resolves to the *mini* and routes through
+  caddy like the `.ts` name it aliases — it just doesn't look like a
+  wildcard. It is `ROOT_URL`, so it is what the UI prints in every HTTPS
+  clone box and link. Two names, two machines, one service: `code.` is
+  the mini's caddy, `git.` is the sidecar's sshd.
 - **State is disposable and not backed up.** `~/Docker/forgejo/tailscale`
   (node keys, tailnet IP) sits beside `data/`, not inside it, so the
   nightly backup ignores it on purpose. Wipe it and re-enrol with a
@@ -440,10 +453,14 @@ upstream issues at svalabs/terraform-provider-forgejo.
   than by hand-editing `data/gitea/conf/app.ini`. Those variables are written
   into `app.ini` on every container start, so `compose.yaml` stays the single
   source of truth and edits made directly to `app.ini` get overwritten.
-- `ROOT_URL` must match the address you actually type in the browser. If you
-  later add a domain or reverse proxy, update `FORGEJO__server__DOMAIN` and
-  `FORGEJO__server__ROOT_URL` together, or generated clone links and redirects
-  will point at the wrong host.
+- `ROOT_URL` is `https://code.twolfe.dev/` — the address every generated
+  link and HTTPS clone URL carries. The `.lab` and `.ts` names still
+  route here and work in a browser; they just aren't what Forgejo prints.
+  `FORGEJO__server__DOMAIN` and `FORGEJO__server__ROOT_URL` move
+  together, or generated clone links and redirects point at the wrong
+  host. Changing them is a container recreate (the tick-chained deploy
+  does it); existing clones keep working, their remotes just print an
+  older name.
 - Nothing here is exposed to the internet. The `:3000` publish is on all
   interfaces, so anything on the LAN can reach the web UI, but no router
   port forwarding is configured; SSH is reachable only over the tailnet.

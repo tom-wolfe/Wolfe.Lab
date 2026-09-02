@@ -14,29 +14,43 @@ in the owning slice's `caddy.caddyfile`. Prefer these in browsers; the
 port addresses below remain the automation path and the fallback when the
 front door is down.
 
-| Hostname                         | Service                     | Upstream       |
-| -------------------------------- | --------------------------- | -------------- |
-| `https://forgejo.lab.twolfe.dev` | Forgejo                     | `forgejo:3000` |
-| `https://kestra.lab.twolfe.dev`  | Kestra                      | `kestra:8080`  |
-| `https://jellyfin.lab.twolfe.dev` | Jellyfin                     | `jellyfin:8096` |
-| `https://s3.lab.twolfe.dev`      | Garage S3 (path-style only) | `garage:3900`  |
-| `https://beszel.lab.twolfe.dev`  | Beszel monitoring hub       | `beszel:8090`  |
-| `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI      | `gluetun:8080` |
+| Hostname                             | Service                     | Upstream       |
+| ------------------------------------ | --------------------------- | -------------- |
+| `https://forgejo.lab.twolfe.dev`     | Forgejo                     | `forgejo:3000` |
+| `https://kestra.lab.twolfe.dev`      | Kestra                      | `kestra:8080`  |
+| `https://jellyfin.lab.twolfe.dev`     | Jellyfin                     | `jellyfin:8096` |
+| `https://s3.lab.twolfe.dev`          | Garage S3 (path-style only) | `garage:3900`  |
+| `https://beszel.lab.twolfe.dev`      | Beszel monitoring hub       | `beszel:8090`  |
+| `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI          | `gluetun:8080` |
+| `https://gatus.lab.twolfe.dev`       | Gatus status page           | `gatus:8080`   |
+
+## Neat names (tailnet-routed, via the front door)
+
+Human names at the apex, each a CNAME to the owning service's `.ts` twin
+(caddy/README.md "Neat names") — so the same caddy, the same certificate,
+the mini's tailnet address, without the wildcard in the name.
+
+| Hostname                    | Service                         | Aliases           | Defined in |
+| --------------------------- | ------------------------------- | ----------------- | ---------- |
+| `https://code.twolfe.dev`   | Forgejo web + HTTPS clone (`ROOT_URL`) | `forgejo.ts.twolfe.dev` | `forgejo/tofu` |
+| `https://status.twolfe.dev` | Gatus status page               | `gatus.ts.twolfe.dev` | `gatus/tofu` |
 
 ## macmini.local
 
-| Address | Service | Auth | Defined in |
-| --- | --- | --- | --- |
-| `:22` | SSH (macOS Remote Login) | 1Password SSH key via `~/.ssh/authorized_keys` | chezmoi (`private_dot_ssh`) |
-| `:5900` | Screen Sharing | macOS account | System Settings |
-| `:80` | Caddy — HTTP→HTTPS redirect | — | `caddy` |
-| `:443` | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below) | `caddy` |
-| `:3000` | Forgejo — web UI + API | Forgejo account; API: 1P `forgejo-api-token` | `forgejo` |
-| `:3900` | Garage — S3 API | 1P `garage-tofu-state-key` (per-bucket keys) | `garage` |
-| `:3903` | Garage — admin API | 1P `garage-s3-admin-token` | `garage` |
-| `:8090` | Beszel — hub UI + API | Beszel superuser account; `/api/health` is unauthenticated | `beszel` |
-| `:8180` | Kestra — web UI + API | basic auth: 1P `kestra-admin`; webhook path key-authed | `kestra` |
-| `:8096` | Jellyfin — web + clients | Jellyfin accounts | `jellyfin` |
+| Address | Service                                          | Auth                                                       | Defined in                   |
+| ------- | ------------------------------------------------ | ---------------------------------------------------------- | --------------------------- |
+| `:22`   | SSH (macOS Remote Login)                         | 1Password SSH key via `~/.ssh/authorized_keys`             | chezmoi (`private_dot_ssh`) |
+| `:80`   | Caddy — HTTP→HTTPS redirect                      | —                                                          | `caddy`                     |
+| `:443`  | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below)                               | `caddy`.                    |
+| `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
+| `:3900` | Garage — S3 API                                  | 1P `garage-tofu-state-key` (per-bucket keys)               | `garage`                    |
+| `:3903` | Garage — admin API                               | 1P `garage-s3-admin-token`                                 | `garage`                    |
+| `:5900` | Screen Sharing.                                  | macOS account                                              | System Settings             |
+| `:8080` | qBittorrent — web UI (via gluetun's namespace)   | qBittorrent account (1P `qbittorrent-webui` is a copy)     | `qbittorrent`               |
+| `:8090` | Beszel — hub UI + API                            | Beszel superuser account; `/api/health` is unauthenticated | `beszel`                    |
+| `:8096` | Jellyfin — web + clients                          | Jellyfin accounts                                           | `jellyfin`                   |
+| `:8180` | Kestra — web UI + API                            | basic auth: 1P `kestra-admin`; webhook path key-authed     | `kestra`                    |
+| `:8280` | Gatus — status page + read-only API              | none (LAN/tailnet only; `/health` is the liveness route)   | `gatus`.                    |
 
 ## git.twolfe.dev (tailnet-routed)
 
@@ -50,7 +64,6 @@ its DNS-independent MagicDNS name (forgejo/README.md "Tailnet identity").
 | Address | Service | Auth | Defined in |
 | --- | --- | --- | --- |
 | `:22` | Forgejo SSH — `git@git.twolfe.dev:<user>/<repo>.git` | SSH key registered in Forgejo profile | `forgejo` |
-| `:8080` | qBittorrent — web UI (via gluetun's namespace) | qBittorrent account (1P `qbittorrent-webui` is a copy) | `qbittorrent` |
 
 Notes:
 

@@ -1,0 +1,23 @@
+name: gatus
+
+services:
+  gatus:
+    image: ghcr.io/twin/gatus:v5.36.0
+    container_name: gatus
+    restart: unless-stopped
+    environment:
+      TZ: Europe/London
+      GATUS_CONFIG_PATH: /config
+    env_file:
+      - /Users/tomwolfe/Docker/gatus/gatus.env
+    volumes:
+      - ./config:/config:ro
+      - /Users/tomwolfe/Docker/gatus/data:/data
+    ports:
+      - "8280:8080"
+    networks:
+      - lab
+
+networks:
+  lab:
+    external: true

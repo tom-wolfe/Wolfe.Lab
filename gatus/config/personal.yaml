@@ -1,0 +1,54 @@
+# Group "personal" — services cared about that the lab does NOT depend
+# on. Same two-kinds-of-check rule as dependencies.yaml (vendor status
+# JSON + a direct probe), same quiet priority. Add a service by adding an
+# endpoint here; a merge is enough, Gatus reloads on the tick's pull.
+
+endpoints:
+  # ---- Proton Mail -------------------------------------------------------
+  - name: proton status
+    group: personal
+    # One status page for every Proton service (Mail, Drive, VPN, Pass).
+    url: https://status.proton.me/api/v2/status.json
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status.indicator == none"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: proton mail web
+    group: personal
+    url: https://mail.proton.me/
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: proton mail inbound
+    group: personal
+    # Can twolfe.dev RECEIVE mail: the primary MX from dns/tofu/records.tf,
+    # answered with STARTTLS. This is the check that matters for a custom
+    # domain — a working webmail says nothing about whether mail sent to
+    # the domain is arriving. Half-hourly: an SMTP handshake is not a thing
+    # to do every two minutes against someone else's mail exchanger.
+    # Outbound port 25 from a residential line is sometimes ISP-blocked;
+    # verified open on the house's line 2026-09-02 (this exact check
+    # passed from a laptop at home). If it ever goes red while mail
+    # arrives fine, the ISP changed its mind — drop it rather than leave
+    # a known-false red.
+    url: starttls://mail.protonmail.ch:25
+    interval: 30m
+    client:
+      timeout: 10s
+    conditions:
+      - "[CONNECTED] == true"
+      - "[CERTIFICATE_EXPIRATION] > 48h"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1

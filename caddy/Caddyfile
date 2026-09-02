@@ -17,8 +17,15 @@
 # the read-only /certs mount. One wildcard cert on purpose — per-name
 # certs would list every internal hostname in public Certificate
 # Transparency logs.
+#
+# The NEAT NAMES (code.twolfe.dev, status.twolfe.dev) are the one thing
+# a slice cannot do entirely on its own: an apex-level name matches no
+# wildcard, so it needs a line here AND a SAN in flows/renew-certs — two
+# edits in this slice, listed in README.md "Neat names". The names
+# themselves are CNAMEs to the owning slice's .ts twin, declared in that
+# slice's tofu.
 
-*.lab.twolfe.dev, *.ts.twolfe.dev {
+*.lab.twolfe.dev, *.ts.twolfe.dev, code.twolfe.dev, status.twolfe.dev {
 	tls /certs/_.lab.twolfe.dev.crt /certs/_.lab.twolfe.dev.key
 
 	import lab/*/caddy.caddyfile

@@ -57,6 +57,8 @@ docker run --rm \
   --dns netlify \
   --domains '*.lab.twolfe.dev' \
   --domains '*.ts.twolfe.dev' \
+  --domains 'code.twolfe.dev' \
+  --domains 'status.twolfe.dev' \
   --path /state \
   --dns.propagation.wait 90s
 

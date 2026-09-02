@@ -10,50 +10,44 @@ a failure visible outranks anything that adds a new thing to fail.
 
 ## Next
 
-### 1. Uptime Kuma — a `kuma/` slice
+### 1. Move Gatus to the Pi
 
-Endpoint checks, which is the one shape of failure nothing here currently
-sees. Beszel is agent-based: it reports that a host is loaded or a container
-has stopped. It cannot tell you a container is *up and wedged* — and that
-gap is not hypothetical, it is exactly how caddy's healthcheck sat red for
-33 hours while caddy served traffic perfectly. A request is the only thing
-that finds that class of fault.
+The status page exists — `gatus/`, built 2026-09-02 — and it lives on the
+mini. This item is the move, and the record of why the earlier plan
+changed.
 
-Two customers, and they are different jobs:
+**What changed (decided 2026-09-02).** The item here used to be Uptime
+Kuma, waiting for the Pi. Two things moved it: the ask grew to cover
+third-party services (1Password, Backblaze, GitHub, Proton and so on,
+read from their own status pages), which turns a handful of checks into a
+few dozen small definitions — the shape where clicking through a UI
+hurts and a YAML file wins; and Kuma's write API is still Socket.IO-only
+with no OpenTofu provider, so the "second UI-only slice" cost named here
+was permanent. Gatus is configuration-as-code end to end, which also
+dissolved the reason for waiting: the cost of landing a stopgap on the
+mini was migrating UI-entered config, and with the config in git a move is
+a deploy-target change. So: Gatus, on the mini now, Pi later.
 
-- **off-stack projects** — the actual ask, and nothing in the lab does it
-  today. Outbound HTTP checks; the lab still exposes nothing inbound.
-- **lab services** — `jellyfin.lab.twolfe.dev` and friends, answering
-  through the front door rather than merely running.
+**Why the Pi still matters.** Placement was never about the third-party
+checks — those are outbound and run the same anywhere. It is about the
+one failure a monitor on the mini structurally cannot see: *the mini is
+down*. Today only healthchecks.io sees that, and only after a ten-minute
+grace. Gatus on a second node is genuinely external to the mini and
+catches it in two.
 
-**Run it on the Pi, not the mini.** Once a second node exists (see the smart
-home item), Kuma there is genuinely external to the *mini* — so it catches
-"the mini is down", which today only healthchecks.io sees, and only after a
-ten-minute grace. On the mini it cannot see the one failure you most want.
+**What the move costs**, known now because the config is code: the
+`front door` and third-party groups move unchanged. The `lab` group asks
+each service by container name over the `lab` Docker network, and those
+names do not exist on the Pi — every one of its URLs becomes a
+`macmini.local:<port>` address from `ENDPOINTS.md`. That is the entire
+migration, and `gatus/README.md` "Moving to the Pi" says so.
 
-**Decided 2026-08-31: wait for the Pi rather than land on the mini as a
-stopgap.** No Pi exists as a managed node yet (nothing on the tailnet, rack
-kit still arriving), so this item queues behind the Pi joining the fleet —
-it does not jump the queue by compromising on placement.
-
-**What it is still NOT: an outside observer.** Kuma anywhere in the house
-shares the house's fate — power cut, router dead, silence that looks like
-health. That is the whole
-reason `chezmoi/tofu/` puts the tick's dead man's switch on healthchecks.io,
-and Kuma does not replace it. Nor does it replace `lab.beszel/health`:
-something has to watch the watcher, and a watcher that watches itself isn't
-one.
-
-Costs, named now rather than discovered later: it would be the **second**
-slice whose configuration is UI-only (no OpenTofu provider), after beszel —
-a pattern worth watching if a third ever appears. Its SQLite state adds a
-backup flow. Small, though — nowhere near the Immich-class surface below.
-
-Placed here because it is cheap and the need is real, but note the tension
-with the ordering principle at the top: offsite backup below is pure risk
-reduction against the lab's biggest remaining single point of failure (one
-copy, one drive, one machine), whereas this both adds visibility *and* adds
-a thing to fail. Swapping the two would be defensible.
+**What it is still NOT: an outside observer.** Gatus anywhere in the
+house shares the house's fate — power cut, router dead, silence that looks
+like health. That is the whole reason `chezmoi/tofu/` puts the tick's
+dead man's switch on healthchecks.io, and Gatus does not replace it. Nor
+does it replace `lab.beszel/health` or `lab.gatus/health`: something has
+to watch the watcher, and a watcher that watches itself isn't one.
 
 ### 2. Jellyfin library cleanup, then the *arr stack
 
@@ -194,7 +188,7 @@ time. The failure mode INVERTS — absent config is a green plan that
 deploys nothing, so every consumer carries a tofu `check` making absence
 at least a named warning (the `chezmoi/tofu` pattern). And published
 config is declared truth, not liveness — proving someone answers is
-monitoring's job (the Kuma item), not this one's.
+monitoring's job (`gatus/`), not this one's.
 
 Why Garage and not the vault: configuration and secrets are different
 jobs. 1Password is the origin of *secrets*, is a cloud round-trip — the
@@ -276,10 +270,11 @@ Wanted (Hue, Sonos, Google/Nest cameras). Undecided only in the sense that
 it hasn't been started; the shape is now clear.
 
 First, a reframe: HA is not a monitoring tool, it is a home automation
-platform. If the want is only "tell me when a device drops off", **Uptime
-Kuma above already covers most of it** — the Hue bridge and each Sonos
-speaker answer on a stable LAN IP, so they are ordinary TCP checks costing
-no new service. Worth doing that first and seeing what is left.
+platform. If the want is only "tell me when a device drops off", **Gatus
+already covers most of it** — the Hue bridge and each Sonos speaker
+answer on a stable LAN IP, so they are ordinary TCP checks in
+`gatus/config/`, costing no new service. Worth doing that first and
+seeing what is left.
 
 **Not on the mini.** Docker Desktop on macOS ignores `network_mode: host` —
 a documented no-op, the container stays isolated. That kills the mDNS/SSDP

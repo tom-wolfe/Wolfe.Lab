@@ -42,18 +42,20 @@ watches.**
 | `system/alert-failed` | every `lab.*` flow failure → Pushover | Kestra does |
 | Beszel agent | the mini's CPU, memory, disks (incl. `/Volumes/Data1`), containers | the mini does |
 | `lab.beszel/health` | the Beszel hub itself — a dead monitor looks like a healthy lab | Kestra does |
+| Gatus (`gatus/`) | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on | the mini does |
+| `lab.gatus/health` | Gatus itself — a dead status page looks like one you haven't opened | Kestra does |
 | healthchecks.io | the tick still pings → **the only observer outside the building** | never (it's SaaS) |
 | `lab.chezmoi/heartbeat` | sends that ping, chained on the tick so it can't break it | Kestra does |
 
 Everything except healthchecks.io runs inside the lab, so a dead mini is
 silence from all of them — and silence is indistinguishable from health.
 That is the entire reason the dead man's switch is off-site, and the reason
-a future Uptime Kuma (see `ROADMAP.md`) would *add* to this list rather than
-replace anything in it.
+Gatus *adds* to this list rather than replacing anything in it.
 
-Two things nothing currently catches: a container that is up but wedged
-(only a request finds that — Uptime Kuma's job), and a flow that hangs
-rather than fails, which is why every flow carries a `timeout`.
+Gatus is what catches a container that is up but wedged — only a request
+finds that, and it is how caddy's healthcheck sat red for 33 hours while
+caddy served fine. The one thing still nothing catches is a flow that
+hangs rather than fails, which is why every flow carries a `timeout`.
 
 ## New machine bootstrap
 

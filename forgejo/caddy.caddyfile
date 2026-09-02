@@ -1,4 +1,4 @@
-@forgejo host forgejo.lab.twolfe.dev forgejo.ts.twolfe.dev
+@forgejo host forgejo.lab.twolfe.dev forgejo.ts.twolfe.dev code.twolfe.dev
 handle @forgejo {
 	reverse_proxy forgejo:3000
 }

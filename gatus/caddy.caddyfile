@@ -1,0 +1,4 @@
+@gatus host gatus.lab.twolfe.dev gatus.ts.twolfe.dev status.twolfe.dev
+handle @gatus {
+	reverse_proxy gatus:8080
+}

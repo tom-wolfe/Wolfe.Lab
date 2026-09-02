@@ -1,0 +1,193 @@
+# Group "dependencies" — the third parties the lab STANDS ON: if one of
+# these is down, something in this repo is already failing or about to.
+# Each has two kinds of check where both are possible:
+#
+#   * the vendor's own status page, read as JSON. Cheap and honest about
+#     what it is: what the vendor ADMITS, published late. Atlassian
+#     Statuspage exposes /api/v2/status.json with status.indicator =
+#     "none" when all is well (GitHub, 1Password, Proton, Tailscale and
+#     Netlify all use it); Backblaze is on FireHydrant, see below.
+#   * a direct probe of the thing the lab actually talks to — the
+#     1Password rate-limit outage of 2026-09-01 never appeared on any
+#     status page, and a direct probe is the only kind that would have.
+#
+# All third-party alerts are pushed at priority -1 (quiet): these are
+# things to know about, not things anyone here can fix. Five-minute
+# intervals throughout — polite to the vendor, and a status page changes
+# on a timescale of minutes anyway.
+
+endpoints:
+  # ---- 1Password: the origin of every secret ----------------------------
+  - name: 1password status
+    group: dependencies
+    url: https://status.1password.com/api/v2/status.json
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status.indicator == none"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: 1password web
+    group: dependencies
+    url: https://my.1password.eu/
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  # ---- Backblaze B2: the offsite restic copy -----------------------------
+  - name: backblaze status
+    group: dependencies
+    # FireHydrant-hosted, not Statuspage: the page is a SPA that loads
+    # /data/payload.json. Probed 2026-09-02 during an all-clear, the
+    # payload carried `config`, `components` and `conditions` and NO
+    # `incidents` key; the page's own bundle derives its active-incident
+    # list from a top-level `incidents` object, and the page is configured
+    # to publish active incidents only. Hence the condition below.
+    # UNVERIFIED against a real incident — if Backblaze has one and this
+    # stays green, fix the condition here and note what the payload held.
+    # The RSS feed at /data/rss.xml is the fallback if JSON proves useless.
+    url: https://status.backblaze.com/data/payload.json
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "has([BODY].components) == true"
+      - "has([BODY].incidents) == false"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: backblaze s3 endpoint
+    group: dependencies
+    # The region restic's offsite repo lives in (restic/README.md). A bare
+    # GET is 403 AccessDenied and needs no key; TLS with a valid cert is
+    # the signal. The repo's own health is lab.restic/verify's job.
+    url: tls://s3.eu-central-003.backblazeb2.com:443
+    interval: 5m
+    conditions:
+      - "[CONNECTED] == true"
+      - "[CERTIFICATE_EXPIRATION] > 48h"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  # ---- GitHub: the push mirror, and the bootstrap clone -----------------
+  - name: github status
+    group: dependencies
+    url: https://www.githubstatus.com/api/v2/status.json
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status.indicator == none"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: github mirror
+    group: dependencies
+    url: https://github.com/tom-wolfe/Wolfe.Lab
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  # ---- healthchecks.io: the dead man's switch ---------------------------
+  - name: healthchecks.io
+    group: dependencies
+    # The ping host itself, GET on the root (it redirects to the site).
+    # No Statuspage-style JSON for this one. Note the asymmetry: this is
+    # the lab checking the thing that checks the lab, and it is the LESS
+    # important direction — hc.io's silence-detection needs no help from
+    # us, whereas a dead hc.io would silently disarm the switch.
+    url: https://hc-ping.com/
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  # ---- Pushover: every alert in the lab goes through it -----------------
+  - name: pushover api
+    group: dependencies
+    url: https://api.pushover.net/
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  # ---- Netlify DNS: every *.lab name resolves here ----------------------
+  - name: netlify status
+    group: dependencies
+    url: https://www.netlifystatus.com/api/v2/status.json
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status.indicator == none"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: netlify dns
+    group: dependencies
+    url: "1.1.1.1"
+    interval: 5m
+    dns:
+      query-name: twolfe.dev
+      query-type: MX
+    conditions:
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] == pat(*protonmail.ch*)"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  # ---- Tailscale: the laptops' path to everything -----------------------
+  - name: tailscale status
+    group: dependencies
+    url: https://status.tailscale.com/api/v2/status.json
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status.indicator == none"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1
+
+  - name: git.twolfe.dev
+    group: dependencies
+    # Forgejo's own tailnet seat (the sidecar, forgejo/README.md "Tailnet
+    # identity") at its 100.x address — the clone URL every machine uses.
+    # VERIFY on first deploy: this asks the Docker Desktop VM to route to
+    # the tailnet, which works only if container egress rides the host's
+    # routing table. Evidence it does: the same check passed from a
+    # laptop's Docker Desktop VM on 2026-09-02. If it is permanently red
+    # on the mini while `git fetch` works from a laptop, delete this check
+    # rather than leave a known-false red on the board.
+    url: tcp://git.twolfe.dev:22
+    interval: 5m
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: pushover
+        provider-override:
+          priority: -1

@@ -12,3 +12,14 @@ resource "netlify_dns_record" "git" {
     prevent_destroy = true
   }
 }
+
+resource "netlify_dns_record" "code" {
+  zone_id  = data.netlify_dns_zone.twolfe_dev.id
+  type     = "CNAME"
+  hostname = "code.twolfe.dev"
+  value    = "forgejo.ts.twolfe.dev"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}

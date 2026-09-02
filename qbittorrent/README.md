@@ -62,8 +62,9 @@ Consequences worth knowing:
   that is the namespace it lives in.
 - `docker ps` showing gluetun unhealthy IS the tunnel being down (the
   image ships a connectivity probe). Nothing alerts on it — the lab rule
-  about Docker healthchecks — endpoint checks are the Uptime Kuma
-  roadmap item.
+  about Docker healthchecks. Gatus checks the web UI answers
+  (`gatus/config/lab.yaml`), which is not the same thing as the tunnel
+  being up.
 - **No inbound peers.** NordVPN offers no port forwarding, so nothing can
   dial in; qbittorrent only uploads on connections it opened itself.
   That is parity with the old host setup, not a regression.
