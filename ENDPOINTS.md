@@ -22,6 +22,8 @@ front door is down.
 | `https://s3.lab.twolfe.dev`          | Garage S3 (path-style only) | `garage:3900`  |
 | `https://beszel.lab.twolfe.dev`      | Beszel monitoring hub       | `beszel:8090`  |
 | `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI          | `gluetun:8080` |
+| `https://sonarr.lab.twolfe.dev`      | Sonarr (TV renamer)         | `sonarr:8989`  |
+| `https://radarr.lab.twolfe.dev`      | Radarr (movie renamer)      | `radarr:7878`  |
 | `https://gatus.lab.twolfe.dev`       | Gatus status page           | `gatus:8080`   |
 
 ## Neat names (tailnet-routed, via the front door)
@@ -46,11 +48,13 @@ the mini's tailnet address, without the wildcard in the name.
 | `:3900` | Garage — S3 API                                  | 1P `garage-tofu-state-key` (per-bucket keys)               | `garage`                    |
 | `:3903` | Garage — admin API                               | 1P `garage-s3-admin-token`                                 | `garage`                    |
 | `:5900` | Screen Sharing.                                  | macOS account                                              | System Settings             |
+| `:7878` | Radarr — web UI + API                            | Radarr account (1P `radarr-webui` is a copy); `/ping` is unauthenticated | `radarr`     |
 | `:8080` | qBittorrent — web UI (via gluetun's namespace)   | qBittorrent account (1P `qbittorrent-webui` is a copy)     | `qbittorrent`               |
 | `:8090` | Beszel — hub UI + API                            | Beszel superuser account; `/api/health` is unauthenticated | `beszel`                    |
 | `:8096` | Jellyfin — web + clients                          | Jellyfin accounts                                           | `jellyfin`                   |
 | `:8180` | Kestra — web UI + API                            | basic auth: 1P `kestra-admin`; webhook path key-authed     | `kestra`                    |
 | `:8280` | Gatus — status page + read-only API              | none (LAN/tailnet only; `/health` is the liveness route)   | `gatus`.                    |
+| `:8989` | Sonarr — web UI + API                            | Sonarr account (1P `sonarr-webui` is a copy); `/ping` is unauthenticated | `sonarr`     |
 
 ## git.twolfe.dev (tailnet-routed)
 

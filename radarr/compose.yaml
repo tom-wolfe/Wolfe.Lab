@@ -1,0 +1,52 @@
+name: radarr
+
+services:
+  radarr:
+    image: linuxserver/radarr:6.3.0.10514-ls315
+    container_name: radarr
+    restart: unless-stopped
+
+    environment:
+      # linuxserver images take the runtime user as env rather than
+      # `user:` — same 501:20 as qbittorrent, for the same VirtioFS
+      # ownership reasons.
+      PUID: "501"
+      PGID: "20"
+      TZ: Europe/London
+      # Authentication is DECLARED here, not left to the UI — see
+      # sonarr/compose.yaml for why "disabled for local addresses" would
+      # be no authentication at all behind caddy.
+      RADARR__AUTH__METHOD: Forms
+      RADARR__AUTH__REQUIRED: Enabled
+
+    volumes:
+      # Radarr's own state: radarr.db (the movie list, root folders,
+      # naming settings), config.xml (API key, auth). State is data —
+      # lives outside the repo like every slice.
+      - /Users/tomwolfe/Docker/radarr/config:/config
+      # Media drives at their HOST paths — jellyfin's ONE RULE; see
+      # sonarr/compose.yaml. Both drives even though only Data2 holds
+      # movies today: the Movies library has a (currently empty) root on
+      # Data1 too, and the deploy guard checks both regardless.
+      - /Volumes/Data1:/Volumes/Data1
+      - /Volumes/Data2:/Volumes/Data2
+
+    ports:
+      - "7878:7878"
+
+    networks:
+      - lab
+
+    # See sonarr/compose.yaml for the rationale and the 127.0.0.1 note.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7878/ping"]
+      interval: 120s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

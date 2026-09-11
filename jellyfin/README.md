@@ -140,6 +140,64 @@ Check what's current:
 curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep '"tag_name"'
 ```
 
+### 10.11.11 → 12.0 (2026-09-11)
+
+12.0 is the first release under Jellyfin's new versioning (`major.minor`;
+what would have been 10.12 is 12.0, and the server reports itself as
+12.0.0). It is the biggest schema change since 10.9: playlists and
+collections move into a relational table, duplicate people and artists
+are merged, orphaned extras are dropped, and — the one that bites —
+**alternative versions that Jellyfin grouped by itself are cleared** and
+only come back after a full library scan. Rolling back means a restore.
+
+Checked on the mini before the bump, so these are not open questions:
+
+- **Usernames must not differ only by case** (12.0 makes them
+  case-insensitive with a unique index; a collision fails the
+  migration). The two accounts are `Wolfe` and `Wolfe2` — fine.
+- **Third-party plugins must be removed first** (10.11 builds won't load
+  on .NET 10). `plugins/` holds only configuration for the bundled
+  TMDb/OMDb/MusicBrainz/StudioImages plugins, no third-party DLLs —
+  nothing to remove.
+- Direct upgrade is supported from any 10.11.x.
+
+The runbook, in order. Do it in one sitting, at the desk:
+
+1. **Snapshot first.** The nightly one at 03:35 is fine if the bump ships
+   the next morning; otherwise run `lab.jellyfin/backup` from Kestra and
+   wait for "backup complete". The snapshot carries `image:…:10.11.11`
+   as a tag — that is the rollback target.
+2. **Merge the tag bump.** `lab.jellyfin/deploy` converges within a tick;
+   `docker compose logs -f jellyfin` shows the migrations run on first
+   boot. They are quick on this database (77 MB), but do not restart the
+   container while they're running.
+3. **Full library scan, and let it finish.** *Dashboard → Scheduled
+   Tasks → Scan Media Library* (or the Scan All Libraries button). The
+   release notes call this REQUIRED: until it completes, auto-grouped
+   alternative versions look missing, and the first scan is deliberately
+   slower — it does path-based cleanup and type corrections. Some movies
+   may show as "recently added". Expected.
+4. **Check the clients.** 12.0 removes the legacy `/emby/*` and
+   `/mediabrowser/*` routes and disables legacy authorization; any
+   client old enough to depend on them stops working. The current
+   official apps are fine. Gatus polls `/health` (`gatus/config/`),
+   which is not a legacy route — if the lab check goes red while the UI
+   works, that is the first thing to look at.
+5. **Verify** watch history, favourites and a collection or two survived,
+   then leave the 10.11.11 snapshots alone — `lab.restic/offsite` owns
+   retention.
+
+**Rollback** (only before step 3 has changed anything you care about):
+set the tag back to `10.11.11`, then the Restore recipe below with the
+last snapshot tagged `image:jellyfin/jellyfin:10.11.11`. A 12.0-migrated
+`jellyfin.db` will not open on 10.11.
+
+**Sequencing with the *arr rename** (`sonarr/`, `radarr/`): upgrade and
+scan FIRST, then rename. The rename mints new item IDs for everything it
+touches and costs a second scan anyway; doing the migration on a library
+in a known state keeps "did 12.0 break it" and "did the rename break it"
+as separate questions.
+
 ## Backup
 
 Runs itself: the `lab.jellyfin/backup` flow fires nightly at 03:35
@@ -209,18 +267,22 @@ starting itself again.
 
 The equivalent applies to future upgrades: rolling back an image tag alone is
 not enough once migrations have run, which is why `backup.sh` runs first.
+12.0 (2026-09-11) is the second such door — a 12.0 database won't open on
+any 10.11 image either; "10.11.11 → 12.0" above has the rollback.
 
 ## Pre-existing issues found during migration
 
 Neither of these was caused by the move, and neither was changed:
 
-- **4,178 items point at volumes that no longer exist** — 3,421 under
-  `/Volumes/books` and 757 under `/Volumes/video`. The current drives mount as
-  `/Volumes/Data1` and `/Volumes/Data2`, so these are stale rows from an earlier
-  drive layout, most likely duplicates of content now under `Data1`. They show
-  in totals (e.g. `Items/Counts` reports 365 movies where a user sees 135) but
-  can't be played. Cleaning them up means removing the dead paths from the
-  affected libraries and rescanning.
+- **Items pointing at volumes that no longer exist.** At migration time
+  4,178 rows pointed at `/Volumes/books` and `/Volumes/video` — an earlier
+  drive layout, the same content now under `Data1`. Scans since have
+  pruned nearly all of them: on 2026-09-11 only 88 remained, all extras
+  under `/Volumes/video/shows/Angel (2005)/` (trailers and outtakes in
+  `Season 00` and `Season 03/Extras`). The 12.0 migration removes
+  orphaned extras and the required post-upgrade scan does path-based
+  cleanup, so expect these to go with the upgrade; if they survive, a
+  scan of the Shows library with the missing-path check is the fix.
 - **~180 MB of dead database files** in `data/`: `library.db.old`,
   `library.db-wal`, `library.db-shm`. Leftovers from the 10.10 → 10.11 migration
   in December 2025. Jellyfin 10.11 uses `jellyfin.db` and never reads these;

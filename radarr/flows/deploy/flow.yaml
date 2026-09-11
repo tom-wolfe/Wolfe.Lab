@@ -1,0 +1,28 @@
+id: deploy
+namespace: lab.radarr
+description: Deploys the radarr compose stack on a green Chezmoi tick.
+
+labels:
+  job: deploy
+  alert: low
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: converge
+    type: io.kestra.plugin.scripts.shell.Commands
+    timeout: PT20M
+    commands:
+      - /Users/tomwolfe/.local/share/chezmoi/scripts/deploy.sh radarr /Volumes/Data1 /Volumes/Data2
+
+triggers:
+  - id: after-tick
+    type: io.kestra.plugin.core.trigger.Flow
+    preconditions:
+      id: chezmoi-tick-green
+      flows:
+        - namespace: lab.chezmoi
+          flowId: update
+          states: [SUCCESS]

@@ -102,3 +102,25 @@ endpoints:
       - "[STATUS] == 200"
     alerts:
       - type: pushover
+
+  - name: sonarr
+    group: lab
+    # /ping is the one route the *arr apps answer without a login —
+    # everything else, including /api/v3/health, wants the API key.
+    url: http://sonarr:8989/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == OK"
+    alerts:
+      - type: pushover
+
+  - name: radarr
+    group: lab
+    url: http://radarr:7878/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == OK"
+    alerts:
+      - type: pushover

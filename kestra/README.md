@@ -82,7 +82,8 @@ converges.
 `scripts/deploy.sh` at the repo root is the single shared
 implementation: smartening deployment (health gates, pre-pulls,
 skip-if-unchanged) is one edit there, not six. Per-slice variation is
-*data* — arguments for required drives (jellyfin, qbittorrent), a
+*data* — arguments for required drives (jellyfin, qbittorrent, sonarr,
+radarr), a
 `flows/deploy/post.sh` hook for follow-up work (caddy's route reload) —
 never a fork of the script.
 

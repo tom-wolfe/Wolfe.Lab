@@ -4,12 +4,25 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.19.0] - 2026-09-11
+
+### Added
+
+- **`sonarr/` and `radarr/` — the *arr stack as a renamer.** both pointed at 
+  the existing library with no indexers and no download client.
+
+### Changed
+
+- **Jellyfin 10.11.11 → 12.0.** First release under the new `major.minor` 
+  versioning; Runbook and rollback in `jellyfin/README.md`.
+
 ## [0.18.2] - 2026-09-11
 
 ### Removed
 
 - **The nightly `lab.chezmoi/packages-upgrade` flow.** Unattended
-  upgrades of everything on a lone server were both unwise, and requiring of user input, causing them to fail every night.
+  upgrades of everything on a lone server were both unwise, and requiring of 
+  user input, causing them to fail every night.
 
 ## [0.18.1] - 2026-09-02
 

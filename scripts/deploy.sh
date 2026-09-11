@@ -19,11 +19,8 @@ repo="$(cd "$(dirname "$0")/.." && pwd)"
 slice="$1"
 shift
 
-# Drive guard, for slices that bind external volumes (jellyfin,
-# qbittorrent): at boot, Docker restarts containers before macOS mounts
-# the drives, and an unmounted /Volumes path is a shadow directory on the
-# internal disk — converging onto it starts containers over empty roots
-# (a jellyfin scan against an empty root PRUNES the library).
+# Drive guard, for slices that bind external volumes. 
+# At boot, Docker restarts containers before macOS mounts the drives.
 #
 # `mount | grep` can't work here — a container sees only the daemon's
 # view, where a shadow directory looks like any other. So each real drive

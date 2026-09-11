@@ -46,6 +46,8 @@ converge garage
 
 converge forgejo
 converge jellyfin
+converge sonarr
+converge radarr
 converge beszel
 converge gatus
 

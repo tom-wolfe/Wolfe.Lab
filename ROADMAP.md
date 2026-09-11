@@ -27,7 +27,8 @@ the same shape as the backups: ONE flow, `lab.restic/drill`, that walks
 the same `backup.conf` files the backup pipeline reads, restores each
 service's latest snapshot to a scratch path, and asserts that the thing
 the service needs to boot is there and non-empty — forgejo's `gitea.db`,
-jellyfin's `library.db`, beszel's `data.db`, and for kestra that
+jellyfin's `jellyfin.db`, sonarr's `sonarr.db`, radarr's `radarr.db`,
+beszel's `data.db`, and for kestra that
 `restic dump latest /kestra.sql` produces something `psql` parses.
 Weekly, after `verify`, `alert: high`. Honest scope: this proves the
 files come back, not that the service boots on them.
@@ -202,43 +203,33 @@ fails — which is why this sits directly under the drills.
   five years old and holds nothing" to be noticed before the day it
   matters.
 
-### 5. Jellyfin library cleanup, then the *arr stack
+### 5. The *arr stack, Phase B — acquisition
 
-Two phases, and the first is the valuable one.
+Phase A shipped in 0.19.0 (`sonarr/`, `radarr/` as renamers, alongside
+the Jellyfin 12.0 upgrade), so what remains is the half that was always
+the smaller value and the larger cost.
 
-**Phase A — Sonarr and Radarr as a renamer.** Pointed at the existing
-library with no indexers and no download client, they do exactly the job
-that was otherwise going to be a bespoke script: parse what's there, and
-rename and re-file it into a consistent layout. Two containers, no VPN
-dependency, nothing else in this item required. It can be pulled forward
-whenever — it sits here only because the rest of the item does.
+**Phase B — acquisition.** Prowlarr for indexers, and Jellyseerr as the
+"write it down and forget it" front end: request something, it lands on
+a list, and it arrives without further involvement. Jellyseerr reads the
+Jellyfin library, so it won't offer what's already there. The download
+client and its `gluetun` sidecar shipped as `qbittorrent/` (0.12); the
+renamers shipped as Phase A — so Phase B is two new containers plus
+wiring: Prowlarr → Sonarr/Radarr (API keys, which today sit unused in
+each app's `config.xml`), Sonarr/Radarr → qBittorrent (categories with
+per-category save paths on `/Volumes/Data2`), and Connect → Jellyfin so
+each import triggers a library update instead of the manual scans Phase
+A needed.
 
-The usual objection doesn't apply: renaming changes every path, every path
-change mints a new item ID, and watch history hangs off item IDs
-(`jellyfin/README.md`). Normally that's the thing that stops you. Watch
-stats are explicitly not wanted here, so the cost is a library rebuild and
-nothing else. Take a `lab.jellyfin/backup` first anyway — it's nightly and
-free — and do it in one pass rather than trickling, so there's one scan and
-one rebuild.
-
-**Phase B — acquisition.** Prowlarr for indexers, a download client, and
-Jellyseerr as the "write it down and forget it" front end: request
-something, it lands on a list, and it arrives without further involvement.
-Jellyseerr reads the Jellyfin library, so it won't offer what's already
-there.
-
-The download client and its `gluetun` sidecar already shipped as the
-`qbittorrent/` slice (0.12) — a precondition met, not work left here.
-
-**The cost, plainly:** Phase B is four or five more containers to pin,
-upgrade, back up and monitor. That is the "each adds backup surface" line
-below, and this is the first item to really test it. Mitigating: the
-configs are small SQLite databases, nothing like the Immich case. The
-media itself is not backed up at all — 1.6 TB, against single-digit GB
-of service state in restic — and whether it should be is an open
-question ("Backing up media" under Undecided). Phase B changes that
-question's shape: a library that re-acquires itself is a library whose
-loss is an inconvenience.
+**The cost, plainly:** two or three more containers to pin, upgrade,
+back up and monitor — the "each adds backup surface" line below, and
+this item is the first to really test it. Mitigating: the configs are
+small SQLite databases, nothing like the Immich case. The media itself
+is not backed up at all — 1.6 TB, against single-digit GB of service
+state in restic — and whether it should be is an open question
+("Backing up media" under Undecided). Phase B changes that question's
+shape: a library that re-acquires itself is a library whose loss is an
+inconvenience.
 
 ### 6. Obsidian vaults into git
 

@@ -90,3 +90,25 @@ endpoints:
       - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
+
+  - name: sonarr
+    group: front door
+    url: https://sonarr.lab.twolfe.dev/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == OK"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: radarr
+    group: front door
+    url: https://radarr.lab.twolfe.dev/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == OK"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover

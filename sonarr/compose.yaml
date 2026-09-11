@@ -1,0 +1,72 @@
+name: sonarr
+
+services:
+  sonarr:
+    # Pinned (linuxserver's fully-qualified tag: Sonarr 4.0.19.2979, image
+    # build ls323). Bump deliberately — see "Upgrading" in README.md.
+    image: linuxserver/sonarr:4.0.19.2979-ls323
+    container_name: sonarr
+    restart: unless-stopped
+
+    environment:
+      # linuxserver images take the runtime user as env rather than
+      # `user:` — same 501:20 as qbittorrent, for the same VirtioFS
+      # ownership reasons.
+      PUID: "501"
+      PGID: "20"
+      # Host /etc/localtime is a symlink into /var/db/timezone — dangles
+      # inside a Linux container. Set TZ instead (jellyfin pattern).
+      TZ: Europe/London
+      # Authentication is DECLARED here, not left to the UI. "Enabled"
+      # means every request logs in. The tempting alternative, "disabled
+      # for local addresses", would wave through everything that arrives
+      # via caddy: the lab Docker network is RFC1918, so to Sonarr the
+      # front door IS a local address. (Env overrides config.xml, so the
+      # UI's copy of these two settings is display-only.)
+      SONARR__AUTH__METHOD: Forms
+      SONARR__AUTH__REQUIRED: Enabled
+
+    volumes:
+      # Sonarr's own state: sonarr.db (the series list, root folders,
+      # naming settings), config.xml (API key, auth). State is data —
+      # lives outside the repo like every slice.
+      - /Users/tomwolfe/Docker/sonarr/config:/config
+      # Media drives at their HOST paths — jellyfin's ONE RULE, for the
+      # same reason: Sonarr stores absolute paths (root folders, every
+      # episode file) in its database, and the rename it exists to do
+      # only makes sense if it and Jellyfin agree on what a path is. The
+      # usual /tv remap would break both.
+      - /Volumes/Data1:/Volumes/Data1
+      - /Volumes/Data2:/Volumes/Data2
+
+    ports:
+      # Web UI fallback (macmini.local:8989), same convention as every
+      # other slice.
+      - "8989:8989"
+
+    networks:
+      - lab
+
+    # The image ships no healthcheck, so this declares one. Nothing alerts
+    # on it — Gatus polling /ping (gatus/config/lab.yaml) is what pages —
+    # but Beszel shows container health, and `docker ps` at the terminal
+    # should say the same thing Beszel does.
+    healthcheck:
+      # 127.0.0.1 rather than localhost: the image resolves `localhost`
+      # to ::1 first (the caddy trap, caddy/compose.yaml). Sonarr happens
+      # to listen dual-stack so both work today; the literal address
+      # doesn't depend on that staying true. /ping is the one route that
+      # answers without the API key. Verified in the image 2026-09-11.
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8989/ping"]
+      # Slow on purpose, as beszel's: nothing reads it on a timer.
+      interval: 120s
+      timeout: 10s
+      retries: 3
+      # .NET startup plus the first-boot database migration.
+      start_period: 60s
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true

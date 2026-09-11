@@ -1,0 +1,23 @@
+id: backup
+namespace: lab.radarr
+description: Nightly cold backup of radarr's state.
+labels:
+  job: backup
+  alert: high
+
+concurrency:
+  limit: 1
+  behavior: QUEUE
+
+tasks:
+  - id: backup
+    type: io.kestra.plugin.fs.ssh.Command
+    timeout: PT15M
+    commands:
+      - radarr/backup
+
+triggers:
+  - id: nightly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "20 4 * * *"
+    timezone: Europe/London
