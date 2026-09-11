@@ -13,10 +13,9 @@ description: |
   changed — and since `brew bundle` upgrades outdated formulae by default,
   every version bump on the mini was triggered by whatever unrelated edit
   happened to touch the Brewfile. A new VS Code extension swept the whole
-  toolchain; a quiet month would have frozen it. Installing and upgrading
-  are now separate flows with separate reasons to run.
-
-  Upgrades are lab.chezmoi/packages-upgrade, nightly. Host side:
+  toolchain; a quiet month would have frozen it. Installing is this flow's
+  job; upgrading is nobody's — versions on the mini move only when a
+  person runs `brew upgrade` (chezmoi/README.md explains why). Host side:
   chezmoi/flows/packages/script.sh via the lab-job bridge.
 
 labels:

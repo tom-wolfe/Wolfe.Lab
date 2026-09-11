@@ -17,12 +17,13 @@ fi
 # a day on the tick and the lab is supposed to keep working with the
 # internet down:
 #   NO_AUTO_UPDATE  — don't refetch Homebrew's metadata every 15 minutes.
-#                     lab.chezmoi/packages-upgrade does `brew update` once
-#                     a night, which is the right cadence for it.
+#                     Nothing on the mini refreshes it on a schedule; the
+#                     hand-run bundle upgrade does (see ../../README.md),
+#                     which is the only cadence upgrades happen at.
 #   --no-upgrade    — `brew bundle` upgrades outdated formulae by DEFAULT.
 #                     That default is exactly what coupled version churn to
-#                     unrelated Brewfile edits; moving versions is the other
-#                     flow's job.
+#                     unrelated Brewfile edits. Versions move only when a
+#                     person moves them.
 export HOMEBREW_NO_AUTO_UPDATE=1
 
 exec brew bundle install --file="$HOME/.Brewfile" --no-upgrade

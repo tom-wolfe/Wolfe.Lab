@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.18.2]
+
+### Removed
+
+- **The nightly `lab.chezmoi/packages-upgrade` flow.** Unattended
+  upgrades of everything on a lone server were both unwise, and requiring of user input, causing them to fail every night.
+
 ## [0.18.1] - 2026-09-02
 
 ### Fixed

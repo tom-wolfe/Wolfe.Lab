@@ -269,7 +269,6 @@ stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
 | `lab.<slice>/apply` | PT30M | provider write paths can be slow; a hung apply must still die |
 | `lab.kestra/tick`, `/push-to-main` | PT1M | no-op Return tasks; a hang here means Kestra itself is sick |
 | `lab.chezmoi/packages` | PT20M | a cold cask or mas download; a satisfied run is ~1s |
-| `lab.chezmoi/packages-upgrade` | PT45M | deliberately generous — see below |
 | `lab.restic/offsite` | PT6H | the FIRST copy uploads the whole repo over home broadband; after that, minutes |
 | `lab.restic/verify` | PT2H | downloads a 5% pack sample from B2; slow is not failed |
 | `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |

@@ -13,7 +13,7 @@ lands — see "Later: the laptops".
 | --- | --- |
 | Hub container | the `lab.beszel/deploy` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `lab.beszel/backup` (below) |
-| Agent binary | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`, server section); installed by `lab.chezmoi/packages` and upgraded by `lab.chezmoi/packages-upgrade`, supervised by `brew services` |
+| Agent binary | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`, server section); installed by `lab.chezmoi/packages`, upgraded by hand (see "Two pins"), supervised by `brew services` |
 | Agent config (`~/.config/beszel/beszel-agent.env`) | chezmoi `create_` template (`chezmoi/home/dot_config/beszel/`) — materialized from 1Password (`beszel-agent`) only while the file is missing |
 | Hub liveness | the `lab.beszel/health` flow — Beszel cannot alert about its own hub being down |
 | Route (`beszel.lab.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
@@ -246,19 +246,24 @@ versioned protocol and are only tested as a pair:
    `beszel-agent.rb` regenerated on each release, so there is nothing
    versioned to name in the Brewfile.
 
-So the agent tracks upstream, on the nightly `lab.chezmoi/packages-upgrade`
-schedule. That flow goes through `brew bundle` rather than plain `brew
-upgrade` specifically for services like this one: `brew upgrade` replaces
-the binary and leaves the old process running, whereas bundle honours
-`restart_service: :changed` and restarts it. A monitor silently running a
-stale binary is the exact failure worth avoiding here.
+So the agent moves when you upgrade packages on the mini by hand — nothing
+upgrades on a schedule there (`chezmoi/README.md`). Do it through bundle,
+not plain `brew upgrade`, specifically for services like this one:
 
-Consequence: the agent can move ahead of the hub's pinned image. That's
-tolerable because a protocol mismatch is loud rather than silent — the mini
-drops off the dashboard, and `lab.beszel/health` and
-`~/.cache/beszel/beszel-agent.log` both say so. To hold it while you catch
-up, `brew pin beszel-agent` on the mini; `brew upgrade` skips pinned
-packages.
+```sh
+brew bundle install --file ~/.Brewfile --upgrade
+```
+
+`brew upgrade` replaces the binary and leaves the old process running,
+whereas bundle honours `restart_service: :changed` and restarts it. A
+monitor silently running a stale binary is the exact failure worth
+avoiding here. Bump the hub's `image:` pin in the same sitting, so the
+pair moves together.
+
+If the agent does get ahead of the hub, a protocol mismatch is loud rather
+than silent — the mini drops off the dashboard, and `lab.beszel/health`
+and `~/.cache/beszel/beszel-agent.log` both say so. To hold it, `brew pin
+beszel-agent` on the mini; upgrades skip pinned packages.
 
 Bump the image via a normal PR; the tick ships it and `lab.beszel/deploy`
 converges it. Check the release notes first — the hub migrates its SQLite

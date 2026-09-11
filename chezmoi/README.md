@@ -13,17 +13,16 @@ declarative machine plane itself (dotfiles, the Brewfile, the `create_`
 secret-cache templates under `home/Docker/`; `.chezmoiroot` points chezmoi
 at it) — and `flows/update/` is the job that runs it on the server.
 
-## Packages (`flows/packages/`, `flows/packages-upgrade/`)
+## Packages (`flows/packages/`)
 
 `home/dot_Brewfile.tmpl` renders to `~/.Brewfile` and stops there. It
-*declares* the machine's package set; it installs nothing. Acting on it is
-two separate jobs:
+*declares* the machine's package set; it installs nothing. Acting on it:
 
 | Job | When | Does |
 | --- | --- | --- |
 | `lab.chezmoi/packages` | chained on the tick | `brew bundle install --no-upgrade` — installs what's missing, so a new Brewfile entry lands within 15 minutes |
-| `lab.chezmoi/packages-upgrade` | nightly, 04:20 | `brew update`, then upgrade — moves versions forward |
 | `.chezmoiscripts/install-packages.sh` | every `chezmoi apply`, **laptops only** | the same install-only converge, because a laptop has no Kestra to act for it |
+| you, at the desk | when you choose | `brew bundle install --file ~/.Brewfile --upgrade` on the mini — the only thing that moves versions there |
 
 ### Why it's split this way
 
@@ -36,13 +35,13 @@ file. Adding one VS Code extension swept the entire toolchain along with it;
 two quiet months would have frozen it silently. The mini was current only by
 accident.
 
-Splitting them means each happens for its own reason: installs follow the
-declaration, upgrades follow a schedule, and neither is a side effect of the
-other. It is also the same move 0.6.0 made when the compose deploy hook was
-deleted from chezmoi — **chezmoi declares, Kestra acts** — and this script
-was the last surviving place where chezmoi still did both.
+Splitting them means installs follow the declaration and nothing else
+moves as a side effect. It is also the same move 0.6.0 made when the
+compose deploy hook was deleted from chezmoi — **chezmoi declares, Kestra
+acts** — and this script was the last surviving place where chezmoi still
+did both.
 
-### Why not pin versions instead
+### Why upgrades are manual
 
 There is nothing to pin to. `brew "foo"` *means* "the current formula";
 versioned formulae like `node@22` exist only where upstream publishes them
@@ -52,20 +51,31 @@ an immutable artifact that will still resolve next year — there is no
 artifact to name. Renovate can't help either: its `homebrew` manager matches
 `^Formula/**.rb` (formula files inside a tap), not Brewfiles.
 
-So versions move on a schedule, and the safeguard is *visibility* rather
-than review: the upgrade is a flow, so a failure reaches Pushover through
-`system/alert-failed` like anything else. `brew pin <formula>` on the mini
-is the escape hatch — `brew upgrade` skips pinned packages.
+So the repo's usual discipline — bump a pin in a PR, let the deploy flow
+act on it — has nothing to bite on, and the alternative once tried here, a
+nightly `lab.chezmoi/packages-upgrade` flow (0.11.0 → 0.18.1), was the
+wrong trade for a lone server: it moved every package at once, unreviewed,
+and it failed every night regardless, because `.pkg`-based casks
+(`dotnet-sdk`) install through sudo and a forced-command SSH session has
+no password to give. Versions on the mini now move only when a person
+moves them:
+
+```sh
+brew bundle install --file ~/.Brewfile --upgrade
+```
+
+Bundle rather than plain `brew upgrade`, because only bundle honours
+`restart_service: :changed` — `brew upgrade` swaps a binary and leaves the
+old process running, which for the Beszel agent means a monitor silently
+running stale code. `brew pin <formula>` holds anything that must not move;
+pinned packages are skipped.
 
 ### Notes
 
 - The tick-chained flow sets `HOMEBREW_NO_AUTO_UPDATE=1`. It runs ~96 times
-  a day and the lab is meant to keep working with the internet down, so the
-  nightly flow is the only one that reaches out.
-- The upgrade flow goes through `brew bundle --upgrade` *before* plain
-  `brew upgrade`, because only bundle honours `restart_service: :changed`.
-  `brew upgrade` swaps the binary and leaves the old process running — for
-  the Beszel agent that would mean a monitor silently running stale code.
+  a day and the lab is meant to keep working with the internet down. With
+  no scheduled upgrade, nothing on the mini refreshes Homebrew's metadata
+  except the hand-run upgrade above, which does it first.
 - Editing the Brewfile: `chezmoi apply` on a laptop installs immediately;
   on the mini it lands on the next tick.
 
