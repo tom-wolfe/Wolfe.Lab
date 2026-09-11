@@ -4,7 +4,7 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## [0.18.2]
+## [0.18.2] - 2026-09-11
 
 ### Removed
 
@@ -33,19 +33,6 @@ rather than versioned — the lab is continuous, not released.
 - **Caddy no longer manages certificates itself** (`auto_https
   disable_certs`). It had started its own Let's Encrypt orders for the
   neat names when recreated a minute ahead of the re-issued cert.
-
-## [0.17.0] - 2026-09-01
-
-- **A `restic/` root to run the offsite backup.** One repository local, one remote.
-
-### Changed
-
-- Backups now happen directly through Restic.
-- Brave browser now gets installed instead of Chrome.
-
-### Fixed
-
-- Kestra now retries Postgres connections for 5 minutes on startup.
 
 ## [0.16.0] - 2026-09-01
 
