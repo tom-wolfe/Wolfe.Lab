@@ -67,8 +67,25 @@ At the desk. Do the Jellyfin 12.0 upgrade and its full scan **first**
 
 1. Deploy: merge, wait for the tick (or trigger `lab.sonarr/deploy`).
    Docker creates `~/Docker/sonarr/config` on first start.
-2. First visit shows the authentication setup page: choose a username
-   and password, mirror them to 1P `sonarr-webui`.
+2. Create the login **through the API, not the UI.** Because the auth
+   method is declared in `compose.yaml`, Sonarr skips its first-run
+   "set up authentication" page and goes straight to a login form with
+   no user behind it. The API key in `config.xml` is the way in — one
+   authenticated PUT to the host config creates the user. On the mini:
+
+   ```sh
+   cd ~/Docker/sonarr/config
+   key=$(sed -n 's/.*<ApiKey>\(.*\)<\/ApiKey>.*/\1/p' config.xml)
+   curl -s -H "X-Api-Key: $key" http://localhost:8989/api/v3/config/host \
+     | jq --arg u USERNAME --arg p PASSWORD \
+          '.username=$u | .password=$p | .passwordConfirmation=$p' \
+     | curl -s -o /dev/null -w '%{http_code}\n' -X PUT -d @- \
+          -H "X-Api-Key: $key" -H 'Content-Type: application/json' \
+          http://localhost:8989/api/v3/config/host/1
+   ```
+
+   `202` means the user exists; log in, then mirror the credentials to
+   1P `sonarr-webui`. Verified against the pinned image 2026-09-12.
 3. *Settings → Media Management*: turn **Rename Episodes** on (it is off
    by default — without it nothing below renames anything). Leave the
    formats at their defaults. Add both root folders.
