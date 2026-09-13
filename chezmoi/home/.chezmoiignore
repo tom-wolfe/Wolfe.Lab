@@ -26,6 +26,14 @@ Docker/**
 .local/bin/lab-job
 .config/beszel
 .config/beszel/**
+# macOS-tuned dotfiles: zsh files carrying Homebrew paths, a Terminal.app
+# profile, and an nvm wrapper for launchd. The Pi's shell env and node
+# arrive as their own Linux slices.
+.zshrc
+.zprofile
+.config/terminal
+.config/terminal/**
+.local/bin/nvm-run
 .chezmoiscripts/install-packages.sh
 .chezmoiscripts/install-homebrew.sh
 .chezmoiscripts/configure-macos.sh

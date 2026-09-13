@@ -3,16 +3,25 @@ Host macmini
   User tomwolfe
 
 {{ if .server -}}
-# Headless git: use the repo deploy key, never the 1Password UI agent.
+# Headless git: use a deploy key, never the 1Password UI agent — a server
+# has no GUI to approve it. (github.com, if a server ever uses it.)
 Host github.com
   IdentityAgent none
   IdentityFile ~/.ssh/github_deploy
   IdentitiesOnly yes
 
 {{ end -}}
+{{ if eq .chezmoi.os "linux" -}}
+# Forgejo is the chezmoi source remote, and a Linux server has no 1Password
+# agent, so reach it with its own read-only deploy key.
+Host git.twolfe.dev
+  IdentityFile ~/.ssh/forgejo_deploy
+  IdentitiesOnly yes
+
+{{ end -}}
 {{ if eq .chezmoi.os "darwin" -}}
-# The 1Password SSH agent lives behind a macOS GUI; a Linux server has no
-# such socket and uses the deploy key above for github, defaults elsewhere.
+# The 1Password SSH agent, behind a macOS GUI — used for every other host
+# (including git.twolfe.dev) on the Macs.
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{ end -}}
