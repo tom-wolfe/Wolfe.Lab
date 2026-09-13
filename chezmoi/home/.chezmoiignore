@@ -41,3 +41,11 @@ Docker/**
 .chezmoiscripts/install-dotnet-tools.sh
 .chezmoiscripts/install-node.sh
 {{ end -}}
+{{ if or .interactive (ne .chezmoi.os "linux") -}}
+# The Actions runner is for Linux server nodes only.
+.config/forgejo-runner
+.config/forgejo-runner/**
+.config/systemd
+.config/systemd/**
+.chezmoiscripts/forgejo-runner.sh
+{{ end -}}

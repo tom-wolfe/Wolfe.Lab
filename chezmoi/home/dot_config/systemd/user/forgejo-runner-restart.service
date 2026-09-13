@@ -1,0 +1,9 @@
+# Started by forgejo-runner.path. daemon-reload first so an edited unit file
+# is what gets restarted; a no-op when only the config changed.
+[Unit]
+Description=Reload systemd and restart the Forgejo runner
+
+[Service]
+Type=oneshot
+ExecStart=systemctl --user daemon-reload
+ExecStart=systemctl --user restart forgejo-runner.service

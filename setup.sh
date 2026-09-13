@@ -75,4 +75,11 @@ Stacks are up. Remaining one-time steps:
        chezmoi apply && brew services list
      Then set thresholds and the Pushover URL in the hub — it ships none,
      so nothing alerts until you do. Full runbook: beszel/README.md.
+
+  4. Re-register every other node's Actions runner — registrations live in
+     Forgejo's database, so a fresh Forgejo knows none of them, while each
+     node's runner.json still holds its vault secret and will poll with it
+     until the server knows it again (forgejo/README.md "Runners"):
+       forgejo/scripts/register-runner.sh wolfe-pi5
+     Same secret, same UUID: the node side needs no change.
 EOF

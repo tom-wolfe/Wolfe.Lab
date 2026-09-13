@@ -8,6 +8,50 @@ ship.
 Ordering principle: reduce risk before adding surface. Anything that makes
 a failure visible outranks anything that adds a new thing to fail.
 
+## CD moves to Forgejo Actions (decided 2026-09-13)
+
+A stack review with the roadmap set aside (Claude-authored, Tom's call on
+the direction) found two structural problems and left the rest alone:
+
+- **The server is macOS.** Every container fault in the changelog is the
+  VM boundary, and a different runtime does not cross it (OrbStack's host
+  networking does not carry mDNS to the Wi-Fi interface). Direction: the
+  mini keeps the drives, media and Apple-native jobs; a Linux node — the
+  Pi first — becomes the platform host.
+- **Kestra is single-node by design.** Its multi-worker feature is
+  Enterprise-only; the SSH bridge, forced defaults and flow-registration
+  root exist to work around that, and they are what makes a new node
+  expensive. Direction: **Forgejo Actions replaces Kestra.** A runner per
+  node, host mode, labelled by hostname; workflow files are the schedule
+  and the fan-out; the scripts (`deploy.sh`, `plan.sh`, `apply.sh`,
+  `backup.sh`, the host scripts) are unchanged. Verified against the
+  Forgejo reference: schedules with timezones, `needs`, queued
+  `concurrency`, `timeout-minutes`, `failure()`, `workflow_dispatch`.
+
+Sequence: (1) the Pi's runner and tick — built, `forgejo/README.md`
+"Runners"; (2) Gatus moves as the first deploy job; (3) if that holds, a
+host-mode runner on the mini, the tick/tofu/backup/CI workflows, delete
+the kestra slice; (4) the platform layer (Forgejo, Caddy, Garage, Beszel
+hub) to Linux as the Pi proves out; (5) Kubernetes stays deferred until
+two Linux service nodes without host-networking workloads — Flux over
+Argo if that day comes.
+
+Trust note, stated plainly: a `pull_request` workflow can name a host
+runner's label and run unmerged code on that node. In a single-author lab
+the merge gate protects less than it looks (the same credential pushes and
+merges). Mitigation: branch protection on main, CI on a containerized
+runner only; a host runner is assumed reachable by any workflow file on any
+branch. Two runners per node, by trust level (Tom's call, 2026-09-13):
+the **host** runner is scoped to the lab repo only and carries the vault
+token; a **containerized** runner (next to build) is instance-wide, carries
+no environment, and is where the lab's CI and every other project — Ritten
+and NSchema, in their own organisations, moving their deploys from GitHub
+to here — build and publish. The per-repo `has_actions` flag in
+`forgejo/tofu/mirrors.tf` stays off for every mirror and turns on only
+when a repo is flipped to active.
+Item 8 below (runner "CI only", "never applies") is superseded by this
+section.
+
 ## Next
 
 ### 1. Restore drills — prove the backups before anything depends on them

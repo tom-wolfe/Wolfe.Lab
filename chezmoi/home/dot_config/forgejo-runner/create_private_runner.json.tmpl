@@ -1,0 +1,26 @@
+{{- /* Registration for this node's runner — the file `forgejo-runner
+       register` would have written, rendered from the vault instead so the
+       runner is code from the first apply. create_ semantics: written only
+       when MISSING, so `op` is a bootstrap dependency, not a tick one.
+
+       The secret is the 40-hex string forgejo/scripts/register-runner.sh
+       registered server-side. Forgejo derives the runner's UUID from it as
+       gouuid.FromBytes(secret[:16]) — the first sixteen CHARACTERS taken as
+       sixteen raw bytes — so the same arithmetic here yields the same UUID
+       (verified: secret 7c31591e8b67225a... -> 37633331-3539-3165-3862-363732323561).
+       Rotation: register a new secret, delete this file, `chezmoi apply`. */ -}}
+{{- $secret := onepasswordRead (printf "op://Wolfe.Lab/forgejo-runner-%s/credential" .chezmoi.hostname) | trim -}}
+{{- $hex := hexEncode (substr 0 16 $secret) -}}
+{{- $uuid := printf "%s-%s-%s-%s-%s" (substr 0 8 $hex) (substr 8 12 $hex) (substr 12 16 $hex) (substr 16 20 $hex) (substr 20 32 $hex) -}}
+{{- /* The instance address is Forgejo's ROOT_URL, read from the slice's own
+       compose file rather than typed twice (the filesystem is the stack
+       reference — same move as forgejo/tofu/webhook.tf). */ -}}
+{{- $compose := include "../../forgejo/compose.yaml" | fromYaml -}}
+{{- $address := $compose.services.server.environment.FORGEJO__server__ROOT_URL | trimSuffix "/" -}}
+{
+  "name": {{ .chezmoi.hostname | quote }},
+  "uuid": {{ $uuid | quote }},
+  "token": {{ $secret | quote }},
+  "address": {{ $address | quote }},
+  "labels": [{{ printf "%s:host" .chezmoi.hostname | quote }}]
+}

@@ -1,0 +1,21 @@
+# The node's Actions runner, as a user service so chezmoi can own it without
+# sudo. Needs lingering (`loginctl enable-linger`) to start at boot with no
+# login — forgejo/README.md "Runners" runbook. Restarted on config change by
+# forgejo-runner.path, not by anything in chezmoi.
+[Unit]
+Description=Forgejo Actions runner (host mode)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/forgejo-runner daemon --config %h/.config/forgejo-runner/config.yaml
+WorkingDirectory=%h/.config/forgejo-runner
+Restart=always
+RestartSec=5s
+# On stop the runner finishes the job it is running (runner.shutdown_timeout,
+# 10m in config.yaml); give systemd longer than that before it escalates to
+# SIGKILL, or a restart mid-tick would kill the tick.
+TimeoutStopSec=15m
+
+[Install]
+WantedBy=default.target

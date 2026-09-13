@@ -1,0 +1,24 @@
+{{- /* Binaries chezmoi fetches rather than a package manager: pinned by
+       URL and checksum, installed under ~/.local/bin without sudo. Linux
+       server nodes only — the Macs get the same tools from the Brewfile.
+       Checksums are for linux-arm64 (the Pi); a Linux node on another arch
+       needs its own pair. To upgrade: bump the version and checksum. */ -}}
+{{- if and (.server) (eq .chezmoi.os "linux") }}
+# The Forgejo Actions runner — the per-node CD agent (forgejo/README.md
+# "Runners"). Release assets: code.forgejo.org/forgejo/runner/releases.
+[".local/bin/forgejo-runner"]
+    type = "file"
+    url = "https://code.forgejo.org/forgejo/runner/releases/download/v13.1.0/forgejo-runner-13.1.0-linux-arm64"
+    executable = true
+    checksum.sha256 = "4a18a9a2aad9619e61aca5d81d2c69cc624b26af8605118bfc4729ff994d12d3"
+
+# 1Password CLI, so create_ templates can read the vault on this node the
+# same way they do on the mini (service account; see .chezmoi.toml.tmpl).
+# Versions: app-updates.agilebits.com/product_history/CLI2.
+[".local/bin/op"]
+    type = "archive-file"
+    url = "https://cache.agilebits.com/dist/1P/op2/pkg/v2.39.0/op_linux_arm64_v2.39.0.zip"
+    path = "op"
+    executable = true
+    checksum.sha256 = "829baeff1c07e055cfa132031b1d9f2282ccdf5076258e482caf2fda70aea5d0"
+{{- end }}

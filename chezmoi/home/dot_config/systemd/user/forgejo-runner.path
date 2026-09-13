@@ -1,0 +1,13 @@
+# Restarts the runner when its config, registration or unit file changes.
+# This is the change signal: chezmoi only writes files, systemd notices.
+[Unit]
+Description=Watch the Forgejo runner's config and unit for changes
+
+[Path]
+PathChanged=%h/.config/forgejo-runner/config.yaml
+PathChanged=%h/.config/forgejo-runner/runner.json
+PathChanged=%h/.config/systemd/user/forgejo-runner.service
+Unit=forgejo-runner-restart.service
+
+[Install]
+WantedBy=default.target

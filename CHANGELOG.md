@@ -4,6 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [Unreleased]
+
+### Added
+
+- **Forgejo Actions.** Only on the Pi for now. Managed by chezmoi, 
+  `forgejo/scripts/register-runner.sh` is the server half. 
+  `.forgejo/workflows/tick-wolfe-pi5.yaml` is the Pi's tick.
+
 ## [0.20.0] - 2026-09-13
 
 ### Added

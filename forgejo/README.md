@@ -447,6 +447,137 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
 The "invalid result object" crash and the `auth_token` no-op are still worth
 upstream issues at svalabs/terraform-provider-forgejo.
 
+## Runners
+
+Forgejo Actions is the lab's CD engine for nodes other than the mini, and
+the intended replacement for Kestra everywhere (ROADMAP.md "CD moves to
+Forgejo Actions"). The model: **one runner per node per trust level.** A
+runner is one binary; what differs is the label *type*, which decides how a
+job's steps execute:
+
+| Runner | Label | Steps run | Scope | Environment | For |
+|---|---|---|---|---|---|
+| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`) | the lab's tick, deploys, backups — anything that mutates the node |
+| containerized | `docker:docker://<image>` | in a fresh container per job, no host socket | **instance-wide** | none | the lab's CI (lint, plan-on-PR) and every other project: Ritten, NSchema, … |
+
+The host runner is built (below). The containerized one is the next
+runner to build: a second process with its own config, registration and
+unit, no `env_file`, capacity above one since builds are stateless, and a
+role label shared across nodes so Forgejo can run a build wherever a node
+is idle. Deploys stay pinned by hostname; builds float.
+
+Two boundaries, and they are different things. **Runner scope** says which
+repos may dispatch to a runner: the host runner answers only to
+`tom-wolfe/Wolfe.Lab`, so no other repo's workflow can ever run in a shell
+on a node. **The per-repo Actions flag** says which repos may run
+workflows at all: `mirrors.tf` sets `has_actions` only for non-mirror
+repos, so every pull mirror (including third-party code) is inert, and a
+project joins Forgejo Actions only when its `mode` is deliberately flipped
+to `active` — a planned replacement, reviewed like any other change.
+Labels only route.
+
+Actions itself is on by default in Forgejo and enabled on this repo
+(`has_actions`); there is nothing to switch on server-side. Adding a node is
+two halves:
+
+**Server half — one command, on the mini, op signed in:**
+
+```sh
+forgejo/scripts/register-runner.sh wolfe-pi5
+```
+
+Mints a 40-hex secret with `forgejo-cli actions generate-secret`, stores it
+as the vault item `forgejo-runner-<hostname>` (the origin), and registers
+the host runner at **repository scope** (`tom-wolfe/Wolfe.Lab`) with the
+label `<hostname>:host`. Re-running with the same secret updates the
+runner in place. The optional second argument overrides the scope; the
+containerized runner's registration will be instance-wide.
+
+What the split buys, stated plainly: a host-mode job runs as the node's
+user with the lab's vault token in its environment. Repository scope means
+only workflow files in *this* repo can obtain that — including, still, a
+workflow on a pull-request branch of this repo (the trust note in
+ROADMAP.md). Other projects never see a shell on a node: they *build and
+publish* (an image, a package) on the containerized runner, and the lab
+*deploys* what they published through its own tick, the way it deploys any
+other pinned image.
+
+**Node half — chezmoi, gated on `!interactive && linux`:**
+
+| Source | Target | Role |
+|---|---|---|
+| `.chezmoiexternal.toml.tmpl` | `~/.local/bin/forgejo-runner`, `~/.local/bin/op` | pinned binaries, no sudo |
+| `dot_config/forgejo-runner/config.yaml.tmpl` | `~/.config/forgejo-runner/config.yaml` | no secrets; re-renders every tick |
+| `dot_config/forgejo-runner/create_private_runner.json.tmpl` | `~/.config/forgejo-runner/runner.json` | registration, rendered ONCE from the vault item |
+| `dot_config/systemd/user/forgejo-runner.service` | `~/.config/systemd/user/…` | the runner, as a user unit |
+| `dot_config/systemd/user/forgejo-runner.path` + `forgejo-runner-restart.service` | `~/.config/systemd/user/…` | systemd watches config, registration and unit; a change restarts the runner. chezmoi only writes files — no change-detection script |
+| `.chezmoiscripts/run_once_after_forgejo-runner.sh` | — | first-time `enable --now` of the two units |
+
+The registration file is the interesting part: Forgejo derives a runner's
+UUID from the secret (`gouuid.FromBytes(secret[:16])` — the first sixteen
+characters as raw bytes), so the template does the same arithmetic and the
+node never needs `forgejo-runner register`. It is a `create_` file: `op` is
+a bootstrap dependency, not a tick dependency, exactly like the env files.
+The instance address is read from this slice's `compose.yaml` (`ROOT_URL`),
+not typed again.
+
+Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
+(`~/.config/forgejo-runner/env`, hand-seeded, mode 600) carries the node's
+`OP_SERVICE_ACCOUNT_TOKEN`; steps read the vault directly. One bootstrap
+secret per node, same as the mini.
+
+### Bringing up the Pi (runbook, at the desk)
+
+The Pi is already a chezmoi machine (owner=mine, server=true, source cloned
+from this instance over its deploy key). In order:
+
+1. **Register server-side** (mini): `forgejo/scripts/register-runner.sh wolfe-pi5`.
+2. **Binaries first** (Pi): `chezmoi apply --include externals` — the
+   registration template needs `op` to exist before it can render. VERIFY:
+   that chezmoi does not evaluate excluded templates on this path; if it
+   does, fetch the two binaries by hand from the URLs in
+   `.chezmoiexternal.toml.tmpl` once.
+3. **Seed the bootstrap secret** (Pi):
+   `install -m 600 /dev/null ~/.config/forgejo-runner/env` and write
+   `OP_SERVICE_ACCOUNT_TOKEN=…` into it (the same service account the mini
+   uses, or a Pi-specific one). Then `export OP_SERVICE_ACCOUNT_TOKEN=…` in
+   the shell for the first apply.
+4. **Lingering**, so the user service starts at boot with nobody logged in:
+   `loginctl enable-linger tomwolfe` (may need sudo).
+5. **Docker access**: the runner runs as the login user, so `id` must show
+   the `docker` group (`sudo usermod -aG docker tomwolfe`, re-login).
+6. **Apply**: `chezmoi apply` — renders config + registration, installs the
+   units, and the `run_once` script enables and starts them.
+   `systemctl --user status forgejo-runner` should show it polling; the
+   runner appears under the repo's Settings → Actions → Runners as
+   `wolfe-pi5`, label `wolfe-pi5:host`, idle.
+7. **First run**: Actions → "tick wolfe-pi5" → Run workflow. Green =
+   `chezmoi update` ran on the Pi from Forgejo. Then break it on purpose
+   (e.g. a bad command via `workflow_dispatch` on a branch) to see the
+   Pushover alert.
+
+Things this design assumes and the first run should prove: `%h` resolves
+in the path unit's `PathChanged=` lines (`systemctl --user cat
+forgejo-runner.path`); a restart triggered mid-tick lets the running job
+finish (`TimeoutStopSec` > `shutdown_timeout`); host-mode steps
+inherit the runner's `envs` PATH (chezmoi/op/docker resolve); the deploy key
+in `~/.ssh/config` lets `chezmoi update` pull headless; `code.twolfe.dev`
+resolves and its certificate validates from the Pi over the tailnet; and a
+`pull_request` workflow naming `wolfe-pi5` will run there too — the trust
+note in ROADMAP.md.
+
+### What is deliberately not here yet
+
+- **No workflow for the mini.** Kestra stays the mini's engine until the Pi
+  pilot holds; then the mini gets a host-mode runner (`macos-arm64` builds
+  exist) and the tick, tofu, backup and CI workflows, and the kestra slice
+  is deleted.
+- **No containerized runner yet**, so no CI (lint, plan-on-PR) and no
+  build-and-publish for other projects. Second process, own config and
+  registration, no `env_file`, capacity above one, instance scope.
+- **No deploy jobs yet.** Gatus is the first slice to move; its deploy is a
+  `needs: update` job in the Pi's tick calling `scripts/deploy.sh gatus`.
+
 ## Notes
 
 - Config is set through `FORGEJO__section__KEY` environment variables rather

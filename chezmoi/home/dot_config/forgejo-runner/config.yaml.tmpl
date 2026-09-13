@@ -1,0 +1,26 @@
+# Forgejo Actions runner for this node
+# Full key reference:
+# code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml
+
+log:
+  level: info
+  job_level: info
+
+runner:
+  file: {{ .chezmoi.homeDir }}/.config/forgejo-runner/runner.json
+  # One job at a time: a tick that overlaps itself queues.
+  capacity: 1
+  timeout: 1h
+  shutdown_timeout: 10m
+  env_file: {{ .chezmoi.homeDir }}/.config/forgejo-runner/env
+  envs:
+    PATH: {{ .chezmoi.homeDir }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+  labels:
+    - {{ .chezmoi.hostname }}:host
+  fetch_interval: 5s
+
+cache:
+  enabled: false
+
+host:
+  workdir_parent: {{ .chezmoi.homeDir }}/.cache/forgejo-runner
