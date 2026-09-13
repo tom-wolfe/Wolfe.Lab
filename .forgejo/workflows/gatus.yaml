@@ -4,7 +4,10 @@ name: gatus
 on:
   push:
     branches: [main]
-    paths: [gatus/**, scripts/deploy.sh]
+    paths: 
+      - gatus/** 
+      - scripts/deploy.sh
+      - .forgejo/workflows/gatus.yaml
   workflow_dispatch:
 
 concurrency:
@@ -16,7 +19,7 @@ jobs:
     runs-on: wolfe-pi5
     timeout-minutes: 10
     steps:
-      - run: chezmoi git pull -- --ff-only --quiet
+      - run: chezmoi update --init --no-tty
       - run: "\"$(chezmoi source-path)/../../scripts/deploy.sh\" gatus"
 
       - if: failure()
