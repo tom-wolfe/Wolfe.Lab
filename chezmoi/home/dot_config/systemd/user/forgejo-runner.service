@@ -12,9 +12,8 @@ ExecStart=%h/.local/bin/forgejo-runner daemon --config %h/.config/forgejo-runner
 WorkingDirectory=%h/.config/forgejo-runner
 Restart=always
 RestartSec=5s
-# On stop the runner finishes the job it is running (runner.shutdown_timeout,
-# 10m in config.yaml); give systemd longer than that before it escalates to
-# SIGKILL, or a restart mid-tick would kill the tick.
+# A restart must let the job in flight finish.
+KillMode=mixed
 TimeoutStopSec=15m
 
 [Install]

@@ -11,7 +11,8 @@ ExecStart=%h/.local/bin/forgejo-runner daemon --config %h/.config/forgejo-runner
 WorkingDirectory=%h/.config/forgejo-runner-docker
 Restart=always
 RestartSec=5s
-# Let running jobs finish on stop (runner.shutdown_timeout is 10m).
+# A restart must let the job in flight finish.
+KillMode=mixed
 TimeoutStopSec=15m
 
 [Install]

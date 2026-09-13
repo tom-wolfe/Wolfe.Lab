@@ -571,7 +571,9 @@ from this instance over its deploy key). In order:
 Things this design assumes and the first run should prove: `%h` resolves
 in the path unit's `PathChanged=` lines (`systemctl --user cat
 forgejo-runner.path`); a restart triggered mid-tick lets the running job
-finish (`TimeoutStopSec` > `shutdown_timeout`); host-mode steps
+finish (`KillMode=mixed` so only the runner is signalled, and
+`TimeoutStopSec` > `shutdown_timeout` — proven necessary 2026-09-13, when
+the default kill mode failed the tick that rewrote the runner's config); host-mode steps
 inherit the runner's `envs` PATH (chezmoi/op/docker resolve); the deploy key
 in `~/.ssh/config` lets `chezmoi update` pull headless; `code.twolfe.dev`
 resolves and its certificate validates from the Pi over the tailnet; and a
