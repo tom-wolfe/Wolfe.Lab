@@ -1,0 +1,11 @@
+[Unit]
+Description=Watch the containerized runner's config and unit for changes
+
+[Path]
+PathChanged=%h/.config/forgejo-runner-docker/config.yaml
+PathChanged=%h/.config/forgejo-runner-docker/runner.json
+PathChanged=%h/.config/systemd/user/forgejo-runner-docker.service
+Unit=restart@forgejo-runner-docker.service
+
+[Install]
+WantedBy=default.target

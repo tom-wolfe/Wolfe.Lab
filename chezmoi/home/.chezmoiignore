@@ -44,6 +44,8 @@ Docker/**
 # The Actions runner is for Linux server nodes only.
 .config/forgejo-runner
 .config/forgejo-runner/**
+.config/forgejo-runner-docker
+.config/forgejo-runner-docker/**
 .config/systemd
 .config/systemd/**
 .chezmoiscripts/user-units.sh

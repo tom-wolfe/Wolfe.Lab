@@ -1,0 +1,37 @@
+# Review-quality checks on every pull request and on main, on the
+# containerized runner: pre-merge code never runs on a node.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch supersedes the running check.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install linters
+        run: |
+          apt-get update -q
+          apt-get install -y -q --no-install-recommends shellcheck python3-yaml >/dev/null
+
+      - name: Shell scripts
+        run: git ls-files '*.sh' | xargs -r shellcheck
+
+      - name: YAML parses
+        run: |
+          git ls-files '*.yaml' '*.yml' | xargs -r python3 -c '
+          import sys, yaml
+          for f in sys.argv[1:]:
+              with open(f) as fh:
+                  yaml.safe_load(fh)
+          '

@@ -1,0 +1,14 @@
+{{- /* The CONTAINERIZED runner: every job in a fresh container, no host env,
+       no socket in the job. Builds are stateless, so more than one at a
+       time, and the cache server on for actions/cache. The `docker` label
+       is a ROLE shared by every node that runs one, so a build lands on
+       whichever node is idle; the image after `docker://` is the default
+       a job gets unless it names its own `container:`. Node is in it
+       because JS actions (actions/checkout) need node in the job image. */ -}}
+{{- template "forgejo-runner/config.yaml" (dict
+      "home" .chezmoi.homeDir
+      "dir" "forgejo-runner-docker"
+      "capacity" 2
+      "host" false
+      "labels" (list "docker:docker://node:22-bookworm")
+      "cache" true) -}}

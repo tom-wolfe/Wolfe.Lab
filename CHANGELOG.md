@@ -10,9 +10,9 @@ rather than versioned — the lab is continuous, not released.
 
 - **Raspberry Pi 5!** The second node in the lab, with all the fun 
   problems you get when scaling from 1->2.
-- **Forgejo Actions.** Only on the Pi for now. Managed by chezmoi, 
-  `forgejo/scripts/register-runner.sh` is the server half. 
-  `.forgejo/workflows/tick-wolfe-pi5.yaml` is the Pi's tick.
+- **Forgejo Actions.** Only on the Pi for now. Managed by chezmoi.
+  One host-connected instance for Wolfe.Lab, one isolated container for
+  other CI jobs.
 
 ### Changed
 

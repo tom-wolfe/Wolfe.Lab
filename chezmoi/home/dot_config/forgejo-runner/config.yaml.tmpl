@@ -1,26 +1,9 @@
-# Forgejo Actions runner for this node
-# Full key reference:
-# code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml
-
-log:
-  level: info
-  job_level: info
-
-runner:
-  file: {{ .chezmoi.homeDir }}/.config/forgejo-runner/runner.json
-  # One job at a time: a tick that overlaps itself queues.
-  capacity: 1
-  timeout: 1h
-  shutdown_timeout: 10m
-  env_file: {{ .chezmoi.homeDir }}/.config/forgejo-runner/env
-  envs:
-    PATH: {{ .chezmoi.homeDir }}/.local/bin:/usr/local/bin:/usr/bin:/bin
-  labels:
-    - {{ .chezmoi.hostname }}:host
-  fetch_interval: 5s
-
-cache:
-  enabled: false
-
-host:
-  workdir_parent: {{ .chezmoi.homeDir }}/.cache/forgejo-runner
+{{- /* The HOST runner: one job at a time (deploys mutate node state; a tick
+       that overlaps itself queues), the bootstrap env, no cache. */ -}}
+{{- template "forgejo-runner/config.yaml" (dict
+      "home" .chezmoi.homeDir
+      "dir" "forgejo-runner"
+      "capacity" 1
+      "host" true
+      "labels" (list (printf "%s:host" .chezmoi.hostname))
+      "cache" false) -}}

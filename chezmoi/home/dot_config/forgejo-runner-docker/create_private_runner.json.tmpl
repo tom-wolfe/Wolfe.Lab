@@ -1,0 +1,3 @@
+{{- template "forgejo-runner/runner.json" (dict
+      "name" (printf "%s-docker" .chezmoi.hostname)
+      "labels" (list "docker:docker://node:22-bookworm")) -}}

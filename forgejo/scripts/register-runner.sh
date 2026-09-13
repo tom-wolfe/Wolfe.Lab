@@ -1,7 +1,7 @@
 #!/bin/bash
 # Register a node's Actions runner with Forgejo:
 #
-#   forgejo/scripts/register-runner.sh <hostname> [scope]   # scope: owner or owner/repo, default tom-wolfe/Wolfe.Lab
+#   forgejo/scripts/register-runner.sh <hostname> [host|docker]   # default host
 #
 # Run on the mini (needs the forgejo container) with op signed in. 
 # Safe to re-run: registering an existing secret updates the runner in place.
@@ -16,12 +16,19 @@ if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
   export OP_SERVICE_ACCOUNT_TOKEN
 fi
 
-name="${1:?usage: register-runner.sh <hostname>}"
+host="${1:?usage: register-runner.sh <hostname> [host|docker]}"
+kind="${2:-host}"
 vault="Wolfe.Lab"
+case "$kind" in
+  # Host runner: steps run in a shell on the node, so only the lab may use
+  # it. The node's name is its label.
+  host)   name="$host";        labels="$host:host";                 scope="tom-wolfe/Wolfe.Lab" ;;
+  # Containerized runner: jobs in fresh containers, instance-wide, a ROLE
+  # label shared by every node (a build lands wherever one is idle).
+  docker) name="$host-docker"; labels="docker:docker://node:22-bookworm"; scope="" ;;
+  *) echo "register-runner: kind must be host or docker" >&2; exit 64 ;;
+esac
 item="forgejo-runner-$name"
-# The runner acts on the host, so only allow te lab to use it.
-# Other projects use the containerized runner.
-scope="${2:-tom-wolfe/Wolfe.Lab}"
 
 # One secret per node, minted by Forgejo itself (40 hex chars) and kept in
 # the vault as the origin. The node reads it once through a create_ template.
@@ -32,10 +39,9 @@ if ! op item get "$item" --vault "$vault" >/dev/null 2>&1; then
   echo "created vault item $item"
 fi
 
-# The node's name is its label; `host` = steps run in a shell on the node.
 # -u git: Forgejo refuses to run as root, which is what a bare exec is.
 # -n: no trailing newline — --secret-stdin counts it (41 != 40).
 op read -n "op://$vault/$item/credential" \
   | docker exec -i -u git forgejo forgejo forgejo-cli actions register \
-      --secret-stdin --name "$name" --labels "$name:host" --scope "$scope"
-echo "registered runner $name (label $name:host, scope $scope)"
+      --secret-stdin --name "$name" --labels "$labels" ${scope:+--scope "$scope"}
+echo "registered runner $name (label $labels, scope ${scope:-instance})"

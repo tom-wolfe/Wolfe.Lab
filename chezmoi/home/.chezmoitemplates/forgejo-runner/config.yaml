@@ -1,0 +1,41 @@
+{{- /* One runner config, two callers: the config.yaml.tmpl under dot_config/forgejo-runner and dot_config/forgejo-runner-docker.
+       Args: home, dir, capacity, host (bool), labels (list), cache (bool).
+       Full key reference:
+       code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml */ -}}
+# Forgejo Actions runner "{{ .dir }}" — rendered from .chezmoitemplates/forgejo-runner/config.yaml
+
+log:
+  level: info
+  job_level: info
+
+runner:
+  file: {{ .home }}/.config/{{ .dir }}/runner.json
+  capacity: {{ .capacity }}
+  timeout: 1h
+  shutdown_timeout: 10m
+{{- if .host }}
+  # Host mode: steps run as this user. The env file is the node's bootstrap
+  # secret; PATH puts ~/.local/bin in front for every step.
+  env_file: {{ .home }}/.config/{{ .dir }}/env
+  envs:
+    PATH: {{ .home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+{{- end }}
+  labels:
+{{- range .labels }}
+    - {{ . }}
+{{- end }}
+  fetch_interval: 5s
+
+cache:
+  enabled: {{ .cache }}
+{{- if .cache }}
+  dir: {{ .home }}/.cache/{{ .dir }}/cache
+{{- end }}
+
+container:
+  # "-": the runner finds the daemon itself but never mounts the socket into
+  # a job container — a build cannot reach the host's Docker.
+  docker_host: "-"
+
+host:
+  workdir_parent: {{ .home }}/.cache/{{ .dir }}

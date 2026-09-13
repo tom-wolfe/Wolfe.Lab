@@ -554,7 +554,16 @@ from this instance over its deploy key). In order:
    `systemctl --user status forgejo-runner` should show it polling; the
    runner appears under the repo's Settings → Actions → Runners as
    `wolfe-pi5`, label `wolfe-pi5:host`, idle.
-7. **First run**: Actions → "tick wolfe-pi5" → Run workflow. Green =
+7. **The containerized runner** on the same node is the same two halves:
+   `forgejo/scripts/register-runner.sh wolfe-pi5 docker` on the mini
+   (vault item `forgejo-runner-wolfe-pi5-docker`, instance scope, label
+   `docker:docker://node:22-bookworm`), then on the Pi delete nothing and
+   `chezmoi apply` — its config and registration render beside the host
+   runner's under `~/.config/forgejo-runner-docker/`, and the `run_after`
+   script starts `forgejo-runner-docker.service`. Both runners share one
+   binary and one restart template; the two configs come from one partial
+   in `.chezmoitemplates/forgejo-runner/`.
+8. **First run**: Actions → "tick wolfe-pi5" → Run workflow. Green =
    `chezmoi update` ran on the Pi from Forgejo. Then break it on purpose
    (e.g. a bad command via `workflow_dispatch` on a branch) to see the
    Pushover alert.
@@ -575,9 +584,13 @@ note in ROADMAP.md.
   pilot holds; then the mini gets a host-mode runner (`macos-arm64` builds
   exist) and the tick, tofu, backup and CI workflows, and the kestra slice
   is deleted.
-- **No containerized runner yet**, so no CI (lint, plan-on-PR) and no
-  build-and-publish for other projects. Second process, own config and
-  registration, no `env_file`, capacity above one, instance scope.
+- **No plan-on-PR yet.** CI today is `.forgejo/workflows/ci.yaml`:
+  shellcheck and YAML parsing on the containerized runner. Plan-on-PR
+  needs provider credentials in a pre-merge context — the
+  `pull_request_target` question in ROADMAP.md item 8 — and waits.
+- **No build-and-publish workflows for other projects yet.** The runner
+  they need exists; the workflows live in their repos when they flip to
+  active.
 - **No deploy jobs yet.** Gatus is the first slice to move; its deploy is a
   `needs: update` job in the Pi's tick calling `scripts/deploy.sh gatus`.
 

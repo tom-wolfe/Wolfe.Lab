@@ -326,6 +326,11 @@ Options, with the honest costs:
 
 ### 8. Forgejo Actions runner — CI only
 
+**2026-09-13: the runner exists** (containerized, on the Pi — "CD moves to
+Forgejo Actions" above) and `ci.yaml` runs shellcheck + YAML parsing on
+PRs. What remains of this item is plan-on-PR (#8) and the changelog check
+(#10), and the credential question below still applies to plan-on-PR.
+
 Rescoped 2026-08-31: CD went to Kestra (plan-on-tick, apply-on-tap,
 kestra's root auto — kestra/README.md "OpenTofu CD"), applies are
 serialized by being Kestra flows, and the runner **never applies** — the
