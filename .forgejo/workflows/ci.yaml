@@ -28,8 +28,10 @@ jobs:
         run: git ls-files '*.sh' | xargs -r shellcheck
 
       - name: YAML parses
+        # .chezmoitemplates/ holds Go templates that only become YAML when
+        # rendered (their names are the TARGET's), so they are not parsed here.
         run: |
-          git ls-files '*.yaml' '*.yml' | xargs -r python3 -c '
+          git ls-files '*.yaml' '*.yml' ':!chezmoi/home/.chezmoitemplates' | xargs -r python3 -c '
           import sys, yaml
           for f in sys.argv[1:]:
               with open(f) as fh:
