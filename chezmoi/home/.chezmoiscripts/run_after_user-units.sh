@@ -17,4 +17,6 @@ for f in "$dir"/*.service "$dir"/*.path; do
   grep -q '^\[Install\]' "$f" || continue   # nothing to enable (oneshots)
   units+=("$(basename "$f")")
 done
-[ ${#units[@]} -eq 0 ] || systemctl --user enable --now "${units[@]}"
+[ ${#units[@]} -eq 0 ] && exit 0
+systemctl --user enable "${units[@]}"
+systemctl --user start --no-block "${units[@]}"
