@@ -532,13 +532,15 @@ The Pi is already a chezmoi machine (owner=mine, server=true, source cloned
 from this instance over its deploy key). In order:
 
 1. **Register server-side** (mini): `forgejo/scripts/register-runner.sh wolfe-pi5`.
-2. **Binaries first** (Pi): `chezmoi apply --include externals` — the
-   registration template needs `op` to exist before it can render. VERIFY:
+2. **Binaries first** (Pi): `chezmoi git pull` (apply does not pull), then
+   `chezmoi apply --include externals` — the registration template needs
+   `op` to exist before it can render. It prints nothing on success; check
+   `ls -l ~/.local/bin/forgejo-runner ~/.local/bin/op`. VERIFY:
    that chezmoi does not evaluate excluded templates on this path; if it
    does, fetch the two binaries by hand from the URLs in
    `.chezmoiexternal.toml.tmpl` once.
 3. **Seed the bootstrap secret** (Pi):
-   `install -m 600 /dev/null ~/.config/forgejo-runner/env` and write
+   `install -D -m 600 /dev/null ~/.config/forgejo-runner/env` and write
    `OP_SERVICE_ACCOUNT_TOKEN=…` into it (the same service account the mini
    uses, or a Pi-specific one). Then `export OP_SERVICE_ACCOUNT_TOKEN=…` in
    the shell for the first apply.
