@@ -1,14 +1,16 @@
+{{ if eq .chezmoi.os "darwin" -}}
 eval "$(/opt/homebrew/bin/brew shellenv)"
+{{ end -}}
 
 # .NET SDK tools
 export PATH="$PATH:$HOME/.dotnet/tools"
 
-{{ if ne .machine "server" -}}
+{{ if .interactive -}}
 # JetBrains Toolbox scripts
 export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 {{ end -}}
 
-{{ if eq .machine "server" -}}
+{{ if .server -}}
 # 1Password service account. chezmoi runs with onepassword.mode = "service",
 # so EVERY onepasswordRead needs this token — including an interactive
 # `chezmoi update` over SSH, which is the documented recovery path when the

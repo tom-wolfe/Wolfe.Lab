@@ -44,7 +44,7 @@ vscode "streetsidesoftware.code-spell-checker"
 vscode "vscode-icons-team.vscode-icons"
 vscode "yzhang.markdown-all-in-one"
 
-{{ if ne .machine "server" -}}
+{{ if .interactive -}}
 # =========================================================
 # Desktop machines (personal + work)
 # =========================================================
@@ -76,7 +76,7 @@ cask "docker-desktop"
 cask "jetbrains-toolbox"
 {{ end -}}
 
-{{ if or (eq .machine "server") (eq .machine "personal") -}}
+{{ if .mine -}}
 # =========================================================
 # My machines
 # =========================================================
@@ -86,7 +86,7 @@ cask "proton-mail"
 mas  "Paste", id: 967805235
 {{ end -}}
 
-{{ if eq .machine "personal" -}}
+{{ if and .mine .portable -}}
 # =========================================================
 # Personal only
 # =========================================================
@@ -100,7 +100,7 @@ mas  "WhatsApp", id: 310633997
 cask "raspberry-pi-imager"
 {{ end -}}
 
-{{ if eq .machine "work" -}}
+{{ if eq .owner "work" -}}
 # =========================================================
 # Work only
 # =========================================================
@@ -111,7 +111,7 @@ mas  "OneDrive", id: 823766827
 cask "slack"
 {{ end -}}
 
-{{ if eq .machine "server" -}}
+{{ if .server -}}
 # =========================================================
 # Server only
 # =========================================================

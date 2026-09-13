@@ -21,7 +21,7 @@ source /opt/homebrew/opt/nvm/nvm.sh --no-use
 nvm install --lts
 nvm alias default 'lts/*'
 
-{{ if eq .machine "server" -}}
+{{ if .server -}}
 # Global npm packages live per node version, so a new LTS starts empty —
 # put the server's tools back. (obsidian-headless: public npm, needs >=22.)
 nvm use 'lts/*' >/dev/null

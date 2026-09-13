@@ -1,16 +1,26 @@
-{{- $machine := promptChoiceOnce . "machine" "What kind of machine is this" (list "personal" "work" "server") -}}
+{{- /* 
+    owner     mine | work   account/ethical boundary (work = SSO + work email)
+    portable  bool          a laptop; travels, may be off-network
+    server    bool          always-on service host; its downtime is a failure
+*/ -}}
+{{- $owner    := promptChoiceOnce . "owner"    "Who owns this machine" (list "mine" "work") -}}
+{{- $portable := promptBoolOnce   . "portable" "Portable (a laptop)" -}}
+{{- $server   := promptBoolOnce   . "server"   "Always-on server (hosts lab services)" -}}
 
-{{/* When the monorepo working copy exists, use it as the chezmoi source
-     instead of the default clone in ~/.local/share/chezmoi */ -}}
+{{/* When the monorepo working copy exists, use it as the chezmoi source */ -}}
 {{- $repo := joinPath .chezmoi.homeDir "Development/Wolfe/Wolfe.Lab" -}}
 {{- if stat $repo }}
 sourceDir = {{ $repo | quote }}
 {{- end }}
 
 [data]
-    machine = {{ $machine | quote }}
+    owner       = {{ $owner | quote }}
+    portable    = {{ $portable }}
+    server      = {{ $server }}
+    interactive = {{ not $server }}
+    mine        = {{ eq $owner "mine" }}
 
-{{ if eq $machine "server" }}
+{{ if $server }}
 [onepassword]
     mode = "service"
 {{- end }}
