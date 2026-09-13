@@ -24,7 +24,7 @@ front door is down.
 | `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI          | `gluetun:8080` |
 | `https://sonarr.lab.twolfe.dev`      | Sonarr (TV renamer)         | `sonarr:8989`  |
 | `https://radarr.lab.twolfe.dev`      | Radarr (movie renamer)      | `radarr:7878`  |
-| `https://gatus.lab.twolfe.dev`       | Gatus status page           | `gatus:8080`   |
+| `https://gatus.lab.twolfe.dev`       | Gatus status page           | `wolfe-pi5.tailf823b8.ts.net:8280` (the Pi) |
 
 ## Neat names (tailnet-routed, via the front door)
 
@@ -53,8 +53,14 @@ the mini's tailnet address, without the wildcard in the name.
 | `:8090` | Beszel — hub UI + API                            | Beszel superuser account; `/api/health` is unauthenticated | `beszel`                    |
 | `:8096` | Jellyfin — web + clients                          | Jellyfin accounts                                           | `jellyfin`                   |
 | `:8180` | Kestra — web UI + API                            | basic auth: 1P `kestra-admin`; webhook path key-authed     | `kestra`                    |
-| `:8280` | Gatus — status page + read-only API              | none (LAN/tailnet only; `/health` is the liveness route)   | `gatus`.                    |
 | `:8989` | Sonarr — web UI + API                            | Sonarr account (1P `sonarr-webui` is a copy); `/ping` is unauthenticated | `sonarr`     |
+
+## wolfe-pi5 (192.168.0.2, DHCP-reserved)
+
+| Address | Service | Auth | Defined in |
+| --- | --- | --- | --- |
+| `:22`   | SSH                                  | 1Password SSH key via `~/.ssh/authorized_keys`           | chezmoi (`private_dot_ssh`) |
+| `:8280` | Gatus — status page + read-only API  | none (LAN only; `/health` is the liveness route)        | `gatus`                     |
 
 ## git.twolfe.dev (tailnet-routed)
 

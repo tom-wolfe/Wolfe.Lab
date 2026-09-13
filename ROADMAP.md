@@ -22,13 +22,18 @@ the direction) found two structural problems and left the rest alone:
   Enterprise-only; the SSH bridge, forced defaults and flow-registration
   root exist to work around that, and they are what makes a new node
   expensive. Direction: **Forgejo Actions replaces Kestra.** A runner per
-  node, host mode, labelled by hostname; workflow files are the schedule
-  and the fan-out; the scripts (`deploy.sh`, `plan.sh`, `apply.sh`,
+  node, host mode, labelled by hostname; one workflow per slice, fired by
+  the push that touches it (no tick — the tick only ever stood in for a
+  push trigger Kestra lacked), placement is `runs-on`; the scripts (`deploy.sh`, `plan.sh`, `apply.sh`,
   `backup.sh`, the host scripts) are unchanged. Verified against the
   Forgejo reference: schedules with timezones, `needs`, queued
   `concurrency`, `timeout-minutes`, `failure()`, `workflow_dispatch`.
 
-Sequence: (1) the Pi's runner and tick — built, `forgejo/README.md`
+Workflows stay thin — a trigger and one command — because the
+commands are moving into a CLI built on Tom's .NET library Ritten; the
+YAML is the trigger, not the pipeline.
+
+Sequence: (1) the Pi's runner and its `chezmoi` workflow — built, `forgejo/README.md`
 "Runners"; (2) Gatus moves as the first deploy job; (3) if that holds, a
 host-mode runner on the mini, the tick/tofu/backup/CI workflows, delete
 the kestra slice; (4) the platform layer (Forgejo, Caddy, Garage, Beszel
@@ -177,45 +182,6 @@ typing. In order:
   the workstation allowed to reach services but nothing allowed to
   reach the workstation, key expiry disabled only on tagged servers.
   Declared in a root, applied like any other.
-
-### 3. Move Gatus to the Pi
-
-The status page exists — `gatus/`, built 2026-09-02 — and it lives on the
-mini. This item is the move, and the record of why the earlier plan
-changed. Depends on #2.
-
-**What changed (decided 2026-09-02).** The item here used to be Uptime
-Kuma, waiting for the Pi. Two things moved it: the ask grew to cover
-third-party services (1Password, Backblaze, GitHub, Proton and so on,
-read from their own status pages), which turns a handful of checks into a
-few dozen small definitions — the shape where clicking through a UI
-hurts and a YAML file wins; and Kuma's write API is still Socket.IO-only
-with no OpenTofu provider, so the "second UI-only slice" cost named here
-was permanent. Gatus is configuration-as-code end to end, which also
-dissolved the reason for waiting: the cost of landing a stopgap on the
-mini was migrating UI-entered config, and with the config in git a move is
-a deploy-target change. So: Gatus, on the mini now, Pi later.
-
-**Why the Pi still matters.** Placement was never about the third-party
-checks — those are outbound and run the same anywhere. It is about the
-one failure a monitor on the mini structurally cannot see: *the mini is
-down*. Today only healthchecks.io sees that, and only after a ten-minute
-grace. Gatus on a second node is genuinely external to the mini and
-catches it in two.
-
-**What the move costs**, known now because the config is code: the
-`front door` and third-party groups move unchanged. The `lab` group asks
-each service by container name over the `lab` Docker network, and those
-names do not exist on the Pi — every one of its URLs becomes a
-`macmini.local:<port>` address from `ENDPOINTS.md`. That is the entire
-migration, and `gatus/README.md` "Moving to the Pi" says so.
-
-**What it is still NOT: an outside observer.** Gatus anywhere in the
-house shares the house's fate — power cut, router dead, silence that looks
-like health. That is the whole reason `chezmoi/tofu/` puts the tick's
-dead man's switch on healthchecks.io, and Gatus does not replace it. Nor
-does it replace `lab.beszel/health` or `lab.gatus/health`: something has
-to watch the watcher, and a watcher that watches itself isn't one.
 
 ### 4. A UPS
 
@@ -573,6 +539,11 @@ cost is the thing to balance. The middle option is the likely shape;
 the sorting is the work.
 
 ### Pi-hole again — and local DNS for `*.lab`
+
+*Interim (2026-09-13): nodes address each other by MagicDNS name
+(`<host>.tailf823b8.ts.net`) — no IPs in the repo, but the tailnet suffix
+recurs and node-to-node traffic rides the tailnet even on the LAN. Local
+names under `*.lab` are what replaces that.*
 
 It ran on the old Pi until it broke (probably SD card wear, see #2). The
 second Pi is the obvious home for it: DNS wants port 53 and real host

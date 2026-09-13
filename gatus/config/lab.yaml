@@ -1,21 +1,34 @@
-# Group "lab" — each service asked DIRECTLY over the `lab` Docker network,
-# by container name. Answers the question "is the application up and
+# Group "lab" — each of the mini's services asked DIRECTLY by published
+# port, from the Pi. Answers the question "is the application up and
 # answering", independent of DNS, the certificate and caddy; those are
 # front-door.yaml's job. Together the two groups localise a fault: lab
-# green + front door red = the edge; both red = the service.
+# green + front door red = the edge; both red = the service; ALL of lab
+# red = the mini itself, which is the one failure a monitor on the mini
+# could never see and the reason Gatus lives on the Pi.
 #
-# Container names resolve ONLY on this network, so this file is the one
-# that changes when Gatus moves to the Pi (README.md "Moving to the Pi") —
-# every url here becomes a macmini.local:<port> address from ENDPOINTS.md.
+# ${LAB_HOST} is the mini's MagicDNS name, set once in compose.yaml, so
+# these checks ride the tailnet and depend on it. Deliberate, and still
+# legible: dependencies.yaml checks the tailnet path on its own, so lab red
+# + dependencies green = the mini; both red = the tailnet. Ports are the
+# published ones in ENDPOINTS.md.
 #
 # Intervals: 2m across the board. Tighter buys nothing — the alert waits
 # for three failures anyway — and a slow check must never hold the others
 # (Gatus evaluates 3 endpoints concurrently by default).
 
 endpoints:
+  - name: mini
+    group: lab
+    url: tcp://${LAB_HOST}:22
+    interval: 2m
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: pushover
+
   - name: forgejo
     group: lab
-    url: http://forgejo:3000/api/healthz
+    url: http://${LAB_HOST}:3000/api/healthz
     interval: 2m
     conditions:
       - "[STATUS] == 200"
@@ -23,38 +36,19 @@ endpoints:
     alerts:
       - type: pushover
 
-  - name: forgejo ssh
-    group: lab
-    # sshd inside the forgejo container, the same listener the tailscale
-    # sidecar proxies to git.twolfe.dev:22 — this one proves the daemon,
-    # the tailnet check in dependencies.yaml proves the path to it.
-    url: tcp://forgejo:22
-    interval: 2m
-    conditions:
-      - "[CONNECTED] == true"
-    alerts:
-      - type: pushover
-
   - name: kestra
     group: lab
-    # Micronaut's management port, the same one the container's own
-    # healthcheck curls (kestra/compose.yaml). Unpublished to the host,
-    # but a container on the lab network can reach it directly — which
-    # makes this the ONE check of Kestra that doesn't need credentials.
-    # VERIFY on first deploy: the management port must bind beyond
-    # loopback for this to connect. If it stays red while Kestra is fine,
-    # fall back to the UI root (http://kestra:8080/ui/) and note it here.
-    url: http://kestra:8081/health
+    url: http://${LAB_HOST}:8180/ping
     interval: 2m
     conditions:
       - "[STATUS] == 200"
-      - "[BODY].status == UP"
+      - "[BODY] == pong"
     alerts:
       - type: pushover
 
   - name: jellyfin
     group: lab
-    url: http://jellyfin:8096/health
+    url: http://${LAB_HOST}:8096/health
     interval: 2m
     conditions:
       - "[STATUS] == 200"
@@ -67,7 +61,7 @@ endpoints:
     # The admin API's unauthenticated liveness route — the S3 API on 3900
     # has no equivalent (a bare GET is 403 AccessDenied; see front-door.yaml
     # for why that is still useful through caddy).
-    url: http://garage:3903/health
+    url: http://${LAB_HOST}:3903/health
     interval: 2m
     conditions:
       - "[STATUS] == 200"
@@ -80,7 +74,7 @@ endpoints:
     # for the monitoring hub is not redundancy for its own sake: this one
     # is on a 2-minute cadence with history, that one alerts even when
     # Gatus itself is down.
-    url: http://beszel:8090/api/health
+    url: http://${LAB_HOST}:8090/api/health
     interval: 2m
     conditions:
       - "[STATUS] == 200"
@@ -89,12 +83,7 @@ endpoints:
 
   - name: qbittorrent
     group: lab
-    # GLUETUN, not qbittorrent: the client shares gluetun's network
-    # namespace, so on the lab network its web UI answers at gluetun's
-    # name (qbittorrent/caddy.caddyfile). The Host header is required —
-    # qBittorrent validates it and answers 401 to any name not in its
-    # "Server domains" list, of which this is one.
-    url: http://gluetun:8080/
+    url: http://${LAB_HOST}:8080/
     interval: 2m
     headers:
       Host: qbittorrent.lab.twolfe.dev
@@ -107,7 +96,7 @@ endpoints:
     group: lab
     # /ping is the one route the *arr apps answer without a login —
     # everything else, including /api/v3/health, wants the API key.
-    url: http://sonarr:8989/ping
+    url: http://${LAB_HOST}:8989/ping
     interval: 2m
     conditions:
       - "[STATUS] == 200"
@@ -117,7 +106,7 @@ endpoints:
 
   - name: radarr
     group: lab
-    url: http://radarr:7878/ping
+    url: http://${LAB_HOST}:7878/ping
     interval: 2m
     conditions:
       - "[STATUS] == 200"

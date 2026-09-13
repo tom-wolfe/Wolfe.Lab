@@ -15,12 +15,12 @@ traffic perfectly, and nothing noticed, because nothing asked.
 
 | Concern | Handled by |
 | --- | --- |
-| Container | the `lab.gatus/deploy` flow, chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
+| Container | **on the Pi** — `.forgejo/workflows/gatus.yaml`, on every push that touches this slice; `scripts/deploy.sh gatus` on the node itself |
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
-| Pushover credentials (`~/Docker/gatus/gatus.env`) | chezmoi `create_` template (`chezmoi/home/Docker/gatus/`), from the existing `pushover` vault item |
+| Pushover credentials (`~/Docker/gatus/gatus.env`, on the Pi) | chezmoi `create_` template (`chezmoi/home/Docker/gatus/`), from the existing `pushover` vault item; un-ignored on Linux for this slice in `.chezmoiignore` |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
-| Gatus's own liveness | the `lab.gatus/health` flow — a status page cannot show itself being down |
-| Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
+| Gatus's own liveness | the `lab.gatus/health` flow, from Kestra on the mini — a status page cannot show itself being down, and now the watcher is on the other machine |
+| Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
 | The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `lab.gatus/apply` on push, drift-checked by `lab.gatus/plan` daily |
 
 ## Why Gatus and not Uptime Kuma
@@ -108,18 +108,18 @@ the full table.
 
 ## Who watches the watcher
 
-`lab.gatus/health` — a Kestra flow polling Gatus's own `/health` at
-11/26/41/56 past the hour, `alert: high`. Gatus's Pushover alerts cannot
-report Gatus being down, and `lab.gatus/deploy` is a convergent no-op
-that stays green regardless, so without this a dead status page looks
-exactly like a page you haven't opened.
+`lab.gatus/health` — a Kestra flow on the mini polling Gatus's `/health`
+on the Pi at 11/26/41/56 past the hour, `alert: high`. Gatus's Pushover
+alerts cannot report Gatus being down, and the deploy workflow is a convergent
+no-op that stays green regardless, so without this a dead status page
+looks exactly like a page you haven't opened.
 
-Gatus watches Kestra back (`config/lab.yaml` polls the management
-`/health` every two minutes), which makes a cycle — and a cycle is not an
-outside observer. Both share the mini's fate. That is why neither is the
-dead man's switch: healthchecks.io is, and it stays outside the building
-(`chezmoi/tofu/`). The layer table in the root README has the full
-picture.
+Gatus watches Kestra back (`config/lab.yaml` polls `/ping` every two
+minutes). Since the move that is two machines watching each other rather
+than one watching itself: the mini down turns the whole `lab` group red
+in two minutes, the Pi down turns `lab.gatus/health` red within fifteen.
+Neither is the dead man's switch — healthchecks.io is, and it stays
+outside the building (`chezmoi/tofu/`).
 
 ## Secrets
 
@@ -225,41 +225,53 @@ account's.
 A known-false red must not stay on the board. A status page anyone has
 learned to ignore is worse than none.
 
-## Moving to the Pi
+## On the Pi
 
-Roadmap item 1. Known now because the config is code:
+Moved 2026-09-13 (roadmap item 3), and it cost what the config-is-code
+argument said it would:
 
-- `front-door.yaml`, `dependencies.yaml`, `personal.yaml` — **unchanged.**
-  Public names and third parties look the same from anywhere.
-- `lab.yaml` — **every URL changes.** Container names resolve only on the
-  mini's `lab` Docker network; from the Pi each becomes the
-  `macmini.local:<port>` address in `ENDPOINTS.md` (Kestra's `:8081` is
-  unpublished — that check becomes the UI root on `:8180`).
-- `compose.yaml` — the `lab` external network goes (nothing to join on
-  the Pi); the caddy route stays on the mini and points at the Pi's
-  address instead of a container name. `status.twolfe.dev` is a CNAME
-  to the front door, so the record does not move — only the snippet's
-  upstream does.
-- `lab.gatus/deploy` — a second `lab-job` bridge target, which is the
-  fleet-model expansion the smart-home roadmap item costs out.
-- `lab.gatus/health` — `gatus:8080` becomes the Pi's address.
+- `front-door.yaml`, `dependencies.yaml`, `personal.yaml` — unchanged.
+- `lab.yaml` — every URL is now `${LAB_HOST}:<published port>`, the
+  mini's MagicDNS name set once in `compose.yaml` — no address in the repo;
+  Tailscale resolves and routes it from a Pi container (verified), the same
+  choice the Beszel agent made for its hub URL. Two checks changed
+  shape: Kestra is asked `/ping` on the web port (the management port is
+  not published), and "forgejo ssh" is gone (the container's `:22` is not
+  on the LAN; `dependencies.yaml` already checks it by its tailnet route).
+  One check is new: `mini`, sshd on the host — when it and everything
+  below it is red, it is the machine, which is the whole point of the move.
+- `compose.yaml` — no `lab` network; paths under `${HOME}` (the runner's
+  job environment carries the login user's `HOME`).
+- `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
+  resolver follows macOS's, so the caddy container resolves it (verified).
+- `lab.gatus/deploy` — deleted. `.forgejo/workflows/gatus.yaml` deploys on push.
+- `lab.gatus/health` — probes the Pi by its MagicDNS name.
 
-Gained by the move: Gatus becomes external to the mini and catches
-"the mini is down" in two minutes rather than healthchecks.io's ten.
+**Retiring the mini's copy** is by hand, once the Pi's is green:
+`docker compose --project-directory "$(chezmoi source-path)/../../gatus"
+down` on the mini. Nothing converges it away — its deploy flow is gone
+and nothing else touches the container. `~/Docker/gatus` on the mini
+(old history, old env) can go with it.
+
+**Verify on the Pi's first deploy:** `curl -s http://wolfe-pi5.tailf823b8.ts.net:8280/health`
+→ `{"status":"UP"}`; the board at https://status.twolfe.dev shows the
+`lab` group green, including `mini`; the `git.twolfe.dev` check in
+`dependencies.yaml` stays green (container egress to the tailnet from a
+Linux Docker host, not a Desktop VM this time).
 
 ## Upgrading
 
-One pin, `image:` in `compose.yaml`. Bump via a normal PR; the tick ships
-it and `lab.gatus/deploy` converges it. Read the release notes for
+One pin, `image:` in `compose.yaml`. Bump via a normal PR; the push
+deploys it. Read the release notes for
 condition-syntax changes — every check is a condition string parsed at
 load, and a changed parser is the one way a routine bump turns into the
 invalid-config exit described under "Adding a check".
 
 ## Operational notes
 
-- Logs: `docker logs gatus`. Reload events and "configuration file was
+- Logs: `docker logs gatus` on the Pi. Reload events and "configuration file was
   updated, but it is not valid" both appear there.
-- Liveness by hand: `curl -s http://macmini.local:8280/health` →
+- Liveness by hand: `curl -s http://wolfe-pi5.tailf823b8.ts.net:8280/health` →
   `{"status":"UP"}`.
 - Read-only API: `/api/v1/endpoints/statuses` (all), or
   `/api/v1/endpoints/<group>_<name>/statuses` with spaces in either part

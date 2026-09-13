@@ -1,4 +1,5 @@
 @gatus host gatus.lab.twolfe.dev gatus.ts.twolfe.dev status.twolfe.dev
 handle @gatus {
-	reverse_proxy gatus:8080
+	# Gatus lives on the Pi, addressed by its MagicDNS name.
+	reverse_proxy wolfe-pi5.tailf823b8.ts.net:8280
 }

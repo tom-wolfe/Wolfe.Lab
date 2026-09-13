@@ -1,0 +1,26 @@
+# Deploy the Gatus service to the Pi.
+name: gatus
+
+on:
+  push:
+    branches: [main]
+    paths: [gatus/**, scripts/deploy.sh]
+  workflow_dispatch:
+
+concurrency:
+  group: wolfe-pi5
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: wolfe-pi5
+    timeout-minutes: 10
+    steps:
+      - run: chezmoi git pull -- --ff-only --quiet
+      - run: "\"$(chezmoi source-path)/../../scripts/deploy.sh\" gatus"
+
+      - if: failure()
+        run: |
+          "$(chezmoi source-path)/../../scripts/alert.sh" \
+            "deploy gatus failed on wolfe-pi5" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

@@ -8,16 +8,11 @@ services:
     environment:
       TZ: Europe/London
       GATUS_CONFIG_PATH: /config
+      LAB_HOST: macmini.tailf823b8.ts.net
     env_file:
-      - /Users/tomwolfe/Docker/gatus/gatus.env
+      - ${HOME}/Docker/gatus/gatus.env
     volumes:
       - ./config:/config:ro
-      - /Users/tomwolfe/Docker/gatus/data:/data
+      - ${HOME}/Docker/gatus/data:/data
     ports:
       - "8280:8080"
-    networks:
-      - lab
-
-networks:
-  lab:
-    external: true

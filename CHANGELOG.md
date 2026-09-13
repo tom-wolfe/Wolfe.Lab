@@ -17,6 +17,8 @@ rather than versioned — the lab is continuous, not released.
 ### Changed
 
 - **Beszel 0.18.8 → 0.19.0**, hub and agents together.
+- **Gatus moved to the Pi.** The first slice deployed by Forgejo Actions.
+
 
 ## [0.20.0] - 2026-09-13
 

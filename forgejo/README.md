@@ -457,7 +457,7 @@ job's steps execute:
 
 | Runner | Label | Steps run | Scope | Environment | For |
 |---|---|---|---|---|---|
-| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`) | the lab's tick, deploys, backups — anything that mutates the node |
+| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`) | chezmoi, deploys, backups — anything that mutates the node |
 | containerized | `docker:docker://<image>` | in a fresh container per job, no host socket | **instance-wide** | none | the lab's CI (lint, plan-on-PR) and every other project: Ritten, NSchema, … |
 
 The host runner is built (below). The containerized one is the next
@@ -499,7 +499,7 @@ only workflow files in *this* repo can obtain that — including, still, a
 workflow on a pull-request branch of this repo (the trust note in
 ROADMAP.md). Other projects never see a shell on a node: they *build and
 publish* (an image, a package) on the containerized runner, and the lab
-*deploys* what they published through its own tick, the way it deploys any
+*deploys* what they published through the slice's own workflow, the way it deploys any
 other pinned image.
 
 **Node half — chezmoi, gated on `!interactive && linux`:**
@@ -507,7 +507,7 @@ other pinned image.
 | Source | Target | Role |
 |---|---|---|
 | `.chezmoiexternal.toml.tmpl` | `~/.local/bin/forgejo-runner`, `~/.local/bin/op` | pinned binaries, no sudo |
-| `dot_config/forgejo-runner/config.yaml.tmpl` | `~/.config/forgejo-runner/config.yaml` | no secrets; re-renders every tick |
+| `dot_config/forgejo-runner/config.yaml.tmpl` | `~/.config/forgejo-runner/config.yaml` | no secrets; re-renders on every apply |
 | `dot_config/forgejo-runner/create_private_runner.json.tmpl` | `~/.config/forgejo-runner/runner.json` | registration, rendered ONCE from the vault item |
 | `dot_config/systemd/user/forgejo-runner.service` | `~/.config/systemd/user/…` | the runner, as a user unit |
 | `dot_config/systemd/user/forgejo-runner.path` | `~/.config/systemd/user/…` | systemd watches config, registration and unit; a change starts the shared `restart@forgejo-runner.service`. chezmoi only writes files — no change-detection script |
@@ -563,7 +563,7 @@ from this instance over its deploy key). In order:
    script starts `forgejo-runner-docker.service`. Both runners share one
    binary and one restart template; the two configs come from one partial
    in `.chezmoitemplates/forgejo-runner/`.
-8. **First run**: Actions → "tick wolfe-pi5" → Run workflow. Green =
+8. **First run**: Actions → "chezmoi" → Run workflow. Green =
    `chezmoi update` ran on the Pi from Forgejo. Then break it on purpose
    (e.g. a bad command via `workflow_dispatch` on a branch) to see the
    Pushover alert.

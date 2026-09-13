@@ -22,6 +22,8 @@ Library
 Library/**
 Docker
 Docker/**
+!Docker/gatus
+!Docker/gatus/**
 .docker-headless
 .docker-headless/**
 .local/bin/lab-job

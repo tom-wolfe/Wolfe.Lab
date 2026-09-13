@@ -326,10 +326,10 @@ each apply. Per daemon that is two files, the service and what it watches;
 the mechanism is systemd's, and chezmoi only writes files (the pattern is
 the Actions runner's — forgejo/README.md "Runners").
 
-Enrolment happens by itself: the Pi's Actions tick runs `chezmoi update`
-with the service-account token in the environment, so the `create_` env
-renders on the first tick after merge, the binary lands, and the agent
-dials the hub. Then, in the hub UI: set thresholds and turn **Status
+Enrolment happens by itself: the `chezmoi` workflow runs `chezmoi update`
+on the Pi on any push that touches `chezmoi/`, with the service-account
+token in the environment, so the `create_` env renders on the merge, the
+binary lands, and the agent dials the hub. Then, in the hub UI: set thresholds and turn **Status
 alerts ON** — unlike a laptop, this machine is always-on and off is a
 failure. Take the SoC and NVMe temperature baselines while you are there.
 
