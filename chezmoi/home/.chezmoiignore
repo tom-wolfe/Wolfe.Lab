@@ -12,8 +12,9 @@ Docker/**
 {{ end -}}
 {{ if eq .chezmoi.os "linux" -}}
 # macOS-only files and scripts — the Pi (Linux) gets none of these. Its
-# equivalents (apt packages, systemd units, a Linux Beszel agent, a Linux
-# job bridge) arrive as their own slices. Until then this keeps `apply` from
+# equivalents arrive as their own slices — the Beszel agent and the Actions
+# runner already have (binaries via .chezmoiexternal.toml.tmpl, user
+# systemd units under .config/systemd). This list keeps `apply` from
 # installing Homebrew or running `defaults` on Debian. Script names here are
 # the run_ attributes stripped, matching the install-packages.sh line above.
 .Brewfile
@@ -24,8 +25,6 @@ Docker/**
 .docker-headless
 .docker-headless/**
 .local/bin/lab-job
-.config/beszel
-.config/beszel/**
 # macOS-tuned dotfiles: zsh files carrying Homebrew paths, a Terminal.app
 # profile, and an nvm wrapper for launchd. The Pi's shell env and node
 # arrive as their own Linux slices.
@@ -47,5 +46,5 @@ Docker/**
 .config/forgejo-runner/**
 .config/systemd
 .config/systemd/**
-.chezmoiscripts/forgejo-runner.sh
+.chezmoiscripts/user-units.sh
 {{ end -}}

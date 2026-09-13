@@ -1,0 +1,20 @@
+#!/bin/bash
+# Converge systemd's view to the user units chezmoi just wrote: reload, then
+# enable and start every non-template unit in the directory. Runs after
+# every apply; idempotent and near-instant, so no once-per-machine
+# bookkeeping. Restarts on change are systemd's job (the .path units).
+set -euo pipefail
+
+dir="$HOME/.config/systemd/user"
+[ -d "$dir" ] || exit 0
+
+systemctl --user daemon-reload
+
+units=()
+for f in "$dir"/*.service "$dir"/*.path; do
+  [ -e "$f" ] || continue
+  case "$f" in *@*) continue ;; esac   # templates are instanced by others
+  grep -q '^\[Install\]' "$f" || continue   # nothing to enable (oneshots)
+  units+=("$(basename "$f")")
+done
+[ ${#units[@]} -eq 0 ] || systemctl --user enable --now "${units[@]}"

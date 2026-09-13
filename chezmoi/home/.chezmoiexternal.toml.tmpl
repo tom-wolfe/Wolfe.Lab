@@ -21,4 +21,14 @@
     path = "op"
     executable = true
     checksum.sha256 = "829baeff1c07e055cfa132031b1d9f2282ccdf5076258e482caf2fda70aea5d0"
+
+# Beszel agent — the monitoring agent as a host process (beszel/README.md
+# "Why the agent is a host process"); the Macs get it from the Brewfile.
+# Moves with the hub pin in beszel/compose.yaml ("Two pins").
+[".local/bin/beszel-agent"]
+    type = "archive-file"
+    url = "https://github.com/henrygd/beszel/releases/download/v0.19.0/beszel-agent_linux_arm64.tar.gz"
+    path = "beszel-agent"
+    executable = true
+    checksum.sha256 = "3a0b0c471506a02d8de79d03f7a45132b54010adc105c6208ffe8b8aedc1da38"
 {{- end }}

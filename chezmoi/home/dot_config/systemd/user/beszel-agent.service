@@ -1,0 +1,18 @@
+# The Beszel agent on a Linux server node, as a user service (no sudo). The
+# Macs run the same agent under brew services; this is the systemd half.
+# Restarted on env/unit change by beszel-agent.path.
+[Unit]
+Description=Beszel monitoring agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# The same env file the Homebrew launcher sources on the Macs; systemd
+# reads KEY="value" lines and ignores the comments.
+EnvironmentFile=%h/.config/beszel/beszel-agent.env
+ExecStart=%h/.local/bin/beszel-agent
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

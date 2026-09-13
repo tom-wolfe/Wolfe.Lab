@@ -8,9 +8,15 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
+- **Raspberry Pi 5!** The second node in the lab, with all the fun 
+  problems you get when scaling from 1->2.
 - **Forgejo Actions.** Only on the Pi for now. Managed by chezmoi, 
   `forgejo/scripts/register-runner.sh` is the server half. 
   `.forgejo/workflows/tick-wolfe-pi5.yaml` is the Pi's tick.
+
+### Changed
+
+- **Beszel 0.18.8 → 0.19.0**, hub and agents together.
 
 ## [0.20.0] - 2026-09-13
 

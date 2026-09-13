@@ -13,7 +13,8 @@ lands — see "Later: the laptops".
 | --- | --- |
 | Hub container | the `lab.beszel/deploy` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `lab.beszel/backup` (below) |
-| Agent binary | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`, server section); installed by `lab.chezmoi/packages`, upgraded by hand (see "Two pins"), supervised by `brew services` |
+| Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins"), supervised by `brew services` |
+| Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
 | Agent config (`~/.config/beszel/beszel-agent.env`) | chezmoi `create_` template (`chezmoi/home/dot_config/beszel/`) — materialized from 1Password (`beszel-agent`) only while the file is missing |
 | Hub liveness | the `lab.beszel/health` flow — Beszel cannot alert about its own hub being down |
 | Route (`beszel.lab.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
@@ -242,9 +243,11 @@ Two pins, and they should move together — the hub and agent speak a
 versioned protocol and are only tested as a pair:
 
 1. `image:` in `compose.yaml` (hub) — pinned, bumped by hand.
-2. The agent has **no version to pin**: the tap ships a single
+2. On the Macs the agent has **no version to pin**: the tap ships a single
    `beszel-agent.rb` regenerated on each release, so there is nothing
-   versioned to name in the Brewfile.
+   versioned to name in the Brewfile. On Linux nodes it does: the release
+   URL and checksum in `.chezmoiexternal.toml.tmpl`, bumped in the same
+   commit as the hub image.
 
 So the agent moves when you upgrade packages on the mini by hand — nothing
 upgrades on a schedule there (`chezmoi/README.md`). Do it through bundle,
@@ -306,3 +309,30 @@ for laptops: a machine that is allowed to sleep is not a failure, and a
 Status alert would page on every lid-close (the same rule the roadmap
 sets for the Studio). The token must be PERSISTENT in the hub's settings
 or enrolment fails with a stale vault copy — see the template.
+
+## The Pi
+
+Built 2026-09-13, the second host shape. Same env template, same vault
+item, same universal token; the template became OS-aware as well as
+role-aware: `HUB_URL` is `localhost` only on the mini (a Linux server
+reaches the hub over the tailnet like a laptop does), `EXTRA_FILESYSTEMS`
+is mini-only (the drives), and `DOCKER_HOST` is the Linux socket. The
+agent binary is a pinned release fetched by chezmoi into `~/.local/bin`,
+run by a user systemd unit that reads the env file with `EnvironmentFile=`
+(quoted `KEY="value"` lines and comments both parse). A path unit restarts
+it when the env or unit changes, through the shared `restart@.service`
+template, and the shared `run_after` script enables every user unit after
+each apply. Per daemon that is two files, the service and what it watches;
+the mechanism is systemd's, and chezmoi only writes files (the pattern is
+the Actions runner's — forgejo/README.md "Runners").
+
+Enrolment happens by itself: the Pi's Actions tick runs `chezmoi update`
+with the service-account token in the environment, so the `create_` env
+renders on the first tick after merge, the binary lands, and the agent
+dials the hub. Then, in the hub UI: set thresholds and turn **Status
+alerts ON** — unlike a laptop, this machine is always-on and off is a
+failure. Take the SoC and NVMe temperature baselines while you are there.
+
+Container stats: the agent reads `/var/run/docker.sock` as the login
+user, who is in the `docker` group. Same reasoning as on the mini — a
+native process that already owns the socket gains nothing from reading it.

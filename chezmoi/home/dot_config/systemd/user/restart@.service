@@ -1,0 +1,10 @@
+# Shared: restart any user service after its files change. Instanced by
+# systemd — a path unit names `restart@<service>.service` and %i is that
+# name. daemon-reload first so an edited unit file is what gets restarted.
+[Unit]
+Description=Restart %i after its files changed
+
+[Service]
+Type=oneshot
+ExecStart=systemctl --user daemon-reload
+ExecStart=systemctl --user restart %i.service

@@ -510,8 +510,9 @@ other pinned image.
 | `dot_config/forgejo-runner/config.yaml.tmpl` | `~/.config/forgejo-runner/config.yaml` | no secrets; re-renders every tick |
 | `dot_config/forgejo-runner/create_private_runner.json.tmpl` | `~/.config/forgejo-runner/runner.json` | registration, rendered ONCE from the vault item |
 | `dot_config/systemd/user/forgejo-runner.service` | `~/.config/systemd/user/…` | the runner, as a user unit |
-| `dot_config/systemd/user/forgejo-runner.path` + `forgejo-runner-restart.service` | `~/.config/systemd/user/…` | systemd watches config, registration and unit; a change restarts the runner. chezmoi only writes files — no change-detection script |
-| `.chezmoiscripts/run_once_after_forgejo-runner.sh` | — | first-time `enable --now` of the two units |
+| `dot_config/systemd/user/forgejo-runner.path` | `~/.config/systemd/user/…` | systemd watches config, registration and unit; a change starts the shared `restart@forgejo-runner.service`. chezmoi only writes files — no change-detection script |
+| `dot_config/systemd/user/restart@.service` | shared | one template unit that restarts whichever service a path unit names |
+| `.chezmoiscripts/run_after_user-units.sh` | shared | after every apply: `daemon-reload`, then `enable --now` every non-template unit in the directory. Idempotent |
 
 The registration file is the interesting part: Forgejo derives a runner's
 UUID from the secret (`gouuid.FromBytes(secret[:16])` — the first sixteen
@@ -549,7 +550,7 @@ from this instance over its deploy key). In order:
 5. **Docker access**: the runner runs as the login user, so `id` must show
    the `docker` group (`sudo usermod -aG docker tomwolfe`, re-login).
 6. **Apply**: `chezmoi apply` — renders config + registration, installs the
-   units, and the `run_once` script enables and starts them.
+   units, and the `run_after` script enables and starts them.
    `systemctl --user status forgejo-runner` should show it polling; the
    runner appears under the repo's Settings → Actions → Runners as
    `wolfe-pi5`, label `wolfe-pi5:host`, idle.

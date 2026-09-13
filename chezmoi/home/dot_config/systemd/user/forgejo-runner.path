@@ -7,7 +7,7 @@ Description=Watch the Forgejo runner's config and unit for changes
 PathChanged=%h/.config/forgejo-runner/config.yaml
 PathChanged=%h/.config/forgejo-runner/runner.json
 PathChanged=%h/.config/systemd/user/forgejo-runner.service
-Unit=forgejo-runner-restart.service
+Unit=restart@forgejo-runner.service
 
 [Install]
 WantedBy=default.target

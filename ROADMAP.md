@@ -156,9 +156,9 @@ typing. In order:
   `host.docker.internal` default and becomes something a flow picks.
   Not every flow: only `deploy` flows for slices that live there. The
   `tick` stays on the mini.
-- **Beszel agent** (Linux binary, systemd), Status alerts ON — unlike
-  the laptops, this machine is always-on and off is a failure. Take
-  the SoC and NVMe temperature baselines the rack plan asks for.
+- **Beszel agent** — BUILT 2026-09-13 (`beszel/README.md` "The Pi").
+  Remaining by hand: Status alerts ON in the hub, thresholds, and the SoC
+  and NVMe temperature baselines the rack plan asks for.
 - **Backups.** Whatever state lands on the Pi gets a `backup.conf` and
   a restic path like anything else; the Pi needs restic, the repo
   password, and a route to `/Volumes/Data2/restic` or its own local
