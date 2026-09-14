@@ -63,8 +63,8 @@ Stacks are up. Remaining one-time steps:
        op run --env-file=secrets.env -- tofu apply
 
   2. Log in at http://macmini.local:8180 (1P: kestra-admin) and watch the
-     first lab.chezmoi/update tick go green — the deploy flows chain from it,
-     and from then on the lab converges itself.
+     first lab.chezmoi/heartbeat go green — from then on healthchecks.io
+     knows the scheduler is alive. Deploys are Forgejo Actions' (step 4).
 
   3. Enrol the monitoring agent — the one bootstrap that can't be ordered
      ahead of time, because the hub mints the token the agent needs:

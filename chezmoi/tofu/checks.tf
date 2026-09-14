@@ -49,21 +49,22 @@ resource "healthchecksio_check" "chezmoi_tick" {
   # Slug-shaped on purpose — see the note above.
   name = "lab-chezmoi-update"
   desc = <<-EOT
-    Dead man's switch for the Wolfe.Lab CD tick (Kestra flow
-    lab.chezmoi/update). Pinged on every SUCCESSful converge. Silence means
-    the tick stopped: Kestra down, postgres wedged, the mini off, or the
-    network gone. Managed by chezmoi/tofu — edits here are reverted.
+    Dead man's switch for Kestra's scheduler (flow lab.chezmoi/heartbeat,
+    every 15 minutes). Silence means it stopped: Kestra down, postgres
+    wedged, the mini off, or the network gone. The slug is historical (the
+    CD tick used to be the pulse); renaming would recreate the check.
+    Managed by chezmoi/tofu — edits here are reverted.
   EOT
 
   # Cron mode rather than a simple period, so the expectation mirrors the
-  # flow's own schedule exactly and a tick missing its slot is caught at
+  # heartbeat flow's own schedule exactly and a missed slot is caught at
   # that slot, not a fixed interval later.
   schedule = "*/15 * * * *"
   timezone = "Europe/London"
 
-  # 10 minutes: comfortably longer than a slow converge (chezmoi update on a
-  # cold Brewfile can run minutes) and comfortably shorter than two missed
-  # ticks, so a genuine stall alerts inside half an hour.
+  # 10 minutes: one HTTP call needs seconds, and this is comfortably
+  # shorter than two missed slots, so a genuine stall alerts inside half
+  # an hour.
   grace = 600
 
   tags = ["lab", "tick", "kestra"]

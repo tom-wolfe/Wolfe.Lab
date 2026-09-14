@@ -35,8 +35,8 @@ Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
 runs `chezmoi update` on a node when `chezmoi/` changes. Kestra remains
 for what is not CD: the backups, the host-native jobs (restic, obsidian,
 brew), the heartbeat and the health probes; its flows are registered by
-`tofu-kestra.yaml` like any other root. Its tick is now only a pulse for
-the heartbeat and a schedule for the rest; `kestra/README.md` has the shrinking remainder and
+`tofu-kestra.yaml` like any other root. Nothing ticks: each remaining
+flow carries its own schedule; `kestra/README.md` has the shrinking remainder and
 `ROADMAP.md` "CD moves to Forgejo Actions" the plan to retire it.
 
 ## How monitoring works
@@ -52,8 +52,8 @@ watches.**
 | `lab.beszel/health` | the Beszel hub itself — a dead monitor looks like a healthy lab | Kestra does |
 | Gatus (`gatus/`) | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on | the mini does |
 | `lab.gatus/health` | Gatus itself — a dead status page looks like one you haven't opened | Kestra does |
-| healthchecks.io | the tick still pings → **the only observer outside the building** | never (it's SaaS) |
-| `lab.chezmoi/heartbeat` | sends that ping, chained on the tick so it can't break it | Kestra does |
+| healthchecks.io | the heartbeat still pings → **the only observer outside the building** | never (it's SaaS) |
+| `lab.chezmoi/heartbeat` | sends that ping every 15 minutes on Kestra's own schedule — proof the scheduler the backups depend on is alive | Kestra does |
 
 Everything except healthchecks.io runs inside the lab, so a dead mini is
 silence from all of them — and silence is indistinguishable from health.

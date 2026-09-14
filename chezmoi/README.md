@@ -126,20 +126,9 @@ is the read-write *management* key, used only from this tofu root;
 the mini via the kestra env template. Never put the management key in
 Kestra's environment.
 
-## The poke (not yet wired)
+## Pushes
 
-`flows/update/flow.yaml` carries a webhook trigger so a merge can deploy in
-seconds instead of within the tick. Unwired by choice, not necessity — a
-native Forgejo repo webhook on push-to-main could call it today
-(declarable in `forgejo/tofu` via `forgejo_repository_webhook`), or
-post-merge CI once the Actions runner exists:
-
-```sh
-curl -X POST "http://macmini.local:8180/api/v1/main/executions/webhook/lab.chezmoi/update/<key>"
-```
-
-The key sits in the flow YAML (committed — acceptable because the endpoint
-is LAN-only and the key can only start this one predefined flow; rotate it
-by editing the flow and re-applying). The webhook path is exempt from basic
-auth in `kestra/application.yaml` precisely so CI needs no admin
-credential.
+Nothing in this slice reacts to a push any more. `.forgejo/workflows/
+chezmoi.yaml` runs `chezmoi update` on every server when a push touches
+`chezmoi/`; the old webhook "poke" into Kestra, and the tick it stood in
+for, are gone (kestra/README.md "Scheduling").

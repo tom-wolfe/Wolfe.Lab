@@ -62,10 +62,12 @@ changes, you upgrade it by hand:
 kestra/scripts/upgrade.sh [expected-version]
 ```
 
-Bump the pin in `compose.yaml` via a normal PR first (the tick ships it
-here, where it sits inert). The version argument is an *assertion* against
-that pin — the script refuses to run if they disagree, so you can't
-converge to a version you didn't review or one the tick hasn't landed yet.
+Bump the pin in `compose.yaml` via a normal PR first, then bring the
+mini's checkout up to date at the desk (`chezmoi git pull`): kestra has no
+deploy workflow by design, so nothing lands its compose automatically. The
+version argument is an *assertion* against that pin — the script refuses
+to run if they disagree, so you can't converge to a version you didn't
+review or one the checkout hasn't got yet.
 It takes a `pg_dump` backup, pulls, converges, and health-polls :8180.
 Postgres majors additionally need pg_upgrade or dump/restore.
 
@@ -186,27 +188,15 @@ The cross-cutting axis is **labels**, not more namespace:
 So "show me every backup" is a label filter, and you never have to choose
 between organising by slice and organising by function.
 
-## Trigger flows
+## Scheduling
 
-Two flows carry the lab's scheduling semantics (2026-09-01):
-
-- **`lab.kestra/tick`** — the 15-minute pulse, a pure no-op. Chaining on
-  it says "run regularly".
-- **`lab.kestra/push-to-main`** — Forgejo's push webhook lands here (the
-  poke; `forgejo/tofu/webhook.tf` derives the URL from its flow file),
-  and it converges the checkout (a subflow of `lab.chezmoi/update`)
-  before going green. Chaining on it says "run when main moves" — and
-  its SUCCESS *means* the push has landed on the mini, which is exactly
-  the guarantee the apply chain consumes. Not a pure no-op, on purpose:
-  the alternative was `apply.sh` racing the update flow with its own
-  `git pull`, freshness enforced in the wrong layer.
-
-Before the split, everything periodic chained on `lab.chezmoi/update` by
-convenience, so "needs the converged checkout" and "wants a timer" were
-indistinguishable. Now a chain is a dependency claim: deploys and
-packages chain on update because they consume what it converges; update
-runs on the tick and inside push-to-main; the apply chain hangs off
-push-to-main because applies are push-shaped.
+Nothing ticks any more (2026-09-14). Every remaining flow carries its own
+`Schedule` trigger — the nightly backups, restic, the obsidian syncs,
+renew-certs, purge, the health probes, and `lab.chezmoi/heartbeat` every
+15 minutes. There is no pulse flow to chain on because nothing here is CD:
+"run when main moves" is Forgejo Actions' job (`.forgejo/workflows/`), and
+"run regularly" is a cron on the flow that wants it. `lab.kestra/tick`
+and `/push-to-main` are gone with the work that hung off them.
 
 ## OpenTofu CD
 
@@ -281,10 +271,6 @@ stall on 2026-08-28, when `chezmoi` blocked on a prompt.)
 | deploys | PT20M | a cold image pull is the unbounded case |
 | `lab.caddy/renew-certs` | PT15M | lego waits 90s for DNS propagation first |
 | `lab.kestra/purge` | PT30M | a first purge after a backlog deletes a lot |
-| `lab.<slice>/plan` | PT10M | a first run downloads providers; after that, seconds |
-| `lab.<slice>/apply` | PT30M | provider write paths can be slow; a hung apply must still die |
-| `lab.kestra/tick`, `/push-to-main` | PT1M | no-op Return tasks; a hang here means Kestra itself is sick |
-| `lab.chezmoi/packages` | PT20M | a cold cask or mas download; a satisfied run is ~1s |
 | `lab.restic/offsite` | PT6H | the FIRST copy uploads the whole repo over home broadband; after that, minutes |
 | `lab.restic/verify` | PT2H | downloads a 5% pack sample from B2; slow is not failed |
 | `lab.chezmoi/heartbeat`, `system/alert-failed` | PT1M | one HTTP call each |
@@ -317,19 +303,15 @@ cautionary tale: erroring plans rendered as WARNINGs and hid for hours.
 The flow's own header explains why it sits in `system` and what that
 costs.
 
-**Outside the lab — the heartbeat.** `lab.chezmoi/update` pings
-healthchecks.io as its final task. Everything above runs inside Kestra and
-therefore shares Kestra's fate: container down, postgres wedged, mini
-powered off, and silence looks exactly like health. The ping stopping is the
-only signal that leaves the building. The check is declared in
-`chezmoi/tofu/` (schedule, grace, channels) — it belongs to the slice that
-owns the tick, not to this one. It is a *separate flow*
-(`lab.chezmoi/heartbeat`) chained on the tick's SUCCESS, not a task on the
-tick — a watchdog must not be able to break what it watches. As a task, an
-unresolvable secret or a healthchecks.io outage turns the tick red, and a red
-tick chains to nothing, so every deploy stops. (`allowFailed` does not cover
-this: it tolerates HTTP status >= 400 only, not connection errors and not a
-secret that fails to resolve.)
+**Outside the lab — the heartbeat.** `lab.chezmoi/heartbeat` pings
+healthchecks.io every 15 minutes on its own schedule. Everything above runs
+inside Kestra and therefore shares Kestra's fate: container down, postgres
+wedged, mini powered off, and silence looks exactly like health. The ping
+stopping is the only signal that leaves the building, and what it proves
+is precisely "Kestra's scheduler fires" — the thing the backups depend on.
+The check is declared in `chezmoi/tofu/` (schedule, grace, channels). It
+is its own flow, not a task on something else, so a broken ping can fail
+only itself — the lesson from when it was a task on the CD tick.
 
 **Verify both after the first apply.** A Flow trigger that matches nothing
 does not error — it silently never fires, which is indistinguishable from a
