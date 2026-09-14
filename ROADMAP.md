@@ -33,6 +33,10 @@ Workflows stay thin — a trigger and one command — because the
 commands are moving into a CLI built on Tom's .NET library Ritten; the
 YAML is the trigger, not the pipeline.
 
+Progress 2026-09-14: the mini's deploys and every tofu root but kestra's
+run from Actions (`feature/mini-actions`); Kestra keeps the tick, backups,
+host-native jobs, heartbeat and health probes until the backups move.
+
 Sequence: (1) the Pi's runner and its `chezmoi` workflow — built, `forgejo/README.md`
 "Runners"; (2) Gatus moves as the first deploy job; (3) if that holds, a
 host-mode runner on the mini, the tick/tofu/backup/CI workflows, delete

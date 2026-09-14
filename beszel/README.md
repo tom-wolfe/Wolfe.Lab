@@ -11,7 +11,7 @@ lands — see "Later: the laptops".
 
 | Concern | Handled by |
 | --- | --- |
-| Hub container | the `lab.beszel/deploy` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
+| Hub container | `.forgejo/workflows/beszel.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `lab.beszel/backup` (below) |
 | Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins"), supervised by `brew services` |
 | Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
@@ -43,7 +43,7 @@ plists are opaque and there is nowhere to watch them. This agent reports
 into a dashboard and shows up in `brew services list`, so it is observable,
 which was the actual requirement.
 
-Consequence worth internalising: **`lab.beszel/deploy` converges the hub
+Consequence worth internalising: **the beszel workflow converges the hub
 only.** The agent's lifecycle belongs to chezmoi, because the agent is a
 host package and chezmoi is what converges host packages. One converger per
 thing.
@@ -128,7 +128,7 @@ per-system thresholds in the systems table.
 **`lab.beszel/health`** — a Kestra flow polling the hub's own `/api/health`
 at 7/22/37/52 past the hour, labelled `alert: high`. This is the failure
 Beszel structurally cannot report: a hub that isn't running sends no alerts,
-and it looks exactly like a healthy lab, because `lab.beszel/deploy` is a
+and it looks exactly like a healthy lab, because the deploy is a
 convergent no-op that stays green regardless. A monitoring tool nobody
 monitors is the trap the roadmap's ordering principle exists to avoid, so
 the hub gets a liveness probe on the day it arrives.
@@ -268,8 +268,7 @@ than silent — the mini drops off the dashboard, and `lab.beszel/health`
 and `~/.cache/beszel/beszel-agent.log` both say so. To hold it, `brew pin
 beszel-agent` on the mini; upgrades skip pinned packages.
 
-Bump the image via a normal PR; the tick ships it and `lab.beszel/deploy`
-converges it. Check the release notes first — the hub migrates its SQLite
+Bump the image via a normal PR; the push deploys it. Check the release notes first — the hub migrates its SQLite
 schema forward on boot and downgrades are not supported, so going back means
 restoring a backup, which is why the backup records its image tag.
 

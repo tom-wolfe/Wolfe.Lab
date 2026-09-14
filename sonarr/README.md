@@ -65,7 +65,7 @@ caddy as local.
 At the desk. Do the Jellyfin 12.0 upgrade and its full scan **first**
 (`jellyfin/README.md`, "Sequencing with the *arr rename").
 
-1. Deploy: merge, wait for the tick (or trigger `lab.sonarr/deploy`).
+1. Deploy: merge — the sonarr workflow converges it on the push.
    Docker creates `~/Docker/sonarr/config` on first start.
 2. Create the login **through the API, not the UI.** Because the auth
    method is declared in `compose.yaml`, Sonarr skips its first-run

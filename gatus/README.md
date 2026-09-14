@@ -21,7 +21,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
 | Gatus's own liveness | the `lab.gatus/health` flow, from Kestra on the mini — a status page cannot show itself being down, and now the watcher is on the other machine |
 | Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
-| The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `lab.gatus/apply` on push, drift-checked by `lab.gatus/plan` daily |
+| The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `.forgejo/workflows/tofu-gatus.yaml` on push, drift-checked by the same workflow daily |
 
 ## Why Gatus and not Uptime Kuma
 
@@ -175,14 +175,14 @@ that decision reverses.
    `code.twolfe.dev`, added in the same change) — `caddy/README.md`
    "Neat names", step 4. At the desk. Until then the `.lab` and `.ts`
    names work and the neat name doesn't.
-4. **Reload caddy's routes** — the tick-chained `lab.caddy/deploy` does
+4. **Reload caddy's routes** — the caddy workflow (it fires on any `*/caddy.caddyfile` change) does
    this on its next run; by hand,
    `docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile`.
 5. **Register the flows**: `cd kestra/tofu` and
    `op run --env-file=secrets.env -- tofu apply` — plan tripwire: 4 to
-   add (`lab.gatus/deploy`, `health`, `plan`, `apply`), 0 to change or
-   destroy. `lab.gatus/apply` then creates the CNAME on the next push
-   to main; `lab.forgejo/apply` creates `code.twolfe.dev` the same way.
+   add (`lab.gatus/health`), 0 to change or destroy. `tofu-gatus.yaml`
+   then creates the CNAME on the push; `tofu-forgejo.yaml` creates
+   `code.twolfe.dev` the same way.
    Or by hand from a laptop:
    `cd gatus/tofu && op run --env-file=secrets.env -- tofu init && op run --env-file=secrets.env -- tofu apply`
    — plan tripwire: 1 to add.
@@ -241,7 +241,9 @@ argument said it would:
   One check is new: `mini`, sshd on the host — when it and everything
   below it is red, it is the machine, which is the whole point of the move.
 - `compose.yaml` — no `lab` network; paths under `${HOME}` (the runner's
-  job environment carries the login user's `HOME`).
+  job environment carries the login user's `HOME`). The project directory
+  is the slice's install, `~/.local/share/Wolfe.Lab/gatus`, which
+  `scripts/deploy.sh` refreshes from the checkout on every deploy.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).
 - `lab.gatus/deploy` — deleted. `.forgejo/workflows/gatus.yaml` deploys on push.

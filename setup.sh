@@ -1,7 +1,7 @@
 #!/bin/bash
 # Fresh-server bring-up — the one imperative sequence that can't converge by
-# itself, because Kestra (the thing that runs deploys) can't deploy itself
-# into existence. Everything here is idempotent; re-runs are safe no-ops.
+# itself: Forgejo (which runs the deploys, through Actions) can't deploy
+# itself into existence, and neither can Kestra for what it still runs. Everything here is idempotent; re-runs are safe no-ops.
 # Day-to-day this script is never needed: the chezmoi tick and the per-slice
 # deploy flows own convergence (see README.md "How deployment works").
 #
@@ -33,7 +33,7 @@ repo="$(cd "$(dirname "$0")" && pwd)"
 
 converge() {
   echo "==> $1"
-  docker compose --project-directory "$repo/$1" up -d --remove-orphans "${@:2}"
+  "$repo/scripts/deploy.sh" "$@"
 }
 
 # Caddy first — its compose OWNS the shared `lab` network.
@@ -45,14 +45,13 @@ converge garage
 "$repo/garage/scripts/init-layout.sh"
 
 converge forgejo
-converge jellyfin
-converge sonarr
-converge radarr
+converge jellyfin /Volumes/Data1 /Volumes/Data2
+converge sonarr /Volumes/Data1 /Volumes/Data2
+converge radarr /Volumes/Data1 /Volumes/Data2
 converge beszel
-converge gatus
 
-# Kestra last: once it's up and the flows are registered, it takes over.
-converge kestra
+echo "==> kestra"
+docker compose --project-directory "$repo/kestra" up -d --remove-orphans
 
 cat <<'EOF'
 
@@ -76,10 +75,11 @@ Stacks are up. Remaining one-time steps:
      Then set thresholds and the Pushover URL in the hub — it ships none,
      so nothing alerts until you do. Full runbook: beszel/README.md.
 
-  4. Re-register every other node's Actions runner — registrations live in
+  4. Re-register every node's Actions runner, this machine's included — registrations live in
      Forgejo's database, so a fresh Forgejo knows none of them, while each
      node's runner.json still holds its vault secret and will poll with it
      until the server knows it again (forgejo/README.md "Runners"):
+       forgejo/scripts/register-runner.sh MacMini
        forgejo/scripts/register-runner.sh wolfe-pi5
      Same secret, same UUID: the node side needs no change.
 EOF

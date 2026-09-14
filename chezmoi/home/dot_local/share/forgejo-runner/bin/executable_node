@@ -1,0 +1,5 @@
+#!/bin/bash
+# node for the Actions runner's JavaScript actions (actions/checkout).
+export NVM_DIR="$HOME/.nvm"
+source /opt/homebrew/opt/nvm/nvm.sh --no-use
+exec "$(nvm which default)" "$@"

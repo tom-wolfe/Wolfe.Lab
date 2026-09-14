@@ -9,7 +9,7 @@ State lives at `~/Docker/garage/{meta,data}` on the mini; config is
 | Concern | Handled by |
 | --- | --- |
 | Secrets (`~/Docker/garage/garage.env`) | chezmoi `create_` template (`chezmoi/home/Docker/garage/`) — materialized from 1Password (`garage-rpc-secret`, `garage-s3-admin-token`), never generated: the vault is the origin, so a wiped env file comes back with the same values. Only evaluated while the file is missing — `op` is a bootstrap dependency, not a tick dependency |
-| Container | the `lab.garage/deploy` flow (`flows/deploy/flow.yaml`), chained on the chezmoi tick like every stack; first bring-up via `setup.sh` |
+| Container | `.forgejo/workflows/garage.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
 | Cluster layout (one-time) | `scripts/init-layout.sh`, invoked by `setup.sh` |
 | Buckets, keys, grants | OpenTofu — this slice's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |
 
@@ -33,8 +33,7 @@ bootstrap only creates what must exist before the admin API answers.
 ## Upgrading
 
 Read the release notes first — metadata formats migrate and downgrades are
-not supported. Bump the image tag, merge; the tick ships it and
-`lab.garage/deploy` converges it.
+not supported. Bump the image tag, merge; the push deploys it.
 
 ## The tofu state store (`tofu/`)
 

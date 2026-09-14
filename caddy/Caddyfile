@@ -6,13 +6,15 @@
 #
 # Routes do NOT live in this file. Each slice contributes a
 # <slice>/caddy.caddyfile next to its compose file — a named host matcher
-# plus a handle block — picked up by the import glob below from the repo
-# mount. Adding a service never edits this slice (the same contract as
+# plus a handle block — picked up by the import glob below from the
+# install mount (flows/deploy/post.sh gathers them). Adding a service never edits this slice (the same contract as
 # flows/ and the job bridge). See README.md for the snippet shape.
 #
-# This file is read in place from the repo mount (/etc/caddy/lab/caddy/
+# This file is read in place from the install mount (/etc/caddy/lab/caddy/
 # Caddyfile — see compose.yaml for why not a file bind), so the import
-# glob is relative to THIS directory: `..` is the repo root.
+# glob is relative to THIS directory: `..` is the installs root,
+# ~/.local/share/Wolfe.Lab, where scripts/deploy.sh puts every slice and
+# where this slice's deploy hook gathers every slice's snippet.
 #
 # Certificates do NOT live here either: caddy is a pure proxy. The
 # renew-certs job (flows/renew-certs/) obtains and renews ONE cert with

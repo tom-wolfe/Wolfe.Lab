@@ -1,3 +1,4 @@
 {{- template "forgejo-runner/runner.json" (dict
       "name" .chezmoi.hostname
-      "labels" (list (printf "%s:host" .chezmoi.hostname))) -}}
+      "labels" (list (printf "%s:host" .chezmoi.hostname))
+      "address" (eq .chezmoi.os "darwin" | ternary "http://localhost:3000" "")) -}}

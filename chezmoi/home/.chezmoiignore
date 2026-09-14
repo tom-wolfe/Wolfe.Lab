@@ -35,6 +35,8 @@ Docker/*/**
 .config/terminal
 .config/terminal/**
 .local/bin/nvm-run
+.local/share/forgejo-runner
+.local/share/forgejo-runner/**
 .chezmoiscripts/install-packages.sh
 .chezmoiscripts/install-homebrew.sh
 .chezmoiscripts/configure-macos.sh
@@ -42,10 +44,15 @@ Docker/*/**
 .chezmoiscripts/install-dotnet-tools.sh
 .chezmoiscripts/install-node.sh
 {{ end -}}
-{{ if or .interactive (ne .chezmoi.os "linux") -}}
-# The Actions runner is for Linux server nodes only.
+{{ if .interactive -}}
+# The host runner is for server nodes.
 .config/forgejo-runner
 .config/forgejo-runner/**
+.local/share/forgejo-runner
+.local/share/forgejo-runner/**
+{{ end -}}
+{{ if or .interactive (ne .chezmoi.os "linux") -}}
+# The containerized runner and the systemd units are Linux-only.
 .config/forgejo-runner-docker
 .config/forgejo-runner-docker/**
 .config/systemd

@@ -14,12 +14,12 @@ keeping the existing library, watch history and artwork exactly as they were.
 
 ## Deployment
 
-The `lab.jellyfin/deploy` flow in Kestra converges this stack after every green
-`lab.chezmoi/update` tick — merge a compose change and it lands within one tick
-(≤15 min). Manual converge: run the flow from the Kestra UI, or on the mini:
+`.forgejo/workflows/jellyfin.yaml` converges this stack on every push that touches it, on
+the mini's host runner. Manual converge: run the workflow from the Actions
+tab, or on the mini:
 
 ```sh
-"$(chezmoi source-path)/../../jellyfin/flows/deploy/script.sh"
+scripts/deploy.sh jellyfin /Volumes/Data1 /Volumes/Data2
 ```
 
 ## Where account passwords live
@@ -76,7 +76,7 @@ Forgejo's does — it has to stay where the native app left it.
 ## Day-to-day
 
 ```sh
-cd "$(chezmoi source-path)/../../jellyfin"
+cd ~/.local/share/Wolfe.Lab/jellyfin
 
 docker compose ps            # status
 docker compose logs -f       # follow logs
@@ -112,7 +112,7 @@ on their own after a reboot. If Docker Desktop has quit for any other reason
 (it did on 2026-09-02, without a reboot), bring it back by hand:
 
 ```sh
-open -a Docker && "$(chezmoi source-path)/../../jellyfin/flows/deploy/script.sh"
+open -a Docker && scripts/deploy.sh jellyfin /Volumes/Data1 /Volumes/Data2
 ```
 
 Note this is tied to **signing in**, not to boot — a Mac mini sitting at the
@@ -127,8 +127,8 @@ image afterwards will fail.
 ```sh
 "$(chezmoi source-path)/../../scripts/backup.sh" jellyfin   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
-# either let lab.jellyfin/deploy converge it or, by hand:
-cd "$(chezmoi source-path)/../../jellyfin"
+# either let the jellyfin workflow converge it or, by hand:
+cd ~/.local/share/Wolfe.Lab/jellyfin
 docker compose pull
 docker compose up -d
 docker compose logs -f           # watch migrations complete
@@ -167,7 +167,7 @@ The runbook, in order. Do it in one sitting, at the desk:
    the next morning; otherwise run `lab.jellyfin/backup` from Kestra and
    wait for "backup complete". The snapshot carries `image:…:10.11.11`
    as a tag — that is the rollback target.
-2. **Merge the tag bump.** `lab.jellyfin/deploy` converges within a tick;
+2. **Merge the tag bump.** The jellyfin workflow converges it on the push;
    `docker compose logs -f jellyfin` shows the migrations run on first
    boot. They are quick on this database (77 MB), but do not restart the
    container while they're running.
@@ -225,7 +225,7 @@ the library definitions.
 ### Restore
 
 ```sh
-cd "$(chezmoi source-path)/../../jellyfin"
+cd ~/.local/share/Wolfe.Lab/jellyfin
 op run --env-file=../restic/restic.env -- restic snapshots --tag service:jellyfin
 docker compose down
 op run --env-file=../restic/restic.env -- restic restore <id> --target /tmp/restore
@@ -253,7 +253,7 @@ still at 10.11.8 and will refuse to open the migrated database.
 Rolling back now means restoring a pre-upgrade backup as well:
 
 ```sh
-cd "$(chezmoi source-path)/../../jellyfin" && docker compose down
+cd ~/.local/share/Wolfe.Lab/jellyfin && docker compose down
 mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
 tar -xzf ~/Docker/jellyfin/backups/jellyfin-20260818-191721.tar.gz \
     -C ~/Library/Application\ Support/

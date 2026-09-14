@@ -1,0 +1,46 @@
+name: tofu dns
+
+on:
+  push:
+    branches: [main]
+    paths: [dns/tofu/**, scripts/apply.sh, scripts/plan.sh, .forgejo/workflows/tofu-dns.yaml]
+  schedule:
+    - cron: "20 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event_name == 'push'
+    runs-on: MacMini
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/apply.sh dns
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "tofu apply dns failed" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+
+  plan:
+    if: github.event_name != 'push'
+    runs-on: MacMini
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: |
+          set +e
+          scripts/plan.sh dns
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit $rc
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "tofu dns: ${{ steps.plan.outputs.rc == '2' && 'drift or pending change' || 'plan failed' }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

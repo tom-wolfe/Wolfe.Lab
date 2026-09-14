@@ -1,6 +1,6 @@
 id: apply
 namespace: lab.kestra
-description: Applies the Kestra Tofu stack on every push to main.
+description: Applies the Kestra Tofu stack.
 
 labels:
   job: apply
@@ -18,11 +18,11 @@ tasks:
       - kestra/apply
 
 triggers:
-  - id: after-push
+  - id: after-tick
     type: io.kestra.plugin.core.trigger.Flow
     preconditions:
-      id: main-moved
+      id: chezmoi-tick-green
       flows:
-        - namespace: lab.kestra
-          flowId: push-to-main
+        - namespace: lab.chezmoi
+          flowId: update
           states: [SUCCESS]

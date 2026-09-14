@@ -1,9 +1,35 @@
-{{- /* The HOST runner: one job at a time (deploys mutate node state; a tick
-       that overlaps itself queues), the bootstrap env, no cache. */ -}}
+{{- /* The HOST runner: one job at a time (deploys mutate node state; a job
+       that overlaps itself queues), the bootstrap env, no cache. Jobs get
+       LAB_ROOT: where deploys INSTALL a slice (scripts/deploy.sh copies the
+       slice out of the disposable checkout into $LAB_ROOT/<slice> and runs
+       compose there, because containers bind-mount files from it after the
+       job is gone). Plus the environment the old lab-job dispatcher
+       exported, per OS. node is on the PATH only because actions/checkout
+       is a JavaScript action: on the mini an nvm shim in
+       ~/.local/share/forgejo-runner/bin (nvm owns the active version), on
+       the Pi the pinned external in ~/.local/bin. */ -}}
+{{- $root := joinPath .chezmoi.homeDir ".local/share/Wolfe.Lab" -}}
+{{- if eq .chezmoi.os "darwin" -}}
 {{- template "forgejo-runner/config.yaml" (dict
       "home" .chezmoi.homeDir
       "dir" "forgejo-runner"
       "capacity" 1
       "host" true
       "labels" (list (printf "%s:host" .chezmoi.hostname))
-      "cache" false) -}}
+      "cache" false
+      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" .chezmoi.homeDir .chezmoi.homeDir)
+      "envs" (dict
+        "LAB_ROOT" $root
+        "DOCKER_CONFIG" (printf "%s/.docker-headless" .chezmoi.homeDir)
+        "TF_PLUGIN_CACHE_DIR" (printf "%s/.cache/tofu-plugins" .chezmoi.homeDir))) -}}
+{{- else -}}
+{{- template "forgejo-runner/config.yaml" (dict
+      "home" .chezmoi.homeDir
+      "dir" "forgejo-runner"
+      "capacity" 1
+      "host" true
+      "labels" (list (printf "%s:host" .chezmoi.hostname))
+      "cache" false
+      "path" (printf "%s/.local/bin:/usr/local/bin:/usr/bin:/bin" .chezmoi.homeDir)
+      "envs" (dict "LAB_ROOT" $root)) -}}
+{{- end -}}

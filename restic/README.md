@@ -65,7 +65,7 @@ that silence is the only backup signal that leaves the building. And
 | `lab.restic/offsite` | 04:35 nightly | copy to B2, then forget+prune both repos |
 | `lab.restic/heartbeat` | on offsite SUCCESS | ping `lab-restic-offsite` |
 | `lab.restic/verify` | Sun 05:05 | `restic check` both repos, 5% data sample from B2 |
-| `lab.restic/plan` / `apply` | tick / manual | the tofu root, standard OpenTofu CD |
+| `.forgejo/workflows/tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
 
 Locking: backups take shared locks and may overlap each other safely;
 `forget --prune` needs an exclusive lock, which is why offsite sits an
@@ -93,7 +93,7 @@ region segment only exists once the B2 account does.
    Password item (generated, letters+digits).
 2. Merge this slice; let the tick ship it. `brew "restic"` is in the
    Brewfile, so `lab.chezmoi/packages` installs it on every machine.
-3. Apply the tofu root (from the mini or via `lab.restic/apply` once the
+3. Apply the tofu root (from the mini or via `tofu-restic.yaml` once the
    flows land): creates the bucket, the scoped key, the check. Then fill
    the `restic-b2` item: `username`/`credential` from
    `op run --env-file=secrets.env -- tofu output -raw restic_application_key_id`

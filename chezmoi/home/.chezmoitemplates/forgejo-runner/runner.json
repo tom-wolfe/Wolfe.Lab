@@ -2,7 +2,7 @@
        have written, rendered from the vault instead. Callers are create_
        files: written only when MISSING, so `op` is a bootstrap dependency,
        not a tick one. Args: name (the registered runner name, also the
-       vault item suffix), labels (list).
+       vault item suffix), labels (list), address (optional override).
 
        The secret is the 40-hex string forgejo/scripts/register-runner.sh
        registered server-side. Forgejo derives the runner's UUID from it as
@@ -17,6 +17,9 @@
        file (the filesystem is the stack reference — as forgejo/tofu/webhook.tf). */ -}}
 {{- $compose := include "../../forgejo/compose.yaml" | fromYaml -}}
 {{- $address := $compose.services.server.environment.FORGEJO__server__ROOT_URL | trimSuffix "/" -}}
+{{- /* …unless the caller overrides it: the mini runs Forgejo, and its own
+       runner reaches it over loopback so CD there depends on no name. */ -}}
+{{- if .address }}{{ $address = .address }}{{ end -}}
 {
   "name": {{ .name | quote }},
   "uuid": {{ $uuid | quote }},

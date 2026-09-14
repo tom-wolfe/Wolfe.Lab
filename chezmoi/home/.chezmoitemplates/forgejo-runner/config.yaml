@@ -1,5 +1,7 @@
 {{- /* One runner config, two callers: the config.yaml.tmpl under dot_config/forgejo-runner and dot_config/forgejo-runner-docker.
-       Args: home, dir, capacity, host (bool), labels (list), cache (bool).
+       Args: home, dir, capacity, host (bool), labels (list), cache (bool),
+       and for host runners: path (the job PATH) and envs (dict of extra job
+       environment, e.g. DOCKER_CONFIG on the mini).
        Full key reference:
        code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml */ -}}
 # Forgejo Actions runner "{{ .dir }}" — rendered from .chezmoitemplates/forgejo-runner/config.yaml
@@ -18,7 +20,10 @@ runner:
   # secret; PATH puts ~/.local/bin in front for every step.
   env_file: {{ .home }}/.config/{{ .dir }}/env
   envs:
-    PATH: {{ .home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+    PATH: {{ .path }}
+{{- range $k, $v := .envs }}
+    {{ $k }}: {{ $v }}
+{{- end }}
 {{- end }}
   labels:
 {{- range .labels }}

@@ -12,18 +12,18 @@ Self-hosted git server running on the Mac mini via Docker Compose.
 
 ## Deployment
 
-The `lab.forgejo/deploy` flow in Kestra converges this stack after every green
-`lab.chezmoi/update` tick — merge a compose change and it lands within one tick
-(≤15 min). Manual converge: run the flow from the Kestra UI, or on the mini:
+`.forgejo/workflows/forgejo.yaml` converges this stack on every push that touches it, on
+the mini's host runner. Manual converge: run the workflow from the Actions
+tab, or on the mini:
 
 ```sh
-"$(chezmoi source-path)/../../forgejo/flows/deploy/script.sh"
+scripts/deploy.sh forgejo
 ```
 
 ## Day-to-day
 
 ```sh
-cd "$(chezmoi source-path)/../../forgejo"
+cd ~/.local/share/Wolfe.Lab/forgejo
 
 docker compose ps            # status
 docker compose logs -f       # follow logs
@@ -156,7 +156,7 @@ red (the beszel bootstrap warning, same shape).
    `credential`.
 3. **Materialize**: on the mini, `chezmoi apply` writes
    `~/Docker/forgejo/tailscale.env`.
-4. **Merge.** The tick's deploy converges the stack and the sidecar
+4. **Merge.** The forgejo workflow converges the stack and the sidecar
    enrols. Confirm the `forgejo` node in the admin console, then
    **disable its key expiry** — same reasoning as the mini itself: a
    server whose node key silently expires drops off the tailnet with
@@ -197,9 +197,9 @@ image after that will fail.
 
 ```sh
 "$(chezmoi source-path)/../../scripts/backup.sh" forgejo   # snapshot first
-# bump the image tag in compose.yaml (normal PR; the tick ships it), then
-# either let lab.forgejo/deploy converge it or, by hand:
-cd "$(chezmoi source-path)/../../forgejo"
+# bump the image tag in compose.yaml (normal PR; the push deploys it), then
+# either let the forgejo workflow converge it or, by hand:
+cd ~/.local/share/Wolfe.Lab/forgejo
 docker compose pull
 docker compose up -d
 docker compose logs -f               # watch migrations complete
@@ -246,7 +246,7 @@ the backup script before anything risky.
 ### Restore
 
 ```sh
-cd "$(chezmoi source-path)/../../forgejo"
+cd ~/.local/share/Wolfe.Lab/forgejo
 op run --env-file=../restic/restic.env -- restic snapshots --tag service:forgejo
 docker compose down
 op run --env-file=../restic/restic.env -- restic restore <id> --target /tmp/restore
@@ -272,7 +272,7 @@ in" → Apply & restart.*
 Until that's on, after every reboot you need:
 
 ```sh
-open -a Docker && "$(chezmoi source-path)/../../forgejo/flows/deploy/script.sh"
+open -a Docker && scripts/deploy.sh forgejo
 ```
 
 Note this is tied to **signing in**, not to boot — a Mac mini sitting at the
@@ -457,7 +457,7 @@ job's steps execute:
 
 | Runner | Label | Steps run | Scope | Environment | For |
 |---|---|---|---|---|---|
-| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`) | chezmoi, deploys, backups — anything that mutates the node |
+| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`); `LAB_ROOT`, where deploys install slices | chezmoi, deploys, backups — anything that mutates the node |
 | containerized | `docker:docker://<image>` | in a fresh container per job, no host socket | **instance-wide** | none | the lab's CI (lint, plan-on-PR) and every other project: Ritten, NSchema, … |
 
 The host runner is built (below). The containerized one is the next
@@ -522,6 +522,25 @@ a bootstrap dependency, not a tick dependency, exactly like the env files.
 The instance address is read from this slice's `compose.yaml` (`ROOT_URL`),
 not typed again.
 
+How a deploy job gets the repo: `actions/checkout`, like any pipeline,
+into the job's workspace, which the runner disposes of afterwards. What
+containers need to keep reading — config directories, route snippets —
+is not read from the checkout: `scripts/deploy.sh` installs the slice into
+`$LAB_ROOT/<slice>` (`~/.local/share/Wolfe.Lab`, rsync so nothing a
+running container has open vanishes) and runs compose there. The front
+door's hook gathers every slice's `caddy.caddyfile` into that tree, so
+caddy's import glob is complete whatever runs on which node. Host runners
+have node on the PATH only because `actions/checkout` is a JavaScript
+action: on the mini a shim in `~/.local/share/forgejo-runner/bin` that
+resolves nvm's default alias at call time (nvm owns the active version; a
+brew node would fight it — the `nvm-run` pattern), on the Pi a pinned
+external. chezmoi's own
+source is a separate clone and no part of a deploy. One ordering
+consequence: a slice whose env file is a chezmoi `create_` template (until
+the config provider lands) needs the `chezmoi` workflow to have rendered it;
+both fire on the same push, in either order, so a brand-new slice's first
+deploy may need one re-run.
+
 Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
 (`~/.config/forgejo-runner/env`, hand-seeded, mode 600) carries the node's
 `OP_SERVICE_ACCOUNT_TOKEN`; steps read the vault directly. One bootstrap
@@ -579,6 +598,44 @@ in `~/.ssh/config` lets `chezmoi update` pull headless; `code.twolfe.dev`
 resolves and its certificate validates from the Pi over the tailnet; and a
 `pull_request` workflow naming `wolfe-pi5` will run there too — the trust
 note in ROADMAP.md.
+
+### The mini's runner
+
+Same host-runner design, macOS supervision. Forgejo publishes no macOS
+binary, so the runner comes from Homebrew (`forgejo-runner` in the server
+Brewfile), and `brew services` supervises it the way it does the Beszel
+agent. chezmoi renders the same config and registration as on the Pi
+(`~/.config/forgejo-runner/`, the job environment is what the old
+`lab-job` dispatcher exported: the headless Docker config and PATH); the
+formula's service reads `$HOMEBREW_PREFIX/etc/forgejo-runner/config.yaml`,
+which is a symlink to chezmoi's file. Its registration addresses Forgejo
+over loopback, so CD on the mini depends on no name. There is no change
+watcher on macOS: a config edit is a `brew services restart
+forgejo-runner` by hand, as for the Beszel agent.
+
+Bring-up, at the desk:
+
+1. `forgejo/scripts/register-runner.sh MacMini` (from a machine with a
+   writable `op` the first time — the mini's service account is read-only,
+   so mint the vault item from the laptop and re-run on the mini).
+2. Seed the bootstrap env: `install -D -m 600 /dev/null
+   ~/.config/forgejo-runner/env` and write
+   `OP_SERVICE_ACCOUNT_TOKEN=$(cat ~/Docker/1password/service-account-token)`.
+3. `chezmoi apply` (installs the formula via the Brewfile, renders config
+   and registration), then
+   `ln -sfn ~/.config/forgejo-runner/config.yaml /opt/homebrew/etc/forgejo-runner/config.yaml`
+   and `brew services start forgejo-runner`. Logs:
+   `/opt/homebrew/var/log/forgejo-runner.{log,err}`.
+4. The runner shows idle under Settings → Actions → Runners as `MacMini`.
+   Run the beszel workflow by hand: green = the slice was installed under
+   `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from
+   Forgejo, through the headless Docker config.
+
+What stays on Kestra for the mini, for now: `lab.chezmoi/update` (the
+15-minute tick), the backups, restic, obsidian, brew, renew-certs, the
+heartbeat and the health probes. `chezmoi.yaml` does not list the mini yet
+because that tick already converges it; two convergers on one checkout
+would race. It joins the matrix when the tick goes.
 
 ### What is deliberately not here yet
 

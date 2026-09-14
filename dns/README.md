@@ -67,10 +67,9 @@ blocks are no-ops for records already in state — and can be deleted.
 
 ## Operational notes
 
-- Plans run themselves: `lab.dns/plan` on every green tick, warning on
-  drift or a pending change; applying is `lab.dns/apply`, triggered by a
-  human in the Kestra UI after reading the plan — the OpenTofu CD model,
-  kestra/README.md. (A workstation `op run … tofu plan` still works for
+- Plans run themselves: `.forgejo/workflows/tofu-dns.yaml` daily, alerting on
+  drift or a pending change; applying is the same workflow on the push that
+  changes the root — the OpenTofu CD model. (A workstation `op run … tofu plan` still works for
   development; applies go through the flow.) Same 1Password items as the
   other roots (`netlify-pat`, `tofu-state-passphrase`, garage state key)
   — nothing new to create.

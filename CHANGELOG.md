@@ -18,7 +18,8 @@ rather than versioned — the lab is continuous, not released.
 
 - **Beszel 0.18.8 → 0.19.0**, hub and agents together.
 - **Gatus moved to the Pi.** The first slice deployed by Forgejo Actions.
-
+- **The mini deploys from Forgejo Actions.** One workflow per mini slice 
+  and per tofu root. Kestra keeps the tick and everything that is not CD.
 
 ## [0.20.0] - 2026-09-13
 

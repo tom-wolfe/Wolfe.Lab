@@ -71,6 +71,11 @@ Postgres majors additionally need pg_upgrade or dump/restore.
 
 ## How container jobs work
 
+> **Superseded 2026-09-14.** Deploys moved to Forgejo Actions
+> (`.forgejo/workflows/<slice>.yaml`, the mini's host runner). No flow
+> uses the Docker task defaults below any more; they stay until the
+> slice is retired. Kept as the record of how it worked.
+
 The deploy flows converge compose stacks as native Docker tasks. The
 plugin defaults in `application.yaml` give every `shell.Commands` task a
 docker CLI image, the socket, the repo checkout — mounted **at its host
@@ -200,6 +205,11 @@ runs on the tick and inside push-to-main; the apply chain hangs off
 push-to-main because applies are push-shaped.
 
 ## OpenTofu CD
+
+> **Superseded 2026-09-14** for every root but this one: `tofu-<root>.yaml`
+> workflows apply on push and plan daily. `lab.kestra/apply` stays here,
+> chained on the tick, because a root that registers Kestra's own flows
+> must not be applied by a flow it can delete mid-run.
 
 Forgejo issue #9's answer — reworked 2026-09-01 after the 1Password
 rate-limit outage (CHANGELOG 0.16.0). The original design planned every

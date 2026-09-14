@@ -31,4 +31,14 @@
     path = "beszel-agent"
     executable = true
     checksum.sha256 = "3a0b0c471506a02d8de79d03f7a45132b54010adc105c6208ffe8b8aedc1da38"
+
+# Node — only because actions/checkout is a JavaScript action and a host
+# runner runs those with the host's node. Nothing else here needs it.
+# Versions + checksums: nodejs.org/dist/<version>/SHASUMS256.txt.
+[".local/bin/node"]
+    type = "archive-file"
+    url = "https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-arm64.tar.xz"
+    path = "node-v22.23.2-linux-arm64/bin/node"
+    executable = true
+    checksum.sha256 = "fff4078c5def658577f92c88db7db3bc0072924bfb93fe52c1e744a54e94abb8"
 {{- end }}

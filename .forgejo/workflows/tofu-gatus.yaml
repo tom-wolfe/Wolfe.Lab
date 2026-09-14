@@ -1,0 +1,46 @@
+name: tofu gatus
+
+on:
+  push:
+    branches: [main]
+    paths: [gatus/tofu/**, scripts/apply.sh, scripts/plan.sh, .forgejo/workflows/tofu-gatus.yaml]
+  schedule:
+    - cron: "55 7 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: github.event_name == 'push'
+    runs-on: MacMini
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/apply.sh gatus
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "tofu apply gatus failed" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+
+  plan:
+    if: github.event_name != 'push'
+    runs-on: MacMini
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: |
+          set +e
+          scripts/plan.sh gatus
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit $rc
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "tofu gatus: ${{ steps.plan.outputs.rc == '2' && 'drift or pending change' || 'plan failed' }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

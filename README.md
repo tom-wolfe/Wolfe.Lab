@@ -21,15 +21,22 @@ its tick job.
 
 ## How deployment works
 
-Chezmoi declares; Kestra acts. The `lab.chezmoi/update` flow is the CD tick:
-every 15 minutes it pulls the repo and converges machine config, and each
-service's `lab.<slice>/deploy` flow chains on its SUCCESS — pull → config →
-deploys, always in that order. `docker compose up -d` is convergent, so
-between changes the deploys are no-ops; a merged compose change lands
-within one tick. Kestra itself has no deploy flow (it can't safely replace
-its own executor) — see `kestra/README.md` for the manual upgrade path.
-All flows are applied from `kestra/tofu/` — kestra's tofu root manages
-flows the way forgejo's manages repositories and garage's manages buckets.
+Chezmoi declares; Forgejo Actions acts. Every slice has a workflow in
+`.forgejo/workflows/<slice>.yaml` that fires on the push touching it, runs
+on the node the slice lives on (`runs-on` is placement — the mini's host
+runner or the Pi's), checks the repo out into a disposable workspace, and
+runs `scripts/deploy.sh <slice>`: install the slice into
+`~/.local/share/Wolfe.Lab/<slice>` (containers bind-mount files from it
+after the job is gone) and `docker compose up -d` there. `docker compose up -d` is convergent, so
+a manual run is always safe. OpenTofu roots have `tofu-<root>.yaml`: apply
+on the push that changes them, a daily plan for drift. Nothing ticks.
+
+Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
+runs `chezmoi update` on a node when `chezmoi/` changes. Kestra remains
+for what is not CD: the backups, the host-native jobs (restic, obsidian,
+brew), the heartbeat and the health probes. Its `lab.chezmoi/update` tick
+still converges the mini's config every 15 minutes for those; `kestra/README.md` has the shrinking remainder and
+`ROADMAP.md` "CD moves to Forgejo Actions" the plan to retire it.
 
 ## How monitoring works
 

@@ -1,4 +1,3 @@
-# Converge machine config on every node the lab manages through Actions.
 name: chezmoi
 
 on:
@@ -11,17 +10,17 @@ jobs:
   update:
     strategy:
       matrix:
-        node: [wolfe-pi5] # Just on the Pi for now.
+        node: [wolfe-pi5]
     runs-on: ${{ matrix.node }}
     concurrency:
       group: ${{ matrix.node }}
       cancel-in-progress: false
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
       - run: chezmoi update --init --no-tty
 
       - if: failure()
         run: |
-          "$(chezmoi source-path)/../../scripts/alert.sh" \
-            "chezmoi update failed on ${{ matrix.node }}" \
+          scripts/alert.sh "chezmoi update failed on ${{ matrix.node }}" \
             "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

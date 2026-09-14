@@ -51,8 +51,8 @@ Everything happens in the service's own slice; this one is never edited.
    are imported inside the wildcard site — one `*.lab` certificate instead
    of per-name certs, which would list every internal hostname in public
    Certificate Transparency logs.
-3. Redeploy caddy (trigger `lab.caddy/deploy` in Kestra, or wait for the
-   tick) — the deploy
+3. Redeploy caddy (run the caddy workflow from the Actions tab, or push a
+   change to it) — the deploy
    script reloads config explicitly, because snippets arrive via the repo
    bind mount and don't change compose's config hash.
 4. Add the row in `ENDPOINTS.md`, same commit.
@@ -125,7 +125,7 @@ sugar for browsers, not plumbing.
 4. **First certificate**: run `flows/renew-certs/script.sh` on the mini
    (or `caddy/renew-certs` via the bridge). Caddy loads the cert from
    files and cannot START without them — setup.sh encodes this ordering.
-5. **First deploy**: trigger `lab.caddy/deploy` in Kestra (or
+5. **First deploy**: run the caddy workflow (or
    `docker compose up -d` in this directory on the mini). Must happen
    ONCE before redeploying any proxied slice — this compose creates the
    `lab` network the others reference as external.
