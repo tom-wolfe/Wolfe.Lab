@@ -36,7 +36,7 @@ fi
 # on macOS is just a directory on the internal disk, so check the mount,
 # then that the repo actually exists (bootstrap is manual: README.md).
 vol="/Volumes/Data2"
-if ! mount | grep -q " on $vol ("; then
+if [ ! -f "$vol/.lab-volume" ]; then
   echo "offsite: $vol is not mounted — nothing to copy from" >&2
   exit 1
 fi

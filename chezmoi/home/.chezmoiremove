@@ -1,2 +1,6 @@
-# The Kestra job bridge (2026-09-14): Kestra is retired, nothing dials in.
-.local/bin/lab-job
+{{ if not .server -}}
+# Laptops no longer run the Beszel agent; drop the env it left behind.
+.config/beszel/beszel-agent.env
+.config/beszel/fingerprint
+.config/beszel
+{{ end -}}

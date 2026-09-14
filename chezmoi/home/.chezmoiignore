@@ -1,4 +1,6 @@
 {{ if not .server -}}
+.config/beszel
+.config/beszel/**
 Library/LaunchAgents
 Library/LaunchAgents/**
 Docker

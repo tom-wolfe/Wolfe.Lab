@@ -19,7 +19,7 @@
       "host" true
       "labels" (list (printf "%s:host" .chezmoi.hostname))
       "cache" false
-      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" .chezmoi.homeDir .chezmoi.homeDir)
+      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir)
       "envs" (dict
         "LAB_ROOT" $root
         "DOCKER_CONFIG" (printf "%s/.docker-headless" .chezmoi.homeDir)

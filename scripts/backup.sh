@@ -42,10 +42,12 @@ if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
 fi
 
 # The restic repo lives on the external drive — an unmounted /Volumes
-# path on macOS is just a directory on the internal disk, so check the
-# mount, then that the repo exists, BEFORE stopping the stack.
+# path on macOS is just a directory on the internal disk. The drive carries
+# a sentinel file at its root (the same guard deploy.sh uses: touch
+# /Volumes/DataN/.lab-volume once, at the desk); check it, then that the
+# repo exists, BEFORE stopping the stack.
 vol="/Volumes/Data2"
-if ! mount | grep -q " on $vol ("; then
+if [ ! -f "$vol/.lab-volume" ]; then
   echo "backup: $vol is not mounted — refusing to write to the internal disk" >&2
   exit 1
 fi

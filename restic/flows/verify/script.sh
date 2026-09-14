@@ -25,7 +25,7 @@ if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
 fi
 
 vol="/Volumes/Data2"
-if ! mount | grep -q " on $vol ("; then
+if [ ! -f "$vol/.lab-volume" ]; then
   echo "verify: $vol is not mounted — cannot check the local repo" >&2
   exit 1
 fi

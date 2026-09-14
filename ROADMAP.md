@@ -269,10 +269,6 @@ than via `brew services`**, per the no-ambient-load requirement; an idle
 Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
 "nothing" on a machine being used for other work.
 
-**Beszel: add it with Status alerts OFF**, exactly like the laptops. A
-workstation that is off is not a failure, and a Status alert would page on
-every shutdown.
-
 ### 10. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
 Two halves because they are the same move —

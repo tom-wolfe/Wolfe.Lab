@@ -6,9 +6,6 @@ pieces — a **hub** (the dashboard and alerting engine, a container in this
 slice) and an **agent** (the thing that actually reads the metrics, a
 native process on each monitored machine).
 
-Today it watches one machine, the mini. The laptops join when Tailscale
-lands — see "Later: the laptops".
-
 | Concern | Handled by |
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
@@ -56,7 +53,7 @@ in. Two values make that work, both in `~/.config/beszel/beszel-agent.env`:
 
 - `TOKEN` — a *universal* registration token from the hub's
   `/settings/tokens`. Universal means the same value enrols any number of
-  agents, so adding the laptops later is a template change, not a new
+  agents, so adding a server is a template change, not a new
   secret per machine.
 - `KEY` — the hub's **public** key, which is how the agent decides the
   thing answering is really our hub.
@@ -207,32 +204,12 @@ A few seconds of downtime costs a gap in one metrics series.
 The agent has nothing to back up — its entire configuration is the
 `create_` template's output, and 1Password holds what that's built from.
 
-## The laptops
-
-Once Tailscale landed, enrolling them was exactly the small change
-predicted: `.config/beszel` left the server-only branch of
-`.chezmoiignore`, the Brewfile entry moved to the all-machines section,
-and `HUB_URL` became machine-aware — `localhost:8090` on the mini,
-`http://macmini.tailf823b8.ts.net:8090` on the laptops. The MagicDNS name
-is deliberate: Tailscale resolves and routes it itself, at home or away,
-so laptop monitoring depends only on the tailnet — never on public DNS or
-the front door (the same reasoning as localhost on the mini). Same
-universal token for every machine; no new vault item.
-
-To enrol a laptop: `chezmoi apply` (materializes the env, installs and
-starts the agent via the Brewfile), then watch it appear in the hub.
-Then set its thresholds in the hub UI — and leave **Status alerts OFF**
-for laptops: a machine that is allowed to sleep is not a failure, and a
-Status alert would page on every lid-close (the same rule the roadmap
-sets for the Studio). The token must be PERSISTENT in the hub's settings
-or enrolment fails with a stale vault copy — see the template.
-
 ## The Pi
 
 The second host shape. Same env template, same vault
 item, same universal token; the template became OS-aware as well as
 role-aware: `HUB_URL` is `localhost` only on the mini (a Linux server
-reaches the hub over the tailnet like a laptop does), `EXTRA_FILESYSTEMS`
+reaches the hub over the tailnet), `EXTRA_FILESYSTEMS`
 is mini-only (the drives), and `DOCKER_HOST` is the Linux socket. The
 agent binary is a pinned release fetched by chezmoi into `~/.local/bin`,
 run by a user systemd unit that reads the env file with `EnvironmentFile=`
@@ -247,7 +224,7 @@ Enrolment happens by itself: the `chezmoi` workflow runs `chezmoi update`
 on the Pi on any push that touches `chezmoi/`, with the service-account
 token in the environment, so the `create_` env renders on the merge, the
 binary lands, and the agent dials the hub. Then, in the hub UI: set thresholds and turn **Status
-alerts ON** — unlike a laptop, this machine is always-on and off is a
+alerts ON** — this machine is always-on and off is a
 failure. Take the SoC and NVMe temperature baselines while you are there.
 
 Container stats: the agent reads `/var/run/docker.sock` as the login

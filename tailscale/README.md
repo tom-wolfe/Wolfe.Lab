@@ -61,8 +61,8 @@ Three things already written down wait on it:
    `*.lab` still resolves to RFC1918 — and both it and the dual
    wildcard retire together if local DNS on a Pi ever lands
    (ROADMAP.md).
-2. **The laptops are enrolled in beszel** (beszel/README.md "The
-   laptops"): agents dial the hub at the mini's
+2. **The Pi's Beszel agent reaches the hub over the tailnet**
+   (beszel/README.md "The Pi"): it dials the mini's
    MagicDNS name over the tailnet. Status alerts OFF for machines that
    are allowed to sleep.
 3. **Per-service sidecar IPs.** forgejo is the first customer: a userspace `tailscale/tailscale` sidecar in the
