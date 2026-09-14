@@ -569,7 +569,11 @@ from this instance over its deploy key). In order:
 5. **Docker access**: the runner runs as the login user, so `id` must show
    the `docker` group (`sudo usermod -aG docker tomwolfe`, re-login).
 6. **Apply**: `chezmoi apply` — renders config + registration, installs the
-   units, and the `run_after` script enables and starts them.
+   units, and the `run_after` script enables and starts them. Do this
+   BEFORE the first workflow runs on the node: `actions/checkout` needs
+   node, and node arrives with this apply (cost the first two Pi runs
+   after the release-model merge — a workflow cannot install its own
+   checkout's prerequisite).
    `systemctl --user status forgejo-runner` should show it polling; the
    runner appears under the repo's Settings → Actions → Runners as
    `wolfe-pi5`, label `wolfe-pi5:host`, idle.
