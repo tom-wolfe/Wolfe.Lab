@@ -10,7 +10,7 @@ rather than versioned — the lab is continuous, not released.
 
 - **Raspberry Pi 5!** The second node in the lab, with all the fun 
   problems you get when scaling from 1->2.
-- **Forgejo Actions.** Only on the Pi for now. Managed by chezmoi.
+- **Forgejo Actions.** Runs on all server nodes. Managed by chezmoi.
   One host-connected instance for Wolfe.Lab, one isolated container for
   other CI jobs.
 

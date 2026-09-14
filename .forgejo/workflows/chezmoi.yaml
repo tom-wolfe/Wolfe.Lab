@@ -10,7 +10,7 @@ jobs:
   update:
     strategy:
       matrix:
-        node: [wolfe-pi5]
+        node: [MacMini, wolfe-pi5]
     runs-on: ${{ matrix.node }}
     concurrency:
       group: ${{ matrix.node }}

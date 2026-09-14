@@ -94,6 +94,10 @@ never a fork of the script.
 
 ## How host jobs work
 
+> **Shrinking, 2026-09-14.** chezmoi update and package installs moved to
+> the `chezmoi` workflow (Actions, on push). What still crosses the bridge:
+> the backups, restic, obsidian, renew-certs.
+
 chezmoi, brew, the restic backups and tofu act on the macOS host itself,
 which no sibling container can reach. That work leaves through the job
 bridge — since the trust decision above, a *transport* rather than a
@@ -206,10 +210,11 @@ push-to-main because applies are push-shaped.
 
 ## OpenTofu CD
 
-> **Superseded 2026-09-14** for every root but this one: `tofu-<root>.yaml`
-> workflows apply on push and plan daily. `lab.kestra/apply` stays here,
-> chained on the tick, because a root that registers Kestra's own flows
-> must not be applied by a flow it can delete mid-run.
+> **Superseded 2026-09-14**: `tofu-<root>.yaml` workflows apply on push
+> and plan daily — this root included (`tofu-kestra.yaml`, which also
+> fires on any `*/flows/*/flow.yaml` change). Applying Kestra's own flow
+> registry from outside Kestra is what makes removing a flow safe: no
+> flow deletes itself mid-run.
 
 Forgejo issue #9's answer — reworked 2026-09-01 after the 1Password
 rate-limit outage (CHANGELOG 0.16.0). The original design planned every

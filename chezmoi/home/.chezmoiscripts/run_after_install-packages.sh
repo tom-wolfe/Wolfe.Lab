@@ -1,11 +1,11 @@
 #!/bin/bash
 # Install anything declared in ~/.Brewfile that isn't installed yet.
 #
-# This script runs on the LAPTOPS ONLY — the server ignores it
-# (.chezmoiignore), because there the job belongs to lab.chezmoi/packages.
-# chezmoi declares, Kestra acts; on a machine with no Kestra, the human
-# running `chezmoi apply` is the actor, and since that is a manual and
-# occasional act a plain `run_` (every apply) costs about a second.
+# Every machine, every apply: on a laptop the human running `chezmoi
+# apply` is the actor; on a server it is the `chezmoi` workflow, which runs
+# `chezmoi update` on the push that changes chezmoi/. A satisfied run costs
+# about a second. (The mini used to get this from a Kestra flow chained
+# on its 15-minute tick — chezmoi/README.md "Packages".)
 #
 # `run_after_` matters: this reads ~/.Brewfile, which chezmoi writes during
 # the file pass. A `before` or unprefixed script could run first and act on
@@ -17,6 +17,11 @@
 # run_onchange script. Installing what's missing and moving versions forward
 # are different jobs with different reasons to happen.
 set -euo pipefail
+
+# Never refetch Homebrew's metadata here: the lab must keep working with
+# the internet down, and nothing on a server refreshes it except the
+# hand-run upgrade (chezmoi/README.md), which does so first.
+export HOMEBREW_NO_AUTO_UPDATE=1
 
 if [ -x /opt/homebrew/bin/brew ]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"

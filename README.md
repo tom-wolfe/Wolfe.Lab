@@ -34,8 +34,9 @@ on the push that changes them, a daily plan for drift. Nothing ticks.
 Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
 runs `chezmoi update` on a node when `chezmoi/` changes. Kestra remains
 for what is not CD: the backups, the host-native jobs (restic, obsidian,
-brew), the heartbeat and the health probes. Its `lab.chezmoi/update` tick
-still converges the mini's config every 15 minutes for those; `kestra/README.md` has the shrinking remainder and
+brew), the heartbeat and the health probes; its flows are registered by
+`tofu-kestra.yaml` like any other root. Its tick is now only a pulse for
+the heartbeat and a schedule for the rest; `kestra/README.md` has the shrinking remainder and
 `ROADMAP.md` "CD moves to Forgejo Actions" the plan to retire it.
 
 ## How monitoring works

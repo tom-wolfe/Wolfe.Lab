@@ -7,9 +7,6 @@ Docker/**
 .docker-headless
 .docker-headless/**
 {{ end -}}
-{{ if .server -}}
-.chezmoiscripts/install-packages.sh
-{{ end -}}
 {{ if eq .chezmoi.os "linux" -}}
 # macOS-only files and scripts — the Pi (Linux) gets none of these. Its
 # equivalents arrive as their own slices — the Beszel agent and the Actions

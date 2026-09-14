@@ -24,18 +24,15 @@ description: |
   The check itself — schedule, grace, notification channels — is declared in
   chezmoi/tofu/checks.tf. Pinged by slug, so the URL is composed from a
   project-wide ping key and `lab-chezmoi-update` is this check's slug.
-
 labels:
   job: heartbeat
   # High: the whole point of this flow is noticing silence. If it is failing,
   # healthchecks.io will report the tick as down and you want to know it was
   # the pinger, not the tick.
   alert: high
-
 concurrency:
   limit: 1
   behavior: QUEUE
-
 tasks:
   - id: ping
     type: io.kestra.plugin.core.http.Request
@@ -44,14 +41,12 @@ tasks:
     timeout: PT1M
     uri: "https://hc-ping.com/{{ secret('HEALTHCHECKS_PING_KEY') }}/lab-chezmoi-update"
     method: GET
-
 triggers:
-  # Same precondition as every deploy flow — see forgejo/flows/deploy.
   - id: after-tick
     type: io.kestra.plugin.core.trigger.Flow
     preconditions:
-      id: chezmoi-tick-green
+      id: tick-fired
       flows:
-        - namespace: lab.chezmoi
-          flowId: update
+        - namespace: lab.kestra
+          flowId: tick
           states: [SUCCESS]

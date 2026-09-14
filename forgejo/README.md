@@ -635,11 +635,10 @@ Bring-up, at the desk:
    `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from
    Forgejo, through the headless Docker config.
 
-What stays on Kestra for the mini, for now: `lab.chezmoi/update` (the
-15-minute tick), the backups, restic, obsidian, brew, renew-certs, the
-heartbeat and the health probes. `chezmoi.yaml` does not list the mini yet
-because that tick already converges it; two convergers on one checkout
-would race. It joins the matrix when the tick goes.
+What stays on Kestra for the mini: the backups, restic, obsidian,
+renew-certs, the heartbeat and the health probes, and the tick that
+schedules the heartbeat. Machine config, packages included, is the
+`chezmoi` workflow's on every server.
 
 ### What is deliberately not here yet
 

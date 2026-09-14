@@ -34,8 +34,9 @@ commands are moving into a CLI built on Tom's .NET library Ritten; the
 YAML is the trigger, not the pipeline.
 
 Progress 2026-09-14: the mini's deploys and every tofu root but kestra's
-run from Actions (`feature/mini-actions`); Kestra keeps the tick, backups,
-host-native jobs, heartbeat and health probes until the backups move.
+run from Actions; so do chezmoi update and package installs on every
+server. Kestra keeps the tick (as the heartbeat's pulse), backups,
+restic, obsidian, renew-certs and the health probes until the backups move.
 
 Sequence: (1) the Pi's runner and its `chezmoi` workflow — built, `forgejo/README.md`
 "Runners"; (2) Gatus moves as the first deploy job; (3) if that holds, a

@@ -13,18 +13,18 @@ declarative machine plane itself (dotfiles, the Brewfile, the `create_`
 secret-cache templates under `home/Docker/`; `.chezmoiroot` points chezmoi
 at it) — and `flows/update/` is the job that runs it on the server.
 
-## Packages (`flows/packages/`)
+## Packages
 
 `home/dot_Brewfile.tmpl` renders to `~/.Brewfile` and stops there. It
-*declares* the machine's package set; it installs nothing. Acting on it:
+*declares* the machine's package set. Acting on it:
 
 | Job | When | Does |
 | --- | --- | --- |
-| `lab.chezmoi/packages` | chained on the tick | `brew bundle install --no-upgrade` — installs what's missing, so a new Brewfile entry lands within 15 minutes |
-| `.chezmoiscripts/install-packages.sh` | every `chezmoi apply`, **laptops only** | the same install-only converge, because a laptop has no Kestra to act for it |
+| `.chezmoiscripts/install-packages.sh` | every `chezmoi apply`, every machine | `brew bundle install --no-upgrade` — installs what's missing, nothing more |
+| `.forgejo/workflows/chezmoi.yaml` | the push that touches `chezmoi/` | runs `chezmoi update` on each server, which is the apply above |
 | you, at the desk | when you choose | `brew bundle install --file ~/.Brewfile --upgrade` on the mini — the only thing that moves versions there |
 
-### Why it's split this way
+### Why installs and upgrades are separate
 
 The Brewfile used to live *inside* a `run_onchange_` script, inlined by
 `{{ template "Brewfile" . }}`. chezmoi keys those scripts on a hash of the
@@ -35,11 +35,11 @@ file. Adding one VS Code extension swept the entire toolchain along with it;
 two quiet months would have frozen it silently. The mini was current only by
 accident.
 
-Splitting them means installs follow the declaration and nothing else
-moves as a side effect. It is also the same move 0.6.0 made when the
-compose deploy hook was deleted from chezmoi — **chezmoi declares, Kestra
-acts** — and this script was the last surviving place where chezmoi still
-did both.
+`--no-upgrade` is the whole fix: installing what is declared and moving
+versions forward are different jobs with different reasons to happen. For
+a while the server half of this ran as a Kestra flow chained on the
+15-minute tick (`lab.chezmoi/packages`); with the `chezmoi` workflow doing
+the apply on push, the script does the same on every machine.
 
 ### Why upgrades are manual
 
@@ -72,12 +72,12 @@ pinned packages are skipped.
 
 ### Notes
 
-- The tick-chained flow sets `HOMEBREW_NO_AUTO_UPDATE=1`. It runs ~96 times
-  a day and the lab is meant to keep working with the internet down. With
-  no scheduled upgrade, nothing on the mini refreshes Homebrew's metadata
-  except the hand-run upgrade above, which does it first.
+- The install script sets `HOMEBREW_NO_AUTO_UPDATE=1`: the lab is meant to
+  keep working with the internet down, and with no scheduled upgrade nothing
+  on the mini refreshes Homebrew's metadata except the hand-run upgrade
+  above, which does it first.
 - Editing the Brewfile: `chezmoi apply` on a laptop installs immediately;
-  on the mini it lands on the next tick.
+  on a server the merge does, through the `chezmoi` workflow.
 
 ## The heartbeat (`tofu/`)
 
