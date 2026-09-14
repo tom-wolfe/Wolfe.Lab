@@ -41,3 +41,45 @@ In order. Step 1 is the precondition and happens at the desk.
    listens on UDP 41641, so a static forward on the router makes the
    home side unconditionally reachable. The CLI lives at
    `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
+
+## The root
+
+Once, in order. The seed step exists because a trust credential can only
+name tags that already exist.
+
+1. **Seed the tag.** Admin console → Access Controls: add
+   `"tagOwners": {"tag:server": ["autogroup:admin"]}` to the policy and
+   save. The root takes the whole file over at step 3; this line is only
+   so step 2 can pick the tag.
+2. **The credential.** Settings → Trust credentials → Generate OAuth
+   client: scopes `policy_file`, `devices:core` and `dns`, all write, tag
+   `tag:server`. Vault it as an API Credential item `tailscale-oauth`:
+   `username` = client id, `credential` = client secret.
+3. **Import the policy**, from a laptop, so the first plan is a diff
+   against what the tailnet really has rather than an overwrite:
+
+   ```sh
+   cd tailscale/tofu
+   op run --env-file=secrets.env -- tofu init
+   op run --env-file=secrets.env -- tofu import tailscale_acl.lab acl
+   op run --env-file=secrets.env -- tofu plan
+   ```
+
+   Tripwire: the policy changes in place; **3 tags to add, 3 keys to
+   change, 1 DNS preference to add**, nothing to destroy. Tailscale
+   returns the console's policy with its own formatting, so the acl
+   diff is the whole file — read it once.
+4. **Merge.** `tofu-tailscale.yaml` applies. Or by hand: `tofu apply`
+   from the same shell.
+5. **Verify.** `tailscale status` from a laptop: the three servers show
+   `tag:server` and their addresses are unchanged (`caddy/tofu` and
+   `forgejo/tofu` carry them); `ssh macmini` over the tailnet still
+   works. From the Pi, `curl -s http://macmini.tailf823b8.ts.net:8090/api/health`
+   — the server↔server rule.
+
+If step 4 refuses to tag a device (a 403 on the tags resource): a
+credential scoped to a tag may only manage devices that already carry
+it. Tag the three devices once in the console (Machines → … → Edit ACL
+tags), re-run the plan (0 to add for tags), and the root holds them
+from then on. The root is the source of truth either way; the console
+is bootstrap.

@@ -10,10 +10,45 @@ reasons are in `README.md`.
    ```sh
    sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
    ```
-3. You'll be asked what kind of machine it is (`personal` / `work` / `server`), which controls the apps that get installed.
+3. You'll be asked three things about the machine — who owns it (`mine` /
+   `work`), whether it's portable, whether it's an always-on server — which
+   decide what gets installed and which service files render
+   (`chezmoi/home/.chezmoi.toml.tmpl`).
 4. Servers additionally: `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Forgejo Actions — the script header documents the details.
 
 If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
+
+## Secondary node bootstrap
+
+The Macs above; a Linux node (the Pi) has no 1Password app, no Homebrew
+and no GUI, so it is the same idea with different mechanics. In order:
+
+1. **Image and boot.** Debian (arm64) on the NVMe; the EEPROM boot order
+   prefers NVMe with the SD card as fallback (`sudo rpi-eeprom-config
+   --edit`, `BOOT_ORDER=0xf416`). Keep the SD card, labelled — it is the
+   console of last resort for a machine with no display.
+2. **Docker Engine** from Docker's apt repository; `sudo usermod -aG
+   docker $USER` and log in again. `loginctl enable-linger $USER`, so user
+   services (the runners, the Beszel agent) start at boot with nobody
+   logged in.
+3. **Tailscale**, the native Linux client: `tailscale up`, then add the
+   node to `servers` in `tailscale/tofu/variables.tf` (a normal PR) — that
+   tags it and disables its key expiry.
+4. **The chezmoi source's deploy key**: `ssh-keygen -t ed25519 -f
+   ~/.ssh/forgejo_deploy`, and the public half as a read-only deploy key
+   on the Wolfe.Lab repo in Forgejo (Settings → Deploy keys). This is the
+   one key made on the machine: chezmoi needs it before chezmoi runs.
+5. **The bootstrap secret**: `export OP_SERVICE_ACCOUNT_TOKEN=…` (the
+   vault's service account) — the `create_` templates read the vault on
+   this first apply. It persists in the runner's env file (next step).
+6. `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply
+   git@git.twolfe.dev:tom-wolfe/Wolfe.Lab.git` — answer `mine`, not
+   portable, server. Linux gets no Homebrew and no macOS scripts
+   (`.chezmoiignore`); binaries arrive as pinned externals under
+   `~/.local/bin`.
+7. Then, per slice: the runners (`forgejo/RUNBOOK.md` "Bringing up the
+   Pi"), the Beszel agent's hub-side setup (`beszel/RUNBOOK.md`), the
+   backup path (`restic/RUNBOOK.md` "A Linux node").
 
 ## Manual sign-ins (not automatable)
 

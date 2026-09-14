@@ -41,13 +41,46 @@ Three things already written down wait on it:
   down, you can't reach the lab to fix the thing you reach the lab
   through. (The data plane survives coordination outages; only logins
   and key operations stall.)
-- **No tofu root — yet.** A first-party provider exists
-  (`tailscale/tailscale`, OAuth-client auth) and could declare DNS
-  preferences, the ACL and auth keys. Today that would codify two
-  console toggles and a default allow-all ACL on a one-person tailnet.
-  The moment the ACL carries real intent — node sharing (the
-  file-sharing roadmap item), the Studio, anything multi-user — this
-  slice grows a `tofu/` like the others.
+- **A tofu root (`tofu/`) carries the intent, and only the intent.** The
+  policy file, one tag, the always-on nodes' tags and key expiry, and the
+  MagicDNS toggle — the things the repo already leans on and that were
+  console clicks until now. Not in it: auth keys (the sidecar's is minted
+  by hand and spent once), global nameservers (the default), split DNS
+  (arrives with local DNS on a Pi — ROADMAP.md). Applied like every root:
+  `.forgejo/workflows/tofu-tailscale.yaml` on the push, a daily plan for
+  drift.
+
+## The policy
+
+`tofu/policy.hujson` is the whole tailnet policy; the console shows it
+verbatim, comments included. It says three things:
+
+- **One tag, `tag:server`,** on the always-on nodes (`tofu/variables.tf`
+  `servers`: the mini, the Pi, the forgejo sidecar). A tagged device
+  belongs to its tag rather than to a user, which is what a server is:
+  nobody is logged in to vouch for it. Tagged devices don't expire their
+  node key, and `tofu/devices.tf` declares that rather than relying on
+  the default — a server whose key silently expires drops off the tailnet
+  with nothing to notice, and `caddy/tofu` and `forgejo/tofu` carry
+  tailnet addresses as record targets.
+- **Workstations are not a tag.** Tagging a laptop would strip its user
+  identity and the interactive re-auth that goes with it; "my devices" is
+  `autogroup:member`, which is every user-owned device and no tagged one.
+  The Studio joins by signing in, and is a workstation by doing nothing.
+- **Two rules:** my devices reach every server; servers reach each other.
+  Nothing reaches a workstation, from anywhere. The server↔server rule is
+  what the lab's own traffic rides — the Pi's Beszel agent to the hub,
+  Gatus to the mini, caddy to the Pi, the Pi to the sidecar and to the
+  mini's sftp — and the day one of those needs narrowing is the day the
+  policy grows a line.
+
+A new server is one entry in `servers`; a new workstation is nothing.
+
+**If a bad policy ever locks the lab out of itself,** the admin console is
+the out-of-band fix — that is the coordination server being a cloud
+dependency, working in the lab's favour. The apply itself can't be
+stranded: the mini's runner reaches Forgejo over loopback, the state over
+the LAN and the API over the internet, none of them through the tailnet.
 
 ## How the lab uses it
 
@@ -61,10 +94,11 @@ Three things already written down wait on it:
    `*.lab` still resolves to RFC1918 — and both it and the dual
    wildcard retire together if local DNS on a Pi ever lands
    (ROADMAP.md).
-2. **The Pi's Beszel agent reaches the hub over the tailnet**
-   (beszel/README.md "The Pi"): it dials the mini's
-   MagicDNS name over the tailnet. Status alerts OFF for machines that
-   are allowed to sleep.
+2. **The Pi is a native Linux client** — `tag:server`, like the mini —
+   and its lab traffic rides the tailnet: the Beszel agent reaches the hub
+   over it (beszel/README.md "The Pi"), Gatus probes the mini by its
+   MagicDNS name (gatus/README.md "Placement"), and its restic snapshots
+   go to the mini over SFTP (restic/README.md "From a Linux node").
 3. **Per-service sidecar IPs.** forgejo is the first customer: a userspace `tailscale/tailscale` sidecar in the
    forgejo container's network namespace gives it its own tailnet seat
    with port 22 free, and clone URLs go portless at `git.twolfe.dev`

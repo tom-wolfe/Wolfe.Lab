@@ -4,6 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.22.0] - 2026-09-14
+
+### Added
+
+- **The Pi backs up like everything else.** A Linux node writes its
+  restic snapshots into the lab's repository on the mini over SFTP.
+- **`tailscale/tofu`.** The tailnet policy is a file in the repo: one
+  tag on the always-on nodes, my devices reach servers, servers reach
+  each other, nothing reaches a workstation. Key expiry and MagicDNS are
+  declared rather than clicked.
+
 ## [0.21.0] - 2026-09-13
 
 ### Added

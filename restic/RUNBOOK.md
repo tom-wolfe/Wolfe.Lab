@@ -31,6 +31,46 @@ reasons are in `README.md`.
    healthchecks.io, then let it miss a night's grace once (disable the
    workflow) and confirm it pages.
 
+## A secondary node
+
+Once per node, in order — the vault item must exist before the merge
+that brings the key, or the `create_` template fails the whole apply.
+
+1. **The key, in the vault:** generated there, never on a machine.
+
+   ```sh
+   op item create --vault Wolfe.Lab --category "SSH Key" \
+     --title restic-sftp-wolfe-pi5 --ssh-generate-key ed25519
+   ```
+
+2. **Merge.** The chezmoi workflow renders, on the mini, the sftp-only
+   `authorized_keys` line (public half from the item) and, on the node,
+   `~/.ssh/restic`, the `Host` block and the restic binary.
+3. **Prove it, from the node:**
+
+   ```sh
+   op run --env-file=~/.local/share/chezmoi/restic/sftp.env -- restic snapshots --latest 1
+   ```
+
+   The first contact accepts the mini's host key (`accept-new`); the
+   listing proves key, forced command, path and password. Then the write
+   path, with something small and disposable:
+
+   ```sh
+   op run --env-file=~/.local/share/chezmoi/restic/sftp.env -- restic backup ~/.local/share/Wolfe.Lab --tag drill
+   ```
+
+   and from the mini, forget it — a lone snapshot in its own group is
+   otherwise kept by the retention policy forever:
+
+   ```sh
+   op run --env-file=restic/restic.env -- restic forget --tag drill --prune
+   ```
+
+Rotation: delete the vault item and recreate it (step 1), `rm
+~/.ssh/restic` on the node, and let the chezmoi workflow — or `chezmoi
+apply` on both machines — render both halves again.
+
 ## Restore
 
 Find the snapshot, check the image it was taken under, restore like-for-like:
@@ -44,6 +84,9 @@ The `image:` tag on every snapshot is the pin to restore onto — schema
 migrates forward only, on every one of these services. Stop the stack,
 put the restored directory where the service's compose file expects it,
 start with the tagged image, then converge upward.
+
+From a secondary node, the same commands with `restic/sftp.env`; the restored
+tree lands on the node, and `docker compose` there.
 
 Disaster case (mini and Data2 both gone): `restic.env`'s repo path is
 dead, but `offsite.env` works from any machine with restic, op and the

@@ -13,7 +13,7 @@ a failure visible outranks anything that adds a new thing to fail.
 ### 1. Restore drills — prove the backups before anything depends on them
 
 `restic/` shipped in 0.16 and nothing has been restored from it. `restic/README.md` asks for a drill after bootstrap and gates
-deleting the old tarball farm on it; the vault exit (#10) was sequenced
+deleting the old tarball farm on it; the vault exit (#9) was sequenced
 "after restic ships". A backup nobody has restored from has not shipped,
 so this is the first item by the ordering principle: it makes the one
 failure that is silent until it is total — an unrestorable backup —
@@ -36,61 +36,32 @@ tagged image, confirm it works, put the original back. This is the one
 that catches the "restored but the app doesn't like it" class, and it
 is what turns each slice's `RUNBOOK.md` restore steps into something someone has
 actually followed. Those sections are where the steps live; the docs
-site (#11) is what makes them followable from a phone.
+site (#10) is what makes them followable from a phone.
 
 **A cold-start runbook belongs here too.** Mini and Data2 both gone:
 what is needed from outside the building (the restic password, the tofu
 state passphrase, the B2 credentials, the vault's own master password —
-see the secret-zero note in #10), and in what order things come up
+see the secret-zero note in #9), and in what order things come up
 (garage before any tofu root, caddy before any route, Forgejo before any
 workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 
-### 2. The Pi as a node — what's left
-
-The Pi boots from NVMe, is a chezmoi machine, runs both Actions runners
-and the Beszel agent, and hosts Gatus. Two structural pieces remain
-before more state lands on it, and both should be decided before the
-first stateful slice does, not after:
-
-- **Backups.** Whatever state lands on the Pi gets a `backup.conf` and
-  a restic path like anything else; the Pi needs restic, the repo
-  password, and a route to `/Volumes/Data2/restic` or its own local
-  repo that the offsite copy also ships. Gatus has no state worth
-  keeping, which is why this could wait until now.
-- **Tailscale, and the first `tailscale/tofu` root.** Two terms, since
-  they come up again in #9 and #10. A *tofu root* is just a directory
-  with its own OpenTofu state — every slice's `tofu/` is one; `plan`
-  and `apply` run per root. The *Tailscale ACL* is the tailnet's
-  access policy: a JSON document saying which devices (or tags) may
-  reach which devices on which ports. The default is "everything can
-  reach everything", which is what the lab runs today, and it is fine
-  for three Macs. `tailscale/README.md` deferred a root "until the ACL
-  carries intent". Two Pis, a Studio and a sidecar-per-service pattern
-  are that intent: tags per role (`tag:server`, `tag:workstation`),
-  the workstation allowed to reach services but nothing allowed to
-  reach the workstation, key expiry disabled only on tagged servers.
-  Declared in a root, applied like any other. The same root is where
-  split DNS for `*.lab` lands (Pi-hole, under Undecided).
-
-Keep the SD card in a drawer, labelled: it is the console of last resort
-for a machine with no display.
-
-### 3. The platform layer moves to Linux
+### 2. The platform layer moves to Linux
 
 Every container fault in the changelog is the VM boundary on macOS, and
 no runtime crosses it (OrbStack's host networking does not carry mDNS to
 the Wi-Fi interface). The mini keeps what genuinely needs it — the
 drives and everything that reads them, the CloudStorage syncs until the
-vaults move into git (#6), Homebrew. Nothing in the platform layer does:
+vaults move into git (#5), Homebrew. Nothing in the platform layer does:
 Forgejo, its Postgres-free SQLite, Caddy, Garage and the Beszel hub all
 publish arm64 images. Move them to the Pi one slice at a time, Forgejo
 last (it runs the deploys), and see how much pain is left on the mini.
 If the answer is "most of it", the always-on server becomes a Linux box
 — a hardware decision (an N100-class machine fits the rack) — and the
-mini becomes the media and Apple-specific host. Depends on #2's backup
-path, since every one of these has state.
+mini becomes the media and Apple-specific host. Every one of these has
+state, so each move brings a `backup.conf` on the Pi's SFTP path
+(`restic/README.md` "From a Linux node").
 
-### 4. A UPS
+### 3. A UPS
 
 Not bought yet. The rack plan already places it: a ~650 VA unit on the floor beside the
 rack, one battery-backed outlet feeding a plain (non-surge) strip on the
@@ -119,7 +90,7 @@ fails — which is why this sits directly under the drills.
   five years old and holds nothing" to be noticed before the day it
   matters.
 
-### 5. The *arr stack, Phase B — acquisition
+### 4. The *arr stack, Phase B — acquisition
 
 Phase A shipped in 0.19.0 (`sonarr/`, `radarr/` as renamers, alongside
 the Jellyfin 12.0 upgrade), so what remains is the half that was always
@@ -147,14 +118,14 @@ state in restic — and whether it should be is an open question
 shape: a library that re-acquires itself is a library whose loss is an
 inconvenience.
 
-### 6. Obsidian vaults into git
+### 5. Obsidian vaults into git
 
 Replaces Google Drive as the vaults' storage with an hourly commit-and-push
 job to Forgejo. Better on every axis: history, dedup, rides the existing
 backup workflow, and it drops the `~/Library/CloudStorage` dependency
 that's the reason the Actions runner needs Full Disk Access granted.
 
-### 7. Knowing what's stale — Renovate, and a report for everything else
+### 6. Knowing what's stale — Renovate, and a report for everything else
 
 **Renovate as a workflow.** A dozen pinned images across the slices
 (caddy, forgejo, jellyfin, garage, lego, beszel, gatus, gluetun,
@@ -196,7 +167,7 @@ Options, with the honest costs:
   consume the same credential from the vault. Cost: one more third-party
   dependency, one more `dependencies` check in Gatus.
 
-### 8. CI, the build pool, and pipelines as a CLI
+### 7. CI, the build pool, and pipelines as a CLI
 
 Every node runs a **host** runner for the lab's own CD: repo-scoped, host
 mode, holding the node's vault token. The Pi also runs a **containerised**
@@ -224,9 +195,13 @@ publish once their repos flip from mirror to active. Three things remain:
 - **Pipelines as a CLI.** The workflows are deliberately thin — a
   trigger and one command — because the commands are moving into a CLI
   built on Tom's .NET library Ritten. The YAML is the trigger, not the
-  pipeline; when the CLI lands, each workflow changes one line.
+  pipeline; when the CLI lands, each workflow changes one line. Node
+  facts the scripts currently infer become inputs there: `backup.sh`
+  decides where the restic repository is by OS, which only holds while
+  the mini is the only macOS server (the Beszel agent template makes
+  the same assumption for its hub address).
 
-### 9. Local models on the Mac Studio (hardware lands ~late Sept 2026)
+### 8. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 
 Pre-ordered M5 Ultra, ~4 weeks out. **Decided: it is a second node, not the
 mini's replacement — and it is a workstation, not a server.** WiFi, powered
@@ -237,10 +212,10 @@ fact settles most of the design.
 that Tailscale can reach; *not* a deploy target and not a runner host,
 because both assume always-on. Correcting
 something written here earlier: the Studio does **not** put a deadline on
-the multi-host fleet work — that pressure comes entirely from the Pi (#2),
+the multi-host fleet work — that pressure comes entirely from the Pi,
 which is the machine that will actually run services. The Studio needs
 Tailscale and nothing else structural — though it is the second machine
-after the Pi that gives the Tailscale ACL (#2) a reason to say
+after the Pi that gives the Tailscale policy (`tailscale/tofu`) a reason to say
 something: a workstation that reaches services and is reached by nothing.
 
 **"Not always on" costs nothing here, because the jobs are interactive.**
@@ -269,7 +244,7 @@ than via `brew services`**, per the no-ambient-load requirement; an idle
 Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
 "nothing" on a machine being used for other work.
 
-### 10. A config plane — Garage for configuration, the Bitwarden exit for secrets
+### 9. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
 Two halves because they are the same move —
 resolution goes LAN-local while every reference keeps its shape — and
@@ -379,7 +354,7 @@ One honest boundary stays regardless of vendor: a runner reads its env_file
 at boot and has no deploy flow, so *its* secret rotation keeps a manual
 restart.
 
-### 11. A lab portal — the docs half, then the dashboard half
+### 10. A lab portal — the docs half, then the dashboard half
 
 Two halves with different costs, in that order.
 
@@ -390,7 +365,7 @@ one without a checked-out repo and a text editor. Cheapest stopgap,
 available today: Forgejo renders every README in the browser, so
 `code.twolfe.dev` on a phone already works. The real thing is a static
 docs site built from the repo's markdown — MkDocs Material or similar,
-built by a workflow on push on the containerised runner (#8), served by a static container behind caddy at
+built by a workflow on push on the containerised runner (#7), served by a static container behind caddy at
 `docs.lab.twolfe.dev`. One convention decides the rest: procedures
 meant to be followed live in a `runbooks/` tree (or a "Runbook" section
 per slice README) so the site can put them on a page of their own, apart
@@ -428,7 +403,7 @@ sits on Data1 with no second copy anywhere, and no decision has been
 recorded either way. The options, so the decision can be made rather
 than deferred:
 
-- **Nothing, on purpose.** Media is re-acquirable, and Phase B of #5
+- **Nothing, on purpose.** Media is re-acquirable, and Phase B of #4
   makes re-acquiring it a list rather than a project. The cost is time
   and bandwidth on the day, not money every month.
 - **Some of it.** A `keep/` subtree for the things that actually can't
@@ -450,9 +425,10 @@ Today nodes address each other by MagicDNS name
 (`<host>.tailf823b8.ts.net`) — no IPs in the repo, but the tailnet suffix
 recurs and node-to-node traffic rides the tailnet even on the LAN. Local
 names under `*.lab`, with Tailscale split DNS pointing the `lab` domain
-at the Pi (#2's root), are what replaces that.
+at the Pi (in `tailscale/tofu`), are what replaces that.
 
-It ran on the old Pi until it broke (probably SD card wear, see #2). The
+It ran on the old Pi until it broke (probably SD card wear; this one
+boots from NVMe). The
 second Pi is the obvious home for it: DNS wants port 53 and real host
 networking, which is exactly what macOS cannot give a container.
 
@@ -531,7 +507,7 @@ host networking — verify that mDNS discovery actually works through it
 before believing it. Colima is the open-source equivalent without that
 claim. Neither changes the compose files.
 
-**The Pi is the first non-VM runtime the lab will have** (#2): Docker
+**The Pi is the first non-VM runtime the lab has**: Docker
 Engine on Linux, natively, where host networking is real and the VM
 problems simply don't exist. The honest experiment is to move the
 workloads that suffer from the VM there and see how much pain is left
@@ -592,7 +568,7 @@ the credentials aren't. That makes HA *better* on this axis than beszel,
 whose alert thresholds have no file representation at all.
 
 **The structural cost is paid.** The Pi is a managed node with its own
-runner; what is left here is one compose slice, and #2's backup path for
+runner; what is left here is one compose slice, and the Pi's backup path for
 its state.
 
 ### New services: Plane, OpenGist, Immich, Paperless-ngx
@@ -600,7 +576,7 @@ its state.
 Wanted, but each adds backup surface. Immich in particular is large and is
 the one where data loss actually hurts — it should land *after* the
 restore drills (#1) have passed, not before. Paperless-ngx (the
-paperwork half of #9) belongs on the mini, needs no new hardware, and
+paperwork half of #8) belongs on the mini, needs no new hardware, and
 could be built today; it is listed here so it isn't lost inside the
 Studio item.
 
@@ -608,7 +584,7 @@ Studio item.
 
 Not roadmap items, but the physical constraints the items above assume.
 
-**A UPS** — promoted to roadmap item #4; the rack plan places it.
+**A UPS** — promoted to roadmap item #3; the rack plan places it.
 
 **A second backup drive — resolved, no purchase needed.** Backups moved to
 `/Volumes/Data2`, which is a separate physical drive with far more room.
@@ -629,7 +605,7 @@ not a hardware one.
 
 ### Self-hosted secrets (OpenBao)
 
-Moot twice over: the vault exit (#10) fixes the vendor
+Moot twice over: the vault exit (#9) fixes the vendor
 question while keeping a cloud origin *by decision* — the server side is
 only ever a replica, exactly to avoid the circularity that parked
 OpenBao here. The section stays as the record of why.
@@ -637,7 +613,7 @@ OpenBao here. The section stays as the record of why.
 The original goal was cutting the cloud dependency. The `create_` template
 pattern already achieves the operative part: `op` is a bootstrap
 dependency, not a run-time one. 1Password Connect left this section
-for the config plane (#10), pulled by a different goal —
+for the config plane (#9), pulled by a different goal —
 rotation ergonomics, not cloud-cutting; as a sync cache it dodges the
 circularity below. OpenBao stays deferred: it would *own* the secrets,
 adding an unseal ritual and a genuine bootstrap circularity — lab down,

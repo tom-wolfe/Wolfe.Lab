@@ -56,3 +56,7 @@ Docker/*/**
 .config/systemd/**
 .chezmoiscripts/user-units.sh
 {{ end -}}
+{{ if not (and .server (eq .chezmoi.os "linux")) -}}
+# The restic SFTP key: secondary server nodes only (restic/README.md).
+.ssh/restic
+{{ end -}}

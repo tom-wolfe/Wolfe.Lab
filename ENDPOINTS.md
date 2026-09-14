@@ -40,7 +40,7 @@ the mini's tailnet address, without the wildcard in the name.
 
 | Address | Service                                          | Auth                                                       | Defined in                   |
 | ------- | ------------------------------------------------ | ---------------------------------------------------------- | --------------------------- |
-| `:22`   | SSH (macOS Remote Login)                         | 1Password SSH key via `~/.ssh/authorized_keys`             | chezmoi (`private_dot_ssh`) |
+| `:22`   | SSH (macOS Remote Login)                         | 1Password SSH key via `~/.ssh/authorized_keys`; per Linux node an sftp-only restic key (`restic/README.md`) | chezmoi (`private_dot_ssh`) |
 | `:80`   | Caddy — HTTP→HTTPS redirect                      | —                                                          | `caddy`                     |
 | `:443`  | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below)                               | `caddy`.                    |
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |

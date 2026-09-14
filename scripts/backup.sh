@@ -41,19 +41,25 @@ if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
   export OP_SERVICE_ACCOUNT_TOKEN
 fi
 
-# The restic repo lives on the external drive — an unmounted /Volumes
-# path on macOS is just a directory on the internal disk. The drive carries
-# a sentinel file at its root (the same guard deploy.sh uses: touch
-# /Volumes/DataN/.lab-volume once, at the desk); check it, then that the
-# repo exists, BEFORE stopping the stack.
-vol="/Volumes/Data2"
-if [ ! -f "$vol/.lab-volume" ]; then
-  echo "backup: $vol is not mounted — refusing to write to the internal disk" >&2
-  exit 1
-fi
-if [ ! -f "$vol/restic/config" ]; then
-  echo "backup: no restic repository at $vol/restic — see restic/README.md" >&2
-  exit 1
+# Where the repository is from this node. The backups drive hangs off the
+# mini. an unmounted /Volumes path on macOS is just a directory on the internal disk. The
+# drive carries a sentinel file at its root (the same guard deploy.sh
+# uses: touch /Volumes/DataN/.lab-volume once, at the desk). Every other node
+# reaches the same repository over SFTP (restic/sftp.env; ssh resolves the
+# identity from ~/.ssh/config), and the mini's side does the guarding.
+if [ "$(uname -s)" = Darwin ]; then
+  env="$repo/restic/restic.env"
+  vol="/Volumes/Data2"
+  if [ ! -f "$vol/.lab-volume" ]; then
+    echo "backup: $vol is not mounted — refusing to write to the internal disk" >&2
+    exit 1
+  fi
+  if [ ! -f "$vol/restic/config" ]; then
+    echo "backup: no restic repository at $vol/restic — see restic/README.md" >&2
+    exit 1
+  fi
+else
+  env="$repo/restic/sftp.env"
 fi
 
 docker compose --project-directory "$root/$slice" stop
@@ -65,7 +71,7 @@ trap 'docker compose --project-directory "$root/$slice" start >/dev/null' EXIT
 # slice's RUNBOOK.md "Restore").
 image="$(docker inspect "$container" --format '{{.Config.Image}}')"
 
-out="$(op run --env-file="$repo/restic/restic.env" -- restic backup \
+out="$(op run --env-file="$env" -- restic backup \
   "${paths[@]}" ${excludes[@]+"${excludes[@]}"} \
   --tag "service:$slice" --tag "image:$image" 2>&1)" || {
   printf '%s\n' "$out"
@@ -82,7 +88,7 @@ snap="$(printf '%s\n' "$out" | sed -n 's/^snapshot \([0-9a-f]*\) saved$/\1/p')"
 # the nightly prune. Backups run serially in one job to make this rare.
 if [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]; then
   if [ -n "$snap" ]; then
-    op run --env-file="$repo/restic/restic.env" -- restic forget "$snap" >/dev/null
+    op run --env-file="$env" -- restic forget "$snap" >/dev/null
   fi
   echo "backup: $container restarted mid-backup — snapshot discarded, rerun me" >&2
   exit 1

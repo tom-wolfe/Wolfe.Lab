@@ -22,6 +22,8 @@ is a tofu root (the offsite bucket, key and dead man's switch) plus flows.
 | `/Volumes/Data2/restic` | the backups drive | every backup lands here, at disk speed; fast local restores |
 | `s3:https://s3.<region>.backblazeb2.com/wolfe-lab-restic` | Backblaze B2 | the offsite copy — the one that survives the enclosure, theft, fire |
 
+Every node writes into the first one. The mini has the drive, and other nodes reach the same repository over SFTP (below).
+
 With the live state on the machines, that's 3-2-1: three copies, two media,
 one offsite.
 
@@ -54,6 +56,45 @@ declared in `tofu/`) after a green copy — that silence is the only backup
 signal that leaves the building. And the verify workflow (Sundays) runs
 `restic check` on both repos, reading a 5% pack sample back from B2 — an
 unverified backup is a hope, not a backup.
+
+## From a secondary node
+
+The backups drive hangs off the mini, and the pipeline does not change
+shape for a node that doesn't have it: `scripts/backup.sh` runs on the
+node the slice lives on (`runs-on` is placement, as for deploys), stops
+the stack there, and writes into the **same** repository — over SFTP to
+the mini, which is restic's `sftp:` backend: restic runs `ssh`, and
+`sftp-server` on the far side speaks the repository's file protocol.
+One repository means offsite, retention and verify are untouched; the
+Pi's snapshots are grouped by host and path like everything else.
+
+What a Linux node needs, all of it chezmoi's (`chezmoi/home/`):
+
+| Piece | Where | Note |
+| --- | --- | --- |
+| `restic` | `~/.local/bin`, pinned in `.chezmoiexternal.toml.tmpl` | the Macs get it from the Brewfile |
+| `~/.ssh/restic` | `private_dot_ssh/create_private_restic.tmpl`, from the vault | SSH Key item `restic-sftp-<hostname>`, generated in the vault, written once |
+| `Host macmini.tailf823b8.ts.net` | `private_dot_ssh/config.tmpl`, Linux servers | user, the key, `accept-new` — the tailnet already authenticates the peer, and a first contact must not block a non-interactive job |
+| the mini's `authorized_keys` line | `private_dot_ssh/private_authorized_keys.tmpl`, the mini | `restrict,command="/usr/libexec/sftp-server"` — the key cannot open a shell, forward a port or run anything else; the public half is read from the same vault item |
+| `sftp.env` | this directory | `restic.env`'s twin: the same password, the repository as an `sftp:` URL. `backup.sh` picks it on Linux |
+
+**What the key can do,** plainly: sftp-server runs as the mini's user, so
+the key reads and writes what that user can — not just the repository.
+The restriction is on *how* (file transfer only), not *where*; a chroot
+would need `sshd_config` and a root-owned jail. Accepted: the Pi already
+holds the vault token that reads the B2 credentials, so it can already
+reach every byte of every backup, and the point of the forced command is
+that a key is not a shell.
+
+**Why not a REST server on the mini.** `rest-server` in a container
+would give an append-only mode and a path jail, and it would put Data2
+behind the VM boundary that every macOS container fault in the changelog
+comes from. sshd is native and the drive is native; when the platform
+layer moves to Linux (ROADMAP.md) and the drive's host changes, revisit.
+
+A Linux slice's backup is a job in `backup.yaml` that runs on its node;
+until the first stateful slice lands on the Pi, the path is proven by
+hand (`RUNBOOK.md` "A Linux node").
 
 ## Workflows
 
