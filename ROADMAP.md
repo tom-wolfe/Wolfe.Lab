@@ -61,6 +61,19 @@ mini becomes the media and Apple-specific host. Every one of these has
 state, so each move brings a `backup.conf` on the Pi's SFTP path
 (`restic/README.md` "From a Linux node").
 
+**What stays on the mini keeps the one debt this item cannot retire.** A
+macOS node's control plane is session state, not files: Docker Desktop
+(installed and upgraded by hand, deliberately outside the Brewfile),
+automatic login, the runner under `brew services` with its config a
+hand-made symlink into the Homebrew prefix (`forgejo/RUNBOOK.md` "The
+mini's runner"), and the Full Disk Access and Local Network grants in
+TCC. chezmoi cannot write any of it and no plan can diff it, and a
+Homebrew upgrade of the runner replaces the binary the TCC grant was
+made for, so the grant wants checking after each one. Two of these
+shrink without leaving macOS: the symlink is a `run_once_` chezmoi
+script, and the Full Disk Access grant goes with the obsidian syncs
+(#5). The rest is the price of the mini's performance, paid knowingly.
+
 ### 3. A UPS
 
 Not bought yet. The rack plan already places it: a ~650 VA unit on the floor beside the
@@ -198,7 +211,24 @@ publish once their repos flip from mirror to active. Three things remain:
   pipeline; when the CLI lands, each workflow changes one line. Node
   facts the scripts currently infer become inputs there: `backup.sh`
   decides where the restic repository is by OS, which only holds while
-  the mini is the only macOS server.
+  the mini is the only macOS server. Two things the CLI does not touch.
+  The seven tofu roots carry an identical `encryption.tf` and backend
+  block each — HCL, not shell — and OpenTofu reads both from the
+  environment (`-backend-config` for the backend, `TF_ENCRYPTION` for
+  the encryption block), so they belong beside the state credentials in
+  `scripts/tofu-state.env`, declared once. And the three short-cycle
+  workflows (heartbeat, the Gatus probe, obsidian) each do a full
+  `actions/checkout` through node to run one command — a CLI installed
+  on the node needs no checkout for those.
+- **One-offs as `workflow_dispatch` workflows.**
+  `forgejo/scripts/register-runner.sh`, the Beszel agent's enrolment
+  (`beszel/RUNBOOK.md`) and `garage/scripts/init-layout.sh` are run at a
+  desk today; as hand-triggered workflows the run is logged and alerts
+  like everything else. One constraint decides how far each moves: the
+  nodes' vault credential is read-only by design, so a workflow can
+  *register* a runner but minting its secret stays wherever a writable
+  credential lives; and the Beszel token is minted by the hub and
+  harvested by hand, so only the apply-and-restart half is a workflow.
 
 ### 8. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 
@@ -252,14 +282,19 @@ the Garage half on the SECOND cross-slice value, the secrets half once
 the restore drills (#1) have passed — the offsite copy exists first and
 is proven, then the origin moves.
 
-**The config half.** No cross-slice value has needed a home yet: the
-nearest candidates are the nodes' addresses (today MagicDNS names typed
-into the slices that need them) and the ports the Gatus checks carry.
-Hardcoding one slice's fact into another is the thing to refuse; a
+**The config half.** The first cross-slice values are already here,
+homed nowhere: `scripts/alert.sh` regex-scrapes Forgejo's `ROOT_URL` out
+of `forgejo/compose.yaml`, the runner registration template reads the
+same file with a cross-tree `include`, seven tofu roots carry the Garage
+endpoint as a `macmini.local` literal, the tailnet suffix is typed into
+fourteen files, and the mini's LAN address appears as two different IPs
+(`caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
+by the Linux move (#2), which is the pressure this half was waiting
+for. Hardcoding one slice's fact into another is the thing to refuse; a
 consumer deriving it from the owning slice's files is only a consumer's
 guess at a format that isn't its own.
 
-The pattern, when the first value appears: a dedicated `config` bucket
+The pattern: a dedicated `config` bucket
 in Garage. The OWNING slice's tofu root publishes named values as S3
 objects on its apply, so the publisher is never staler than the last
 push. Consumers list-then-read (a list
@@ -384,6 +419,24 @@ Forgejo's for the repo. A static front end that reads those over the
 `lab` network, in a container behind caddy, is a slice like any other.
 It does not replace Gatus, Beszel or the Actions tab; it is the page
 that saves opening four of them.
+
+## Debt no item above retires
+
+### Jellyfin's state directory is where the native app left it
+
+Jellyfin stays on the mini — the drives are there. This is about the
+path, on the same machine: `jellyfin/compose.yaml` bind-mounts
+`~/Library/Application Support/jellyfin` at the same absolute path
+inside the container and overrides every `JELLYFIN_*_DIR` to match,
+because the database stores absolute paths and item IDs derive from
+them. Every other slice keeps state under `~/Docker/<slice>`; this is
+the one mount rooted in a macOS user directory, and the reason its
+restore lands under `Users/tomwolfe/Library/…`. The gain is small —
+one convention, one less exception in the restore steps — and the cost
+is a one-time move: stop, copy to `~/Docker/jellyfin`, rewrite the path
+columns in `jellyfin.db` (or accept a full rescan and lost watch state),
+change the four variables. Only worth doing after the restore drills
+(#1), and only if the exception bothers you more than the rewrite does.
 
 ## Undecided
 

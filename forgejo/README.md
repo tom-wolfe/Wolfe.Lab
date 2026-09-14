@@ -281,11 +281,11 @@ job's steps execute:
 | host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`); `LAB_ROOT`, where deploys install slices | chezmoi, deploys, backups — anything that mutates the node |
 | containerized | `docker:docker://<image>` | in a fresh container per job, no host socket | **instance-wide** | none | the lab's CI (lint, plan-on-PR) and every other project: Ritten, NSchema, … |
 
-The host runner is built (below). The containerized one is the next
-runner to build: a second process with its own config, registration and
-unit, no `env_file`, capacity above one since builds are stateless, and a
-role label shared across nodes so Forgejo can run a build wherever a node
-is idle. Deploys stay pinned by hostname; builds float.
+Both are built (below); the containerized one runs on the Pi today: a
+second process with its own config, registration and unit, no `env_file`,
+capacity above one since builds are stateless, and a role label shared
+across nodes so Forgejo can run a build wherever a node is idle. Deploys
+stay pinned by hostname; builds float.
 
 Two boundaries, and they are different things. **Runner scope** says which
 repos may dispatch to a runner: the host runner answers only to

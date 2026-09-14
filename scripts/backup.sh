@@ -79,7 +79,8 @@ snap="$(printf '%s\n' "$out" | sed -n 's/^snapshot \([0-9a-f]*\) saved$/\1/p')"
 # deploy flow converging concurrently), the copy may contain live
 # mid-write files — discard rather than trust. `restic forget <id>`
 # drops just that snapshot; the data it referenced is rewritten out by
-# the nightly prune. Backups run serially in one job to make this rare.
+# the nightly prune. The MacMini concurrency group keeps deploys out of
+# the backup window to make this rare.
 if [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]; then
   if [ -n "$snap" ]; then
     "$secrets" run --env-file "$env" -- restic forget "$snap" >/dev/null

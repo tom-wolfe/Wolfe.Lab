@@ -10,5 +10,5 @@ These replaced the `md.obsidian.headless-sync-*` launch agents'
 and failure visibility. Today that is `.forgejo/workflows/obsidian.yaml`,
 every ten minutes on the mini's runner.
 
-Adding a vault = one more `flows/<name>/` directory (`flow.yaml` + `script.sh`);
-the id, schedule and vault path all live inside the pair.
+Adding a vault = one more `flows/<name>/script.sh` (the vault path lives
+there) and a step in `.forgejo/workflows/obsidian.yaml` (the schedule).

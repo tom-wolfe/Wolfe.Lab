@@ -225,21 +225,12 @@ Then lock it down, since this is a LAN server that doesn't need public signups:
 
 ## After a reboot
 
-Docker Desktop is **not** currently set to launch at login, so nothing starts
-itself after a restart. Fix it once:
-
-*Docker Desktop → Settings → General → tick "Start Docker Desktop when you sign
-in" → Apply & restart.*
-
-Until that's on, after every reboot you need:
-
-```sh
-open -a Docker && scripts/deploy.sh forgejo
-```
-
-Note this is tied to **signing in**, not to boot — a Mac mini sitting at the
-login screen after a power cut won't run Forgejo. If that matters, enable
-automatic login in System Settings → Users & Groups.
+Nothing to do. The mini signs in automatically and Docker Desktop starts
+at sign-in, so every `restart: unless-stopped` container is back without
+a hand. Both are macOS settings, not files (System Settings → Users &
+Groups → automatic login; Docker Desktop → Settings → General → start at
+sign-in), so a fresh mini needs them set once. Verify: `docker ps` over
+SSH after a power cut, and the heartbeat check going green on its own.
 
 ## The mini's runner
 
