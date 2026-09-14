@@ -32,27 +32,6 @@ docker compose down          # stop (data is untouched)
 docker compose up -d         # start
 ```
 
-## First-run setup
-
-On a fresh data directory, http://macmini.local:3000 shows the installer with
-the database and URL fields pre-filled from `compose.yaml`. Leave them alone and
-submit — the admin fields at the bottom are optional, and the **first account to
-register becomes an admin** either way.
-
-> **Never put `INSTALL_LOCK` in `compose.yaml`.** It is one-time state written
-> by the installer, not configuration. Because `environment-to-ini` re-applies
-> every `FORGEJO__*` variable on each start, pinning it there reverts what the
-> installer just saved, and Forgejo aborts fatally on the next boot. See
-> Troubleshooting.
-
-Then lock it down, since this is a LAN server that doesn't need public signups:
-
-1. Register your account at http://macmini.local:3000/user/sign_up
-2. Set `FORGEJO__service__DISABLE_REGISTRATION: "true"` in `compose.yaml`
-   (this one *is* safe to manage via env — it's ordinary config, and setting it
-   is idempotent)
-3. `docker compose up -d`
-
 ## Where the admin password lives
 
 In the SQLite DB inside `~/Docker/forgejo/data` — not in any env file. So
@@ -143,144 +122,6 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   fresh auth key: same MagicDNS name, new 100.x IP, and nothing
   references the IP.
 
-### Bootstrap
-
-Order matters — the 1Password item must exist **before** the merge, or
-the `create_` template fails the whole `chezmoi apply` and the tick goes
-red (the beszel bootstrap warning, same shape).
-
-1. **Mint an auth key**: admin console → Settings → Keys → Auth keys →
-   Generate. Not reusable, not ephemeral, no tags. Its own expiry barely
-   matters — it's spent at enrolment and never replayed (`TS_AUTH_ONCE`).
-2. **Vault it**: item `forgejo-tailscale` in the Wolfe.Lab vault, key in
-   `credential`.
-3. **Materialize**: on the mini, `chezmoi apply` writes
-   `~/Docker/forgejo/tailscale.env`.
-4. **Merge.** The forgejo workflow converges the stack and the sidecar
-   enrols. Confirm the `forgejo` node in the admin console, then
-   **disable its key expiry** — same reasoning as the mini itself: a
-   server whose node key silently expires drops off the tailnet with
-   nothing to notice.
-5. **Declare the record.** Read the sidecar's address (admin console, or
-   `tailscale status | grep forgejo` from any machine), write it in as
-   the **default** of `forgejo_tailscale_ipv4` in `tofu/variables.tf`
-   (caddy's `lab_tailscale_ipv4` pattern) and commit; then from `tofu/`:
-   `op run --env-file=secrets.env -- tofu apply`. Tripwire: **1 to add**
-   (the `git.twolfe.dev` record), 0 changed, 0 destroyed. Until the
-   default is written in, every plan of this root prompts for the
-   variable — deliberate: it means the record isn't real yet.
-6. **Repoint remotes** on each machine — the old
-   `ssh://git@macmini.local:2222/...` URLs died with the port publish:
-
-   ```sh
-   old="ssh://git@macmini.local:2222/"
-   new="git@git.twolfe.dev:"
-   find ~/Development -maxdepth 4 -type d -name .git 2>/dev/null | while read -r g; do
-     repo="${g%/.git}"
-     url="$(git -C "$repo" remote get-url origin 2>/dev/null)" || continue
-     case "$url" in
-       "$old"*) git -C "$repo" remote set-url origin "$new${url#"$old"}"
-                echo "repointed: $repo" ;;
-     esac
-   done
-   ```
-
-7. First contact from each machine accepts a new `known_hosts` entry.
-   The host keys themselves are unchanged (same `data/ssh/`) — only the
-   name is new.
-
-## Upgrading
-
-State lives in `data/`, so upgrades are a tag bump. **Back up first** — an
-upgrade runs irreversible database migrations, and rolling back to an older
-image after that will fail.
-
-```sh
-"$(chezmoi source-path)/../../scripts/backup.sh" forgejo   # snapshot first
-# bump the image tag in compose.yaml (normal PR; the push deploys it), then
-# either let the forgejo workflow converge it or, by hand:
-cd ~/.local/share/Wolfe.Lab/forgejo
-docker compose pull
-docker compose up -d
-docker compose logs -f               # watch migrations complete
-```
-
-Rules worth respecting:
-
-- **Never skip a major version.** To go 16 → 18, stop at 17 first, let it start
-  and finish migrating, then move on.
-- Read the release notes for major bumps: https://codeberg.org/forgejo/forgejo/releases
-- If it won't start after an upgrade, restore the backup (below) and pin the
-  old tag again.
-
-Checking what's current:
-
-```sh
-curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
-  | grep -o '"tag_name":"[^"]*"'
-```
-
-## Backup
-
-Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
-slice nightly from 02:20, this one among them (`flows/backup/backup.conf`
-declares what). Manual snapshot — run the backup workflow from the
-Actions tab, or:
-
-```sh
-"$(chezmoi source-path)/../../scripts/backup.sh" forgejo
-```
-
-Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
-rides on it as a snapshot tag; `restic-offsite.yaml` ships it to B2 and
-owns retention — see `restic/README.md`). It refuses to run if the drive
-isn't mounted — an unmounted `/Volumes` path on macOS silently writes to
-the internal disk. It stops the container first — a live SQLite file
-copied mid-write can be inconsistent — and starts it again afterwards, so
-expect ~30s of downtime. If a concurrent deploy restarts the stack
-mid-snapshot, the snapshot is discarded and the run fails loudly rather
-than keeping a suspect copy.
-
-Because `data/` is an ordinary folder, Time Machine already covers it too, but
-only the cold-copy caveat above makes those snapshots trustworthy; prefer
-the backup script before anything risky.
-
-### Restore
-
-```sh
-cd ~/.local/share/Wolfe.Lab/forgejo
-op run --env-file=../restic/restic.env -- restic snapshots --tag service:forgejo
-docker compose down
-op run --env-file=../restic/restic.env -- restic restore <id> --target /tmp/restore
-mv ~/Docker/forgejo/data ~/Docker/forgejo/data.bak
-mv /tmp/restore/Users/tomwolfe/Docker/forgejo/data ~/Docker/forgejo/data
-docker compose up -d
-```
-
-(restic reproduces the snapshot's full original path under `--target`,
-hence the nested `mv`.) Make sure the image tag in `compose.yaml`
-matches the version the backup was taken with (the `image:` tag on the
-snapshot records it), or Forgejo may refuse to start against an older
-schema.
-
-## After a reboot
-
-Docker Desktop is **not** currently set to launch at login, so nothing starts
-itself after a restart. Fix it once:
-
-*Docker Desktop → Settings → General → tick "Start Docker Desktop when you sign
-in" → Apply & restart.*
-
-Until that's on, after every reboot you need:
-
-```sh
-open -a Docker && scripts/deploy.sh forgejo
-```
-
-Note this is tied to **signing in**, not to boot — a Mac mini sitting at the
-login screen after a power cut won't run Forgejo. If that matters, enable
-automatic login in System Settings → Users & Groups.
-
 ## Troubleshooting
 
 **Clicking Install gives `ERR_CONNECTION_RESET` and returns you to the install
@@ -357,32 +198,6 @@ Forgejo cannot convert between mirror and regular in place, so a mode flip
   work not pushed elsewhere.** Push first, flip second. The plan output
   shows the replacement; treat `-/+ forgejo_repository` as a red flag to
   double-check.
-
-### One-time setup
-
-1. Create the 1Password items named in `tofu/secrets.env`:
-   - `forgejo-api-token` — Forgejo -> Settings -> Applications -> Generate
-     Token (read/write repository scope).
-   - `github-tom-wolfe-pat`, `github-nschema-org-pat`,
-     `github-disastercare-pat` — fine-grained, Contents: read-only, resource
-     owner = that account/org, all (or selected private) repos. Orgs must
-     allow fine-grained PATs (org Settings -> Personal access tokens).
-   - `GitHub PAT Wolfe.Lab push` — fine-grained, Contents: read/write,
-     scoped to tom-wolfe/Wolfe.Lab ONLY (this one can write; keep it narrow).
-
-2. Delete the hand-made mirrors (they'd 409 against tofu's creates; mirrors
-   are cattle — tofu recreates all of them uniformly):
-
-   ```sh
-   export FORGEJO_TOKEN=...   # or op read
-   curl -s -H "Authorization: token $FORGEJO_TOKEN" \
-     'http://macmini.local:3000/api/v1/users/tom-wolfe/repos?limit=50' \
-     | jq -r '.[] | select(.mirror) | .name' \
-     | xargs -I{} curl -s -X DELETE -H "Authorization: token $FORGEJO_TOKEN" \
-         "http://macmini.local:3000/api/v1/repos/tom-wolfe/{}"
-   ```
-
-3. `cd tofu && op run --env-file=secrets.env -- tofu init`
 
 ### Day-to-day
 
@@ -546,61 +361,6 @@ Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
 `OP_SERVICE_ACCOUNT_TOKEN`; steps read the vault directly. One bootstrap
 secret per node, same as the mini.
 
-### Bringing up the Pi (runbook, at the desk)
-
-The Pi is already a chezmoi machine (owner=mine, server=true, source cloned
-from this instance over its deploy key). In order:
-
-1. **Register server-side** (mini): `forgejo/scripts/register-runner.sh wolfe-pi5`.
-2. **Binaries first** (Pi): `chezmoi git pull` (apply does not pull), then
-   `chezmoi apply --include externals` — the registration template needs
-   `op` to exist before it can render. It prints nothing on success; check
-   `ls -l ~/.local/bin/forgejo-runner ~/.local/bin/op`. VERIFY:
-   that chezmoi does not evaluate excluded templates on this path; if it
-   does, fetch the two binaries by hand from the URLs in
-   `.chezmoiexternal.toml.tmpl` once.
-3. **Seed the bootstrap secret** (Pi):
-   `install -D -m 600 /dev/null ~/.config/forgejo-runner/env` and write
-   `OP_SERVICE_ACCOUNT_TOKEN=…` into it (the same service account the mini
-   uses, or a Pi-specific one). Then `export OP_SERVICE_ACCOUNT_TOKEN=…` in
-   the shell for the first apply.
-4. **Lingering**, so the user service starts at boot with nobody logged in:
-   `loginctl enable-linger tomwolfe` (may need sudo).
-5. **Docker access**: the runner runs as the login user, so `id` must show
-   the `docker` group (`sudo usermod -aG docker tomwolfe`, re-login).
-6. **Apply**: `chezmoi apply` — renders config + registration, installs the
-   units, and the `run_after` script enables and starts them. Do this
-   BEFORE the first workflow runs on the node: `actions/checkout` needs
-   node, and node arrives with this apply (a workflow cannot install its own checkout's prerequisite).
-   `systemctl --user status forgejo-runner` should show it polling; the
-   runner appears under the repo's Settings → Actions → Runners as
-   `wolfe-pi5`, label `wolfe-pi5:host`, idle.
-7. **The containerized runner** on the same node is the same two halves:
-   `forgejo/scripts/register-runner.sh wolfe-pi5 docker` on the mini
-   (vault item `forgejo-runner-wolfe-pi5-docker`, instance scope, label
-   `docker:docker://node:22-bookworm`), then on the Pi delete nothing and
-   `chezmoi apply` — its config and registration render beside the host
-   runner's under `~/.config/forgejo-runner-docker/`, and the `run_after`
-   script starts `forgejo-runner-docker.service`. Both runners share one
-   binary and one restart template; the two configs come from one partial
-   in `.chezmoitemplates/forgejo-runner/`.
-8. **First run**: Actions → "chezmoi" → Run workflow. Green =
-   `chezmoi update` ran on the Pi from Forgejo. Then break it on purpose
-   (e.g. a bad command via `workflow_dispatch` on a branch) to see the
-   Pushover alert.
-
-Things this design assumes and the first run should prove: `%h` resolves
-in the path unit's `PathChanged=` lines (`systemctl --user cat
-forgejo-runner.path`); a restart triggered mid-tick lets the running job
-finish (`KillMode=mixed` so only the runner is signalled, and
-`TimeoutStopSec` > `shutdown_timeout` — the default kill mode signals the
-job's processes too, and a restart mid-job killed the job); host-mode steps
-inherit the runner's `envs` PATH (chezmoi/op/docker resolve); the deploy key
-in `~/.ssh/config` lets `chezmoi update` pull headless; `code.twolfe.dev`
-resolves and its certificate validates from the Pi over the tailnet; and a
-`pull_request` workflow naming `wolfe-pi5` will run there too — the trust
-note in ROADMAP.md.
-
 ### The mini's runner
 
 Same host-runner design, macOS supervision. Forgejo publishes no macOS
@@ -615,23 +375,7 @@ over loopback, so CD on the mini depends on no name. There is no change
 watcher on macOS: a config edit is a `brew services restart
 forgejo-runner` by hand, as for the Beszel agent.
 
-Bring-up, at the desk:
-
-1. `forgejo/scripts/register-runner.sh MacMini` (from a machine with a
-   writable `op` the first time — the mini's service account is read-only,
-   so mint the vault item from the laptop and re-run on the mini).
-2. Seed the bootstrap env: `install -D -m 600 /dev/null
-   ~/.config/forgejo-runner/env` and write
-   `OP_SERVICE_ACCOUNT_TOKEN=$(cat ~/Docker/1password/service-account-token)`.
-3. `chezmoi apply` (installs the formula via the Brewfile, renders config
-   and registration), then
-   `ln -sfn ~/.config/forgejo-runner/config.yaml /opt/homebrew/etc/forgejo-runner/config.yaml`
-   and `brew services start forgejo-runner`. Logs:
-   `/opt/homebrew/var/log/forgejo-runner.{log,err}`.
-4. The runner shows idle under Settings → Actions → Runners as `MacMini`.
-   Run the beszel workflow by hand: green = the slice was installed under
-   `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from
-   Forgejo, through the headless Docker config.
+Bring-up is in `RUNBOOK.md` "The mini's runner".
 
 Everything scheduled on the mini is a cron workflow on this runner:
 `backup.yaml`, `restic-offsite.yaml`, `restic-verify.yaml`,
@@ -639,37 +383,6 @@ Everything scheduled on the mini is a cron workflow on this runner:
 `gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
 probe never queue behind a long job; stateful jobs serialise through the
 `MacMini` concurrency group.
-
-### Decommissioning Kestra (one-time, at the desk, after the merge)
-
-1. `brew services restart forgejo-runner` — the capacity change is in the
-   config, and macOS has no watcher.
-2. Full Disk Access for `/opt/homebrew/opt/forgejo-runner/bin/forgejo-runner`
-   (System Settings → Privacy), then run the obsidian workflow by hand and
-   confirm it reads `~/Library/CloudStorage`.
-3. Run the heartbeat workflow by hand; confirm `lab-chezmoi-update` pinged
-   on healthchecks.io.
-4. Stop and remove Kestra on the mini: `docker rm -f kestra kestra-db`
-   (its compose file is gone with the merge; the containers are named).
-   Its last restic snapshot is tagged `pre-upgrade`; then
-   `rm -rf ~/Docker/kestra ~/.local/share/Wolfe.Lab/kestra`.
-5. Garage: delete the orphan `kestra/terraform.tfstate` object from the
-   `tofu-state` bucket. 1Password: delete `kestra-postgres`,
-   `kestra-admin`, `kestra-encryption-key` and `kestra-job-bridge`.
-6. Next morning: the backup, offsite and verify runs green in the Actions
-   tab, and `lab-restic-offsite` pinged.
-
-### What is deliberately not here yet
-
-- **No plan-on-PR yet.** CI today is `.forgejo/workflows/ci.yaml`:
-  shellcheck and YAML parsing on the containerized runner. Plan-on-PR
-  needs provider credentials in a pre-merge context — the
-  `pull_request_target` question in ROADMAP.md item 8 — and waits.
-- **No build-and-publish workflows for other projects yet.** The runner
-  they need exists; the workflows live in their repos when they flip to
-  active.
-- **No deploy jobs yet.** Gatus is the first slice to move; its deploy is a
-  `needs: update` job in the Pi's tick calling `scripts/deploy.sh gatus`.
 
 ## Notes
 
@@ -688,3 +401,7 @@ probe never queue behind a long job; stateful jobs serialise through the
 - Nothing here is exposed to the internet. The `:3000` publish is on all
   interfaces, so anything on the LAN can reach the web UI, but no router
   port forwarding is configured; SSH is reachable only over the tailnet.
+
+## Runbook
+
+Bootstrap, upgrade, backup and restore procedures are in `RUNBOOK.md`.

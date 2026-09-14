@@ -70,7 +70,7 @@ services:
     # Pinned (linuxserver's fully-qualified tag: qBittorrent 5.2.3,
     # libtorrent 2.0.14, image build ls474). A libtorrentv1 variant
     # exists if seeding behaviour ever demands it. Bump deliberately —
-    # see "Upgrading" in README.md.
+    # see "Upgrading" in RUNBOOK.md.
     image: linuxserver/qbittorrent:5.2.3_v2.0.14-ls474
     container_name: qbittorrent
     restart: unless-stopped

@@ -30,11 +30,6 @@ bootstrap only creates what must exist before the admin API answers.
   drive isn't mounted. `garage.env` is deliberately not included — the
   vault is its origin.
 
-## Upgrading
-
-Read the release notes first — metadata formats migrate and downgrades are
-not supported. Bump the image tag, merge; the push deploys it.
-
 ## The tofu state store (`tofu/`)
 
 Creates the OpenTofu state store (bucket `tofu-state` + key + grant) on
@@ -42,30 +37,6 @@ Garage — the chicken that lays every other project's egg. Its own state is
 deliberately **local and disposable**: run once, harvest the outputs, delete
 the state.
 
-### Run once
+## Runbook
 
-```sh
-# Admin token: 1Password `garage-s3-admin-token` (the mini caches it at
-# ~/Docker/garage/garage.env via a chezmoi create_ template)
-export TF_VAR_garage_admin_token=...   # or inject via `op run`
-
-cd tofu
-tofu init
-tofu apply
-
-tofu output access_key_id
-tofu output -raw secret_access_key     # -> 1Password item "tofu-state-key"
-
-rm -rf terraform.tfstate terraform.tfstate.backup
-```
-
-Every other tofu root in the repo (`forgejo/tofu`,
-`caddy/tofu`, …) then uses the `s3` backend against
-`http://macmini.local:3900` with those credentials.
-
-### Re-running later
-
-With the state deleted, a re-apply would try to create resources that
-already exist and fail on the alias conflict. To manage these resources
-again (e.g. to add grants), re-adopt them with `import` blocks instead of
-recreating — or just do one-off changes via `docker exec garage /garage`.
+Bootstrap, upgrade, backup and restore procedures are in `RUNBOOK.md`.

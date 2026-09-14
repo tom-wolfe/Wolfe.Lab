@@ -3,7 +3,7 @@ name: sonarr
 services:
   sonarr:
     # Pinned (linuxserver's fully-qualified tag: Sonarr 4.0.19.2979, image
-    # build ls323). Bump deliberately — see "Upgrading" in README.md.
+    # build ls323). Bump deliberately — see "Upgrading" in RUNBOOK.md.
     image: linuxserver/sonarr:4.0.19.2979-ls323
     container_name: sonarr
     restart: unless-stopped

@@ -34,7 +34,7 @@ files come back, not that the service boots on them.
 pick a service, stop it, move its state aside, restore, start it on the
 tagged image, confirm it works, put the original back. This is the one
 that catches the "restored but the app doesn't like it" class, and it
-is what turns each README's "Restore" section into a runbook someone has
+is what turns each slice's `RUNBOOK.md` restore steps into something someone has
 actually followed. Those sections are where the steps live; the docs
 site (#11) is what makes them followable from a phone.
 
@@ -388,7 +388,7 @@ restart.
 Two halves with different costs, in that order.
 
 **The docs half: runbooks readable from a phone.** The READMEs are the
-runbooks — each "Restore" section, each bootstrap procedure — and the
+runbooks — each slice's `RUNBOOK.md` — and the
 drills (#1) are what prove them. What is missing is a way to *follow*
 one without a checked-out repo and a text editor. Cheapest stopgap,
 available today: Forgejo renders every README in the browser, so

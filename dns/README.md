@@ -35,36 +35,6 @@ thing they own (the `forgejo/` tree *is* Forgejo artifacts), and the
 thing this root owns is the domain's records. Same convention, applied
 to a thing that isn't a deployment.
 
-## Imported, not recreated
-
-These records were live and working before they were declared. Getting
-an MX or SPF record subtly wrong doesn't error — it silently stops mail
-or lands it in spam, and the feedback loop is days long. So the records
-entered state via the `import` blocks in `tofu/imports.tf`, and the
-gate is that the first plan shows **import only**:
-
-```
-Plan: 8 to import, 0 to add, 0 to change, 0 to destroy.
-```
-
-Anything else means a resource doesn't match reality — fix the
-declaration, never let tofu "correct" a working mail record. Belt and
-braces around the first apply:
-
-```sh
-dig +noall +answer MX twolfe.dev TXT twolfe.dev TXT _dmarc.twolfe.dev
-```
-
-before and after, and compare. `scripts/list-records.sh` prints every
-record in the zone with its ID (the source of the import IDs), run as:
-
-```sh
-op run --env-file=tofu/secrets.env -- scripts/list-records.sh
-```
-
-Once the import has applied, `tofu/imports.tf` is dead weight — import
-blocks are no-ops for records already in state — and can be deleted.
-
 ## Operational notes
 
 - Plans run themselves: `.forgejo/workflows/tofu-dns.yaml` daily, alerting on

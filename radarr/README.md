@@ -46,50 +46,12 @@ into `10 Cloverfield Lane (2016)/`.
 **`radarr-webui`** (Login item), a copy not the origin, and the API key
 in `config.xml` — identical standing to `sonarr/README.md`.
 
-## Bootstrap
-
-At the desk, after the Jellyfin 12.0 upgrade and its full scan.
-
-1. Fold the loose files, dry run first, then for real:
-
-   ```sh
-   cd ~/.local/share/Wolfe.Lab
-   DRY=1 radarr/scripts/fold-movies.sh /Volumes/Data2/videos/movies   # prints the plan
-   radarr/scripts/fold-movies.sh /Volumes/Data2/videos/movies
-   ```
-
-   Anything reported as `skip:` (a loose file whose stem already exists
-   as a folder) gets folded by hand.
-2. Deploy: merge — the radarr workflow converges it on the push.
-3. Create the login through the API — the same recipe as
-   `sonarr/README.md` bootstrap step 2 with `radarr` for `sonarr` and
-   port `7878`. Then mirror to 1P `radarr-webui`.
-4. *Settings → Media Management*: turn **Rename Movies** on (off by
-   default); keep the formats. Add the Data2 root folder (and the Data1
-   one if it ever gets movies).
-5. *Movies → Library Import*: review every match — TMDb guesses from the
-   folder name, and the `www.UIndex.org    -    Title 2025 …` folders are
-   the ones to check — **Monitor: None**, any profile, import.
-6. *Movies → Edit Movies → select all → Rename Files* (preview first),
-   then the folder-rename recipe above for the folders that need it.
-7. Then the single Jellyfin full scan that closes the pass
-   (`sonarr/README.md`, bootstrap step 7).
-
 ## Deliberately not configured
 
 Indexers, download client, Connect → Jellyfin: Phase B, as for sonarr.
 The `Adult` library (`/Volumes/Data2/videos/adult`) is a movies-type
 library Radarr *could* manage as a third root; not added — that's a
 separate call, not a default.
-
-## Upgrading, backup, restore
-
-As `sonarr/README.md`, substituting `radarr`: tag bump after a snapshot
-(`scripts/backup.sh radarr`), current stable tags at
-https://github.com/linuxserver/docker-radarr/releases (`nightly-…` and
-`develop-…` are prereleases), nightly backup at 04:20 excluding
-`Backups/`, `MediaCover/` and logs. The file a restore drill should
-assert is `radarr.db`.
 
 ## Notes
 
@@ -100,3 +62,7 @@ assert is `radarr.db`.
   orphans to sweep afterwards, not a loss.
 - Data2 is APFS, so none of the exFAT caveats in `sonarr/README.md`
   apply to the movies root today. They would if Data1's root were used.
+
+## Runbook
+
+Bootstrap, upgrade, backup and restore procedures are in `RUNBOOK.md`.

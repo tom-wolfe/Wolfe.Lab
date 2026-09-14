@@ -60,7 +60,7 @@ trap 'docker compose --project-directory "$root/$slice" start >/dev/null' EXIT
 
 # The image rides on the snapshot as a tag — these schemas migrate
 # forward only, so a restore pairs with the version that wrote it (each
-# slice README's "Restore").
+# slice's RUNBOOK.md "Restore").
 image="$(docker inspect "$container" --format '{{.Config.Image}}')"
 
 out="$(op run --env-file="$repo/restic/restic.env" -- restic backup \

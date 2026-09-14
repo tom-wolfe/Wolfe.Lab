@@ -162,67 +162,9 @@ nightly stop/snapshot/start for that would be backup surface for its own
 sake. If Gatus ever grows state that isn't reproducible from the repo,
 that decision reverses.
 
-## Bootstrap (one-time, in order)
+## Placement
 
-1. **Materialize the env file** on the mini: `chezmoi apply` (needs
-   `OP_SERVICE_ACCOUNT_TOKEN` in a non-login shell; `.zprofile` exports
-   it on servers). Confirm `~/Docker/gatus/gatus.env` has two lines.
-   No red-tick trap here — the `pushover` item already exists.
-2. **Bring the container up**: `./setup.sh` from the repo root, or on the
-   mini `docker compose --project-directory <this dir> up -d`. Caddy must
-   already have been deployed once (it owns the `lab` network).
-3. **Re-issue the certificate** so it carries `status.twolfe.dev` (and
-   `code.twolfe.dev`, added in the same change) — `caddy/README.md`
-   "Neat names", step 4. At the desk. Until then the `.lab` and `.ts`
-   names work and the neat name doesn't.
-4. **Reload caddy's routes** — the caddy workflow (it fires on any `*/caddy.caddyfile` change) does
-   this on its next run; by hand,
-   `docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile`.
-5. **The record**: `tofu-gatus.yaml` creates the CNAME on the push;
-   `tofu-forgejo.yaml` creates `code.twolfe.dev` the same way.
-   Or by hand from a laptop:
-   `cd gatus/tofu && op run --env-file=secrets.env -- tofu init && op run --env-file=secrets.env -- tofu apply`
-   — plan tripwire: 1 to add.
-6. **Open the board** at https://status.twolfe.dev (fallbacks
-   `https://gatus.lab.twolfe.dev`, `http://macmini.local:8280`) and work
-   through the verification list.
-
-## Verify on first deploy
-
-The whole config was run from a laptop on the LAN before merging
-(the pinned image, this `config/`, dummy Pushover keys): all
-29 endpoints parsed, every vendor check passed as written — Backblaze's
-payload condition on an all-clear, Proton's port-25 STARTTLS from the
-house's line, `git.twolfe.dev:22` from inside a Docker Desktop VM — and
-every front-door check passed with its certificate condition. So the
-conditions are right. What a laptop cannot prove is the mini's own
-vantage point. Three checks still carry a `VERIFY` note in their file;
-give them ten minutes to settle, then:
-
-- **`front door` group, all of it.** From inside the mini's Docker
-  Desktop VM the `*.lab` names resolve to the mini's OWN LAN address and
-  loop back through the host's published `:443`. If the whole group is
-  red while the browser is fine, that loop doesn't work — the fix is a
-  `client.dns-resolver` or an explicit address, and it goes in the file
-  with a note. (`code.twolfe.dev` was red on the laptop only because the
-  record didn't exist yet.)
-- **`dependencies/git.twolfe.dev`** — asks the mini's VM to route to the
-  tailnet. It worked from a laptop's VM, which is strong evidence; if
-  it's red on the mini while `git fetch` works from a laptop, delete the
-  check.
-
-And two claims about vendors that only an incident can verify:
-Backblaze's payload shape during an outage (the comment in
-`dependencies.yaml`), and that the `.com` 1Password region is the
-account's.
-
-A known-false red must not stay on the board. A status page anyone has
-learned to ignore is worse than none.
-
-## On the Pi
-
-It lives on the Pi, and moving it there cost what the config-is-code
-argument said it would:
+It lives on the Pi, and everything the move changed is in files:
 
 - `front-door.yaml`, `dependencies.yaml`, `personal.yaml` — unchanged.
 - `lab.yaml` — every URL is now `${LAB_HOST}:<published port>`, the
@@ -242,26 +184,6 @@ argument said it would:
 - `.forgejo/workflows/gatus.yaml` deploys on push; `gatus-health.yaml`
   probes the Pi by its MagicDNS name.
 
-**Retiring the mini's copy** is by hand, once the Pi's is green:
-`docker compose --project-directory "$(chezmoi source-path)/../../gatus"
-down` on the mini. Nothing converges it away — its deploy flow is gone
-and nothing else touches the container. `~/Docker/gatus` on the mini
-(old history, old env) can go with it.
-
-**Verify on the Pi's first deploy:** `curl -s http://wolfe-pi5.tailf823b8.ts.net:8280/health`
-→ `{"status":"UP"}`; the board at https://status.twolfe.dev shows the
-`lab` group green, including `mini`; the `git.twolfe.dev` check in
-`dependencies.yaml` stays green (container egress to the tailnet from a
-Linux Docker host, not a Desktop VM this time).
-
-## Upgrading
-
-One pin, `image:` in `compose.yaml`. Bump via a normal PR; the push
-deploys it. Read the release notes for
-condition-syntax changes — every check is a condition string parsed at
-load, and a changed parser is the one way a routine bump turns into the
-invalid-config exit described under "Adding a check".
-
 ## Operational notes
 
 - Logs: `docker logs gatus` on the Pi. Reload events and "configuration file was
@@ -278,3 +200,7 @@ invalid-config exit described under "Adding a check".
 - The `:8280` publish is the fallback for when the front door is down —
   for a status page that is precisely the moment it's wanted. Don't tidy
   it away.
+
+## Runbook
+
+Bootstrap, upgrade, backup and restore procedures are in `RUNBOOK.md`.

@@ -53,31 +53,5 @@ converge beszel
 
 cat <<'EOF'
 
-Stacks are up. Remaining one-time steps:
-
-  1. Register this machine's Actions runner (step 3 below) and run the
-     heartbeat workflow once from the Actions tab — from then on
-     healthchecks.io knows the lab's scheduler is alive.
-
-  2. Grant Full Disk Access to the runner binary
-     (/opt/homebrew/opt/forgejo-runner/bin/forgejo-runner) in System
-     Settings → Privacy: the obsidian syncs read ~/Library/CloudStorage,
-     which TCC guards, and a launchd-started process cannot be prompted.
-
-  3. Enrol the monitoring agent — the one bootstrap that can't be ordered
-     ahead of time, because the hub mints the token the agent needs:
-       http://macmini.local:8090 -> create the superuser
-       Settings -> Tokens -> copy the universal token and public key into
-         a 1Password item `beszel-agent` (credential / username)
-       chezmoi apply && brew services list
-     Then set thresholds and the Pushover URL in the hub — it ships none,
-     so nothing alerts until you do. Full runbook: beszel/README.md.
-
-  4. Register every node's Actions runner, this machine's included — registrations live in
-     Forgejo's database, so a fresh Forgejo knows none of them, while each
-     node's runner.json still holds its vault secret and will poll with it
-     until the server knows it again (forgejo/README.md "Runners"):
-       forgejo/scripts/register-runner.sh MacMini
-       forgejo/scripts/register-runner.sh wolfe-pi5
-     Same secret, same UUID: the node side needs no change.
+Stacks are up. What remains is by hand: RUNBOOK.md "After setup.sh".
 EOF
