@@ -68,10 +68,11 @@ the library definitions.
 ## Restore
 
 ```sh
+lab=~/.local/share/chezmoi   # the repo on the mini
 cd ~/.local/share/Wolfe.Lab/jellyfin
-op run --env-file=../restic/restic.env -- restic snapshots --tag service:jellyfin
+$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic snapshots --tag service:jellyfin
 docker compose down
-op run --env-file=../restic/restic.env -- restic restore <id> --target /tmp/restore
+$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic restore <id> --target /tmp/restore
 mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
 mv "/tmp/restore/Users/tomwolfe/Library/Application Support/jellyfin" \
    ~/Library/Application\ Support/

@@ -39,7 +39,7 @@ to a thing that isn't a deployment.
 
 - Plans run themselves: `.forgejo/workflows/tofu-dns.yaml` daily, alerting on
   drift or a pending change; applying is the same workflow on the push that
-  changes the root — the OpenTofu CD model. (A workstation `op run … tofu plan` still works for
+  changes the root — the OpenTofu CD model. (`scripts/plan.sh dns` from a workstation still works for
   development; applies go through the flow.) Same 1Password items as the
   other roots (`netlify-pat`, `tofu-state-passphrase`, garage state key)
   — nothing new to create.

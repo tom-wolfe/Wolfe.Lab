@@ -12,7 +12,8 @@ its tick job.
 | Path | Purpose |
 | --- | --- |
 | `<name>/` | one slice per thing the lab runs: a compose stack + configs and/or jobs (`flows/<job>/` directories holding the job's script or `backup.conf`; the schedule is the workflow in `.forgejo/workflows/`), a `tofu/` root where the service has API resources, one README |
-| `chezmoi/home/` | the chezmoi source — dotfiles, the Brewfile, secrets-bootstrap templates: everything *declarative* about a machine (`.chezmoiroot` points here) |
+| `chezmoi/home/` | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here) |
+| `scripts/` | what every workflow runs: `deploy.sh`, `backup.sh`, `apply.sh`/`plan.sh`, `alert.sh` — and `secrets.sh`, the one door to the vault |
 | `setup.sh` | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence) |
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 | `RUNBOOK.md`, `<slice>/RUNBOOK.md` | procedures — bootstrap, upgrade, backup, restore — kept apart from the design prose so they can be followed step by step |
@@ -31,6 +32,18 @@ runs `scripts/deploy.sh <slice>`: install the slice into
 after the job is gone) and `docker compose up -d` there. `docker compose up -d` is convergent, so
 a manual run is always safe. OpenTofu roots have `tofu-<root>.yaml`: apply
 on the push that changes them, a daily plan for drift. Nothing ticks.
+
+Secrets never sit in a file. A slice that needs one commits a
+`secrets.env` of vault *references* beside its compose file, and
+`deploy.sh` resolves them into the environment of the one `compose up`
+that creates the container — through `scripts/secrets.sh`, the only
+thing in the repo that speaks to the vault, so changing vaults changes
+one script. A container keeps the environment it was created with, so a
+stack runs, restarts and reboots with no vault in the loop; a rotated
+value reaches it on the next deploy (re-run the workflow). Jobs —
+backups, certificate renewal, the alerts, every tofu root — resolve
+their own env files the same way at run time. The vault is reachable or
+a deploy fails; a running stack never notices.
 
 Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
 runs `chezmoi update` on a node when `chezmoi/` changes. Everything

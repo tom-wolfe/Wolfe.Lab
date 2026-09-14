@@ -15,14 +15,7 @@ set -euo pipefail
 export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
 
 slice="$(cd "$(dirname "$0")/../.." && pwd)"
-
-# The op service account: a workflow step is a non-login shell, so
-# .zprofile's export never happened (the runner's env_file usually has it).
-token_file="$HOME/Docker/1password/service-account-token"
-if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
-  OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")
-  export OP_SERVICE_ACCOUNT_TOKEN
-fi
+secrets="$slice/../scripts/secrets.sh"
 
 vol="/Volumes/Data2"
 if [ ! -f "$vol/.lab-volume" ]; then
@@ -35,9 +28,9 @@ if [ ! -f "$vol/restic/config" ]; then
 fi
 
 echo "checking local repository"
-op run --env-file="$slice/restic.env" -- restic check
+"$secrets" run --env-file "$slice/restic.env" -- restic check
 
 echo "checking B2 repository (5% pack sample)"
-op run --env-file="$slice/offsite.env" -- restic check --read-data-subset=5%
+"$secrets" run --env-file "$slice/offsite.env" -- restic check --read-data-subset=5%
 
 echo "verify complete"

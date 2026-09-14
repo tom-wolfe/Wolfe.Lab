@@ -8,7 +8,7 @@ State lives at `~/Docker/garage/{meta,data}` on the mini; config is
 
 | Concern | Handled by |
 | --- | --- |
-| Secrets (`~/Docker/garage/garage.env`) | chezmoi `create_` template (`chezmoi/home/Docker/garage/`) — materialized from 1Password (`garage-rpc-secret`, `garage-s3-admin-token`), never generated: the vault is the origin, so a wiped env file comes back with the same values. Only evaluated while the file is missing — `op` is a bootstrap dependency, not a tick dependency |
+| Secrets | `secrets.env` names the vault items (`garage-rpc-secret`, `garage-s3-admin-token`); the deploy resolves them into the environment of the `up` that creates the container. Never generated: the vault is the origin, so a recreated container gets the same values back. Nothing is on disk — bring the stack up with `scripts/deploy.sh garage`, never a bare `compose up` |
 | Container | `.forgejo/workflows/garage.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
 | Cluster layout (one-time) | `scripts/init-layout.sh`, invoked by `setup.sh` |
 | Buckets, keys, grants | OpenTofu — this slice's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |
@@ -21,14 +21,14 @@ bootstrap only creates what must exist before the admin API answers.
 
 - `garage.toml` changes are NOT picked up by `docker compose up -d` (it's a
   bind mount) — after editing, restart:
-  `ssh macmini "docker compose --project-directory .local/share/chezmoi/garage restart"`
+  `ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/garage restart"`
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
   nightly `backup.yaml` (`flows/backup/backup.conf`) does a cold copy from 02:20
   — stop, restic snapshot of both, start; `restic-offsite.yaml` ships it
   to B2 and owns retention (`restic/README.md`); refuses to run if the
-  drive isn't mounted. `garage.env` is deliberately not included — the
-  vault is its origin.
+  drive isn't mounted. The secrets are not on disk to include — the
+  vault is their origin.
 
 ## The tofu state store (`tofu/`)
 

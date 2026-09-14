@@ -53,8 +53,7 @@ services:
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: "true"
       TS_AUTH_ONCE: "true"
-    env_file:
-      - /Users/tomwolfe/Docker/forgejo/tailscale.env
+      TS_AUTHKEY:
     volumes:
       - /Users/tomwolfe/Docker/forgejo/tailscale:/var/lib/tailscale
 

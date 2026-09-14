@@ -3,11 +3,10 @@
 #
 #   alert.sh <title> [message]
 #
-# Credentials come from the vault through the node's service account (the
-# runner's env_file) — Forgejo holds no secrets.
 set -eu
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
+secrets="$repo/scripts/secrets.sh"
 title="$1"
 message="${2:-}"
 
@@ -17,8 +16,8 @@ if [ -z "$message" ] && [ -n "${GITHUB_RUN_NUMBER:-}" ]; then
 fi
 
 curl -fsS -o /dev/null https://api.pushover.net/1/messages.json \
-  --form-string "token=$(op read 'op://Wolfe.Lab/pushover/credential')" \
-  --form-string "user=$(op read 'op://Wolfe.Lab/pushover/username')" \
+  --form-string "token=$("$secrets" read 'op://Wolfe.Lab/pushover/credential')" \
+  --form-string "user=$("$secrets" read 'op://Wolfe.Lab/pushover/username')" \
   --form-string "title=$title" \
   --form-string "message=$message" \
   --form-string "priority=-1"

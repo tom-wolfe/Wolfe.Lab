@@ -9,16 +9,15 @@ At the desk, not remotely — the last steps change the mini's default
 route.
 
 1. Create `nordvpn-wireguard` in the Wolfe.Lab vault (see Secrets).
-2. On the mini: `chezmoi apply` — materializes `gluetun.env`.
-3. Deploy: merge — the qbittorrent workflow converges it on the push.
-4. Verify the tunnel from inside the namespace (the LSIO image has curl;
+2. Deploy: merge — the qbittorrent workflow converges it on the push.
+3. Verify the tunnel from inside the namespace (the LSIO image has curl;
    gluetun's own image is shell-less):
    `docker exec qbittorrent curl -s https://ipinfo.io/ip` — expect a
    Nord egress address, not the house's WAN IP. Then prove the kill
    switch: `docker stop gluetun`, same curl times out, `docker start
    gluetun` (and restart qbittorrent if the UI stays unreachable — see
    the namespace note in compose.yaml).
-5. First login and UI-held settings. The image prints a temporary admin
+4. First login and UI-held settings. The image prints a temporary admin
    password to `docker logs qbittorrent` on each start until a permanent
    one is set. Log in at `macmini.local:8080` and set, in
    Settings → Web UI:

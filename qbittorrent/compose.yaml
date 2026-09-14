@@ -42,11 +42,7 @@ services:
       # Host /etc/localtime is a symlink into /var/db/timezone — dangles
       # inside a Linux container. Set TZ instead (jellyfin pattern).
       TZ: Europe/London
-
-    # WIREGUARD_PRIVATE_KEY — materialized from 1Password by a chezmoi
-    # create_ template; see "Secrets" in README.md.
-    env_file:
-      - /Users/tomwolfe/Docker/qbittorrent/gluetun.env
+      WIREGUARD_PRIVATE_KEY:
 
     volumes:
       # Server-list cache. Disposable — gluetun ships an embedded list and

@@ -13,15 +13,15 @@ reasons are in `README.md`.
 3. Apply the tofu root (from the mini or via `tofu-restic.yaml` once the
    flows land): creates the bucket, the scoped key, the check. Then fill
    the `restic-b2` item: `username`/`credential` from
-   `op run --env-file=secrets.env -- tofu output -raw restic_application_key_id`
+   `scripts/secrets.sh run --env-file scripts/tofu-state.env --env-file restic/tofu/secrets.env -- tofu -chdir=restic/tofu output -raw restic_application_key_id`
    (and `…_key`), `repository` from the bucket name plus the S3 endpoint
    shown in the B2 UI.
 4. Initialize the repos — local first, then B2 **with the same chunker
    parameters**, or copies between them re-chunk and dedup dies:
 
    ```sh
-   op run --env-file=restic/restic.env  -- restic init
-   op run --env-file=restic/offsite.env -- restic init --copy-chunker-params
+   scripts/secrets.sh run --env-file restic/restic.env  -- restic init
+   scripts/secrets.sh run --env-file restic/offsite.env -- restic init --copy-chunker-params
    ```
 
 5. Run the backup workflow once from the Actions tab, then restic
@@ -49,7 +49,8 @@ that brings the key, or the `create_` template fails the whole apply.
 3. **Prove it, from the node:**
 
    ```sh
-   op run --env-file=~/.local/share/chezmoi/restic/sftp.env -- restic snapshots --latest 1
+   lab=~/.local/share/chezmoi   # the repo on the node
+   $lab/scripts/secrets.sh run --env-file $lab/restic/sftp.env -- restic snapshots --latest 1
    ```
 
    The first contact accepts the mini's host key (`accept-new`); the
@@ -57,7 +58,7 @@ that brings the key, or the `create_` template fails the whole apply.
    path, with something small and disposable:
 
    ```sh
-   op run --env-file=~/.local/share/chezmoi/restic/sftp.env -- restic backup ~/.local/share/Wolfe.Lab --tag drill
+   $lab/scripts/secrets.sh run --env-file $lab/restic/sftp.env -- restic backup ~/.local/share/Wolfe.Lab --tag drill
    ```
 
    and from the mini, forget it by ID (`forget` needs an ID or a policy;
@@ -65,8 +66,8 @@ that brings the key, or the `create_` template fails the whole apply.
    otherwise kept by the retention policy forever:
 
    ```sh
-   op run --env-file=restic/restic.env -- restic snapshots --tag drill
-   op run --env-file=restic/restic.env -- restic forget <id> --prune
+   scripts/secrets.sh run --env-file restic/restic.env -- restic snapshots --tag drill
+   scripts/secrets.sh run --env-file restic/restic.env -- restic forget <id> --prune
    ```
 
 Rotation: delete the vault item and recreate it (step 1), `rm
@@ -78,8 +79,8 @@ apply` on both machines — render both halves again.
 Find the snapshot, check the image it was taken under, restore like-for-like:
 
 ```sh
-op run --env-file=restic/restic.env -- restic snapshots --tag service:forgejo
-op run --env-file=restic/restic.env -- restic restore <id> --target /tmp/restore
+scripts/secrets.sh run --env-file restic/restic.env -- restic snapshots --tag service:forgejo
+scripts/secrets.sh run --env-file restic/restic.env -- restic restore <id> --target /tmp/restore
 ```
 
 The `image:` tag on every snapshot is the pin to restore onto — schema

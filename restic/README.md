@@ -118,11 +118,11 @@ Sunday's verify, the verify fails on the lock — rerun it.
 | `restic-b2` | API Credential | `username` = scoped keyID, `credential` = scoped key (both from `tofu output` after apply), plus a custom `repository` field = the full `s3:https://…/wolfe-lab-restic` URL |
 | `b2-master-key` | API Credential | `username` = master keyID, `credential` = master key — used only by `tofu/` to mint the scoped key |
 
-The env files beside this README (`restic.env`, `offsite.env`) are op://
-references resolved at spawn by `op run` — the same unattended path
-`scripts/plan.sh` already uses on every tick (service-account token on the
-mini). The repository URL lives in the vault, not the repo, because its
-region segment only exists once the B2 account does.
+The env files beside this README (`restic.env`, `offsite.env`,
+`sftp.env`) are op:// references, resolved at spawn by
+`scripts/secrets.sh` — the same path every job in the lab uses. The
+repository URL lives in the vault, not the repo, because its region
+segment only exists once the B2 account does.
 
 ## Cost
 

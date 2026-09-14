@@ -2,7 +2,11 @@
 
 `home/` is the chezmoi source: everything *declarative* about a machine —
 dotfiles, the Brewfile, the service and runner files the nodes run under,
-the `create_` secret-cache templates. `.chezmoiroot` points chezmoi at it.
+and, as `create_` files, the few secrets a node's own daemons read at
+start (the runner registrations, the Beszel agent's token, the Pi's restic
+key). Nothing a container needs is here: those secrets reach compose
+through the deploy (`README.md` "How deployment works"). `.chezmoiroot`
+points chezmoi at it.
 Laptops apply it by hand; the nodes apply it through
 `.forgejo/workflows/chezmoi.yaml` on the push that touches `chezmoi/`.
 
@@ -123,10 +127,8 @@ UI and only *referenced* here, so a data source for a channel that hasn't
 been set up will fail the plan.
 
 ```sh
-cd tofu
-op run --env-file=secrets.env -- tofu init
-op run --env-file=secrets.env -- tofu plan
-op run --env-file=secrets.env -- tofu apply
+scripts/plan.sh chezmoi
+scripts/apply.sh chezmoi
 ```
 
 **Why the check lives here** rather than in a `monitoring/` slice:

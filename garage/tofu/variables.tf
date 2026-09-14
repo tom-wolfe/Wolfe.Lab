@@ -5,7 +5,7 @@ variable "garage_host" {
 }
 
 variable "garage_admin_token" {
-  description = "Garage admin token (GARAGE_ADMIN_TOKEN from the mini's garage.env; keep in 1Password)"
+  description = "Garage admin token"
   type        = string
   sensitive   = true
 }

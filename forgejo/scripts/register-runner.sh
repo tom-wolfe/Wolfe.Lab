@@ -3,18 +3,11 @@
 #
 #   forgejo/scripts/register-runner.sh <hostname> [host|docker]   # default host
 #
-# Run on the mini (needs the forgejo container) with op signed in. 
+# Run on the mini (needs the forgejo container) with op signed in.
 # Safe to re-run: registering an existing secret updates the runner in place.
 set -euo pipefail
 
-# Headless op on the mini: the machine's service account, same fallback as
-# chezmoi/flows/update/script.sh. Not sudo — op refuses a config dir it
-# doesn't own, and docker exec needs no root here.
-token_file="$HOME/Docker/1password/service-account-token"
-if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
-  OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")
-  export OP_SERVICE_ACCOUNT_TOKEN
-fi
+repo="$(cd "$(dirname "$0")/../.." && pwd)"
 
 host="${1:?usage: register-runner.sh <hostname> [host|docker]}"
 kind="${2:-host}"
@@ -41,7 +34,7 @@ fi
 
 # -u git: Forgejo refuses to run as root, which is what a bare exec is.
 # -n: no trailing newline — --secret-stdin counts it (41 != 40).
-op read -n "op://$vault/$item/credential" \
+"$repo/scripts/secrets.sh" read "op://$vault/$item/credential" \
   | docker exec -i -u git forgejo forgejo forgejo-cli actions register \
       --secret-stdin --name "$name" --labels "$labels" ${scope:+--scope "$scope"}
 echo "registered runner $name (label $labels, scope ${scope:-instance})"

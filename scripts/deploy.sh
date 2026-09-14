@@ -38,7 +38,13 @@ done
 mkdir -p "$release"
 rsync -a --delete --exclude flows/ --exclude tofu/ "$repo/$slice/" "$release/"
 
-docker compose \
+env="$repo/$slice/secrets.env"
+if [ -f "$env" ]; then
+  set -- --env-file "$env"
+else
+  set --
+fi
+"$repo/scripts/secrets.sh" run "$@" -- docker compose \
   --project-directory "$release" \
   up -d --remove-orphans
 

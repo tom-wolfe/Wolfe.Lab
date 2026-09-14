@@ -275,10 +275,9 @@ config is declared truth, not liveness — proving someone answers is
 monitoring's job (`gatus/`), not this one's.
 
 Why Garage and not the vault: configuration and secrets are different
-jobs. 1Password is the origin of *secrets*, is a cloud round-trip — the
-whole reason `create_` templates evaluate once instead of pinging it
-every tick — and changing a value there means the delete-and-recreate
-dance. Garage is LAN-local (every plan already polls it), sits below
+jobs. 1Password is the origin of *secrets*, is a cloud round-trip —
+deploys and jobs read it, nothing that runs does — and changing a value
+there is a redeploy. Garage is LAN-local (every plan already polls it), sits below
 every would-be publisher in the bootstrap order, and costs no new
 service.
 
@@ -303,12 +302,16 @@ from them rather than relitigating:
   accounts — check *its* rate limits before trusting it with the lesson
   of 0.16.0) or `bw`/`rbw` with a local cache — rbw's agent holds the
   vault locally, which is the Connect-shaped property: reads cost no
-  quota and survive cloud outages. A small run-style shim keeps the
-  committed env-files-of-references pattern, and chezmoi has native
-  `bitwarden`/`rbw` template functions for the `create_` templates.
-- **Migration surface, inventoried:** every vault item, every
-  `secrets.env`, the `create_` templates, the op service account (secret
-  zero changes shape), the SSH agent on three Macs, the READMEs.
+  quota and survive cloud outages. `scripts/secrets.sh` is already the
+  run-style shim every caller goes through, so the machine half is its
+  backend plus the reference syntax in the env files — no caller changes;
+  chezmoi has native `bitwarden`/`rbw` template functions for the
+  `create_` files that remain (the runner registrations, the Beszel
+  agent, the Pi's restic key).
+- **Migration surface, inventoried:** every vault item, every env file
+  of references (`secrets.env`, restic's, rclone's), the four `create_`
+  files, the op service account (secret zero changes shape), the SSH
+  agent on three Macs, the READMEs.
 
 **Where the lab's secrets live in Bitwarden (Tom's plan).**
 Bitwarden has no per-account vaults the way 1Password does. Its
@@ -562,7 +565,7 @@ automations, scripts, scenes, templates and dashboards are all files. Only
 integration config entries (`.storage/`, holding OAuth tokens and
 discovered devices) are UI-managed — and that is exactly the split this
 repo already runs everywhere else, where `caddy/Caddyfile` is code and
-`caddy.env` is vaulted credential state. The decisions are declarable; only
+the Netlify token is vaulted credential state. The decisions are declarable; only
 the credentials aren't. That makes HA *better* on this axis than beszel,
 whose alert thresholds have no file representation at all.
 
@@ -609,9 +612,10 @@ question while keeping a cloud origin *by decision* — the server side is
 only ever a replica, exactly to avoid the circularity that parked
 OpenBao here. The section stays as the record of why.
 
-The original goal was cutting the cloud dependency. The `create_` template
-pattern already achieves the operative part: `op` is a bootstrap
-dependency, not a run-time one. 1Password Connect left this section
+The original goal was cutting the cloud dependency. The operative part is
+already had: the vault is read by deploys and jobs, never by anything
+that runs, so a running stack rides out a vault outage and only the next
+deploy waits. 1Password Connect left this section
 for the config plane (#9), pulled by a different goal —
 rotation ergonomics, not cloud-cutting; as a sync cache it dodges the
 circularity below. OpenBao stays deferred: it would *own* the secrets,

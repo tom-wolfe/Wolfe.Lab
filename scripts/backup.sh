@@ -33,13 +33,7 @@ if [ "${#paths[@]}" -eq 0 ]; then
   exit 64
 fi
 
-# The op service account: a workflow step is a non-login shell, so
-# .zprofile's export never happened (the runner's env_file usually has it).
-token_file="$HOME/Docker/1password/service-account-token"
-if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
-  OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")
-  export OP_SERVICE_ACCOUNT_TOKEN
-fi
+secrets="$repo/scripts/secrets.sh"
 
 # Where the repository is from this node. The backups drive hangs off the
 # mini. an unmounted /Volumes path on macOS is just a directory on the internal disk. The
@@ -71,7 +65,7 @@ trap 'docker compose --project-directory "$root/$slice" start >/dev/null' EXIT
 # slice's RUNBOOK.md "Restore").
 image="$(docker inspect "$container" --format '{{.Config.Image}}')"
 
-out="$(op run --env-file="$env" -- restic backup \
+out="$("$secrets" run --env-file "$env" -- restic backup \
   "${paths[@]}" ${excludes[@]+"${excludes[@]}"} \
   --tag "service:$slice" --tag "image:$image" 2>&1)" || {
   printf '%s\n' "$out"
@@ -88,7 +82,7 @@ snap="$(printf '%s\n' "$out" | sed -n 's/^snapshot \([0-9a-f]*\) saved$/\1/p')"
 # the nightly prune. Backups run serially in one job to make this rare.
 if [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]; then
   if [ -n "$snap" ]; then
-    op run --env-file="$env" -- restic forget "$snap" >/dev/null
+    "$secrets" run --env-file "$env" -- restic forget "$snap" >/dev/null
   fi
   echo "backup: $container restarted mid-backup — snapshot discarded, rerun me" >&2
   exit 1

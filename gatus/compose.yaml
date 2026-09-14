@@ -9,8 +9,8 @@ services:
       TZ: Europe/London
       GATUS_CONFIG_PATH: /config
       LAB_HOST: macmini.tailf823b8.ts.net
-    env_file:
-      - ${HOME}/Docker/gatus/gatus.env
+      PUSHOVER_APP_TOKEN:
+      PUSHOVER_USER_KEY:
     volumes:
       - ./config:/config:ro
       - ${HOME}/Docker/gatus/data:/data

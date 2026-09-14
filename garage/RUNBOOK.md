@@ -6,9 +6,8 @@ reasons are in `README.md`.
 ## Run once
 
 ```sh
-# Admin token: 1Password `garage-s3-admin-token` (the mini caches it at
-# ~/Docker/garage/garage.env via a chezmoi create_ template)
-export TF_VAR_garage_admin_token=...   # or inject via `op run`
+# Admin token: 1Password `garage-s3-admin-token`.
+export TF_VAR_garage_admin_token=...
 
 cd tofu
 tofu init

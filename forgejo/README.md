@@ -29,7 +29,8 @@ docker compose ps            # status
 docker compose logs -f       # follow logs
 docker compose restart       # restart
 docker compose down          # stop (data is untouched)
-docker compose up -d         # start
+scripts/deploy.sh forgejo    # start — from a checkout: the deploy is what
+                             # puts the sidecar's auth key in its environment
 ```
 
 ## Where the admin password lives
@@ -202,12 +203,17 @@ Forgejo cannot convert between mirror and regular in place, so a mode flip
 ### Day-to-day
 
 ```sh
-cd tofu
-op run --env-file=secrets.env -- tofu plan
-op run --env-file=secrets.env -- tofu apply
+scripts/plan.sh forgejo
+scripts/apply.sh forgejo
 ```
 
-State inspection: `op run --env-file=secrets.env -- tofu state list`.
+Anything else against the root, with its secrets resolved:
+
+```sh
+cd forgejo/tofu
+run="../../scripts/secrets.sh run --env-file ../../scripts/tofu-state.env --env-file secrets.env --"
+$run tofu state list
+```
 
 ### Notes
 
@@ -350,16 +356,12 @@ action: on the mini a shim in `~/.local/share/forgejo-runner/bin` that
 resolves nvm's default alias at call time (nvm owns the active version; a
 brew node would fight it — the `nvm-run` pattern), on the Pi a pinned
 external. chezmoi's own
-source is a separate clone and no part of a deploy. One ordering
-consequence: a slice whose env file is a chezmoi `create_` template (until
-the config provider lands) needs the `chezmoi` workflow to have rendered it;
-both fire on the same push, in either order, so a brand-new slice's first
-deploy may need one re-run.
+source is a separate clone and no part of a deploy.
 
 Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
 (`~/.config/forgejo-runner/env`, hand-seeded, mode 600) carries the node's
-`OP_SERVICE_ACCOUNT_TOKEN`; steps read the vault directly. One bootstrap
-secret per node, same as the mini.
+`OP_SERVICE_ACCOUNT_TOKEN`; steps read the vault through
+`scripts/secrets.sh`. One bootstrap secret per node, same as the mini.
 
 ### The mini's runner
 

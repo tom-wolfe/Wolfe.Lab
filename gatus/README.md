@@ -17,7 +17,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | --- | --- |
 | Container | **on the Pi** — `.forgejo/workflows/gatus.yaml`, on every push that touches this slice; `scripts/deploy.sh gatus` on the node itself |
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
-| Pushover credentials (`~/Docker/gatus/gatus.env`, on the Pi) | chezmoi `create_` template (`chezmoi/home/Docker/gatus/`), from the existing `pushover` vault item; the `pi-node` profile is the one that gets `Docker/gatus` |
+| Pushover credentials | `secrets.env` names the existing `pushover` vault item; the deploy resolves both fields into the container's environment |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
 | Gatus's own liveness | `.forgejo/workflows/gatus-health.yaml`, from the mini — a status page cannot show itself being down, and the watcher is on the other machine |
 | Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
@@ -124,17 +124,15 @@ healthchecks.io is, and it stays outside the building (`chezmoi/tofu/`).
 ## Secrets
 
 No new vault item. The Pushover application token and user key are the
-same `pushover` item `system/alert-failed` and Beszel use, so every alert
-in the lab lands in one place. The `create_` template writes them to
-`~/Docker/gatus/gatus.env`; compose passes the file as `env_file`; the
-config references `${PUSHOVER_APP_TOKEN}` and `${PUSHOVER_USER_KEY}`,
-which Gatus substitutes from its environment at load. The repo carries no
-secret material.
+same `pushover` item `scripts/alert.sh` and Beszel use, so every alert
+in the lab lands in one place. `secrets.env` names the two fields; the
+deploy resolves them into Gatus's environment, and the config references
+`${PUSHOVER_APP_TOKEN}` and `${PUSHOVER_USER_KEY}`, which Gatus
+substitutes at load. Neither the repo nor the node's disk carries the
+values.
 
-Rotation: update the vault item, `rm ~/Docker/gatus/gatus.env`, `chezmoi
-apply` on the mini, then `docker compose --project-directory
-~/.local/share/chezmoi/gatus up -d --force-recreate` — an env change is
-not a file change, so Gatus's reload doesn't see it.
+Rotation: update the vault item and re-run the gatus workflow — a changed
+environment is a changed container, so compose recreates it.
 
 ## The neat name
 

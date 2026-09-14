@@ -8,11 +8,9 @@ services:
     container_name: garage
     restart: unless-stopped
 
-    # GARAGE_RPC_SECRET and GARAGE_ADMIN_TOKEN live outside the repo —
-    # a chezmoi-owned create_ template (chezmoi/home/Docker/garage/),
-    # written from 1Password only when the file is missing. See README.md.
-    env_file:
-      - /Users/tomwolfe/Docker/garage/garage.env
+    environment:
+      GARAGE_RPC_SECRET:
+      GARAGE_ADMIN_TOKEN:
 
     volumes:
       # Config is code — lives in this repo, mounted read-only.

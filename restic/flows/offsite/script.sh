@@ -23,14 +23,7 @@ set -euo pipefail
 export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
 
 slice="$(cd "$(dirname "$0")/../.." && pwd)"
-
-# The op service account: a workflow step is a non-login shell, so
-# .zprofile's export never happened (the runner's env_file usually has it).
-token_file="$HOME/Docker/1password/service-account-token"
-if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
-  OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")
-  export OP_SERVICE_ACCOUNT_TOKEN
-fi
+secrets="$slice/../scripts/secrets.sh"
 
 # The local repo lives on the external drive — an unmounted /Volumes path
 # on macOS is just a directory on the internal disk, so check the mount,
@@ -46,7 +39,7 @@ if [ ! -f "$vol/restic/config" ]; then
 fi
 
 echo "copying new snapshots to B2"
-op run --env-file="$slice/offsite.env" -- restic copy
+"$secrets" run --env-file "$slice/offsite.env" -- restic copy
 
 # One policy, both repos. Nightlies thin out with age; anything tagged
 # pre-upgrade (labelled dumps taken before upgrades) is kept forever — rare, small,
@@ -54,9 +47,9 @@ op run --env-file="$slice/offsite.env" -- restic copy
 policy=(--keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-tag pre-upgrade)
 
 echo "applying retention locally"
-op run --env-file="$slice/restic.env" -- restic forget "${policy[@]}" --prune
+"$secrets" run --env-file "$slice/restic.env" -- restic forget "${policy[@]}" --prune
 
 echo "applying retention on B2"
-op run --env-file="$slice/offsite.env" -- restic forget "${policy[@]}" --prune
+"$secrets" run --env-file "$slice/offsite.env" -- restic forget "${policy[@]}" --prune
 
 echo "offsite complete"

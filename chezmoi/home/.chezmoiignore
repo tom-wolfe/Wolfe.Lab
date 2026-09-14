@@ -5,7 +5,6 @@
 .config/systemd
 .docker-headless
 .local/share/forgejo-runner
-Docker
 {{ end -}}
 
 {{ if eq .profile "work-macbook" -}}
@@ -15,22 +14,16 @@ Docker
 .config/systemd
 .docker-headless
 .local/share/forgejo-runner
-Docker
 {{ end -}}
 
 {{ if eq .profile "macmini-node" -}}
 .config/forgejo-runner-docker
 .config/systemd
-Docker/gatus
 {{ end -}}
 
 {{ if eq .profile "pi-node" -}}
 .config/terminal
 .docker-headless
 .local/share/forgejo-runner
-Docker/caddy
-Docker/forgejo
-Docker/garage
-Docker/qbittorrent
 Library
 {{ end -}}

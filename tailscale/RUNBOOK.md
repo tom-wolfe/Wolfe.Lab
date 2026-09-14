@@ -74,9 +74,10 @@ name tags that already exist.
 
    ```sh
    cd tailscale/tofu
-   op run --env-file=secrets.env -- tofu init
-   op run --env-file=secrets.env -- tofu import tailscale_acl.lab acl
-   op run --env-file=secrets.env -- tofu plan
+   run="../../scripts/secrets.sh run --env-file ../../scripts/tofu-state.env --env-file secrets.env --"
+   $run tofu init
+   $run tofu import tailscale_acl.lab acl
+   $run tofu plan
    ```
 
    Tripwire: the policy changes in place; **3 tags to add, 3 keys to

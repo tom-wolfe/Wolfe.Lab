@@ -6,30 +6,27 @@ reasons are in `README.md`.
 ## Bootstrap
 
 Order matters — the 1Password item must exist **before** the merge, or
-the `create_` template fails the whole `chezmoi apply` and the tick goes
-red (the beszel bootstrap warning, same shape).
+the deploy fails resolving it and the workflow goes red.
 
 1. **Mint an auth key**: admin console → Settings → Keys → Auth keys →
    Generate. Not reusable, not ephemeral, no tags. Its own expiry barely
    matters — it's spent at enrolment and never replayed (`TS_AUTH_ONCE`).
 2. **Vault it**: item `forgejo-tailscale` in the Wolfe.Lab vault, key in
    `credential`.
-3. **Materialize**: on the mini, `chezmoi apply` writes
-   `~/Docker/forgejo/tailscale.env`.
-4. **Merge.** The forgejo workflow converges the stack and the sidecar
+3. **Merge.** The forgejo workflow converges the stack and the sidecar
    enrols. Confirm the `forgejo` node in the admin console, then
    **disable its key expiry** — same reasoning as the mini itself: a
    server whose node key silently expires drops off the tailnet with
    nothing to notice.
-5. **Declare the record.** Read the sidecar's address (admin console, or
+4. **Declare the record.** Read the sidecar's address (admin console, or
    `tailscale status | grep forgejo` from any machine), write it in as
    the **default** of `forgejo_tailscale_ipv4` in `tofu/variables.tf`
-   (caddy's `lab_tailscale_ipv4` pattern) and commit; then from `tofu/`:
-   `op run --env-file=secrets.env -- tofu apply`. Tripwire: **1 to add**
+   (caddy's `lab_tailscale_ipv4` pattern) and commit; then from the repo
+   root: `scripts/apply.sh forgejo`. Tripwire: **1 to add**
    (the `git.twolfe.dev` record), 0 changed, 0 destroyed. Until the
    default is written in, every plan of this root prompts for the
    variable — deliberate: it means the record isn't real yet.
-6. **Repoint remotes** on each machine — the old
+5. **Repoint remotes** on each machine — the old
    `ssh://git@macmini.local:2222/...` URLs died with the port publish:
 
    ```sh
@@ -45,7 +42,7 @@ red (the beszel bootstrap warning, same shape).
    done
    ```
 
-7. First contact from each machine accepts a new `known_hosts` entry.
+6. First contact from each machine accepts a new `known_hosts` entry.
    The host keys themselves are unchanged (same `data/ssh/`) — only the
    name is new.
 
@@ -109,9 +106,10 @@ the backup script before anything risky.
 
 ```sh
 cd ~/.local/share/Wolfe.Lab/forgejo
-op run --env-file=../restic/restic.env -- restic snapshots --tag service:forgejo
+lab=~/.local/share/chezmoi   # the repo on the mini
+$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic snapshots --tag service:forgejo
 docker compose down
-op run --env-file=../restic/restic.env -- restic restore <id> --target /tmp/restore
+$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic restore <id> --target /tmp/restore
 mv ~/Docker/forgejo/data ~/Docker/forgejo/data.bak
 mv /tmp/restore/Users/tomwolfe/Docker/forgejo/data ~/Docker/forgejo/data
 docker compose up -d
@@ -139,7 +137,7 @@ schema.
    are cattle — tofu recreates all of them uniformly):
 
    ```sh
-   export FORGEJO_TOKEN=...   # or op read
+   export FORGEJO_TOKEN=...   # or scripts/secrets.sh read
    curl -s -H "Authorization: token $FORGEJO_TOKEN" \
      'http://macmini.local:3000/api/v1/users/tom-wolfe/repos?limit=50' \
      | jq -r '.[] | select(.mirror) | .name' \
@@ -147,7 +145,7 @@ schema.
          "http://macmini.local:3000/api/v1/repos/tom-wolfe/{}"
    ```
 
-3. `cd tofu && op run --env-file=secrets.env -- tofu init`
+3. `scripts/plan.sh forgejo` — init, then a plan to read before applying.
 
 ## Bringing up the Pi (runbook, at the desk)
 
@@ -223,7 +221,7 @@ Then lock it down, since this is a LAN server that doesn't need public signups:
 2. Set `FORGEJO__service__DISABLE_REGISTRATION: "true"` in `compose.yaml`
    (this one *is* safe to manage via env — it's ordinary config, and setting it
    is idempotent)
-3. `docker compose up -d`
+3. Redeploy — merge, or `scripts/deploy.sh forgejo` from a checkout.
 
 ## After a reboot
 

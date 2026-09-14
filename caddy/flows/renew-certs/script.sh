@@ -12,16 +12,11 @@
 # shows up as a red run in Actions instead of a log line nobody reads.
 set -euo pipefail
 
+job="$(cd "$(dirname "$0")" && pwd)"
+secrets="$job/../../../scripts/secrets.sh"
+
 lego_dir="$HOME/Docker/caddy/lego"
 mkdir -p "$lego_dir"
-
-# NETLIFY_TOKEN — chezmoi-materialized cache, origin 1Password. Only this
-# job sees it; the caddy container no longer carries any secret.
-env_file="$HOME/Docker/caddy/caddy.env"
-if [ ! -s "$env_file" ]; then
-  echo "renew-certs: $env_file missing — run chezmoi apply first" >&2
-  exit 1
-fi
 
 # Pinned like every image in the lab. To upgrade: bump the tag, re-run.
 #
@@ -46,8 +41,8 @@ fi
 # re-run this job. Fresh issuance, same filenames (first domain), so the
 # Caddyfile's tls paths never change. Verify with:
 #   openssl x509 -in ~/Docker/caddy/lego/certificates/_.lab.twolfe.dev.crt -noout -text | grep DNS
-docker run --rm \
-  --env-file "$env_file" \
+"$secrets" run --env-file "$job/secrets.env" -- docker run --rm \
+  -e NETLIFY_TOKEN \
   -v "$lego_dir:/state" \
   goacme/lego:v5.4.0 \
   --log.format text \

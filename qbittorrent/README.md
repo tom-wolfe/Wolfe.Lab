@@ -71,10 +71,11 @@ Consequences worth knowing:
 
 ## Secrets
 
-- `gluetun.env` ← **`nordvpn-wireguard`** (Password item, `credential`
-  field): the usual `create_` template
-  (`chezmoi/home/Docker/qbittorrent/`), 1Password as the origin, written
-  only while missing, rotation = delete + `chezmoi apply`. The key is
+- **`nordvpn-wireguard`** (Password item, `credential` field) →
+  `WIREGUARD_PRIVATE_KEY`: named in `secrets.env`, resolved into
+  gluetun's environment by the deploy, on disk nowhere. Rotation =
+  update the item, re-run the qbittorrent workflow (compose recreates
+  gluetun, and qbittorrent with it). The key is
   the WireGuard private key from the Nord dashboard →
   *Manual configuration*. It is NOT the account password and NOT the
   OpenVPN service credential. If the dashboard only offers an access
