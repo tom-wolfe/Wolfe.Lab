@@ -1,8 +1,8 @@
 # =========================================================
-# All machines
+# All machines covered by Homebrew
 # =========================================================
 
-# Utilities
+# Utilities
 cask "1password"
 cask "1password-cli"
 cask "brave-browser"
@@ -38,13 +38,54 @@ vscode "github.vscode-pull-request-github"
 vscode "mikestead.dotenv"
 vscode "ms-azuretools.vscode-containers"
 vscode "ms-dotnettools.vscode-dotnet-runtime"
-vscode "streetsidesoftware.code-spell-checker" 
+vscode "streetsidesoftware.code-spell-checker"
 vscode "vscode-icons-team.vscode-icons"
 vscode "yzhang.markdown-all-in-one"
 
-{{ if .interactive -}}
+{{ if eq .profile "macbook" -}}
 # =========================================================
-# Desktop machines (personal + work)
+# macbook
+# =========================================================
+
+# Drivers
+cask "displaylink"
+cask "betterdisplay"
+cask "logi-options+"
+
+# Utilities
+cask "airbuddy"
+cask "TheBoredTeam/boring-notch/boring-notch", trusted: true
+cask "daisydisk"
+cask "proton-mail"
+mas  "Paste", id: 967805235
+cask "nordvpn"
+cask "raspberry-pi-imager"
+
+# Productivity
+cask "claude"
+cask "chatgpt"
+cask "obsidian"
+mas  "Things", id: 904280696
+
+# Media
+cask "spotify"
+mas  "forScore", id: 363738376
+cask "affinity"
+
+# Social
+cask "discord"
+mas  "WhatsApp", id: 310633997
+
+# Developer Tools
+brew "cloc"
+cask "docker-desktop"
+cask "jetbrains-toolbox"
+brew "ollama"
+{{ end -}}
+
+{{ if eq .profile "work-macbook" -}}
+# =========================================================
+# work-macbook
 # =========================================================
 
 # Drivers
@@ -60,64 +101,41 @@ cask "TheBoredTeam/boring-notch/boring-notch", trusted: true
 cask "claude"
 cask "chatgpt"
 cask "obsidian"
+mas  "Microsoft Excel", id: 462058435
+mas  "Microsoft Word", id: 462054704
+mas  "OneDrive", id: 823766827
 
 # Media
 cask "spotify"
 
 # Social
 cask "discord"
+cask "slack"
 
 # Developer Tools
 brew "cloc"
-# Deliberately NOT on the server, because updating reboots Docker.
 cask "docker-desktop"
 cask "jetbrains-toolbox"
 {{ end -}}
 
-{{ if .mine -}}
+{{ if eq .profile "macmini-node" -}}
 # =========================================================
-# My machines
+# macmini-node
 # =========================================================
 
+# Utilities
+cask "tailscale-app"
+
+# Mine
 cask "daisydisk"
 cask "proton-mail"
 mas  "Paste", id: 967805235
-{{ end -}}
 
-{{ if and .mine .portable -}}
-# =========================================================
-# Personal only
-# =========================================================
-
-cask "affinity"
-mas  "forScore", id: 363738376
-cask "nordvpn"
-brew "ollama"
-mas  "Things", id: 904280696
-mas  "WhatsApp", id: 310633997
-cask "raspberry-pi-imager"
-{{ end -}}
-
-{{ if eq .owner "work" -}}
-# =========================================================
-# Work only
-# =========================================================
-
-mas  "Microsoft Excel", id: 462058435
-mas  "Microsoft Word", id: 462054704
-mas  "OneDrive", id: 823766827
-cask "slack"
-{{ end -}}
-
-{{ if .server -}}
-# =========================================================
-# Server only
-# =========================================================
-
+# Server
 mas  "AutoMounter", id: 1160435653
 brew "forgejo-runner", restart_service: :changed
 brew "henrygd/beszel/beszel-agent", restart_service: :changed, trusted: true
 brew "lazydocker"
 npm  "obsidian-headless"
-
+# Deliberately NOT docker, because updating reboots Docker.
 {{ end -}}

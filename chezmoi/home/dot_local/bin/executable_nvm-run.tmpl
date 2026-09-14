@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 #!/bin/bash
 # Run a command with an nvm-managed node on PATH.
 # For launchd agents and other contexts that don't get a login shell.
@@ -12,3 +13,4 @@ nvm use --lts >/dev/null 2>&1 || {
   echo "nvm-run: WARNING: no LTS installed, fell back to default ($(node --version))" >&2
 }
 exec "$@"
+{{ end -}}

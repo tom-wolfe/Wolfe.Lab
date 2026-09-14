@@ -1,0 +1,7 @@
+# Set variables/args based on the selected profile.
+
+[profiles.macmini-node]
+node = "MacMini"
+
+[profiles.pi-node]
+node = "wolfe-pi5"

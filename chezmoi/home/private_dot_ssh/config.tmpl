@@ -2,22 +2,43 @@ Host macmini
   HostName macmini.local
   User tomwolfe
 
-{{ if .server -}}
-# Headless git: use a deploy key, never the 1Password UI agent.
+{{ if eq .profile "macbook" -}}
+# The 1Password SSH agent/
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+{{ end -}}
+
+{{ if eq .profile "work-macbook" -}}
+# The 1Password SSH agent.
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+{{ end -}}
+
+{{ if eq .profile "macmini-node" -}}
+# Headless git.
 Host github.com
   IdentityAgent none
   IdentityFile ~/.ssh/github_deploy
   IdentitiesOnly yes
+
+# The 1Password SSH agent for everything else.
+Host *
+  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{ end -}}
 
-{{ if eq .chezmoi.os "linux" -}}
-# Forgejo hosts chezmoi, so 
+{{ if eq .profile "pi-node" -}}
+# Headless git.
+Host github.com
+  IdentityAgent none
+  IdentityFile ~/.ssh/github_deploy
+  IdentitiesOnly yes
+
+# Forgejo is the chezmoi source remote, and there is no 1Password agent
+# here, so reach it with its own read-only deploy key.
 Host git.twolfe.dev
   IdentityFile ~/.ssh/forgejo_deploy
   IdentitiesOnly yes
-{{ end -}}
 
-{{ if and .server (eq .chezmoi.os "linux") -}}
 # Linux nodes write their restic snapshots to the mini over SFTP, 
 # with a key the mini's authorized_keys restricts to sftp-server.
 Host macmini.tailf823b8.ts.net
@@ -25,10 +46,4 @@ Host macmini.tailf823b8.ts.net
   IdentityFile ~/.ssh/restic
   IdentitiesOnly yes
   StrictHostKeyChecking accept-new
-{{ end -}}
-
-{{ if eq .chezmoi.os "darwin" -}}
-# Use the 1Password SSH by default on all Mac devices.
-Host *
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{ end -}}

@@ -19,7 +19,7 @@
 {{- $address := $compose.services.server.environment.FORGEJO__server__ROOT_URL | trimSuffix "/" -}}
 {{- /* …unless the caller overrides it: the mini runs Forgejo, and its own
        runner reaches it over loopback so CD there depends on no name. */ -}}
-{{- if .address }}{{ $address = .address }}{{ end -}}
+{{- if and (hasKey . "address") .address }}{{ $address = .address }}{{ end -}}
 {
   "name": {{ .name | quote }},
   "uuid": {{ $uuid | quote }},

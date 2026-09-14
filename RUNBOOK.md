@@ -10,10 +10,9 @@ reasons are in `README.md`.
    ```sh
    sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
    ```
-3. You'll be asked three things about the machine — who owns it (`mine` /
-   `work`), whether it's portable, whether it's an always-on server — which
-   decide what gets installed and which service files render
-   (`chezmoi/home/.chezmoi.toml.tmpl`).
+3. You'll be asked which machine this is — `macbook`, `work-macbook`,
+   `macmini-node` or `pi-node` — and every file in the source says what
+   that profile gets (`chezmoi/README.md` "Profiles").
 4. Servers additionally: `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Forgejo Actions — the script header documents the details.
 
 If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
@@ -42,10 +41,9 @@ and no GUI, so it is the same idea with different mechanics. In order:
    vault's service account) — the `create_` templates read the vault on
    this first apply. It persists in the runner's env file (next step).
 6. `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply
-   git@git.twolfe.dev:tom-wolfe/Wolfe.Lab.git` — answer `mine`, not
-   portable, server. Linux gets no Homebrew and no macOS scripts
-   (`.chezmoiignore`); binaries arrive as pinned externals under
-   `~/.local/bin`.
+   git@git.twolfe.dev:tom-wolfe/Wolfe.Lab.git` — answer `pi-node`. That
+   profile gets no Homebrew and no macOS scripts; binaries arrive as
+   pinned externals under `~/.local/bin`.
 7. Then, per slice: the runners (`forgejo/RUNBOOK.md` "Bringing up the
    Pi"), the Beszel agent's hub-side setup (`beszel/RUNBOOK.md`), the
    backup path (`restic/RUNBOOK.md` "A Linux node").

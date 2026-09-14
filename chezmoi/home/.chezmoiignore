@@ -1,62 +1,36 @@
-{{ if not .server -}}
+{{ if eq .profile "macbook" -}}
 .config/beszel
-.config/beszel/**
-Library/LaunchAgents
-Library/LaunchAgents/**
-Docker
-Docker/**
-.docker-headless
-.docker-headless/**
-{{ end -}}
-{{ if eq .chezmoi.os "linux" -}}
-# macOS-only files and scripts — the Pi (Linux) gets none of these. Its
-# equivalents arrive as their own slices — the Beszel agent and the Actions
-# runner already have (binaries via .chezmoiexternal.toml.tmpl, user
-# systemd units under .config/systemd). This list keeps `apply` from
-# installing Homebrew or running `defaults` on Debian. Script names here are
-# the run_ attributes stripped, matching the install-packages.sh line above.
-.Brewfile
-Library
-Library/**
-Docker/*
-Docker/*/**
-!Docker/gatus
-!Docker/gatus/**
-.docker-headless
-.docker-headless/**
-# macOS-tuned dotfiles: zsh files carrying Homebrew paths, a Terminal.app
-# profile, and an nvm wrapper for launchd. The Pi's shell env and node
-# arrive as their own Linux slices.
-.zshrc
-.zprofile
-.config/terminal
-.config/terminal/**
-.local/bin/nvm-run
-.local/share/forgejo-runner
-.local/share/forgejo-runner/**
-.chezmoiscripts/install-packages.sh
-.chezmoiscripts/install-homebrew.sh
-.chezmoiscripts/configure-macos.sh
-.chezmoiscripts/configure-terminal.sh
-.chezmoiscripts/install-dotnet-tools.sh
-.chezmoiscripts/install-node.sh
-{{ end -}}
-{{ if .interactive -}}
-# The host runner is for server nodes.
 .config/forgejo-runner
-.config/forgejo-runner/**
-.local/share/forgejo-runner
-.local/share/forgejo-runner/**
-{{ end -}}
-{{ if or .interactive (ne .chezmoi.os "linux") -}}
-# The containerized runner and the systemd units are Linux-only.
 .config/forgejo-runner-docker
-.config/forgejo-runner-docker/**
 .config/systemd
-.config/systemd/**
-.chezmoiscripts/user-units.sh
+.docker-headless
+.local/share/forgejo-runner
+Docker
 {{ end -}}
-{{ if not (and .server (eq .chezmoi.os "linux")) -}}
-# The restic SFTP key: secondary server nodes only (restic/README.md).
-.ssh/restic
+
+{{ if eq .profile "work-macbook" -}}
+.config/beszel
+.config/forgejo-runner
+.config/forgejo-runner-docker
+.config/systemd
+.docker-headless
+.local/share/forgejo-runner
+Docker
+{{ end -}}
+
+{{ if eq .profile "macmini-node" -}}
+.config/forgejo-runner-docker
+.config/systemd
+Docker/gatus
+{{ end -}}
+
+{{ if eq .profile "pi-node" -}}
+.config/terminal
+.docker-headless
+.local/share/forgejo-runner
+Docker/caddy
+Docker/forgejo
+Docker/garage
+Docker/qbittorrent
+Library
 {{ end -}}

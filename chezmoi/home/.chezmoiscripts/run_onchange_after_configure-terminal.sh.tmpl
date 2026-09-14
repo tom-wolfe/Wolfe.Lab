@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 #!/bin/bash
 # Re-run when the profile changes: {{ include "dot_config/terminal/Clean.terminal" | sha256sum }}
 
@@ -10,3 +11,4 @@ fi
 
 defaults write com.apple.Terminal "Default Window Settings" -string "Clean"
 defaults write com.apple.Terminal "Startup Window Settings" -string "Clean"
+{{ end -}}

@@ -198,8 +198,7 @@ publish once their repos flip from mirror to active. Three things remain:
   pipeline; when the CLI lands, each workflow changes one line. Node
   facts the scripts currently infer become inputs there: `backup.sh`
   decides where the restic repository is by OS, which only holds while
-  the mini is the only macOS server (the Beszel agent template makes
-  the same assumption for its hub address).
+  the mini is the only macOS server.
 
 ### 8. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 

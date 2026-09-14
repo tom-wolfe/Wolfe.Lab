@@ -1,6 +1,0 @@
-{{ if not .server -}}
-# Laptops no longer run the Beszel agent; drop the env it left behind.
-.config/beszel/beszel-agent.env
-.config/beszel/fingerprint
-.config/beszel
-{{ end -}}

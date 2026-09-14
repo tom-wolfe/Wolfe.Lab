@@ -1,2 +1,4 @@
 {{- /* This node's restic SFTP key. */ -}}
-{{ onepasswordRead (printf "op://Wolfe.Lab/restic-sftp-%s/private key?ssh-format=openssh" .chezmoi.hostname) }}
+{{ if eq .profile "pi-node" -}}
+{{ onepasswordRead (printf "op://Wolfe.Lab/restic-sftp-%s/private key?ssh-format=openssh" (index .profiles .profile).node) }}
+{{ end -}}

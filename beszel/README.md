@@ -207,10 +207,10 @@ The agent has nothing to back up — its entire configuration is the
 ## The Pi
 
 The second host shape. Same env template, same vault
-item, same universal token; the template became OS-aware as well as
-role-aware: `HUB_URL` is `localhost` only on the mini (a Linux server
-reaches the hub over the tailnet), `EXTRA_FILESYSTEMS`
-is mini-only (the drives), and `DOCKER_HOST` is the Linux socket. The
+item, same universal token; the template has a block per node: `HUB_URL`
+is `localhost` on the mini and the mini's MagicDNS name on the Pi,
+`EXTRA_FILESYSTEMS` is the mini's (the drives), and `DOCKER_HOST` is
+each node's socket. The
 agent binary is a pinned release fetched by chezmoi into `~/.local/bin`,
 run by a user systemd unit that reads the env file with `EnvironmentFile=`
 (quoted `KEY="value"` lines and comments both parse). A path unit restarts

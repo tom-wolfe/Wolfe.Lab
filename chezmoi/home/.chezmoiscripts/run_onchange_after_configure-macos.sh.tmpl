@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 #!/bin/bash
 
 set -euo pipefail
@@ -21,3 +22,4 @@ mkdir -p "$HOME/Documents/Screenshots"
 defaults write com.apple.screencapture location -string "$HOME/Documents/Screenshots"
 
 killall Dock Finder 2>/dev/null || true
+{{ end -}}

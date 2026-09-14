@@ -6,7 +6,7 @@
 # deploy flows own convergence (see README.md "How deployment works").
 #
 # Before running (see README.md "New machine bootstrap" for the details):
-#   1. 1Password signed in, machine type "server" chosen during:
+#   1. 1Password signed in, profile "macmini-node" chosen during:
 #   2. sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
 #      — run `chezmoi apply` a second time: authorized_keys can only template
 #      the job-bridge public key after the first apply has materialized it.

@@ -1,9 +1,9 @@
 {{- /* Binaries chezmoi fetches rather than a package manager: pinned by
-       URL and checksum, installed under ~/.local/bin without sudo. Linux
-       server nodes only — the Macs get the same tools from the Brewfile.
-       Checksums are for linux-arm64 (the Pi); a Linux node on another arch
-       needs its own pair. To upgrade: bump the version and checksum. */ -}}
-{{- if and (.server) (eq .chezmoi.os "linux") }}
+       URL and checksum, installed under ~/.local/bin without sudo. The Pi
+       only — the Macs get the same tools from the Brewfile. Checksums are
+       for linux-arm64; another Linux node on another arch needs its own
+       pair. To upgrade: bump the version and checksum. */ -}}
+{{- if eq .profile "pi-node" }}
 # The Forgejo Actions runner — the per-node CD agent (forgejo/README.md
 # "Runners"). Release assets: code.forgejo.org/forgejo/runner/releases.
 [".local/bin/forgejo-runner"]

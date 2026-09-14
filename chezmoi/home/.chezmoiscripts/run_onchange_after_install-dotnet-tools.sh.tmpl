@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 #!/bin/bash
 
 set -euo pipefail
@@ -25,3 +26,4 @@ dotnet tool update -g ritten
   echo '_nschema_complete "$@"'
 } > "$(brew --prefix)/share/zsh/site-functions/_nschema"
 rm -f "$HOME"/.zcompdump*  # compinit caches bindings; force a rebuild
+{{ end -}}

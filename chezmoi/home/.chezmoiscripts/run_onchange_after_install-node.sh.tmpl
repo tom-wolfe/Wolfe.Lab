@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 #!/bin/bash
 # Keep a current Node LTS installed and make it nvm's default, fleet-wide.
 #
@@ -16,14 +17,16 @@ set -eo pipefail
 
 export NVM_DIR="$HOME/.nvm"
 mkdir -p "$NVM_DIR"
+# shellcheck disable=SC1091
 source /opt/homebrew/opt/nvm/nvm.sh --no-use
 
 nvm install --lts
 nvm alias default 'lts/*'
 
-{{ if .server -}}
+{{ if eq .profile "macmini-node" -}}
 # Global npm packages live per node version, so a new LTS starts empty —
 # put the server's tools back. (obsidian-headless: public npm, needs >=22.)
 nvm use 'lts/*' >/dev/null
 npm ls -g obsidian-headless >/dev/null 2>&1 || npm install -g obsidian-headless
+{{ end -}}
 {{ end -}}

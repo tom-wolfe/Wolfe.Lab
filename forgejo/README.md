@@ -317,7 +317,7 @@ publish* (an image, a package) on the containerized runner, and the lab
 *deploys* what they published through the slice's own workflow, the way it deploys any
 other pinned image.
 
-**Node half — chezmoi, gated on `!interactive && linux`:**
+**Node half — chezmoi, the `pi-node` profile:**
 
 | Source | Target | Role |
 |---|---|---|

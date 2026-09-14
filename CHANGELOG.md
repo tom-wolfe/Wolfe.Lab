@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.23.0] - 2026-09-14
+
+### Changed
+
+- **A machine is its profile.** The chezmoi facets (owner, portable,
+  server) are replaced by one value — `macbook`, `work-macbook`,
+  `macmini-node`, `pi-node`
+- **The work MacBook leaves the tailnet.** Its profile does not list
+  Tailscale; the employer's machine no longer has a route into the lab.
+
 ## [0.22.0] - 2026-09-14
 
 ### Added

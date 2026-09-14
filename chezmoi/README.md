@@ -1,17 +1,44 @@
-# chezmoi — the CD tick
+# chezmoi — the machine plane
 
-The lab's game tick: `flows/update/flow.yaml` runs `chezmoi update` on the mini
-every 15 minutes — pull the repo, converge machine config. It is the single
-clock and the only place the repo gets pulled; every service's
-`lab.<slice>/deploy` flow chains on this flow reaching SUCCESS, so the order is
-always pull → config → deploys, and a broken config converge *pauses*
-deployment (the next green tick converges everything — the deploys are
-idempotent no-ops when nothing changed).
+`home/` is the chezmoi source: everything *declarative* about a machine —
+dotfiles, the Brewfile, the service and runner files the nodes run under,
+the `create_` secret-cache templates. `.chezmoiroot` points chezmoi at it.
+Laptops apply it by hand; the nodes apply it through
+`.forgejo/workflows/chezmoi.yaml` on the push that touches `chezmoi/`.
 
-The whole chezmoi story lives in this slice: `home/` is the *source* — the
-declarative machine plane itself (dotfiles, the Brewfile, the `create_`
-secret-cache templates under `home/Docker/`; `.chezmoiroot` points chezmoi
-at it) — and `flows/update/` is the job that runs it on the server.
+## Profiles
+
+One prompted value, `profile`, says which machine this is: `macbook`,
+`work-macbook`, `macmini-node` or `pi-node`
+(`home/.chezmoi.toml.tmpl`). There are no derived facts — no "is a
+server", no OS test. A machine is its profile, and every file says what
+each profile gets:
+
+- **Root content is what every machine gets.** Anything else lives in a
+  block that opens with one test, `{{ if eq .profile "…" }}`, one block
+  per profile. Two profiles wanting the same lines repeat them: that is
+  the point. It makes "truly common" a claim the file has to earn, and
+  everything else an explicit opt-in per machine — the work laptop not
+  listing Tailscale is a decision you can see, not a section it fell
+  out of.
+- **A template that renders nothing produces no file.** That is how a file
+  is absent from a profile: the block isn't there. chezmoi does still
+  create parent *directories*, so `.chezmoiignore` keeps one job —
+  whole directories a profile does not have, one block per profile.
+  Files never appear in it.
+- **Scripts are one thing, gated whole.** A script opens with a single
+  membership test (`has .profile (list …)`) rather than a copy per
+  profile; a profile-specific step inside it is its own block.
+- **`.chezmoidata.toml` is the inventory:** the facts a template needs by
+  name (each node's runner name, which is also its vault-item suffix),
+  looked up as `(index .profiles .profile).node`. Adding a machine is a
+  new profile in the prompt's list, an entry there if it is a node, and
+  a block in each file it should get.
+
+**Seeing it.** `scripts/chezmoi-render.sh <profile> [dir]` renders the
+whole source for any profile on any machine, vault stubbed, and lists what
+that machine would get. CI runs it for every profile on each pull request,
+so a template that only breaks on the Pi fails before the merge.
 
 ## Packages
 
@@ -125,7 +152,7 @@ account. Never put the management key where a job can read it.
 
 ## Pushes
 
-`.forgejo/workflows/chezmoi.yaml` runs `chezmoi update` on every server
+`.forgejo/workflows/chezmoi.yaml` runs `chezmoi update` on each node
 when a push touches `chezmoi/`. Nothing here needs a schedule: config
 changes arrive as pushes, and `create_` files are written on the apply
 that first needs them.

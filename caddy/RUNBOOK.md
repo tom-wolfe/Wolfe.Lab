@@ -16,8 +16,8 @@ reasons are in `README.md`.
    reservation if it doesn't have one — the record is only as stable as
    the address.
 3. **Secrets on the mini**: `chezmoi apply` materializes
-   `~/Docker/caddy/caddy.env` — a `create_` template (server machines
-   only, see `.chezmoiignore`): chezmoi evaluates it ONLY while the file
+   `~/Docker/caddy/caddy.env` — a `create_` template (the `macmini-node`
+   profile only): chezmoi evaluates it ONLY while the file
    is missing, so `op` and the internet are bootstrap dependencies, not
    tick dependencies. Rotation: delete the file, `chezmoi apply` again
    (GUI session, or any session on the mini — the update flow exports the

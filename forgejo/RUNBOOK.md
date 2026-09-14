@@ -151,7 +151,7 @@ schema.
 
 ## Bringing up the Pi (runbook, at the desk)
 
-The Pi is already a chezmoi machine (owner=mine, server=true, source cloned
+The Pi is already a chezmoi machine (profile `pi-node`, source cloned
 from this instance over its deploy key). In order:
 
 1. **Register server-side** (mini): `forgejo/scripts/register-runner.sh wolfe-pi5`.

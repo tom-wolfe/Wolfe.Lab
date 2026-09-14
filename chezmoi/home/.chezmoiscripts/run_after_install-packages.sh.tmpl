@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 #!/bin/bash
 # Install anything declared in ~/.Brewfile that isn't installed yet.
 #
@@ -29,3 +30,4 @@ elif [ -x /usr/local/bin/brew ]; then
 fi
 
 exec brew bundle install --file="$HOME/.Brewfile" --no-upgrade
+{{ end -}}

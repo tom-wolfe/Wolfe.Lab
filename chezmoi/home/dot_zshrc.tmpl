@@ -1,3 +1,4 @@
+{{ if has .profile (list "macbook" "work-macbook" "macmini-node") -}}
 export PATH="$HOME/.local/bin:$PATH"
 
 # Initialise zsh completion, then the bash-compat shim for tools that need it
@@ -8,3 +9,4 @@ complete -o nospace -C /opt/homebrew/bin/tofu tofu
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+{{ end -}}

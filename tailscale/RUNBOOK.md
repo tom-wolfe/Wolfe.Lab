@@ -42,6 +42,20 @@ In order. Step 1 is the precondition and happens at the desk.
    home side unconditionally reachable. The CLI lives at
    `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
 
+## Removing a machine
+
+The work MacBook, or any machine whose profile stops listing Tailscale.
+Brew never uninstalls, so the Brewfile change only stops declaring it:
+
+1. On the machine: `brew uninstall --cask tailscale-app`.
+2. Admin console → Machines → remove it. The policy does not name
+   individual workstations, so nothing in `tofu/` changes.
+3. That machine can no longer reach `git.twolfe.dev` or
+   `code.twolfe.dev` (both are tailnet addresses; the forgejo
+   container's port 22 is not on the LAN). Point its Wolfe.Lab remote at
+   the GitHub mirror, which Forgejo pushes to:
+   `git remote set-url origin git@github.com:tom-wolfe/Wolfe.Lab.git`.
+
 ## The root
 
 Once, in order. The seed step exists because a trust credential can only

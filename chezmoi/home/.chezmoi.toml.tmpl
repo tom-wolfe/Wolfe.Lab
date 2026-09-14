@@ -1,11 +1,10 @@
-{{- /* 
-    owner     mine | work   account/ethical boundary (work = SSO + work email)
-    portable  bool          a laptop; travels, may be off-network
-    server    bool          always-on service host; its downtime is a failure
-*/ -}}
-{{- $owner    := promptChoiceOnce . "owner"    "Who owns this machine" (list "mine" "work") -}}
-{{- $portable := promptBoolOnce   . "portable" "Portable (a laptop)" -}}
-{{- $server   := promptBoolOnce   . "server"   "Always-on server (hosts lab services)" -}}
+{{- /* One value decides everything: which machine this is.
+       macbook        my laptop
+       work-macbook   the employer's laptop — SSO, work email, no lab access
+       macmini-node   the always-on server: the drives and the platform layer
+       pi-node        the Linux node: the runners, Gatus, the Beszel agent
+     Every file opts in per profile (README.md "Profiles"). */ -}}
+{{- $profile := promptChoiceOnce . "profile" "Which machine is this" (list "macbook" "work-macbook" "macmini-node" "pi-node") -}}
 
 {{/* When the monorepo working copy exists, use it as the chezmoi source */ -}}
 {{- $repo := joinPath .chezmoi.homeDir "Development/Wolfe/Wolfe.Lab" -}}
@@ -14,13 +13,9 @@ sourceDir = {{ $repo | quote }}
 {{- end }}
 
 [data]
-    owner       = {{ $owner | quote }}
-    portable    = {{ $portable }}
-    server      = {{ $server }}
-    interactive = {{ not $server }}
-    mine        = {{ eq $owner "mine" }}
+    profile = {{ $profile | quote }}
 
-{{ if $server }}
+{{ if has $profile (list "macmini-node" "pi-node") }}
 [onepassword]
     mode = "service"
 {{- end }}

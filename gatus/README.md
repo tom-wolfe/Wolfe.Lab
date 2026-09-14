@@ -17,7 +17,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | --- | --- |
 | Container | **on the Pi** — `.forgejo/workflows/gatus.yaml`, on every push that touches this slice; `scripts/deploy.sh gatus` on the node itself |
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
-| Pushover credentials (`~/Docker/gatus/gatus.env`, on the Pi) | chezmoi `create_` template (`chezmoi/home/Docker/gatus/`), from the existing `pushover` vault item; un-ignored on Linux for this slice in `.chezmoiignore` |
+| Pushover credentials (`~/Docker/gatus/gatus.env`, on the Pi) | chezmoi `create_` template (`chezmoi/home/Docker/gatus/`), from the existing `pushover` vault item; the `pi-node` profile is the one that gets `Docker/gatus` |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
 | Gatus's own liveness | `.forgejo/workflows/gatus-health.yaml`, from the mini — a status page cannot show itself being down, and the watcher is on the other machine |
 | Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |

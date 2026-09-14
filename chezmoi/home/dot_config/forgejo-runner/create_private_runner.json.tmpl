@@ -1,4 +1,15 @@
+{{- $node := (index .profiles .profile).node -}}
+{{- if eq .profile "macmini-node" -}}
+{{- /* The mini runs Forgejo: its own runner reaches it over loopback, so
+       CD here depends on no name. */ -}}
 {{- template "forgejo-runner/runner.json" (dict
-      "name" .chezmoi.hostname
-      "labels" (list (printf "%s:host" .chezmoi.hostname))
-      "address" (eq .chezmoi.os "darwin" | ternary "http://localhost:3000" "")) -}}
+      "name" $node
+      "labels" (list (printf "%s:host" $node))
+      "address" "http://localhost:3000") -}}
+{{- end -}}
+{{- if eq .profile "pi-node" -}}
+{{- template "forgejo-runner/runner.json" (dict
+      "name" $node
+      "labels" (list (printf "%s:host" $node))
+      "address" "") -}}
+{{- end -}}

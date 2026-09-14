@@ -60,11 +60,13 @@ that brings the key, or the `create_` template fails the whole apply.
    op run --env-file=~/.local/share/chezmoi/restic/sftp.env -- restic backup ~/.local/share/Wolfe.Lab --tag drill
    ```
 
-   and from the mini, forget it — a lone snapshot in its own group is
+   and from the mini, forget it by ID (`forget` needs an ID or a policy;
+   a tag alone selects nothing) — a lone snapshot in its own group is
    otherwise kept by the retention policy forever:
 
    ```sh
-   op run --env-file=restic/restic.env -- restic forget --tag drill --prune
+   op run --env-file=restic/restic.env -- restic snapshots --tag drill
+   op run --env-file=restic/restic.env -- restic forget <id> --prune
    ```
 
 Rotation: delete the vault item and recreate it (step 1), `rm
