@@ -7,8 +7,8 @@ never contend for Drive at the same moment. The host-side scripts run
 
 These replaced the `md.obsidian.headless-sync-*` launch agents'
 `--continuous` watchers — trading ≤10 min of latency for logs, retries,
-and failure visibility (the cutover pattern is documented in
-`kestra/README.md`).
+and failure visibility. Today that is `.forgejo/workflows/obsidian.yaml`,
+every ten minutes on the mini's runner.
 
 Adding a vault = one more `flows/<name>/` directory (`flow.yaml` + `script.sh`);
 the id, schedule and vault path all live inside the pair.

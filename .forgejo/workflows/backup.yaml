@@ -1,0 +1,33 @@
+name: backup
+
+on:
+  schedule:
+    - cron: "20 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    strategy:
+      matrix:
+        slice: 
+          - qbittorrent
+          - beszel
+          - garage
+          - forgejo
+          - jellyfin
+          - sonarr
+          - radarr
+    runs-on: MacMini
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/backup.sh ${{ matrix.slice }}
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "backup ${{ matrix.slice }} failed" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

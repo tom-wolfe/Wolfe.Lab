@@ -1,6 +1,6 @@
 #!/bin/bash
 # One-shot sync of the Main Obsidian vault from Google Drive.
-# Invoked on the mini by lab-job.
+# Run every 10 minutes on the mini by .forgejo/workflows/obsidian.yaml.
 set -euo pipefail
 
 exec "$HOME/.local/bin/nvm-run" ob sync \

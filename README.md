@@ -11,9 +11,9 @@ its tick job.
 
 | Path | Purpose |
 | --- | --- |
-| `<name>/` | one slice per thing the lab runs: a compose stack + configs and/or Kestra jobs (`flows/<job>/` directories, `flow.yaml` + `script.sh` paired), a `tofu/` root where the service has API resources, one README |
+| `<name>/` | one slice per thing the lab runs: a compose stack + configs and/or jobs (`flows/<job>/` directories holding the job's script or `backup.conf`; the schedule is the workflow in `.forgejo/workflows/`), a `tofu/` root where the service has API resources, one README |
 | `chezmoi/home/` | the chezmoi source — dotfiles, the Brewfile, secrets-bootstrap templates: everything *declarative* about a machine (`.chezmoiroot` points here) |
-| `setup.sh` | fresh-server bring-up — the one imperative bootstrap (Kestra can't deploy itself into existence) |
+| `setup.sh` | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence) |
 | `k8s/` | *(planned)* Argo CD applications and manifests |
 | `ENDPOINTS.md` | every service address in the lab |
 | `CHANGELOG.md` | what changed, when — Keep a Changelog format |
@@ -32,12 +32,12 @@ a manual run is always safe. OpenTofu roots have `tofu-<root>.yaml`: apply
 on the push that changes them, a daily plan for drift. Nothing ticks.
 
 Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
-runs `chezmoi update` on a node when `chezmoi/` changes. Kestra remains
-for what is not CD: the backups, the host-native jobs (restic, obsidian,
-brew), the heartbeat and the health probes; its flows are registered by
-`tofu-kestra.yaml` like any other root. Nothing ticks: each remaining
-flow carries its own schedule; `kestra/README.md` has the shrinking remainder and
-`ROADMAP.md` "CD moves to Forgejo Actions" the plan to retire it.
+runs `chezmoi update` on a node when `chezmoi/` changes. Everything
+scheduled — the nightly backups, restic's offsite copy and weekly verify,
+the obsidian syncs, certificate renewal, the heartbeat and the Gatus probe
+— is a cron-triggered workflow on the mini's host runner, over the same
+scripts. Nothing ticks, nothing chains: one workflow per job, each with
+its own schedule and its own failure alert.
 
 ## How monitoring works
 
@@ -47,13 +47,12 @@ watches.**
 
 | Layer | Watches | Dies when |
 | --- | --- | --- |
-| `system/alert-failed` | every `lab.*` flow failure → Pushover | Kestra does |
-| Beszel agent | the mini's CPU, memory, disks (incl. `/Volumes/Data1`), containers | the mini does |
-| `lab.beszel/health` | the Beszel hub itself — a dead monitor looks like a healthy lab | Kestra does |
-| Gatus (`gatus/`) | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on | the mini does |
-| `lab.gatus/health` | Gatus itself — a dead status page looks like one you haven't opened | Kestra does |
+| every workflow's failure step | its own job failing → Pushover (`scripts/alert.sh`) | Forgejo or the node's runner does |
+| Beszel agent | each node's CPU, memory, disks (incl. `/Volumes/Data1`), containers | that node does |
+| Gatus (`gatus/`, on the Pi) | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on; the Beszel hub among them | the Pi does |
+| `gatus-health.yaml` | Gatus itself, from the mini — a dead status page looks like one you haven't opened | the mini does |
 | healthchecks.io | the heartbeat still pings → **the only observer outside the building** | never (it's SaaS) |
-| `lab.chezmoi/heartbeat` | sends that ping every 15 minutes on Kestra's own schedule — proof the scheduler the backups depend on is alive | Kestra does |
+| `heartbeat.yaml` | sends that ping every 15 minutes from the mini's runner — proof Forgejo, the runner and its schedules are alive | the mini does |
 
 Everything except healthchecks.io runs inside the lab, so a dead mini is
 silence from all of them — and silence is indistinguishable from health.
@@ -73,7 +72,7 @@ hangs rather than fails, which is why every flow carries a `timeout`.
    sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
    ```
 3. You'll be asked what kind of machine it is (`personal` / `work` / `server`), which controls the apps that get installed.
-4. Servers additionally: run `chezmoi apply` a second time (authorized_keys can only template the job-bridge key after the first apply materializes it), then `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Kestra — the script header documents the details.
+4. Servers additionally: `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Forgejo Actions — the script header documents the details.
 
 If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
 
@@ -84,9 +83,10 @@ Auth state is device-bound by design; these are the once-per-machine rituals:
 - [ ] **1Password** — first, always: unlocks SSH/git, and everything below
 - [ ] **Full Disk Access** (server) — grant to **Terminal** (the op CLI discovers
       the desktop app by reading its TCC-protected group container; without this
-      it silently falls back to manual sign-ins) and to **remote users** via
-      Sharing → Remote Login (the Kestra job bridge runs over SSH and touches
-      protected paths like `~/Library/CloudStorage`)
+      it silently falls back to manual sign-ins) and to the **Actions runner
+      binary** (`/opt/homebrew/opt/forgejo-runner/bin/forgejo-runner`): the
+      obsidian syncs it runs touch `~/Library/CloudStorage`, and a
+      launchd-started process cannot be prompted
 - [ ] **1Password service account** (server) — create at 1password.com
       (Developer → Service Accounts), read-only grant on the **Wolfe.Lab vault
       only**, and place the token at
@@ -111,6 +111,6 @@ chezmoi add ~/.zshrc   # start managing a new dotfile
 Edit the Brewfile at `chezmoi/home/dot_Brewfile.tmpl`. chezmoi renders it to
 `~/.Brewfile` and stops there — it *declares* the package set, it does not
 install it. On a laptop the apply-time script installs whatever is missing;
-on the mini that's the `lab.chezmoi/packages` flow. Nothing upgrades
+on the mini that's the chezmoi workflow (`install-packages.sh` on apply). Nothing upgrades
 automatically on the mini: versions move when you run `brew bundle install
 --file ~/.Brewfile --upgrade` there. See `chezmoi/README.md`.

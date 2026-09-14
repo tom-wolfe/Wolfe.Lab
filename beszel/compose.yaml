@@ -44,7 +44,7 @@ services:
       # this reason (see caddy/compose.yaml).
       test: ["CMD", "/beszel", "health", "--url", "http://127.0.0.1:8090"]
       # Deliberately slow: the docs warn these cost measurable CPU, and
-      # nothing reads the result anyway — `lab.beszel/health` is what
+      # nothing reads the result anyway — Gatus, from the Pi, is what
       # actually alerts. This is here for `docker ps` at the terminal.
       interval: 120s
       timeout: 10s

@@ -56,7 +56,7 @@ services:
       # to ::1 first (the caddy trap, caddy/compose.yaml). Sonarr happens
       # to listen dual-stack so both work today; the literal address
       # doesn't depend on that staying true. /ping is the one route that
-      # answers without the API key. Verified in the image 2026-09-11.
+      # answers without the API key. Verified in the image.
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8989/ping"]
       # Slow on purpose, as beszel's: nothing reads it on a timer.
       interval: 120s

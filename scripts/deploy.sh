@@ -33,8 +33,8 @@ for vol in "$@"; do
   fi
 done
 
-# Install: the slice minus what the node never runs (flows/ are hooks and
-# Kestra jobs, tofu/ is IaC). --delete so a removed config file is removed.
+# Install: the slice minus what the node never runs (flows/ are job
+# scripts and hooks, tofu/ is IaC). --delete so a removed config file is removed.
 mkdir -p "$release"
 rsync -a --delete --exclude flows/ --exclude tofu/ "$repo/$slice/" "$release/"
 

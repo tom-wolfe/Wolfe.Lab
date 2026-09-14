@@ -1,26 +1,9 @@
-# The dead man's switch for the CD tick.
+# The dead man's switch. Every alert path in this lab runs on the mini's
+# Actions runner and dies with it (or with Forgejo, or the mini), so the
+# one signal that can report "the lab is off" has to come from outside:
+# .forgejo/workflows/heartbeat.yaml pings this check every 15 minutes, and
+# healthchecks.io shouts when the pings stop.
 #
-# Everything else that watches this lab runs INSIDE it — system/alert-failed
-# is a Kestra flow, so it dies with Kestra, with postgres, with the mini, or
-# with the power. Silence from a dead lab is indistinguishable from silence
-# from a healthy one. This check is the only observer outside the building:
-# lab.chezmoi/update pings it on success, and healthchecks.io shouts when
-# the pings STOP.
-#
-# Ping by SLUG, not UUID (https://hc-ping.com/<ping-key>/<slug>), which is
-# why the flow composes its URL from a project-level ping key instead of
-# storing a per-check URL. Three consequences, all wanted:
-#   * the URL survives this check being destroyed and recreated — a UUID
-#     would not, and the breakage would be silent until the next outage;
-#   * ONE secret (the ping key) covers every future check, so adding one is
-#     a resource here plus a task in the flow — no new vault item, no
-#     chezmoi change, no container restart;
-#   * the slug is visible in the flow next to the thing it monitors.
-# The slug is derived from `name` by healthchecks.io, so `name` is written
-# slug-shaped and the two stay identical. VERIFY after the first apply that
-# the check's slug really is `lab-chezmoi-update` (Check Details -> the ping
-# URL) — if it isn't, pings 404 and healthchecks reports the tick as down.
-# That failure is loud, not silent, which is why deriving is acceptable.
 
 # Notification channels are configured in the healthchecks.io UI and only
 # REFERENCED here — the provider reads them, it doesn't create them, so a
@@ -49,16 +32,16 @@ resource "healthchecksio_check" "chezmoi_tick" {
   # Slug-shaped on purpose — see the note above.
   name = "lab-chezmoi-update"
   desc = <<-EOT
-    Dead man's switch for Kestra's scheduler (flow lab.chezmoi/heartbeat,
-    every 15 minutes). Silence means it stopped: Kestra down, postgres
-    wedged, the mini off, or the network gone. The slug is historical (the
-    CD tick used to be the pulse); renaming would recreate the check.
-    Managed by chezmoi/tofu — edits here are reverted.
+    Dead man's switch for the lab's scheduler: .forgejo/workflows/
+    heartbeat.yaml pings every 15 minutes from the mini's runner. Silence
+    means Forgejo, the runner or the mini stopped, or the network is gone.
+    The slug is historical; renaming would recreate the check. Managed by chezmoi/tofu — edits
+    here are reverted.
   EOT
 
   # Cron mode rather than a simple period, so the expectation mirrors the
-  # heartbeat flow's own schedule exactly and a missed slot is caught at
-  # that slot, not a fixed interval later.
+  # heartbeat workflow's own schedule exactly and a missed slot is caught
+  # at that slot, not a fixed interval later.
   schedule = "*/15 * * * *"
   timezone = "Europe/London"
 
@@ -67,7 +50,7 @@ resource "healthchecksio_check" "chezmoi_tick" {
   # an hour.
   grace = 600
 
-  tags = ["lab", "tick", "kestra"]
+  tags = ["lab", "actions"]
 
   channels = [
     data.healthchecksio_channel.pushover.id,

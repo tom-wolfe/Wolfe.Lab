@@ -2,7 +2,7 @@
 
 [restic](https://restic.net) is the lab's backup mechanism — versioning,
 retention, dedup, compression, encryption and the offsite copy, one tool.
-Decision 2026-09-01 (Tom's): it **replaces** the old scheme outright rather
+It **replaces** the old scheme outright rather
 than layering over it. The previous design — ten full `.tar.gz` per service
 on Data2, with a restic stage proposed on top — was backups chained on
 backups, ~10× duplicated data, and would have needed the tar scripts
@@ -28,13 +28,11 @@ one offsite.
 **Per-service backups keep their stop windows.** The stop is the
 load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared
-pipeline, `scripts/backup.sh` (deploy.sh's pattern on the bridge side:
+pipeline, `scripts/backup.sh` (deploy.sh's pattern:
 stop → `restic backup` → start, with the mount, repo and mid-backup
 restart guards); per-slice variation is data, a `flows/backup/backup.conf`
-beside each flow declaring what to snapshot. kestra is the one override —
-its own `script.sh`, because a live `pg_dump` (no stop, snapshotted
-uncompressed so nights dedup) is a different shape, not a variation.
-No script keeps or prunes anything, because —
+per slice declaring what to snapshot. No script keeps or prunes
+anything, because —
 
 **Retention lives in ONE place:** `flows/offsite/script.sh`, nightly at
 04:35, after every backup has finished:
@@ -47,25 +45,24 @@ No script keeps or prunes anything, because —
    --keep-tag pre-upgrade --prune` — the same policy applied to both
    repos, after the copy so nothing is pruned before it's offsite.
    Snapshots group by path (per service) automatically; `pre-upgrade`
-   (kestra's labelled dumps) is kept forever.
+   (labelled dumps taken before upgrades) is kept forever.
 
-**Watching it:** every flow here is `alert: high`, so a red run pages via
-`system/alert-failed`. The flow *silently not running* is covered the same
-way the tick is: `lab.restic/heartbeat` pings healthchecks.io
-(`lab-restic-offsite`, declared in `tofu/`) after every green offsite run —
-that silence is the only backup signal that leaves the building. And
-`lab.restic/verify` (Sundays) runs `restic check` on both repos, reading a
-5% pack sample back from B2 — an unverified backup is a hope, not a backup.
+**Watching it:** every workflow here alerts on failure (Pushover). The
+job *silently not running* is covered the way the lab's heartbeat is: the
+offsite workflow's last step pings healthchecks.io (`lab-restic-offsite`,
+declared in `tofu/`) after a green copy — that silence is the only backup
+signal that leaves the building. And the verify workflow (Sundays) runs
+`restic check` on both repos, reading a 5% pack sample back from B2 — an
+unverified backup is a hope, not a backup.
 
-## Flows
+## Workflows
 
-| Flow | When | What |
+| Workflow | When | What |
 | --- | --- | --- |
-| `lab.<service>/backup` ×6 | 02:20–03:35 nightly | stop → snapshot → start (kestra: live pg_dump), unchanged schedules |
-| `lab.restic/offsite` | 04:35 nightly | copy to B2, then forget+prune both repos |
-| `lab.restic/heartbeat` | on offsite SUCCESS | ping `lab-restic-offsite` |
-| `lab.restic/verify` | Sun 05:05 | `restic check` both repos, 5% data sample from B2 |
-| `.forgejo/workflows/tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
+| `backup.yaml` (matrix ×7) | 02:20 nightly, one slice after another | stop → snapshot → start |
+| `restic-offsite.yaml` | 04:35 nightly | copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
+| `restic-verify.yaml` | Sun 05:05 | `restic check` both repos, 5% data sample from B2 |
+| `tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
 
 Locking: backups take shared locks and may overlap each other safely;
 `forget --prune` needs an exclusive lock, which is why offsite sits an
@@ -92,7 +89,7 @@ region segment only exists once the B2 account does.
    **master** key into 1P item `b2-master-key`; create the `restic-repo`
    Password item (generated, letters+digits).
 2. Merge this slice; let the tick ship it. `brew "restic"` is in the
-   Brewfile, so `lab.chezmoi/packages` installs it on every machine.
+   Brewfile, so the chezmoi workflow (`install-packages.sh` on apply) installs it on every machine.
 3. Apply the tofu root (from the mini or via `tofu-restic.yaml` once the
    flows land): creates the bucket, the scoped key, the check. Then fill
    the `restic-b2` item: `username`/`credential` from
@@ -107,12 +104,12 @@ region segment only exists once the B2 account does.
    op run --env-file=restic/offsite.env -- restic init --copy-chunker-params
    ```
 
-5. Run each `lab.<service>/backup` once from the Kestra UI, then
-   `lab.restic/offsite` (the first copy uploads everything — hours, once),
-   then `lab.restic/verify`.
+5. Run the backup workflow once from the Actions tab, then restic
+   offsite (the first copy uploads everything — hours, once), then restic
+   verify.
 6. Verify the heartbeat: check `lab-restic-offsite` went green on
-   healthchecks.io, then let it miss a night's grace once (pause the flow)
-   and confirm it pages.
+   healthchecks.io, then let it miss a night's grace once (disable the
+   workflow) and confirm it pages.
 
 ## Restore
 
@@ -126,13 +123,7 @@ op run --env-file=restic/restic.env -- restic restore <id> --target /tmp/restore
 The `image:` tag on every snapshot is the pin to restore onto — schema
 migrates forward only, on every one of these services. Stop the stack,
 put the restored directory where the service's compose file expects it,
-start with the tagged image, then converge upward. kestra is the
-exception (a SQL dump, not files):
-
-```sh
-op run --env-file=restic/restic.env -- restic dump latest /kestra.sql | \
-  docker exec -i kestra-db psql -U kestra -d kestra
-```
+start with the tagged image, then converge upward.
 
 Disaster case (mini and Data2 both gone): `restic.env`'s repo path is
 dead, but `offsite.env` works from any machine with restic, op and the
@@ -145,7 +136,7 @@ the live tree, throw it away.
 B2 is ~$6/TB/month. Service state is single-digit GB — pennies. The knob
 that matters later is scope, not price: adding sources (the Google Drive
 question, Immich) is adding paths to back up, not redesigning. Both are
-explicitly out of scope for now (Tom, 2026-09-01: Drive content unsorted;
+explicitly out of scope for now (Drive content unsorted;
 Immich lands only after this exists — ROADMAP).
 
 ## Transition

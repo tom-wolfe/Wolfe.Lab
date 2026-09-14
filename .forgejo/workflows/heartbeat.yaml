@@ -1,0 +1,21 @@
+# The dead man's switch: ping healthchecks.io every 15 minutes.
+# No node group: it must never queue behind a long job.
+name: heartbeat
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: MacMini
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/heartbeat.sh lab-chezmoi-update
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "heartbeat failed (the pinger, not the lab)" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

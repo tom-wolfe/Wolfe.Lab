@@ -24,8 +24,8 @@ bootstrap only creates what must exist before the admin API answers.
   `ssh macmini "docker compose --project-directory .local/share/chezmoi/garage restart"`
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
-  `lab.garage/backup` flow (`flows/backup/`) does a nightly cold copy at 02:50
-  — stop, restic snapshot of both, start; `lab.restic/offsite` ships it
+  nightly `backup.yaml` (`flows/backup/backup.conf`) does a cold copy from 02:20
+  — stop, restic snapshot of both, start; `restic-offsite.yaml` ships it
   to B2 and owns retention (`restic/README.md`); refuses to run if the
   drive isn't mounted. `garage.env` is deliberately not included — the
   vault is its origin.
@@ -60,7 +60,7 @@ rm -rf terraform.tfstate terraform.tfstate.backup
 ```
 
 Every other tofu root in the repo (`forgejo/tofu`,
-`kestra/tofu`) then uses the `s3` backend against
+`caddy/tofu`, …) then uses the `s3` backend against
 `http://macmini.local:3900` with those credentials.
 
 ### Re-running later

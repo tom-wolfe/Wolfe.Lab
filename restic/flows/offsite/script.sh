@@ -1,8 +1,8 @@
 #!/bin/bash
 # Ship the local restic repository offsite and apply retention — the
-# second half of the backup design (restic/README.md). Invoked through
-# the lab-job bridge as `restic/offsite` by ./flow.yaml beside it
-# (nightly, 04:35, after every service backup has finished), or by hand.
+# second half of the backup design (restic/README.md). Run nightly at
+# 04:35 by .forgejo/workflows/restic-offsite.yaml, after every service
+# backup has finished, or by hand.
 #
 # Three steps, in an order that matters:
 #   1. copy   — every snapshot the B2 repo doesn't have yet. Idempotent
@@ -19,14 +19,13 @@
 # clear of the 02:20–03:35 backup window so it never contends.
 set -euo pipefail
 
-# Non-interactive SSH sessions miss path_helper: Docker Desktop's CLI is
-# in /usr/local/bin, and restic + op come from Homebrew.
+# A hand run may lack brew's PATH; a workflow step has the runner's.
 export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
 
 slice="$(cd "$(dirname "$0")/../.." && pwd)"
 
-# The op service account, same fallback the tick uses: lab-job runs a
-# non-login shell, so .zprofile's export never happened.
+# The op service account: a workflow step is a non-login shell, so
+# .zprofile's export never happened (the runner's env_file usually has it).
 token_file="$HOME/Docker/1password/service-account-token"
 if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
   OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")
@@ -50,7 +49,7 @@ echo "copying new snapshots to B2"
 op run --env-file="$slice/offsite.env" -- restic copy
 
 # One policy, both repos. Nightlies thin out with age; anything tagged
-# pre-upgrade (kestra's labelled dumps) is kept forever — rare, small,
+# pre-upgrade (labelled dumps taken before upgrades) is kept forever — rare, small,
 # and the thing you want when a migration goes sideways.
 policy=(--keep-daily 7 --keep-weekly 5 --keep-monthly 12 --keep-tag pre-upgrade)
 

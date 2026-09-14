@@ -1,7 +1,7 @@
 #!/bin/bash
 # Fresh-server bring-up — the one imperative sequence that can't converge by
 # itself: Forgejo (which runs the deploys, through Actions) can't deploy
-# itself into existence, and neither can Kestra for what it still runs. Everything here is idempotent; re-runs are safe no-ops.
+# itself into existence. Everything here is idempotent; re-runs are safe no-ops.
 # Day-to-day this script is never needed: the chezmoi tick and the per-slice
 # deploy flows own convergence (see README.md "How deployment works").
 #
@@ -50,21 +50,19 @@ converge sonarr /Volumes/Data1 /Volumes/Data2
 converge radarr /Volumes/Data1 /Volumes/Data2
 converge beszel
 
-echo "==> kestra"
-docker compose --project-directory "$repo/kestra" up -d --remove-orphans
 
 cat <<'EOF'
 
 Stacks are up. Remaining one-time steps:
 
-  1. Register the flows (from any machine with op and the repo):
-       cd kestra/tofu
-       op run --env-file=secrets.env -- tofu init
-       op run --env-file=secrets.env -- tofu apply
+  1. Register this machine's Actions runner (step 3 below) and run the
+     heartbeat workflow once from the Actions tab — from then on
+     healthchecks.io knows the lab's scheduler is alive.
 
-  2. Log in at http://macmini.local:8180 (1P: kestra-admin) and watch the
-     first lab.chezmoi/heartbeat go green — from then on healthchecks.io
-     knows the scheduler is alive. Deploys are Forgejo Actions' (step 4).
+  2. Grant Full Disk Access to the runner binary
+     (/opt/homebrew/opt/forgejo-runner/bin/forgejo-runner) in System
+     Settings → Privacy: the obsidian syncs read ~/Library/CloudStorage,
+     which TCC guards, and a launchd-started process cannot be prompted.
 
   3. Enrol the monitoring agent — the one bootstrap that can't be ordered
      ahead of time, because the hub mints the token the agent needs:
@@ -75,7 +73,7 @@ Stacks are up. Remaining one-time steps:
      Then set thresholds and the Pushover URL in the hub — it ships none,
      so nothing alerts until you do. Full runbook: beszel/README.md.
 
-  4. Re-register every node's Actions runner, this machine's included — registrations live in
+  4. Register every node's Actions runner, this machine's included — registrations live in
      Forgejo's database, so a fresh Forgejo knows none of them, while each
      node's runner.json still holds its vault secret and will poll with it
      until the server knows it again (forgejo/README.md "Runners"):

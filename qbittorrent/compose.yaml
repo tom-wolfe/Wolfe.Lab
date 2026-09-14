@@ -92,7 +92,7 @@ services:
 
     environment:
       # linuxserver images take the runtime user as env rather than
-      # `user:` — same 501:20 as kestra/compose.yaml, for the same
+      # `user:` — 501:20, the host user, for the same
       # VirtioFS ownership reasons.
       PUID: "501"
       PGID: "20"

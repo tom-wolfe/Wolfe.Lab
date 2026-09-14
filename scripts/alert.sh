@@ -1,6 +1,6 @@
 #!/bin/sh
-# Pushover, from a failed workflow step — the Actions counterpart of the
-# Kestra system flow. One place for the transport; workflows pass a title.
+# Pushover, from a failed workflow step. One place for the transport;
+# workflows pass a title.
 #
 #   alert.sh <title> [message]
 #

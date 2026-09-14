@@ -1,5 +1,2 @@
-Library/LaunchAgents/md.obsidian.headless-sync-main.plist
-Library/LaunchAgents/md.obsidian.headless-sync-dnd.plist
-# Superseded by the shared restart@.service template (2026-09-13); the Pi
-# had the per-daemon oneshot on disk before the template landed.
-.config/systemd/user/forgejo-runner-restart.service
+# The Kestra job bridge (2026-09-14): Kestra is retired, nothing dials in.
+.local/bin/lab-job

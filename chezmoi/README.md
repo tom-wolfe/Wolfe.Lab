@@ -36,10 +36,7 @@ two quiet months would have frozen it silently. The mini was current only by
 accident.
 
 `--no-upgrade` is the whole fix: installing what is declared and moving
-versions forward are different jobs with different reasons to happen. For
-a while the server half of this ran as a Kestra flow chained on the
-15-minute tick (`lab.chezmoi/packages`); with the `chezmoi` workflow doing
-the apply on push, the script does the same on every machine.
+versions forward are different jobs with different reasons to happen.
 
 ### Why upgrades are manual
 
@@ -53,7 +50,7 @@ artifact to name. Renovate can't help either: its `homebrew` manager matches
 
 So the repo's usual discipline — bump a pin in a PR, let the deploy flow
 act on it — has nothing to bite on, and the alternative once tried here, a
-nightly `lab.chezmoi/packages-upgrade` flow (0.11.0 → 0.18.1), was the
+nightly unattended upgrade job (0.11.0 → 0.18.1), was the
 wrong trade for a lone server: it moved every package at once, unreviewed,
 and it failed every night regardless, because `.pkg`-based casks
 (`dotnet-sdk`) install through sudo and a forced-command SSH session has
@@ -81,11 +78,11 @@ pinned packages are skipped.
 
 ## The heartbeat (`tofu/`)
 
-The tick is the one flow whose *absence* is the failure, so it is the one
-flow watched from outside the lab. `flows/update/flow.yaml` pings
-healthchecks.io as its final task; healthchecks.io alerts when the pings
-stop. Everything else that watches this lab (`system/alert-failed`) is
-itself a Kestra flow and dies with Kestra.
+A scheduler's *absence* is the failure nothing inside it can report, so
+it is watched from outside the lab: `.forgejo/workflows/heartbeat.yaml`
+pings healthchecks.io every 15 minutes from the mini's runner, and
+healthchecks.io alerts when the pings stop. Everything else that watches
+this lab runs on the same runner and dies with it.
 
 The check is declared, not clicked: `tofu/checks.tf` owns its schedule,
 grace period, description and notification channels.
@@ -122,13 +119,13 @@ first apply.
 
 Two 1Password items, and they are not interchangeable: `healthchecks-api-key`
 is the read-write *management* key, used only from this tofu root;
-`healthchecks-ping-key` is the far less privileged *ping* key that reaches
-the mini via the kestra env template. Never put the management key in
-Kestra's environment.
+`healthchecks-ping-key` is the far less privileged *ping* key that
+`scripts/heartbeat.sh` reads at run time through the runner's service
+account. Never put the management key where a job can read it.
 
 ## Pushes
 
-Nothing in this slice reacts to a push any more. `.forgejo/workflows/
-chezmoi.yaml` runs `chezmoi update` on every server when a push touches
-`chezmoi/`; the old webhook "poke" into Kestra, and the tick it stood in
-for, are gone (kestra/README.md "Scheduling").
+`.forgejo/workflows/chezmoi.yaml` runs `chezmoi update` on every server
+when a push touches `chezmoi/`. Nothing here needs a schedule: config
+changes arrive as pushes, and `create_` files are written on the apply
+that first needs them.

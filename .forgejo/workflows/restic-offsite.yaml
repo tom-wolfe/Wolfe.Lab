@@ -1,0 +1,24 @@
+name: restic offsite
+
+on:
+  schedule:
+    - cron: "35 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  offsite:
+    runs-on: MacMini
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - run: restic/flows/offsite/script.sh
+      - run: scripts/heartbeat.sh lab-restic-offsite
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "restic offsite failed" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

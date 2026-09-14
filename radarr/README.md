@@ -13,13 +13,13 @@ covers what is different about movies.
 | Image | `linuxserver/radarr` pinned in `compose.yaml` |
 | State | `~/Docker/radarr/config` — `radarr.db` (movies, root folders, naming), `config.xml` (API key, auth) |
 | Root folders | `/Volumes/Data2/videos/movies`; `/Volumes/Data1/video/movies` is the Movies library's other root and is empty |
-| Backups | `lab.radarr/backup`, nightly 04:20, into the restic repo (`restic/README.md`) |
+| Backups | `backup.yaml`, nightly from 02:20 (serial, one slice at a time), into the restic repo (`restic/README.md`) |
 
 ## What is different about movies
 
 **Radarr requires a folder per movie**, full stop — the wiki FAQ answers
 "can all my movie files be stored in one folder" with "No" and calls a
-flat layout "highly unlikely" ever. On 2026-09-11 the Data2 root held
+flat layout "highly unlikely" ever. Before the fold, the Data2 root held
 312 entries of which **250 were loose files** in the root — the
 `Alien.Covenant.2017.1080p.WEB-DL…[EtHD].mkv` kind, with Jellyfin's
 `-poster.jpg`/`-backdrop.jpg` sidecars beside them. Library Import would

@@ -1,0 +1,24 @@
+name: obsidian
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: obsidian
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: MacMini
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - run: obsidian/flows/main/script.sh
+      - run: obsidian/flows/dnd/script.sh
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "obsidian sync failed" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

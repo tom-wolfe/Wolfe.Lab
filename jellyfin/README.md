@@ -109,7 +109,7 @@ Worth knowing before you hit them:
 Docker Desktop is set to start at login (Settings → General → "Start Docker
 Desktop when you sign in"), and the mini auto-logs-in, so the stacks come back
 on their own after a reboot. If Docker Desktop has quit for any other reason
-(it did on 2026-09-02, without a reboot), bring it back by hand:
+(it has, without a reboot), bring it back by hand:
 
 ```sh
 open -a Docker && scripts/deploy.sh jellyfin /Volumes/Data1 /Volumes/Data2
@@ -140,7 +140,7 @@ Check what's current:
 curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep '"tag_name"'
 ```
 
-### 10.11.11 → 12.0 (2026-09-11)
+### 10.11.11 → 12.0
 
 12.0 is the first release under Jellyfin's new versioning (`major.minor`;
 what would have been 10.12 is 12.0, and the server reports itself as
@@ -164,7 +164,7 @@ Checked on the mini before the bump, so these are not open questions:
 The runbook, in order. Do it in one sitting, at the desk:
 
 1. **Snapshot first.** The nightly one at 03:35 is fine if the bump ships
-   the next morning; otherwise run `lab.jellyfin/backup` from Kestra and
+   the next morning; otherwise run the backup workflow from the Actions tab and
    wait for "backup complete". The snapshot carries `image:…:10.11.11`
    as a tag — that is the rollback target.
 2. **Merge the tag bump.** The jellyfin workflow converges it on the push;
@@ -184,7 +184,7 @@ The runbook, in order. Do it in one sitting, at the desk:
    which is not a legacy route — if the lab check goes red while the UI
    works, that is the first thing to look at.
 5. **Verify** watch history, favourites and a collection or two survived,
-   then leave the 10.11.11 snapshots alone — `lab.restic/offsite` owns
+   then leave the 10.11.11 snapshots alone — `restic-offsite.yaml` owns
    retention.
 
 **Rollback** (only before step 3 has changed anything you care about):
@@ -200,8 +200,10 @@ as separate questions.
 
 ## Backup
 
-Runs itself: the `lab.jellyfin/backup` flow fires nightly at 03:35
-(`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
+Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
+slice nightly from 02:20, this one among them (`flows/backup/backup.conf`
+declares what). Manual snapshot — run the backup workflow from the
+Actions tab, or:
 
 ```sh
 "$(chezmoi source-path)/../../scripts/backup.sh" jellyfin                  # config + database + library roots + plugins
@@ -209,7 +211,7 @@ Runs itself: the `lab.jellyfin/backup` flow fires nightly at 03:35
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
-rides on it as a snapshot tag; `lab.restic/offsite` ships it to B2 and
+rides on it as a snapshot tag; `restic-offsite.yaml` ships it to B2 and
 owns retention — see `restic/README.md`). It refuses to run if the drive
 isn't mounted — an unmounted `/Volumes` path on macOS silently writes to
 the internal disk. It stops the container first — SQLite copied mid-write
@@ -246,8 +248,7 @@ taken with (the `image:` tag on the snapshot records it).
 
 ## Rolling back to the native app
 
-**This door is now closed.** On 2026-08-18 the container was upgraded to
-10.11.11, which applied three irreversible schema migrations. `Jellyfin.app` is
+**This door is now closed.** The container was upgraded to 10.11.11, which applied three irreversible schema migrations. `Jellyfin.app` is
 still at 10.11.8 and will refuse to open the migrated database.
 
 Rolling back now means restoring a pre-upgrade backup as well:
@@ -267,7 +268,7 @@ starting itself again.
 
 The equivalent applies to future upgrades: rolling back an image tag alone is
 not enough once migrations have run, which is why `backup.sh` runs first.
-12.0 (2026-09-11) is the second such door — a 12.0 database won't open on
+12.0 is the second such door — a 12.0 database won't open on
 any 10.11 image either; "10.11.11 → 12.0" above has the rollback.
 
 ## Pre-existing issues found during migration
@@ -277,7 +278,7 @@ Neither of these was caused by the move, and neither was changed:
 - **Items pointing at volumes that no longer exist.** At migration time
   4,178 rows pointed at `/Volumes/books` and `/Volumes/video` — an earlier
   drive layout, the same content now under `Data1`. Scans since have
-  pruned nearly all of them: on 2026-09-11 only 88 remained, all extras
+  pruned nearly all of them: at last count only 88 remained, all extras
   under `/Volumes/video/shows/Angel (2005)/` (trailers and outtakes in
   `Season 00` and `Season 03/Extras`). The 12.0 migration removes
   orphaned extras and the required post-upgrade scan does path-based

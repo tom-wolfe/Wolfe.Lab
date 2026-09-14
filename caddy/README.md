@@ -83,7 +83,7 @@ because an apex-level name matches no wildcard. The recipe, per name:
 4. **Re-issue the certificate.** An edited domain list does NOT reissue
    by itself (lego converges on expiry, not SANs — the script's comment
    explains). At the desk: move `_.lab.twolfe.dev.*` out of
-   `~/Docker/caddy/lego/certificates`, trigger `lab.caddy/renew-certs`,
+   `~/Docker/caddy/lego/certificates`, run the renew-certs workflow,
    confirm with
    `openssl x509 -in ~/Docker/caddy/lego/certificates/_.lab.twolfe.dev.crt -noout -text | grep DNS`.
    Until this is done the new name answers with a certificate that
@@ -98,7 +98,7 @@ wildcards.
 ## Names are for humans
 
 Service-to-service traffic on the mini uses the Docker network directly
-(`http://kestra:8080`), never the public names. The lab must keep working
+(`http://forgejo:3000`), never the public names. The lab must keep working
 with the internet down; DNS for `*.lab.twolfe.dev` lives on Netlify's
 nameservers and resolves only while the internet is up. The names are
 sugar for browsers, not plumbing.
@@ -123,13 +123,13 @@ sugar for browsers, not plumbing.
    (GUI session, or any session on the mini — the update flow exports the
    1P service account for headless runs).
 4. **First certificate**: run `flows/renew-certs/script.sh` on the mini
-   (or `caddy/renew-certs` via the bridge). Caddy loads the cert from
+   (or the renew-certs workflow). Caddy loads the cert from
    files and cannot START without them — setup.sh encodes this ordering.
 5. **First deploy**: run the caddy workflow (or
    `docker compose up -d` in this directory on the mini). Must happen
    ONCE before redeploying any proxied slice — this compose creates the
    `lab` network the others reference as external.
-6. **Re-up the proxied slices** (forgejo, kestra, jellyfin, garage) so
+6. **Re-up the proxied slices** (forgejo, jellyfin, garage) so
    their containers join the network. Compose recreates them — brief
    downtime each.
 
@@ -149,7 +149,7 @@ notes — a major bump can change the CLI (v4→v5 did).
   state, backed up like all state. Losing it means re-issuing (Let's
   Encrypt rate limits apply), not disaster. `~/Docker/caddy/data` is
   caddy's own runtime state, modest now that ACME moved out.
-- Renewal health is a Kestra concern: the nightly `renew-certs` run is
+- Renewal health is the renew-certs workflow's concern: the nightly run is
   a no-op until lego's ARI window opens, so a red run means the chain
   broke with weeks of certificate lifetime still banked.
 - **After any certificate change, the reload must be `--force`.** A
@@ -175,9 +175,9 @@ notes — a major bump can change the CLI (v4→v5 did).
 - The repo mount is read-only and safe: the repo contains `op://`
   references, never secret material.
 - Headless pulls of uncached images (a bumped caddy or lego pin, through
-  the bridge) work because of the null credential helper the headless
+  the runner) work because of the null credential helper the headless
   Docker config names — without it, macOS defaults to the osxkeychain
   helper and the locked login keychain kills the pull (CHANGELOG 0.9.1).
-- Port 3000/8096/8180 publishes stay for now — automation (kestra flows,
-  tofu providers, the job bridge docs) targets `macmini.local:<port>` and
+- Port 3000/8096 publishes stay for now — automation (tofu providers, the
+  Gatus lab checks) targets the mini by address and port and
   keeps working when the front door doesn't.

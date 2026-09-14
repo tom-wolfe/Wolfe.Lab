@@ -37,7 +37,7 @@ endpoints:
     # the domain is arriving. Half-hourly: an SMTP handshake is not a thing
     # to do every two minutes against someone else's mail exchanger.
     # Outbound port 25 from a residential line is sometimes ISP-blocked;
-    # verified open on the house's line 2026-09-02 (this exact check
+    # verified open on the house's line (this exact check
     # passed from a laptop at home). If it ever goes red while mail
     # arrives fine, the ISP changed its mind — drop it rather than leave
     # a known-false red.

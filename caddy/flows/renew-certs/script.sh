@@ -1,7 +1,7 @@
 #!/bin/bash
-# Issue-or-renew the lab's wildcard certificate. Invoked nightly through
-# the lab-job bridge as `caddy/renew-certs` by ./flow.yaml beside it, and
-# once by setup.sh BEFORE caddy first starts — the Caddyfile loads the
+# Issue-or-renew the lab's wildcard certificate. Run nightly by
+# .forgejo/workflows/renew-certs.yaml, and once by setup.sh BEFORE caddy
+# first starts — the Caddyfile loads the
 # cert from FILES, so no cert means caddy cannot start.
 #
 # lego v5's `run` is convergent: registers + issues when nothing exists,
@@ -9,7 +9,7 @@
 # safe on any schedule. SSL maintenance lives HERE, not in caddy: the
 # caddy-dns/netlify module is dead upstream (see CHANGELOG 0.9.1/0.9.2),
 # lego's in-tree netlify provider is maintained, and a renewal that fails
-# shows up as a red run in Kestra instead of a log line nobody reads.
+# shows up as a red run in Actions instead of a log line nobody reads.
 set -euo pipefail
 
 lego_dir="$HOME/Docker/caddy/lego"
@@ -25,7 +25,7 @@ fi
 
 # Pinned like every image in the lab. To upgrade: bump the tag, re-run.
 #
-# Two hard-won flags (2026-08-28):
+# Two hard-won flags:
 #  * State mounts at /state, NOT /lego — the v5 image ships its BINARY at
 #    /lego, and mounting a directory over it fails with a misleading
 #    "not a directory" error.
@@ -72,7 +72,7 @@ docker run --rm \
 # and the certificate files are only re-read as part of a real load. A
 # renewal changes the FILES, never the Caddyfile, so without --force every
 # reload here was a silent no-op and caddy would have served the old cert
-# until something else changed the config (found 2026-09-02, when a
+# until something else changed the config (found when a
 # re-issued cert with new SANs sat on disk while caddy kept serving the
 # previous one through two "successful" reloads).
 if [ -n "$(docker ps -q -f name='^caddy$')" ]; then

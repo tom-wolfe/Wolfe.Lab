@@ -40,16 +40,6 @@ endpoints:
     alerts:
       - type: pushover
 
-  - name: kestra
-    group: front door
-    url: https://kestra.lab.twolfe.dev/
-    interval: 2m
-    conditions:
-      - "[STATUS] == any(200, 401)"
-      - "[CERTIFICATE_EXPIRATION] > 336h"
-    alerts:
-      - type: pushover
-
   - name: jellyfin
     group: front door
     url: https://jellyfin.lab.twolfe.dev/health

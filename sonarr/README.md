@@ -14,7 +14,7 @@ client hook-up, Jellyseerr — is Phase B and is deliberately not here.
 | Image | `linuxserver/sonarr` pinned in `compose.yaml` |
 | State | `~/Docker/sonarr/config` — `sonarr.db` (series, root folders, naming), `config.xml` (API key, auth) |
 | Root folders | `/Volumes/Data1/video/shows`, `/Volumes/Data2/videos/shows` — the Shows library's two roots in `jellyfin/` |
-| Backups | `lab.sonarr/backup`, nightly 04:05, into the restic repo (`restic/README.md`) |
+| Backups | `backup.yaml`, nightly from 02:20 (serial, one slice at a time), into the restic repo (`restic/README.md`) |
 
 ## Why the paths look like jellyfin's
 
@@ -85,7 +85,7 @@ At the desk. Do the Jellyfin 12.0 upgrade and its full scan **first**
    ```
 
    `202` means the user exists; log in, then mirror the credentials to
-   1P `sonarr-webui`. Verified against the pinned image 2026-09-12.
+   1P `sonarr-webui`. Verified against the pinned image.
 3. *Settings → Media Management*: turn **Rename Episodes** on (it is off
    by default — without it nothing below renames anything). Leave the
    formats at their defaults. Add both root folders.
@@ -134,7 +134,7 @@ Current stable tags: https://github.com/linuxserver/docker-sonarr/releases
 
 ## Backup and restore
 
-`lab.sonarr/backup` snapshots `~/Docker/sonarr/config` nightly at 04:05
+The nightly backup workflow snapshots `~/Docker/sonarr/config`
 via the shared pipeline (`scripts/backup.sh`, `flows/backup/backup.conf`):
 stops the container, `restic backup`, starts it. Excluded: `Backups/`
 (Sonarr's own zips — restic is the backup), `MediaCover/` (artwork

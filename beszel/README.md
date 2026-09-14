@@ -12,11 +12,11 @@ lands — see "Later: the laptops".
 | Concern | Handled by |
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
-| Hub state (`~/Docker/beszel/data`) | nightly cold backup, `lab.beszel/backup` (below) |
+| Hub state (`~/Docker/beszel/data`) | nightly cold backup, `backup.yaml` (below) |
 | Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins"), supervised by `brew services` |
 | Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
 | Agent config (`~/.config/beszel/beszel-agent.env`) | chezmoi `create_` template (`chezmoi/home/dot_config/beszel/`) — materialized from 1Password (`beszel-agent`) only while the file is missing |
-| Hub liveness | the `lab.beszel/health` flow — Beszel cannot alert about its own hub being down |
+| Hub liveness | Gatus, from the Pi (`gatus/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
 | Route (`beszel.lab.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
 | Systems, thresholds, notification URLs | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
 
@@ -37,8 +37,9 @@ and runs natively on macOS. That's the pick.
 
 The cost is supervision: a native process needs launchd, and `brew
 services` is launchd. That's accepted, and it is consistent with what this
-repo actually retired — Kestra replaced launchd's *scheduling*, not its
-*supervision* (`kestra/README.md`). The objection to launchd was that
+repo actually retired — the scheduler replaced launchd's *scheduling*,
+not its *supervision*. The objection to
+launchd was that
 plists are opaque and there is nowhere to watch them. This agent reports
 into a dashboard and shows up in `brew services list`, so it is observable,
 which was the actual requirement.
@@ -99,8 +100,8 @@ Docker's control plane: anything that can talk to it can start a container
 that mounts the whole disk, which is root access by another route. The rule
 this lab follows is that **no container gets the socket** — that's the rule
 that matters, because it's the one that turns "one container compromised"
-into "host compromised", and Kestra in particular is built around avoiding
-it (`kestra/README.md`).
+into "host compromised" (the containerised Actions runner never mounts it
+into a job for the same reason).
 
 The agent is a different shape. It is a native process already running as
 `tomwolfe`, who owns the socket and can run `docker` at any prompt. Reading
@@ -125,23 +126,23 @@ pushover://shoutrrr:<credential>@<username>/
 `system/alert-failed` uses.) Configured in **Settings → Notifications**, then
 per-system thresholds in the systems table.
 
-**`lab.beszel/health`** — a Kestra flow polling the hub's own `/api/health`
-at 7/22/37/52 past the hour, labelled `alert: high`. This is the failure
-Beszel structurally cannot report: a hub that isn't running sends no alerts,
-and it looks exactly like a healthy lab, because the deploy is a
-convergent no-op that stays green regardless. A monitoring tool nobody
-monitors is the trap the roadmap's ordering principle exists to avoid, so
-the hub gets a liveness probe on the day it arrives.
+**Who watches the hub:** Gatus, from the Pi (`gatus/config/lab.yaml`
+asks `/api/health` every two minutes, three failures page). This is the
+failure Beszel structurally cannot report: a hub that isn't running sends
+no alerts, and it looks exactly like a healthy lab, because the deploy is
+a convergent no-op that stays green regardless. Gatus is on the other
+machine, and Gatus itself is probed from the mini (`gatus-health.yaml`),
+so the chain has no self-reference.
 
-Note what that flow is *not*: it isn't reading `compose.yaml`'s Docker
+Note what that check is *not*: it isn't reading `compose.yaml`'s Docker
 healthcheck. Docker healthchecks are inert in this lab — nothing reads them
 and nothing alerts on them. Caddy's has failed nearly four thousand times in
-a row in total silence. The check that alerts is the one written in Kestra.
+a row in total silence. The check that alerts is the one that asks.
 
 ## The configuration that isn't code
 
 Every other slice declares its API resources in tofu — buckets in
-`garage/tofu`, repositories in `forgejo/tofu`, flows in `kestra/tofu`. This
+`garage/tofu`, repositories in `forgejo/tofu`, checks in `gatus/tofu`. This
 one can't: Beszel has no Terraform/OpenTofu provider. Registered systems,
 alert thresholds and notification URLs are clicked into the UI and live only
 in `~/Docker/beszel/data`.
@@ -214,15 +215,13 @@ as `garage/tofu` — run once, harvest the outputs, store them.
 4. **Materialize the agent config.** On the mini, `chezmoi apply` — writes
    `~/.config/beszel/beszel-agent.env`. Needs `OP_SERVICE_ACCOUNT_TOKEN` in
    the environment for a non-login shell; `.zprofile` exports it on servers.
-5. **Install and start the agent**: wait for `lab.chezmoi/packages` on the
+5. **Install and start the agent**: wait for the chezmoi workflow on the
    next tick, or by hand `brew bundle install --file=~/.Brewfile`. Confirm
    with `brew services list`.
 6. **Confirm enrolment.** The mini should appear in the hub within a few
    seconds. If it doesn't, `tail ~/.cache/beszel/beszel-agent.log`.
 7. **Configure notifications and thresholds** (see "Alerting"). Nothing
    alerts until you do — the hub ships no default thresholds.
-8. **Register the flows**: `cd kestra/tofu` and
-   `op run --env-file=secrets.env -- tofu apply`.
 
 ## Operational notes
 
@@ -264,7 +263,7 @@ avoiding here. Bump the hub's `image:` pin in the same sitting, so the
 pair moves together.
 
 If the agent does get ahead of the hub, a protocol mismatch is loud rather
-than silent — the mini drops off the dashboard, and `lab.beszel/health`
+than silent — the mini drops off the dashboard, and Gatus
 and `~/.cache/beszel/beszel-agent.log` both say so. To hold it, `brew pin
 beszel-agent` on the mini; upgrades skip pinned packages.
 
@@ -277,9 +276,9 @@ restoring a backup, which is why the backup records its image tag.
 `scripts/backup.sh` — the shared pipeline; `flows/backup/backup.conf`
 declares the paths — stops the hub, snapshots `~/Docker/beszel/data`
 into the restic repo on `/Volumes/Data2` (tagged with the image it was
-taken under; `lab.restic/offsite` ships it to B2 and owns retention — see
+taken under; `restic-offsite.yaml` ships it to B2 and owns retention — see
 `restic/README.md`), and starts it again, refusing to run if the drive
-isn't mounted. Nightly at 02:35 via `lab.beszel/backup`, staggered ahead of
+isn't mounted. Nightly via `backup.yaml` (from 02:20, one slice at a time), ahead of
 garage's 02:50.
 
 The stop is not optional: PocketBase runs SQLite in WAL mode, and copying
@@ -291,8 +290,8 @@ The agent has nothing to back up — its entire configuration is the
 
 ## Later: the laptops
 
-Built 2026-08-31, once Tailscale landed — and it was exactly the small
-change predicted: `.config/beszel` left the server-only branch of
+Once Tailscale landed, enrolling them was exactly the small change
+predicted: `.config/beszel` left the server-only branch of
 `.chezmoiignore`, the Brewfile entry moved to the all-machines section,
 and `HUB_URL` became machine-aware — `localhost:8090` on the mini,
 `http://macmini.tailf823b8.ts.net:8090` on the laptops. The MagicDNS name
@@ -311,7 +310,7 @@ or enrolment fails with a stale vault copy — see the template.
 
 ## The Pi
 
-Built 2026-09-13, the second host shape. Same env template, same vault
+The second host shape. Same env template, same vault
 item, same universal token; the template became OS-aware as well as
 role-aware: `HUB_URL` is `localhost` only on the mini (a Linux server
 reaches the hub over the tailnet like a laptop does), `EXTRA_FILESYSTEMS`

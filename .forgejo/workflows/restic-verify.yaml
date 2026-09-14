@@ -1,0 +1,24 @@
+# Weekly integrity check of both restic repositories.
+name: restic verify
+
+on:
+  schedule:
+    - cron: "5 5 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: MacMini
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - run: restic/flows/verify/script.sh
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "restic verify failed" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

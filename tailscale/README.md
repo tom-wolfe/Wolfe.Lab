@@ -59,7 +59,7 @@ In order. Step 1 is the precondition and happens at the desk.
    streaming, and streaming is one of the reasons this exists.
 2. Install — **the mini FIRST, and before this branch merges.** The cask
    is a `.pkg`, which needs sudo, and the headless, sudo-less
-   `lab.chezmoi/packages` flow can't provide it: once the Brewfile
+   chezmoi workflow (`install-packages.sh` on apply) can't provide it: once the Brewfile
    change reaches the mini, that flow fails on every tick (an instant
    sudo error, alerting each time) until the cask exists. Pre-empt it:
    `brew install --cask tailscale-app` once in an SSH or Screen Sharing
@@ -78,7 +78,7 @@ In order. Step 1 is the precondition and happens at the desk.
    `tailscale status`, then `tailscale ping macmini` — expect `direct`,
    not `via DERP`. But don't trust a DERP verdict from `tailscale ping`
    alone: it gives up after ~10 seconds, and through carrier CGNAT the
-   upgrade can take longer (measured 2026-08-30 on Three — DERP for the
+   upgrade can take longer (measured on Three — DERP for the
    whole ping window, direct under sustained traffic). Judge with
    `ping -c 30 <100.x address>` then `tailscale status | grep macmini`.
    DERP that survives THAT means traversal is broken — step 1
@@ -88,12 +88,11 @@ In order. Step 1 is the precondition and happens at the desk.
    home side unconditionally reachable. The CLI lives at
    `/Applications/Tailscale.app/Contents/MacOS/Tailscale`.
 
-## After it works — follow-ups, each its own change
+## How the lab uses it
 
-1. **Repoint the wildcard — SUPERSEDED (Tom's call, 2026-08-31).**
-   Instead of repointing `*.lab` at the Tailscale address — which would
-   have cut off non-tailnet LAN devices (a TV Jellyfin app, guests) —
-   the lab runs TWO wildcards: `*.lab` stays on the LAN address,
+1. **Two wildcards, not a repoint.** Repointing `*.lab` at the Tailscale
+   address would have cut off non-tailnet LAN devices (a TV Jellyfin app,
+   guests), so the lab runs TWO wildcards: `*.lab` stays on the LAN address,
    `*.ts.twolfe.dev` points at 100.x. Every device has an option; one
    cert carries both SANs; every route snippet matches both names. The
    mechanics live in the caddy slice (`tofu/records.tf` records the
@@ -101,12 +100,11 @@ In order. Step 1 is the precondition and happens at the desk.
    `*.lab` still resolves to RFC1918 — and both it and the dual
    wildcard retire together if local DNS on a Pi ever lands
    (ROADMAP.md).
-2. **Enroll the laptops in beszel — built 2026-08-31**, see
-   beszel/README.md "The laptops": agents dial the hub at the mini's
+2. **The laptops are enrolled in beszel** (beszel/README.md "The
+   laptops"): agents dial the hub at the mini's
    MagicDNS name over the tailnet. Status alerts OFF for machines that
    are allowed to sleep.
-3. **Per-service sidecar IPs — forgejo built 2026-08-31**, the first
-   customer as planned: a userspace `tailscale/tailscale` sidecar in the
+3. **Per-service sidecar IPs.** forgejo is the first customer: a userspace `tailscale/tailscale` sidecar in the
    forgejo container's network namespace gives it its own tailnet seat
    with port 22 free, and clone URLs go portless at `git.twolfe.dev`
    (an A record in forgejo/tofu at the sidecar's address — the

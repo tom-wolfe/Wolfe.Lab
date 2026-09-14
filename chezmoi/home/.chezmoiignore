@@ -1,7 +1,6 @@
 {{ if not .server -}}
 Library/LaunchAgents
 Library/LaunchAgents/**
-.local/bin/lab-job
 Docker
 Docker/**
 .docker-headless
@@ -23,7 +22,6 @@ Docker/*/**
 !Docker/gatus/**
 .docker-headless
 .docker-headless/**
-.local/bin/lab-job
 # macOS-tuned dotfiles: zsh files carrying Homebrew paths, a Terminal.app
 # profile, and an nvm wrapper for launchd. The Pi's shell env and node
 # arrive as their own Linux slices.

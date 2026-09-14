@@ -3,17 +3,19 @@
        LAB_ROOT: where deploys INSTALL a slice (scripts/deploy.sh copies the
        slice out of the disposable checkout into $LAB_ROOT/<slice> and runs
        compose there, because containers bind-mount files from it after the
-       job is gone). Plus the environment the old lab-job dispatcher
-       exported, per OS. node is on the PATH only because actions/checkout
+       job is gone). Plus the environment a headless shell needs, per OS. node is on the PATH only because actions/checkout
        is a JavaScript action: on the mini an nvm shim in
        ~/.local/share/forgejo-runner/bin (nvm owns the active version), on
        the Pi the pinned external in ~/.local/bin. */ -}}
 {{- $root := joinPath .chezmoi.homeDir ".local/share/Wolfe.Lab" -}}
 {{- if eq .chezmoi.os "darwin" -}}
+{{- /* Capacity 3 on the mini: stateful jobs serialise themselves through
+       the MacMini concurrency group; the heartbeat, the obsidian syncs and
+       the Gatus probe must never queue behind a six-hour restic copy. */ -}}
 {{- template "forgejo-runner/config.yaml" (dict
       "home" .chezmoi.homeDir
       "dir" "forgejo-runner"
-      "capacity" 1
+      "capacity" 3
       "host" true
       "labels" (list (printf "%s:host" .chezmoi.hostname))
       "cache" false

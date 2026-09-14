@@ -4,8 +4,7 @@
 # Every machine, every apply: on a laptop the human running `chezmoi
 # apply` is the actor; on a server it is the `chezmoi` workflow, which runs
 # `chezmoi update` on the push that changes chezmoi/. A satisfied run costs
-# about a second. (The mini used to get this from a Kestra flow chained
-# on its 15-minute tick — chezmoi/README.md "Packages".)
+# about a second.
 #
 # `run_after_` matters: this reads ~/.Brewfile, which chezmoi writes during
 # the file pass. A `before` or unprefixed script could run first and act on

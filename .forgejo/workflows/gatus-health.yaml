@@ -1,0 +1,22 @@
+name: gatus health
+
+on:
+  schedule:
+    - cron: "11-59/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: MacMini
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          body="$(curl -fsS --max-time 20 http://wolfe-pi5.tailf823b8.ts.net:8280/health)"
+          echo "$body"
+          [ "$body" = '{"status":"UP"}' ]
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "gatus is down on the Pi" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"

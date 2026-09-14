@@ -6,8 +6,8 @@ set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$repo/$1/tofu"
 
-# The op service account, same fallback the tick uses: lab-job runs a
-# non-login shell, so .zprofile's export never happened.
+# The op service account: a workflow step is a non-login shell, so
+# .zprofile's export never happened (the runner's env_file usually has it).
 token_file="$HOME/Docker/1password/service-account-token"
 if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
   OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")

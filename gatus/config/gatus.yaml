@@ -13,8 +13,8 @@ ui:
   buttons:
     - name: Beszel
       link: https://beszel.lab.twolfe.dev
-    - name: Kestra
-      link: https://kestra.lab.twolfe.dev
+    - name: Actions
+      link: https://code.twolfe.dev/tom-wolfe/Wolfe.Lab/actions
     - name: healthchecks.io
       link: https://healthchecks.io
 

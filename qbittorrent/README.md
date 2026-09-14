@@ -80,7 +80,7 @@ Consequences worth knowing:
   OpenVPN service credential. If the dashboard only offers an access
   token, the key falls out of
   `curl -s -u token:<TOKEN> https://api.nordvpn.com/v1/users/services/credentials | jq -r .nordlynx_private_key`.
-  Shape check before saving — this has bitten once (2026-08-30): the KEY
+  Shape check before saving — this has bitten once: the KEY
   is 44 base64 chars ending `=`; the dashboard's access TOKEN is 64 hex
   chars, and gluetun rejects it as `wgtypes: incorrect key size: 48`.
   The item keeps that token in a separate `token` field — it is what
@@ -121,27 +121,26 @@ route.
    `/Volumes/Data1/...` path; the drives are mounted at their host
    paths, so what qbittorrent writes is what jellyfin sees.
 6. Take the host off Nord — the point of the whole exercise. Quit the
-   native Transmission.app (superseded, nothing worth keeping — Tom's
-   call, 2026-08-30). In the NordVPN app: disable the kill switch,
+   native Transmission.app (nothing worth keeping). In the NordVPN app: disable the kill switch,
    disconnect, log out. Then
    `brew uninstall --cask transmission nordvpn`. The Brewfile already
    stopped declaring both on the server, but `brew bundle` never
    uninstalls anything — this step is manual by design.
 7. Verify the route is real again: `route -n get default` should show
    the LAN gateway on a real interface, not a `utun` via `10.5.0.2`.
-   Then trigger `lab.chezmoi/update` from the Kestra UI and watch it
-   stay green — that exercises git, 1Password and the heartbeat over
-   the restored interface in one go.
+   Then run the chezmoi and heartbeat workflows from the Actions tab and
+   watch them stay green — that exercises git, 1Password and the
+   heartbeat over the restored interface.
 
 ## Backup
 
-`lab.qbittorrent/backup`, nightly at 02:20: cold restic snapshot of
+The nightly backup workflow, from 02:20: cold restic snapshot of
 `config/` — qBittorrent.conf (including the web UI password hash),
 categories, and BT_backup/ (.torrent files + fastresume); the parts
 configured in the UI rather than declared here. Mount-guarded,
 integrity-guarded — the shared `scripts/backup.sh` pipeline, with this
 slice's paths declared in `flows/backup/backup.conf`; retention and the
-offsite copy belong to `lab.restic/offsite` (`restic/README.md`).
+offsite copy belong to `restic-offsite.yaml` (`restic/README.md`).
 `gluetun/` is deliberately excluded: a disposable server-list cache.
 
 ## Upgrading

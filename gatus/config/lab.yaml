@@ -36,16 +36,6 @@ endpoints:
     alerts:
       - type: pushover
 
-  - name: kestra
-    group: lab
-    url: http://${LAB_HOST}:8180/ping
-    interval: 2m
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY] == pong"
-    alerts:
-      - type: pushover
-
   - name: jellyfin
     group: lab
     url: http://${LAB_HOST}:8096/health
@@ -70,10 +60,6 @@ endpoints:
 
   - name: beszel
     group: lab
-    # The same route `lab.beszel/health` polls from Kestra. Two watchers
-    # for the monitoring hub is not redundancy for its own sake: this one
-    # is on a 2-minute cadence with history, that one alerts even when
-    # Gatus itself is down.
     url: http://${LAB_HOST}:8090/api/health
     interval: 2m
     conditions:

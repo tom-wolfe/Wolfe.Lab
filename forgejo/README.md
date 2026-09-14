@@ -130,7 +130,7 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   resolution rides Netlify DNS, like every `.lab` name. The sidecar's
   MagicDNS name, `forgejo.tailf823b8.ts.net`, is the same endpoint with
   no DNS dependency — the fallback when Netlify is the broken thing.
-- **And the web gets `code.twolfe.dev`** (added 2026-09-02), the same
+- **And the web gets `code.twolfe.dev`**, the same
   pattern from the other side: a CNAME to `forgejo.ts.twolfe.dev` in
   `tofu/records.tf`, so it resolves to the *mini* and routes through
   caddy like the `.ts` name it aliases — it just doesn't look like a
@@ -222,15 +222,17 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 
 ## Backup
 
-Runs itself: the `lab.forgejo/backup` flow fires nightly at 03:05
-(`flows/backup/`). Manual snapshot — run the flow from the Kestra UI, or:
+Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
+slice nightly from 02:20, this one among them (`flows/backup/backup.conf`
+declares what). Manual snapshot — run the backup workflow from the
+Actions tab, or:
 
 ```sh
 "$(chezmoi source-path)/../../scripts/backup.sh" forgejo
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
-rides on it as a snapshot tag; `lab.restic/offsite` ships it to B2 and
+rides on it as a snapshot tag; `restic-offsite.yaml` ships it to B2 and
 owns retention — see `restic/README.md`). It refuses to run if the drive
 isn't mounted — an unmounted `/Volumes` path on macOS silently writes to
 the internal disk. It stops the container first — a live SQLite file
@@ -400,7 +402,7 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
 - Private mirrors store their PAT inside Forgejo per-repo, but Forgejo only
   consumes it at migration time — there is no API to update mirror
   credentials, so a `tofu apply` after rotating a PAT "succeeds" while the
-  mirror keeps pulling with the dead token (2026-08-25). To rotate: update
+  mirror keeps pulling with the dead token. To rotate: update
   1Password, then set the new token in each repo's Settings -> Mirror
   Settings -> Authorization in the Forgejo UI, then run `tofu apply` once so
   state catches up (that apply is a harmless server-side no-op).
@@ -418,7 +420,7 @@ State inspection: `op run --env-file=secrets.env -- tofu state list`.
   — the provider PATCHes the full repo object including an empty
   `wiki_branch`, which Forgejo treats as a branch rename to `""`. This hits
   *real* changes too, not just the no-op ones (seen flipping the feature
-  units off on Hamelin, 2026-08-27). Workaround: make the same change
+  units off on Hamelin). Workaround: make the same change
   out-of-band with a minimal PATCH that omits `wiki_branch` —
 
   ```sh
@@ -449,9 +451,7 @@ upstream issues at svalabs/terraform-provider-forgejo.
 
 ## Runners
 
-Forgejo Actions is the lab's CD engine for nodes other than the mini, and
-the intended replacement for Kestra everywhere (ROADMAP.md "CD moves to
-Forgejo Actions"). The model: **one runner per node per trust level.** A
+Forgejo Actions is the lab's CD engine. The model: **one runner per node per trust level.** A
 runner is one binary; what differs is the label *type*, which decides how a
 job's steps execute:
 
@@ -571,9 +571,7 @@ from this instance over its deploy key). In order:
 6. **Apply**: `chezmoi apply` — renders config + registration, installs the
    units, and the `run_after` script enables and starts them. Do this
    BEFORE the first workflow runs on the node: `actions/checkout` needs
-   node, and node arrives with this apply (cost the first two Pi runs
-   after the release-model merge — a workflow cannot install its own
-   checkout's prerequisite).
+   node, and node arrives with this apply (a workflow cannot install its own checkout's prerequisite).
    `systemctl --user status forgejo-runner` should show it polling; the
    runner appears under the repo's Settings → Actions → Runners as
    `wolfe-pi5`, label `wolfe-pi5:host`, idle.
@@ -595,8 +593,8 @@ Things this design assumes and the first run should prove: `%h` resolves
 in the path unit's `PathChanged=` lines (`systemctl --user cat
 forgejo-runner.path`); a restart triggered mid-tick lets the running job
 finish (`KillMode=mixed` so only the runner is signalled, and
-`TimeoutStopSec` > `shutdown_timeout` — proven necessary 2026-09-13, when
-the default kill mode failed the tick that rewrote the runner's config); host-mode steps
+`TimeoutStopSec` > `shutdown_timeout` — the default kill mode signals the
+job's processes too, and a restart mid-job killed the job); host-mode steps
 inherit the runner's `envs` PATH (chezmoi/op/docker resolve); the deploy key
 in `~/.ssh/config` lets `chezmoi update` pull headless; `code.twolfe.dev`
 resolves and its certificate validates from the Pi over the tailnet; and a
@@ -609,8 +607,8 @@ Same host-runner design, macOS supervision. Forgejo publishes no macOS
 binary, so the runner comes from Homebrew (`forgejo-runner` in the server
 Brewfile), and `brew services` supervises it the way it does the Beszel
 agent. chezmoi renders the same config and registration as on the Pi
-(`~/.config/forgejo-runner/`, the job environment is what the old
-`lab-job` dispatcher exported: the headless Docker config and PATH); the
+(`~/.config/forgejo-runner/`, with the job environment a headless macOS
+shell needs: the headless Docker config and PATH); the
 formula's service reads `$HOMEBREW_PREFIX/etc/forgejo-runner/config.yaml`,
 which is a symlink to chezmoi's file. Its registration addresses Forgejo
 over loopback, so CD on the mini depends on no name. There is no change
@@ -635,17 +633,34 @@ Bring-up, at the desk:
    `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from
    Forgejo, through the headless Docker config.
 
-What stays on Kestra for the mini: the backups, restic, obsidian,
-renew-certs, the heartbeat and the health probes, and the tick that
-schedules the heartbeat. Machine config, packages included, is the
-`chezmoi` workflow's on every server.
+Everything scheduled on the mini is a cron workflow on this runner:
+`backup.yaml`, `restic-offsite.yaml`, `restic-verify.yaml`,
+`obsidian.yaml`, `renew-certs.yaml`, `heartbeat.yaml` and
+`gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
+probe never queue behind a long job; stateful jobs serialise through the
+`MacMini` concurrency group.
+
+### Decommissioning Kestra (one-time, at the desk, after the merge)
+
+1. `brew services restart forgejo-runner` — the capacity change is in the
+   config, and macOS has no watcher.
+2. Full Disk Access for `/opt/homebrew/opt/forgejo-runner/bin/forgejo-runner`
+   (System Settings → Privacy), then run the obsidian workflow by hand and
+   confirm it reads `~/Library/CloudStorage`.
+3. Run the heartbeat workflow by hand; confirm `lab-chezmoi-update` pinged
+   on healthchecks.io.
+4. Stop and remove Kestra on the mini: `docker rm -f kestra kestra-db`
+   (its compose file is gone with the merge; the containers are named).
+   Its last restic snapshot is tagged `pre-upgrade`; then
+   `rm -rf ~/Docker/kestra ~/.local/share/Wolfe.Lab/kestra`.
+5. Garage: delete the orphan `kestra/terraform.tfstate` object from the
+   `tofu-state` bucket. 1Password: delete `kestra-postgres`,
+   `kestra-admin`, `kestra-encryption-key` and `kestra-job-bridge`.
+6. Next morning: the backup, offsite and verify runs green in the Actions
+   tab, and `lab-restic-offsite` pinged.
 
 ### What is deliberately not here yet
 
-- **No workflow for the mini.** Kestra stays the mini's engine until the Pi
-  pilot holds; then the mini gets a host-mode runner (`macos-arm64` builds
-  exist) and the tick, tofu, backup and CI workflows, and the kestra slice
-  is deleted.
 - **No plan-on-PR yet.** CI today is `.forgejo/workflows/ci.yaml`:
   shellcheck and YAML parsing on the containerized runner. Plan-on-PR
   needs provider credentials in a pre-merge context — the

@@ -19,13 +19,13 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
 | Pushover credentials (`~/Docker/gatus/gatus.env`, on the Pi) | chezmoi `create_` template (`chezmoi/home/Docker/gatus/`), from the existing `pushover` vault item; un-ignored on Linux for this slice in `.chezmoiignore` |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
-| Gatus's own liveness | the `lab.gatus/health` flow, from Kestra on the mini — a status page cannot show itself being down, and now the watcher is on the other machine |
+| Gatus's own liveness | `.forgejo/workflows/gatus-health.yaml`, from the mini — a status page cannot show itself being down, and the watcher is on the other machine |
 | Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
 | The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `.forgejo/workflows/tofu-gatus.yaml` on push, drift-checked by the same workflow daily |
 
 ## Why Gatus and not Uptime Kuma
 
-The roadmap said Kuma. Decision 2026-09-02 (Tom's), on two grounds:
+Uptime Kuma was the original plan. Gatus won on two grounds:
 
 1. **The checks are code.** Kuma's configuration is UI-only — its write
    API is Socket.IO with no REST and no OpenTofu provider — and the
@@ -68,7 +68,7 @@ vendor's status page, read as JSON — Atlassian Statuspage exposes
 and GitHub, 1Password, Proton, Tailscale and Netlify all use it. And a
 direct probe of the thing the lab actually talks to, because a status
 page reports what the vendor *admits*, late: the 1Password rate-limit
-outage of 2026-09-01 never appeared on any status page. Backblaze is the
+outage never appeared on any status page. Backblaze is the
 odd one out (FireHydrant, not Statuspage) — its check is marked
 unverified in the file, for reasons the comment there explains.
 
@@ -90,7 +90,7 @@ Two consequences of that convenience, both loud rather than silent:
 
 - **An invalid config makes Gatus exit** (upstream's default, and the
   right one — the alternative is running on stale config while looking
-  healthy). Docker restarts it, it exits again, and `lab.gatus/health`
+  healthy). Docker restarts it, it exits again, and `gatus-health.yaml`
   goes red within fifteen minutes with `alert: high`. So a bad merge to
   `config/` is a paged incident, not a quiet one. Check YAML before
   merging; `yq . gatus/config/*.yaml` from the repo root is the cheap
@@ -108,18 +108,18 @@ the full table.
 
 ## Who watches the watcher
 
-`lab.gatus/health` — a Kestra flow on the mini polling Gatus's `/health`
-on the Pi at 11/26/41/56 past the hour, `alert: high`. Gatus's Pushover
-alerts cannot report Gatus being down, and the deploy workflow is a convergent
-no-op that stays green regardless, so without this a dead status page
-looks exactly like a page you haven't opened.
+`.forgejo/workflows/gatus-health.yaml` — the mini's runner polls Gatus's
+`/health` on the Pi at 11/26/41/56 past the hour and pages if it isn't
+`UP`. Gatus's Pushover alerts cannot report Gatus being down, and the
+deploy workflow is a convergent no-op that stays green regardless, so
+without this a dead status page looks exactly like a page you haven't
+opened.
 
-Gatus watches Kestra back (`config/lab.yaml` polls `/ping` every two
-minutes). Since the move that is two machines watching each other rather
-than one watching itself: the mini down turns the whole `lab` group red
-in two minutes, the Pi down turns `lab.gatus/health` red within fifteen.
-Neither is the dead man's switch — healthchecks.io is, and it stays
-outside the building (`chezmoi/tofu/`).
+Gatus watches the mini back (`config/lab.yaml`, every two minutes): two
+machines watching each other rather than one watching itself. The mini
+down turns the whole `lab` group red in two minutes; the Pi down turns
+`gatus-health` red within fifteen. Neither is the dead man's switch —
+healthchecks.io is, and it stays outside the building (`chezmoi/tofu/`).
 
 ## Secrets
 
@@ -178,11 +178,8 @@ that decision reverses.
 4. **Reload caddy's routes** — the caddy workflow (it fires on any `*/caddy.caddyfile` change) does
    this on its next run; by hand,
    `docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile`.
-5. **Register the flows**: `cd kestra/tofu` and
-   `op run --env-file=secrets.env -- tofu apply` — plan tripwire: 4 to
-   add (`lab.gatus/health`), 0 to change or destroy. `tofu-gatus.yaml`
-   then creates the CNAME on the push; `tofu-forgejo.yaml` creates
-   `code.twolfe.dev` the same way.
+5. **The record**: `tofu-gatus.yaml` creates the CNAME on the push;
+   `tofu-forgejo.yaml` creates `code.twolfe.dev` the same way.
    Or by hand from a laptop:
    `cd gatus/tofu && op run --env-file=secrets.env -- tofu init && op run --env-file=secrets.env -- tofu apply`
    — plan tripwire: 1 to add.
@@ -193,7 +190,7 @@ that decision reverses.
 ## Verify on first deploy
 
 The whole config was run from a laptop on the LAN before merging
-(2026-09-02: the pinned image, this `config/`, dummy Pushover keys): all
+(the pinned image, this `config/`, dummy Pushover keys): all
 29 endpoints parsed, every vendor check passed as written — Backblaze's
 payload condition on an all-clear, Proton's port-25 STARTTLS from the
 house's line, `git.twolfe.dev:22` from inside a Docker Desktop VM — and
@@ -209,9 +206,6 @@ give them ten minutes to settle, then:
   `client.dns-resolver` or an explicit address, and it goes in the file
   with a note. (`code.twolfe.dev` was red on the laptop only because the
   record didn't exist yet.)
-- **`lab/kestra`** — Micronaut's management port `:8081` must bind beyond
-  loopback for a sibling container to reach it. Red while Kestra is fine
-  means it doesn't; fall back to the UI root and note it.
 - **`dependencies/git.twolfe.dev`** — asks the mini's VM to route to the
   tailnet. It worked from a laptop's VM, which is strong evidence; if
   it's red on the mini while `git fetch` works from a laptop, delete the
@@ -227,17 +221,16 @@ learned to ignore is worse than none.
 
 ## On the Pi
 
-Moved 2026-09-13 (roadmap item 3), and it cost what the config-is-code
+It lives on the Pi, and moving it there cost what the config-is-code
 argument said it would:
 
 - `front-door.yaml`, `dependencies.yaml`, `personal.yaml` — unchanged.
 - `lab.yaml` — every URL is now `${LAB_HOST}:<published port>`, the
   mini's MagicDNS name set once in `compose.yaml` — no address in the repo;
   Tailscale resolves and routes it from a Pi container (verified), the same
-  choice the Beszel agent made for its hub URL. Two checks changed
-  shape: Kestra is asked `/ping` on the web port (the management port is
-  not published), and "forgejo ssh" is gone (the container's `:22` is not
-  on the LAN; `dependencies.yaml` already checks it by its tailnet route).
+  choice the Beszel agent made for its hub URL. One check went:
+  "forgejo ssh" (the container's `:22` is not on the LAN;
+  `dependencies.yaml` already checks it by its tailnet route).
   One check is new: `mini`, sshd on the host — when it and everything
   below it is red, it is the machine, which is the whole point of the move.
 - `compose.yaml` — no `lab` network; paths under `${HOME}` (the runner's
@@ -246,8 +239,8 @@ argument said it would:
   `scripts/deploy.sh` refreshes from the checkout on every deploy.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).
-- `lab.gatus/deploy` — deleted. `.forgejo/workflows/gatus.yaml` deploys on push.
-- `lab.gatus/health` — probes the Pi by its MagicDNS name.
+- `.forgejo/workflows/gatus.yaml` deploys on push; `gatus-health.yaml`
+  probes the Pi by its MagicDNS name.
 
 **Retiring the mini's copy** is by hand, once the Pi's is green:
 `docker compose --project-directory "$(chezmoi source-path)/../../gatus"
@@ -277,7 +270,7 @@ invalid-config exit described under "Adding a check".
   `{"status":"UP"}`.
 - Read-only API: `/api/v1/endpoints/statuses` (all), or
   `/api/v1/endpoints/<group>_<name>/statuses` with spaces in either part
-  replaced by `-`. Handy for a future Kestra flow that wants "is X green"
+  replaced by `-`. Handy for a future workflow that wants "is X green"
   without parsing a dashboard.
 - Concurrency is upstream's default of 3 checks at a time. Fine at this
   size; if a slow vendor ever holds the lab checks back, raise

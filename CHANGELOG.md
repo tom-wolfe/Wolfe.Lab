@@ -21,6 +21,11 @@ rather than versioned — the lab is continuous, not released.
 - **The mini deploys from Forgejo Actions.** One workflow per mini slice 
   and per tofu root. Kestra keeps the tick and everything that is not CD.
 
+### Removed
+
+- **Kestra.** Its last jobs are cron workflows on the mini's runner over
+  the same scripts.
+
 ## [0.20.0] - 2026-09-13
 
 ### Added

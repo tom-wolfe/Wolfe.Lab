@@ -1,7 +1,7 @@
 #!/bin/bash
 # Weekly integrity check of both restic repositories — an unverified
-# backup is a hope, not a backup. Invoked through the lab-job bridge as
-# `restic/verify` by ./flow.yaml beside it (Sundays, 05:05), or by hand.
+# backup is a hope, not a backup. Run Sundays at 05:05 by
+# .forgejo/workflows/restic-verify.yaml, or by hand.
 #
 # The local check is structural (index and tree consistency; it reads
 # metadata, not every pack). The B2 check additionally downloads a 5%
@@ -11,14 +11,13 @@
 # documented in restic/README.md.
 set -euo pipefail
 
-# Non-interactive SSH sessions miss path_helper: restic and op come from
-# Homebrew.
+# A hand run may lack brew's PATH; a workflow step has the runner's.
 export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin"
 
 slice="$(cd "$(dirname "$0")/../.." && pwd)"
 
-# The op service account, same fallback the tick uses: lab-job runs a
-# non-login shell, so .zprofile's export never happened.
+# The op service account: a workflow step is a non-login shell, so
+# .zprofile's export never happened (the runner's env_file usually has it).
 token_file="$HOME/Docker/1password/service-account-token"
 if [ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] && [ -s "$token_file" ]; then
   OP_SERVICE_ACCOUNT_TOKEN=$(cat "$token_file")

@@ -17,7 +17,6 @@ front door is down.
 | Hostname                             | Service                     | Upstream       |
 | ------------------------------------ | --------------------------- | -------------- |
 | `https://forgejo.lab.twolfe.dev`     | Forgejo                     | `forgejo:3000` |
-| `https://kestra.lab.twolfe.dev`      | Kestra                      | `kestra:8080`  |
 | `https://jellyfin.lab.twolfe.dev`     | Jellyfin                     | `jellyfin:8096` |
 | `https://s3.lab.twolfe.dev`          | Garage S3 (path-style only) | `garage:3900`  |
 | `https://beszel.lab.twolfe.dev`      | Beszel monitoring hub       | `beszel:8090`  |
@@ -52,7 +51,6 @@ the mini's tailnet address, without the wildcard in the name.
 | `:8080` | qBittorrent — web UI (via gluetun's namespace)   | qBittorrent account (1P `qbittorrent-webui` is a copy)     | `qbittorrent`               |
 | `:8090` | Beszel — hub UI + API                            | Beszel superuser account; `/api/health` is unauthenticated | `beszel`                    |
 | `:8096` | Jellyfin — web + clients                          | Jellyfin accounts                                           | `jellyfin`                   |
-| `:8180` | Kestra — web UI + API                            | basic auth: 1P `kestra-admin`; webhook path key-authed     | `kestra`                    |
 | `:8989` | Sonarr — web UI + API                            | Sonarr account (1P `sonarr-webui` is a copy); `/ping` is unauthenticated | `sonarr`     |
 
 ## wolfe-pi5 (192.168.0.2, DHCP-reserved)

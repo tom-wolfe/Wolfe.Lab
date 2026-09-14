@@ -53,7 +53,7 @@ services:
       # never pass. This was wrong from the day it was written: caddy was
       # serving fine throughout while its healthcheck sat at a FailingStreak
       # of 3,933, and nothing anywhere reported it, because Docker
-      # healthchecks are inert in this lab. `lab.beszel/health` is the shape
+      # healthchecks are inert in this lab. a request from elsewhere (Gatus) is the shape
       # that actually alerts.
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:2019/config/"]
       interval: 30s
