@@ -29,5 +29,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "backup ${{ matrix.slice }} failed" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "backup ${{ matrix.slice }} failed"

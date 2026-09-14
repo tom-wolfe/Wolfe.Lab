@@ -18,5 +18,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "gatus is down on the Pi" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "gatus is down on the Pi"

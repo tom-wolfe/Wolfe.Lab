@@ -20,5 +20,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "restic verify failed" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "restic verify failed"

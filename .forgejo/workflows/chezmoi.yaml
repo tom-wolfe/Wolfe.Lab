@@ -22,5 +22,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "chezmoi update failed on ${{ matrix.node }}" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "chezmoi update failed on ${{ matrix.node }}"

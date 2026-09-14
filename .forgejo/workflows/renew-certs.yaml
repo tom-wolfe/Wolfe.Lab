@@ -19,5 +19,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "renew-certs failed" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "renew-certs failed"

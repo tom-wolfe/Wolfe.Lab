@@ -23,8 +23,7 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "tofu apply dns failed" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "tofu apply dns failed"
 
   plan:
     if: github.event_name != 'push'
@@ -42,5 +41,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "tofu dns: ${{ steps.plan.outputs.rc == '2' && 'drift or pending change' || 'plan failed' }}" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "tofu dns: ${{ steps.plan.outputs.rc == '2' && 'drift or pending change' || 'plan failed' }}"

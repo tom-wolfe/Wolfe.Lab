@@ -17,5 +17,4 @@ jobs:
 
       - if: failure()
         run: |
-          scripts/alert.sh "heartbeat failed (the pinger, not the lab)" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}"
+          scripts/alert.sh "heartbeat failed (the pinger, not the lab)"
