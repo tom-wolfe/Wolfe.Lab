@@ -1,2 +1,2 @@
-{{- /* This node's restic SFTP key. -}}
+{{- /* This node's restic SFTP key. */ -}}
 {{ onepasswordRead (printf "op://Wolfe.Lab/restic-sftp-%s/private key?ssh-format=openssh" .chezmoi.hostname) }}
