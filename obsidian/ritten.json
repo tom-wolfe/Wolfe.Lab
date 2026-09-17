@@ -1,0 +1,22 @@
+{
+  "workflow": "obsidian",
+  "push": {
+    "username": "tom-wolfe",
+    "token": "op://Wolfe.Lab/forgejo-obsidian-token/credential"
+  },
+  "vaults": {
+    "main": {
+      "path": "~/Obsidian/main",
+      "repository": "http://macmini.local:3000/tom-wolfe/obsidian-main.git"
+    },
+    "dnd": {
+      "path": "~/Obsidian/dnd",
+      "repository": "http://macmini.local:3000/tom-wolfe/obsidian-dnd.git"
+    }
+  },
+  "exclude": [
+    ".DS_Store",
+    ".trash/",
+    ".obsidian/.sync.lock"
+  ]
+}

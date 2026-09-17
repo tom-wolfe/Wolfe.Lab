@@ -1,13 +1,5 @@
 {{- /* The HOST runner: one job at a time (deploys mutate node state; a job
-       that overlaps itself queues), the bootstrap env, no cache. Jobs get
-       LAB_ROOT: where deploys INSTALL a slice (scripts/deploy.sh copies the
-       slice out of the disposable checkout into $LAB_ROOT/<slice> and runs
-       compose there, because containers bind-mount files from it after the
-       job is gone). Plus the environment a headless shell needs, per node.
-       node is on the PATH only because actions/checkout is a JavaScript
-       action: on the mini an nvm shim in ~/.local/share/forgejo-runner/bin
-       (nvm owns the active version), on the Pi the pinned external in
-       ~/.local/bin. */ -}}
+       that overlaps itself queues). */ -}}
 {{- $root := joinPath .chezmoi.homeDir ".local/share/Wolfe.Lab" -}}
 {{- $node := (index .profiles .profile).node -}}
 {{- if eq .profile "macmini-node" -}}
@@ -21,7 +13,7 @@
       "host" true
       "labels" (list (printf "%s:host" $node))
       "cache" false
-      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir)
+      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:%s/.dotnet/tools:/usr/local/share/dotnet:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir .chezmoi.homeDir)
       "envs" (dict
         "LAB_ROOT" $root
         "DOCKER_CONFIG" (printf "%s/.docker-headless" .chezmoi.homeDir)

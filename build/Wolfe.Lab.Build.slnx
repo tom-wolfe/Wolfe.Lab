@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Wolfe.Lab.Build/Wolfe.Lab.Build.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Wolfe.Lab.Build.Tests/Wolfe.Lab.Build.Tests.csproj" />
+  </Folder>
+</Solution>

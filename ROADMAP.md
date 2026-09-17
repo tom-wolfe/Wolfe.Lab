@@ -13,7 +13,7 @@ a failure visible outranks anything that adds a new thing to fail.
 ### 1. Restore drills — prove the backups before anything depends on them
 
 `restic/` shipped in 0.16 and nothing has been restored from it. `restic/README.md` asks for a drill after bootstrap and gates
-deleting the old tarball farm on it; the vault exit (#9) was sequenced
+deleting the old tarball farm on it; the vault exit (#8) was sequenced
 "after restic ships". A backup nobody has restored from has not shipped,
 so this is the first item by the ordering principle: it makes the one
 failure that is silent until it is total — an unrestorable backup —
@@ -36,12 +36,12 @@ tagged image, confirm it works, put the original back. This is the one
 that catches the "restored but the app doesn't like it" class, and it
 is what turns each slice's `RUNBOOK.md` restore steps into something someone has
 actually followed. Those sections are where the steps live; the docs
-site (#10) is what makes them followable from a phone.
+site (#9) is what makes them followable from a phone.
 
 **A cold-start runbook belongs here too.** Mini and Data2 both gone:
 what is needed from outside the building (the restic password, the tofu
 state passphrase, the B2 credentials, the vault's own master password —
-see the secret-zero note in #9), and in what order things come up
+see the secret-zero note in #8), and in what order things come up
 (garage before any tofu root, caddy before any route, Forgejo before any
 workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 
@@ -50,8 +50,7 @@ workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 Every container fault in the changelog is the VM boundary on macOS, and
 no runtime crosses it (OrbStack's host networking does not carry mDNS to
 the Wi-Fi interface). The mini keeps what genuinely needs it — the
-drives and everything that reads them, the CloudStorage syncs until the
-vaults move into git (#5), Homebrew. Nothing in the platform layer does:
+drives and everything that reads them, Homebrew. Nothing in the platform layer does:
 Forgejo, its Postgres-free SQLite, Caddy, Garage and the Beszel hub all
 publish arm64 images. Move them to the Pi one slice at a time, Forgejo
 last (it runs the deploys), and see how much pain is left on the mini.
@@ -64,12 +63,11 @@ state, so each move brings a `backup.conf` on the Pi's SFTP path
 **What stays on the mini keeps the one debt this item cannot retire.** A
 macOS node's control plane is session state, not files: Docker Desktop
 (installed and upgraded by hand, deliberately outside the Brewfile),
-automatic login, and the Full Disk Access and Local Network grants in
+automatic login, and the Local Network grant in
 TCC. chezmoi cannot write any of it and no plan can diff it, and a
 Homebrew upgrade of the runner replaces the binary the TCC grant was
-made for, so the grant wants checking after each one. The Full Disk
-Access grant goes with the obsidian syncs (#5). The rest is the price of
-the mini's performance, paid knowingly.
+made for, so the grant wants checking after each one. It is the price
+of the mini's performance, paid knowingly.
 
 ### 3. A UPS
 
@@ -128,14 +126,7 @@ state in restic — and whether it should be is an open question
 shape: a library that re-acquires itself is a library whose loss is an
 inconvenience.
 
-### 5. Obsidian vaults into git
-
-Replaces Google Drive as the vaults' storage with an hourly commit-and-push
-job to Forgejo. Better on every axis: history, dedup, rides the existing
-backup workflow, and it drops the `~/Library/CloudStorage` dependency
-that's the reason the Actions runner needs Full Disk Access granted.
-
-### 6. Knowing what's stale — Renovate, and a report for everything else
+### 5. Knowing what's stale — Renovate, and a report for everything else
 
 **Renovate as a workflow.** A dozen pinned images across the slices
 (caddy, forgejo, jellyfin, garage, lego, beszel, gatus, gluetun,
@@ -177,7 +168,7 @@ Options, with the honest costs:
   consume the same credential from the vault. Cost: one more third-party
   dependency, one more `dependencies` check in Gatus.
 
-### 7. CI, the build pool, and pipelines as a CLI
+### 6. CI, the build pool, and pipelines as a CLI
 
 Every node runs a **host** runner for the lab's own CD: repo-scoped, host
 mode, holding the node's vault token. The Pi also runs a **containerised**
@@ -202,10 +193,10 @@ publish once their repos flip from mirror to active. Three things remain:
   and run unmerged code on a node; branch protection on main and CI on
   the containerised runner only are the mitigations, and a host runner
   is assumed reachable by any workflow file on any branch.
-- **Pipelines as a CLI.** The workflows are deliberately thin — a
-  trigger and one command — because the commands are moving into a CLI
-  built on Tom's .NET library Ritten. The YAML is the trigger, not the
-  pipeline; when the CLI lands, each workflow changes one line. Node
+- **The rest of `scripts/` into the CLI.** `build/` exists and the
+  obsidian workflows call it; deploy, backup, apply/plan, alert and the
+  heartbeat still run as shell. Each moves as a workflow class with a
+  `ritten.json` per slice, and each workflow file changes one line. Node
   facts the scripts currently infer become inputs there: `backup.sh`
   decides where the restic repository is by OS, which only holds while
   the mini is the only macOS server. Two things the CLI does not touch.
@@ -213,10 +204,10 @@ publish once their repos flip from mirror to active. Three things remain:
   block each — HCL, not shell — and OpenTofu reads both from the
   environment (`-backend-config` for the backend, `TF_ENCRYPTION` for
   the encryption block), so they belong beside the state credentials in
-  `scripts/tofu-state.env`, declared once. And the three short-cycle
-  workflows (heartbeat, the Gatus probe, obsidian) each do a full
-  `actions/checkout` through node to run one command — a CLI installed
-  on the node needs no checkout for those.
+  `scripts/tofu-state.env`, declared once. And the CLI is compiled from
+  the checkout on every run today; packed as a tool and installed on
+  each node by chezmoi, the short-cycle workflows (heartbeat, the Gatus
+  probe, obsidian) need no `actions/checkout` through node at all.
 - **One-offs as `workflow_dispatch` workflows.**
   `forgejo/scripts/register-runner.sh`, the Beszel agent's enrolment
   (`beszel/RUNBOOK.md`) and `garage/scripts/init-layout.sh` are run at a
@@ -227,7 +218,7 @@ publish once their repos flip from mirror to active. Three things remain:
   credential lives; and the Beszel token is minted by the hub and
   harvested by hand, so only the apply-and-restart half is a workflow.
 
-### 8. Local models on the Mac Studio (hardware lands ~late Sept 2026)
+### 7. Local models on the Mac Studio (hardware lands ~late Sept 2026)
 
 Pre-ordered M5 Ultra, ~4 weeks out. **Decided: it is a second node, not the
 mini's replacement — and it is a workstation, not a server.** WiFi, powered
@@ -250,9 +241,8 @@ machine*. There is no unattended workload to strand.
 
 The three stated jobs are three different tools:
 
-- **Vault querying** — Ollama plus a RAG front end. Rides the Obsidian
-  vaults-into-git item, which conveniently turns the corpus into a git
-  checkout instead of a CloudStorage mount.
+- **Vault querying** — Ollama plus a RAG front end. The corpus is a
+  clone of the vault repositories on Forgejo (`obsidian/`), not a mount.
 - **Capturing notes** — Whisper-family transcription, local.
 - **Filing paperwork** — Paperless-ngx, and **this one belongs on the
   mini**, not the Studio. It is an always-on ingest-and-index service, its
@@ -270,7 +260,7 @@ than via `brew services`**, per the no-ambient-load requirement; an idle
 Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
 "nothing" on a machine being used for other work.
 
-### 9. A config plane — Garage for configuration, the Bitwarden exit for secrets
+### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
 Two halves because they are the same move —
 resolution goes LAN-local while every reference keeps its shape — and
@@ -388,7 +378,7 @@ One honest boundary stays regardless of vendor: a runner reads its env_file
 at boot and has no deploy flow, so *its* secret rotation keeps a manual
 restart.
 
-### 10. A lab portal — the docs half, then the dashboard half
+### 9. A lab portal — the docs half, then the dashboard half
 
 Two halves with different costs, in that order.
 
@@ -399,7 +389,7 @@ one without a checked-out repo and a text editor. Cheapest stopgap,
 available today: Forgejo renders every README in the browser, so
 `code.twolfe.dev` on a phone already works. The real thing is a static
 docs site built from the repo's markdown — MkDocs Material or similar,
-built by a workflow on push on the containerised runner (#7), served by a static container behind caddy at
+built by a workflow on push on the containerised runner (#6), served by a static container behind caddy at
 `docs.lab.twolfe.dev`. One convention decides the rest: procedures
 meant to be followed live in a `runbooks/` tree (or a "Runbook" section
 per slice README) so the site can put them on a page of their own, apart
@@ -628,7 +618,7 @@ its state.
 Wanted, but each adds backup surface. Immich in particular is large and is
 the one where data loss actually hurts — it should land *after* the
 restore drills (#1) have passed, not before. Paperless-ngx (the
-paperwork half of #8) belongs on the mini, needs no new hardware, and
+paperwork half of #7) belongs on the mini, needs no new hardware, and
 could be built today; it is listed here so it isn't lost inside the
 Studio item.
 
@@ -657,7 +647,7 @@ not a hardware one.
 
 ### Self-hosted secrets (OpenBao)
 
-Moot twice over: the vault exit (#9) fixes the vendor
+Moot twice over: the vault exit (#8) fixes the vendor
 question while keeping a cloud origin *by decision* — the server side is
 only ever a replica, exactly to avoid the circularity that parked
 OpenBao here. The section stays as the record of why.
@@ -666,7 +656,7 @@ The original goal was cutting the cloud dependency. The operative part is
 already had: the vault is read by deploys and jobs, never by anything
 that runs, so a running stack rides out a vault outage and only the next
 deploy waits. 1Password Connect left this section
-for the config plane (#9), pulled by a different goal —
+for the config plane (#8), pulled by a different goal —
 rotation ergonomics, not cloud-cutting; as a sync cache it dodges the
 circularity below. OpenBao stays deferred: it would *own* the secrets,
 adding an unseal ritual and a genuine bootstrap circularity — lab down,

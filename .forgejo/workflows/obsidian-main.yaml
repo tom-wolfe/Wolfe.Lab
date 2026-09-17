@@ -1,0 +1,23 @@
+name: obsidian main
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: obsidian-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: MacMini
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: obsidian
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main --auto-approve
+
+      - if: failure()
+        run: |
+          scripts/alert.sh "obsidian main sync failed"

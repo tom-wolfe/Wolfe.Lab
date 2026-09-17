@@ -9,17 +9,18 @@ root, whatever mix of compose, tofu, flows and scripts it needs — even
 chezmoi is a slice, holding the declarative machine plane (`home/`) beside
 its tick job.
 
-| Path | Purpose |
-| --- | --- |
-| `<name>/` | one slice per thing the lab runs: a compose stack + configs and/or jobs (`flows/<job>/` directories holding the job's script or `backup.conf`; the schedule is the workflow in `.forgejo/workflows/`), a `tofu/` root where the service has API resources, one README |
-| `chezmoi/home/` | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here) |
-| `scripts/` | what every workflow runs: `deploy.sh`, `backup.sh`, `apply.sh`/`plan.sh`, `alert.sh` — and `secrets.sh`, the one door to the vault |
-| `setup.sh` | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence) |
-| `k8s/` | *(planned)* Argo CD applications and manifests |
-| `RUNBOOK.md`, `<slice>/RUNBOOK.md` | procedures — bootstrap, upgrade, backup, restore — kept apart from the design prose so they can be followed step by step |
-| `ENDPOINTS.md` | every service address in the lab |
-| `CHANGELOG.md` | what changed, when — Keep a Changelog format |
-| `ROADMAP.md` | what's next and why — including what's deliberately deferred |
+| Path                               | Purpose                                                                                                                                                                                                                                                               |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `<name>/`                          | one slice per thing the lab runs: a compose stack + configs and/or jobs (`flows/<job>/` directories holding the job's script or `backup.conf`; the schedule is the workflow in `.forgejo/workflows/`), a `tofu/` root where the service has API resources, one README |
+| `chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
+| `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: a slice with a `ritten.json` is run by it, and `scripts/` is moving into it one job at a time                                                                                                                        |
+| `scripts/`                         | what every workflow runs: `deploy.sh`, `backup.sh`, `apply.sh`/`plan.sh`, `alert.sh` — and `secrets.sh`, the one door to the vault                                                                                                                                    |
+| `setup.sh`                         | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence)                                                                                                                                                                     |
+| `k8s/`                             | *(planned)* Argo CD applications and manifests                                                                                                                                                                                                                        |
+| `RUNBOOK.md`, `<slice>/RUNBOOK.md` | procedures — bootstrap, upgrade, backup, restore — kept apart from the design prose so they can be followed step by step                                                                                                                                              |
+| `ENDPOINTS.md`                     | every service address in the lab                                                                                                                                                                                                                                      |
+| `CHANGELOG.md`                     | what changed, when — Keep a Changelog format                                                                                                                                                                                                                          |
+| `ROADMAP.md`                       | what's next and why — including what's deliberately deferred                                                                                                                                                                                                          |
 
 ## How deployment works
 
@@ -59,14 +60,14 @@ Five layers, deliberately, because they fail in different ways. The rule
 that orders them: **a watcher must not share the fate of the thing it
 watches.**
 
-| Layer | Watches | Dies when |
-| --- | --- | --- |
-| every workflow's failure step | its own job failing → Pushover (`scripts/alert.sh`) | Forgejo or the node's runner does |
-| Beszel agent | each node's CPU, memory, disks (incl. `/Volumes/Data1`), containers | that node does |
-| Gatus (`gatus/`, on the Pi) | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on; the Beszel hub among them | the Pi does |
-| `gatus-health.yaml` | Gatus itself, from the mini — a dead status page looks like one you haven't opened | the mini does |
-| healthchecks.io | the heartbeat still pings → **the only observer outside the building** | never (it's SaaS) |
-| `heartbeat.yaml` | sends that ping every 15 minutes from the mini's runner — proof Forgejo, the runner and its schedules are alive | the mini does |
+| Layer                         | Watches                                                                                                                            | Dies when                         |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
+| every workflow's failure step | its own job failing → Pushover (`scripts/alert.sh`)                                                                                | Forgejo or the node's runner does |
+| Beszel agent                  | each node's CPU, memory, disks (incl. `/Volumes/Data1`), containers                                                                | that node does                    |
+| Gatus (`gatus/`, on the Pi)   | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on; the Beszel hub among them | the Pi does                       |
+| `gatus-health.yaml`           | Gatus itself, from the mini — a dead status page looks like one you haven't opened                                                 | the mini does                     |
+| healthchecks.io               | the heartbeat still pings → **the only observer outside the building**                                                             | never (it's SaaS)                 |
+| `heartbeat.yaml`              | sends that ping every 15 minutes from the mini's runner — proof Forgejo, the runner and its schedules are alive                    | the mini does                     |
 
 Everything except healthchecks.io runs inside the lab, so a dead mini is
 silence from all of them — and silence is indistinguishable from health.

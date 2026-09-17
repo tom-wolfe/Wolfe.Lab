@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Shouldly" />
+    <Using Include="NSubstitute" />
+    <Using Include="Ritten.Commands" />
+    <Using Include="Ritten.Contracts" />
+    <Using Include="Ritten.Contracts.FileSystem" />
+    <Using Include="Ritten.Engine" />
+    <Using Include="Ritten.Reporting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wolfe.Lab.Build\Wolfe.Lab.Build.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Obsidian\Jobs\" />
+  </ItemGroup>
+
+</Project>

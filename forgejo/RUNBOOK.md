@@ -232,6 +232,27 @@ Groups → automatic login; Docker Desktop → Settings → General → start at
 sign-in), so a fresh mini needs them set once. Verify: `docker ps` over
 SSH after a power cut, and the heartbeat check going green on its own.
 
+## Restarting a runner
+
+A runner reads `config.yaml` — the job PATH and envs included — only at
+start, so a config change is not live until the runner is.
+
+- **Pi**: nothing to do. `forgejo-runner.path` watches the config,
+  registration and unit file and restarts the service when chezmoi
+  writes any of them. By hand: `systemctl --user restart forgejo-runner`.
+- **Mini**: launchd watches nothing, so after a `chezmoi` run that
+  touched `~/.config/forgejo-runner/`:
+
+  ```sh
+  launchctl kickstart -k gui/$(id -u)/dev.twolfe.forgejo-runner
+  ```
+
+  `-k` stops the running instance first; a job in flight gets the
+  runner's `shutdown_timeout` (10 min, under the agent's `ExitTimeOut`)
+  to finish, so pick a moment when nothing long is running, or accept
+  the wait. Confirm with `launchctl print gui/$(id -u)/dev.twolfe.forgejo-runner | grep state`
+  and the runner going idle again under Settings → Actions → Runners.
+
 ## The mini's runner
 
 1. `forgejo/scripts/register-runner.sh MacMini` (from a machine with a
@@ -240,11 +261,12 @@ SSH after a power cut, and the heartbeat check going green on its own.
 2. Seed the bootstrap env: `install -D -m 600 /dev/null
    ~/.config/forgejo-runner/env` and write
    `OP_SERVICE_ACCOUNT_TOKEN=$(cat ~/Docker/1password/service-account-token)`.
-3. `chezmoi apply` (installs the formula via the Brewfile, renders config
-   and registration), then
-   `ln -sfn ~/.config/forgejo-runner/config.yaml /opt/homebrew/etc/forgejo-runner/config.yaml`
-   and `brew services start forgejo-runner`. Logs:
-   `/opt/homebrew/var/log/forgejo-runner.{log,err}`.
+3. `chezmoi apply` installs the formula via the Brewfile, renders the
+   config and registration, and places the launchd agent
+   `dev.twolfe.forgejo-runner` (`KeepAlive`, so it retries until Forgejo
+   answers). Load it once: `launchctl bootstrap gui/$(id -u)
+   ~/Library/LaunchAgents/dev.twolfe.forgejo-runner.plist`. Logs:
+   `~/Library/Logs/forgejo-runner.log`.
 4. The runner shows idle under Settings → Actions → Runners as `MacMini`.
    Run the beszel workflow by hand: green = the slice was installed under
    `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from

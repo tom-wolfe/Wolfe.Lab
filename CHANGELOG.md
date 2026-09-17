@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.26.0] - 2026-09-17
+
+### Changed
+
+- **The Obsidian vaults are git repositories on Forgejo.** The mini syncs
+  each vault into `~/Obsidian/Wolfe.<name>` and pushes every change to
+  `Obsidian/Wolfe.<name>`.
+
+### Added
+
+- **The lab has a CLI.** `build/` is a .NET solution on Ritten; the
+  obsidian workflows are its first callers, one command each.
+
 ## [0.25.0] - 2026-09-17
 
 ### Changed
