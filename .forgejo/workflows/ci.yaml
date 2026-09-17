@@ -53,17 +53,17 @@ jobs:
           '
 
   build:
-    # The lab's own CLI (build/): compiled and tested in the SDK image, so the
-    # runner needs nothing installed. Format is checked because the mini
-    # compiles this on every job and a warning there is a failed sync.
+    # The lab's own CLI (build/).
     runs-on: docker
-    container: mcr.microsoft.com/dotnet/sdk:10.0
     timeout-minutes: 15
     defaults:
       run:
         working-directory: build
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
       - run: dotnet restore Wolfe.Lab.Build.slnx
       - run: dotnet format Wolfe.Lab.Build.slnx --no-restore --verify-no-changes
       - run: dotnet build Wolfe.Lab.Build.slnx --no-restore --configuration Release
