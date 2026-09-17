@@ -11,6 +11,7 @@ services:
       LAB_HOST: macmini.tailf823b8.ts.net
       PUSHOVER_APP_TOKEN:
       PUSHOVER_USER_KEY:
+      FORGEJO_GATUS_TOKEN:
     volumes:
       - ./config:/config:ro
       - ${HOME}/Docker/gatus/data:/data

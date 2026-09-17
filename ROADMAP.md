@@ -64,15 +64,12 @@ state, so each move brings a `backup.conf` on the Pi's SFTP path
 **What stays on the mini keeps the one debt this item cannot retire.** A
 macOS node's control plane is session state, not files: Docker Desktop
 (installed and upgraded by hand, deliberately outside the Brewfile),
-automatic login, the runner under `brew services` with its config a
-hand-made symlink into the Homebrew prefix (`forgejo/RUNBOOK.md` "The
-mini's runner"), and the Full Disk Access and Local Network grants in
+automatic login, and the Full Disk Access and Local Network grants in
 TCC. chezmoi cannot write any of it and no plan can diff it, and a
 Homebrew upgrade of the runner replaces the binary the TCC grant was
-made for, so the grant wants checking after each one. Two of these
-shrink without leaving macOS: the symlink is a `run_once_` chezmoi
-script, and the Full Disk Access grant goes with the obsidian syncs
-(#5). The rest is the price of the mini's performance, paid knowingly.
+made for, so the grant wants checking after each one. The Full Disk
+Access grant goes with the obsidian syncs (#5). The rest is the price of
+the mini's performance, paid knowingly.
 
 ### 3. A UPS
 

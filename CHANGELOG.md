@@ -4,6 +4,23 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.25.0] - 2026-09-17
+
+### Changed
+
+- **The mini's runner is supervised by launchd, not `brew services`.**
+  A chezmoi-owned agent with `KeepAlive`, so it can keep retrying if the 
+  runner comes up before Forgejo itself.
+
+### Added
+
+- **A `runners` group on the status page.** Gatus asks Forgejo for each
+  Actions runner's status.
+
+### Removed
+
+- Betterdisplay and Boring Notch, because I don't use them.
+
 ## [0.24.0] - 2026-09-14
 
 ### Changed

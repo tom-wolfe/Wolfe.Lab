@@ -367,15 +367,7 @@ Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
 
 Same host-runner design, macOS supervision. Forgejo publishes no macOS
 binary, so the runner comes from Homebrew (`forgejo-runner` in the server
-Brewfile), and `brew services` supervises it the way it does the Beszel
-agent. chezmoi renders the same config and registration as on the Pi
-(`~/.config/forgejo-runner/`, with the job environment a headless macOS
-shell needs: the headless Docker config and PATH); the
-formula's service reads `$HOMEBREW_PREFIX/etc/forgejo-runner/config.yaml`,
-which is a symlink to chezmoi's file. Its registration addresses Forgejo
-over loopback, so CD on the mini depends on no name. There is no change
-watcher on macOS: a config edit is a `brew services restart
-forgejo-runner` by hand, as for the Beszel agent.
+Brewfile), but launchd supervises it through a plist.
 
 Bring-up is in `RUNBOOK.md` "The mini's runner".
 

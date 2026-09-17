@@ -1,0 +1,38 @@
+# Group "runners" — each Forgejo Actions runner's own status.
+
+endpoints:
+  - name: mini-host
+    group: runners
+    url: http://${LAB_HOST}:3000/api/v1/repos/tom-wolfe/Wolfe.Lab/actions/runners/5
+    interval: 2m
+    headers:
+      Authorization: token ${FORGEJO_GATUS_TOKEN}
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status != offline"
+    alerts:
+      - type: pushover
+
+  - name: pi1-host
+    group: runners
+    url: http://${LAB_HOST}:3000/api/v1/repos/tom-wolfe/Wolfe.Lab/actions/runners/2
+    interval: 2m
+    headers:
+      Authorization: token ${FORGEJO_GATUS_TOKEN}
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status != offline"
+    alerts:
+      - type: pushover
+
+  - name: pi1-container
+    group: runners
+    url: http://${LAB_HOST}:3000/api/v1/repos/tom-wolfe/Wolfe.Lab/actions/runners/4
+    interval: 2m
+    headers:
+      Authorization: token ${FORGEJO_GATUS_TOKEN}
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status != offline"
+    alerts:
+      - type: pushover

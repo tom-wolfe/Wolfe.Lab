@@ -53,6 +53,7 @@ only file that sets any).
 | --- | --- | --- |
 | `lab.yaml` | `lab` | each service **directly**, by container name over the `lab` network: is the app up and answering? |
 | `front-door.yaml` | `front door` | the same services **as a browser would** — public name, TLS, through caddy. One request exercises Netlify DNS, the wildcard cert, caddy's routing and the upstream |
+| `runners.yaml` | `runners` | each Actions runner's status, asked of Forgejo's API: is the thing that runs every deploy, backup and alert still polling? |
 | `dependencies.yaml` | `dependencies` | the third parties the lab stands on: 1Password, Backblaze, GitHub, healthchecks.io, Pushover, Netlify DNS, Tailscale |
 | `personal.yaml` | `personal` | services cared about that the lab doesn't depend on: Proton Mail |
 | `gatus.yaml` | — | UI, storage, alerting — everything that isn't a check |
@@ -118,18 +119,25 @@ opened.
 Gatus watches the mini back (`config/lab.yaml`, every two minutes): two
 machines watching each other rather than one watching itself. The mini
 down turns the whole `lab` group red in two minutes; the Pi down turns
-`gatus-health` red within fifteen. Neither is the dead man's switch —
+`gatus-health` red within fifteen. A runner that has stopped polling
+(`config/runners.yaml`) turns its own light red in six: Forgejo reports
+a runner `offline` a minute after its last poll, and a dead runner is
+otherwise silence — its scheduled workflows simply stop being run, and
+nothing inside the lab noticed until the dead man's switch fired. Neither is the dead man's switch —
 healthchecks.io is, and it stays outside the building (`chezmoi/tofu/`).
 
 ## Secrets
 
-No new vault item. The Pushover application token and user key are the
-same `pushover` item `scripts/alert.sh` and Beszel use, so every alert
-in the lab lands in one place. `secrets.env` names the two fields; the
-deploy resolves them into Gatus's environment, and the config references
-`${PUSHOVER_APP_TOKEN}` and `${PUSHOVER_USER_KEY}`, which Gatus
-substitutes at load. Neither the repo nor the node's disk carries the
-values.
+The Pushover application token and user key are the same `pushover`
+item `scripts/alert.sh` and Beszel use, so every alert in the lab lands
+in one place. `forgejo-gatus-token` is the one item of Gatus's own: a
+Forgejo token scoped `read:repository`, because the runners route wants
+a login and the `forgejo-api-token` the tofu holds can write. Minted by
+hand (`RUNBOOK.md` "The runners group"). `secrets.env` names the three;
+the deploy resolves them into Gatus's environment, and the config
+references `${PUSHOVER_APP_TOKEN}`, `${PUSHOVER_USER_KEY}` and
+`${FORGEJO_GATUS_TOKEN}`, which Gatus substitutes at load. Neither the
+repo nor the node's disk carries the values.
 
 Rotation: update the vault item and re-run the gatus workflow — a changed
 environment is a changed container, so compose recreates it.

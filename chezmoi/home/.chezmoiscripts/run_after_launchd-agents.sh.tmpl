@@ -1,0 +1,56 @@
+{{ if eq .profile "macmini-node" -}}
+#!/bin/bash
+# Converge launchd's view to the agent chezmoi just wrote — the macOS
+# counterpart of run_after_user-units.sh plus the Pi's .path unit, in one
+# rule: load the agent if it isn't, and restart it when anything it read
+# is newer than the process. "Anything" is the plist, the config, the
+# registration, the env file and the binary the formula symlink resolves
+# to, so a Homebrew upgrade counts the same as a config edit. Runs after
+# every apply; a satisfied run is a few stat calls.
+#
+# The restart is a SIGTERM, not a bootout: the runner finishes the job in
+# flight (which is usually the chezmoi job running this script), exits,
+# and KeepAlive brings it back.
+set -euo pipefail
+
+label=dev.twolfe.forgejo-runner
+plist="$HOME/Library/LaunchAgents/$label.plist"
+target="gui/$(id -u)/$label"
+brew_label=sh.brew.forgejo-runner
+
+[ -f "$plist" ] || exit 0
+
+# Two supervisors would run two runners. The Homebrew one is retired by
+# hand, once, at the desk (forgejo/RUNBOOK.md "The mini's runner") — never
+# from here, because a `brew services stop` issued from inside a job of
+# the runner it stops is killed with it.
+if launchctl print "gui/$(id -u)/$brew_label" >/dev/null 2>&1; then
+  echo "launchd-agents: $brew_label is still loaded; stop it first (brew services stop forgejo-runner)" >&2
+  exit 1
+fi
+
+if ! launchctl print "$target" >/dev/null 2>&1; then
+  launchctl bootstrap "gui/$(id -u)" "$plist"
+  exit 0
+fi
+
+pid="$(launchctl print "$target" | sed -n 's/^[[:space:]]*pid = \([0-9]*\).*/\1/p')"
+# Not running: launchd is between retries and will start it with the new
+# files on its own.
+[ -n "$pid" ] || exit 0
+
+started="$(LC_ALL=C date -j -f '%a %b %d %T %Y' "$(ps -o lstart= -p "$pid" | xargs)" +%s)"
+for f in \
+  "$plist" \
+  "$HOME/.config/forgejo-runner/config.yaml" \
+  "$HOME/.config/forgejo-runner/runner.json" \
+  "$HOME/.config/forgejo-runner/env" \
+  "$(readlink -f /opt/homebrew/opt/forgejo-runner/bin/forgejo-runner)"; do
+  [ -e "$f" ] || continue
+  if [ "$(stat -f %m "$f")" -gt "$started" ]; then
+    echo "launchd-agents: $f is newer than the runner; restarting"
+    launchctl kill TERM "$target"
+    exit 0
+  fi
+done
+{{ end -}}

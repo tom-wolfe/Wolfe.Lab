@@ -49,12 +49,10 @@ vscode "yzhang.markdown-all-in-one"
 
 # Drivers
 cask "displaylink"
-cask "betterdisplay"
 cask "logi-options+"
 
 # Utilities
 cask "airbuddy"
-cask "TheBoredTeam/boring-notch/boring-notch", trusted: true
 cask "daisydisk"
 cask "proton-mail"
 mas  "Paste", id: 967805235
@@ -90,12 +88,10 @@ brew "ollama"
 
 # Drivers
 cask "displaylink"
-cask "betterdisplay"
 cask "logi-options+"
 
 # Utilities
 cask "airbuddy"
-cask "TheBoredTeam/boring-notch/boring-notch", trusted: true
 
 # Productivity
 cask "claude"
@@ -133,7 +129,7 @@ mas  "Paste", id: 967805235
 
 # Server
 mas  "AutoMounter", id: 1160435653
-brew "forgejo-runner", restart_service: :changed
+brew "forgejo-runner"
 brew "henrygd/beszel/beszel-agent", restart_service: :changed, trusted: true
 brew "lazydocker"
 npm  "obsidian-headless"
