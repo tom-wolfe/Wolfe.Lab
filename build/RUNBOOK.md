@@ -6,12 +6,12 @@ reasons are in `README.md`.
 ## Running a job by hand
 
 From the slice's directory, with `--dry-run` unless the side effects
-are wanted:
+are wanted; without it the gate asks before the push:
 
 ```sh
 cd obsidian
 dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main --dry-run
-dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main   # asks before the push
+dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main
 dotnet run --project ../build/src/Wolfe.Lab.Build -- --help
 ```
 

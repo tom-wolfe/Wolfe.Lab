@@ -62,6 +62,19 @@ public class CommitVaultTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_RefusesACheckoutThatPushesSomewhereElse()
+    {
+        MakeRepository();
+        _repository.GetRemoteUrl("origin", Arg.Any<CancellationToken>()).Returns("http://forgejo/elsewhere.git");
+
+        var result = await Step().Run(_vault, TestContext.Current.CancellationToken);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("remote set-url origin http://forgejo/obsidian-main.git");
+        await _repository.DidNotReceiveWithAnyArgs().Stage(default!, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task Run_CommitsNothingWhenNothingChanged()
     {
         MakeRepository();

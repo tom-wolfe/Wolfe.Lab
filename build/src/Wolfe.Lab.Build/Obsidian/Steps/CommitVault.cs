@@ -23,9 +23,17 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
         WriteExcludes(dotGit);
 
         var repository = git.InRepository(vault.Directory);
-        if (await repository.GetRemoteUrl("origin", cancellationToken) is null)
+        switch (await repository.GetRemoteUrl("origin", cancellationToken))
         {
-            await repository.AddRemote("origin", vault.Repository.Value, cancellationToken);
+            case null:
+                await repository.AddRemote("origin", vault.Repository.Value, cancellationToken);
+                break;
+            case var url when url != vault.Repository.Value:
+                // A push to the wrong place creates a repository there (Forgejo's push-to-create),
+                // so a checkout whose remote drifted from ritten.json stops here, with the fix.
+                return new Error(
+                    $"{vault.Directory.AbsolutePath} pushes to {url}, but ritten.json says {vault.Repository.Value}. " +
+                    $"Re-point it: git -C {vault.Directory.AbsolutePath} remote set-url origin {vault.Repository.Value}");
         }
 
         var changed = await repository.ChangedFiles(".", cancellationToken);

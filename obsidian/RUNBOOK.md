@@ -28,28 +28,34 @@ expected and stops on its own.
    `sync-setup` writes is replaced by the vault's own before anything
    is committed.
 
+   Paste each block whole. They carry no comments on purpose: an
+   interactive zsh reads `#` as a word, so a commented block pasted at
+   the prompt runs the comments as commands.
+
    ```sh
    PATH="$HOME/.local/bin:$PATH"
    old="$HOME/Library/CloudStorage/GoogleDrive-trwolfe13@gmail.com/My Drive/Obsidian"
    configs=app,appearance,appearance-data,hotkey,core-plugin,core-plugin-data,community-plugin,community-plugin-data
+   ```
 
-   # Main
+   Main. The `sync` line is the full download and takes minutes.
+
+   ```sh
    nvm-run ob sync-unlink --path "$old/Main"
    mkdir -p ~/Obsidian/main
-   nvm-run ob sync-setup --vault d83d080aa129a220d67b3646a264b42b \
-     --path ~/Obsidian/main --device-name MacMini.local
-   nvm-run ob sync-config --path ~/Obsidian/main --mode mirror-remote \
-     --file-types image,audio,pdf,video --configs "$configs"
-   nvm-run ob sync --path ~/Obsidian/main      # the full download; minutes
+   nvm-run ob sync-setup --vault d83d080aa129a220d67b3646a264b42b --path ~/Obsidian/main --device-name MacMini.local
+   nvm-run ob sync-config --path ~/Obsidian/main --mode mirror-remote --file-types image,audio,pdf,video --configs "$configs"
+   nvm-run ob sync --path ~/Obsidian/main
    git -C ~/Obsidian/main init -q -b main
+   ```
 
-   # Dungeons & Dragons
+   Dungeons & Dragons.
+
+   ```sh
    nvm-run ob sync-unlink --path "$old/Dungeons & Dragons"
    mkdir -p ~/Obsidian/dnd
-   nvm-run ob sync-setup --vault 48d36650fba5264cd39acb07a8bb2d51 \
-     --path ~/Obsidian/dnd --device-name MacMini.local
-   nvm-run ob sync-config --path ~/Obsidian/dnd --mode mirror-remote \
-     --file-types image,audio,pdf,video --configs "$configs"
+   nvm-run ob sync-setup --vault 48d36650fba5264cd39acb07a8bb2d51 --path ~/Obsidian/dnd --device-name MacMini.local
+   nvm-run ob sync-config --path ~/Obsidian/dnd --mode mirror-remote --file-types image,audio,pdf,video --configs "$configs"
    nvm-run ob sync --path ~/Obsidian/dnd
    git -C ~/Obsidian/dnd init -q -b main
    ```
@@ -90,12 +96,13 @@ attach Obsidian Sync to the clone — it reconciles identical files
 rather than duplicating them:
 
 ```sh
-git clone http://macmini.local:3000/tom-wolfe/obsidian-main.git ~/Obsidian/main
+git clone http://macmini.local:3000/Obsidian/Wolfe.Main.git ~/Obsidian/main
 nvm-run ob sync-setup --vault d83d080aa129a220d67b3646a264b42b \
   --path ~/Obsidian/main --device-name MacMini.local
-nvm-run ob sync-config --path ~/Obsidian/main --mode mirror-remote \
-  --file-types image,audio,pdf,video --configs "$configs"   # as in Bootstrap
+nvm-run ob sync-config --path ~/Obsidian/main --mode mirror-remote --file-types image,audio,pdf,video --configs "$configs"
 ```
+
+`$configs` is the list from Bootstrap.
 
 **Forgejo is gone.** The repositories return with Forgejo's own restore
 (`forgejo/RUNBOOK.md`); the checkout keeps pushing once it is back, and
@@ -110,5 +117,6 @@ sync up, the MacBook's copy for instance:
 ```sh
 git -C ~/Obsidian/main log --oneline -- '10-19 Life admin/Some note.md'
 git -C ~/Obsidian/main show <sha>:'10-19 Life admin/Some note.md' > /tmp/note.md
-# then copy /tmp/note.md over the file in the MacBook's vault
 ```
+
+Then copy `/tmp/note.md` over the file in the MacBook's vault.

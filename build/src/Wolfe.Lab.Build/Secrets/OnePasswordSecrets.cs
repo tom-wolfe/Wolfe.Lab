@@ -10,18 +10,28 @@ internal sealed class OnePasswordSecrets(ICommandRunner commands) : ISecrets
     /// <inheritdoc />
     public async Task<string> Read(SecretReference reference, CancellationToken cancellationToken = default)
     {
-        // The reference is safe to log; the value never is.
+        // The reference is safe to log; the value never is, so both streams are redacted.
         var command = Command.Create("op")
             .WithArguments("read", "--no-newline", reference.Value)
             .RedactOutput()
-            .QuietOutput()
-            .ThrowOnError();
+            .QuietOutput();
         if (ServiceAccountToken() is { } token)
         {
             command = command.WithEnvironmentVariables(new Dictionary<string, string> { [TokenVariable] = token });
         }
 
         var result = await commands.Run(command, cancellationToken);
+        if (result.IsError)
+        {
+            // Redaction keeps the runner's own failure text to the exit code, which is no help
+            // at all. What op writes to stderr names the vault, the item or the account, never
+            // the value, and that is the message worth having.
+            var why = result.ErrorTail(3);
+            throw new CommandFailedException(
+                $"Could not read {reference.Value}: {(why.Count == 0 ? $"op exited with code {result.ExitCode}" : string.Join(' ', why))}",
+                result);
+        }
+
         return result.StandardOutput;
     }
 

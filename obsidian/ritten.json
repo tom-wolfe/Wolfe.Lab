@@ -7,11 +7,11 @@
   "vaults": {
     "main": {
       "path": "~/Obsidian/main",
-      "repository": "http://macmini.local:3000/tom-wolfe/obsidian-main.git"
+      "repository": "http://macmini.local:3000/Obsidian/Wolfe.Main.git"
     },
     "dnd": {
       "path": "~/Obsidian/dnd",
-      "repository": "http://macmini.local:3000/tom-wolfe/obsidian-dnd.git"
+      "repository": "http://macmini.local:3000/Obsidian/Wolfe.Dnd.git"
     }
   },
   "exclude": [
