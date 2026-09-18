@@ -32,7 +32,10 @@ internal sealed class OnePasswordSecrets(ICommandRunner commands) : ISecrets
                 result);
         }
 
-        return result.StandardOutput;
+        // op prints the value without a newline; the runner captures output a line at a time
+        // and terminates each, so the one line terminator here is the runner's, never the
+        // secret's. Left in, it reached Postgres as part of the password.
+        return result.StandardOutput.TrimEnd('\r', '\n');
     }
 
     private static string? ServiceAccountToken()

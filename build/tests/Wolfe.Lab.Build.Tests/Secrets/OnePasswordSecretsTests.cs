@@ -22,6 +22,16 @@ public class OnePasswordSecretsTests
     }
 
     [Fact]
+    public async Task Read_DropsTheLineTerminatorTheRunnerAppends()
+    {
+        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "s3cret\n", ""));
+
+        var value = await new OnePasswordSecrets(_commands).Read(Reference, TestContext.Current.CancellationToken);
+
+        value.ShouldBe("s3cret");
+    }
+
+    [Fact]
     public async Task Read_SaysWhyWhenOpRefuses()
     {
         _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>())
