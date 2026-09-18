@@ -44,6 +44,19 @@ public class AlertOnFailureTests
     }
 
     [Fact]
+    public void Gist_KeepsTheFirstAndLastLinesOfAWallOfText()
+    {
+        var usage = "Command 'docker' exited with code 1.\n" + string.Join('\n', Enumerable.Repeat("      --flag   what it does", 80)) + "\nmkdir /.cache: permission denied";
+
+        var gist = AlertOnFailure.Gist(usage);
+
+        gist.ShouldStartWith("Command 'docker' exited with code 1. … mkdir /.cache: permission denied");
+        gist.Length.ShouldBeLessThan(700);
+        AlertOnFailure.Gist("one line").ShouldBe("one line");
+        AlertOnFailure.Gist(new string('x', 500)).Length.ShouldBe(300);
+    }
+
+    [Fact]
     public void Message_LeavesOutWhatIsNotKnown()
     {
         AlertOnFailure.Message(new WorkflowReport("t", false, []), null).ShouldBe("");

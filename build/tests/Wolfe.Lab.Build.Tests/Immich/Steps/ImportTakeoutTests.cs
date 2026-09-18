@@ -31,7 +31,7 @@ public class ImportTakeoutTests
         var run = (ContainerRun)_docker.ReceivedCalls().Single().GetArguments()[0]!;
         run.Image.ShouldBe("lab/immich-go");
         run.Network.ShouldBe(ImportTakeout.Network);
-        run.Arguments.ShouldBe(["upload", "from-google-photos", "--concurrent-tasks", "4", "--pause-immich-jobs", "--session-tag", "--include-unmatched", ImportTakeout.MountPoint]);
+        run.Arguments.ShouldBe(["upload", "from-google-photos", "--concurrent-tasks", "4", "--pause-immich-jobs", "--session-tag", "--include-unmatched", "--no-ui", ImportTakeout.MountPoint]);
         run.Mounts.ShouldHaveSingleItem().ShouldBe(new BindMount(takeout.Directory, ImportTakeout.MountPoint, ReadOnly: true));
         run.Environment["IMMICH_GO_UPLOAD_SERVER"].ShouldBe("http://immich-server:2283");
         run.Environment["IMMICH_GO_UPLOAD_API_KEY"].ShouldBe("k3y");

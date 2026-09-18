@@ -11,7 +11,10 @@ RUN apk add --no-cache ca-certificates \
  && tar -xzf /tmp/immich-go.tar.gz -C /usr/local/bin immich-go \
  && rm /tmp/immich-go.tar.gz
 
+# Runs as the host user, which has no passwd entry here and so no home;
+# immich-go keeps a cache under ~, so its home is the scratch directory.
 # The takeout is mounted read-only; logs go to the working directory.
 WORKDIR /tmp
+ENV HOME=/tmp XDG_CACHE_HOME=/tmp/.cache
 USER 501:20
 ENTRYPOINT ["immich-go"]

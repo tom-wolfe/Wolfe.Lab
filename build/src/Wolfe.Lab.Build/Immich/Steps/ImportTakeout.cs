@@ -28,6 +28,8 @@ internal sealed class ImportTakeout(IDocker docker, ISecrets secrets, ImmichServ
                 "--pause-immich-jobs",
                 "--session-tag",
                 "--include-unmatched",
+                // A runner log, not a terminal: the progress screen would be noise.
+                "--no-ui",
                 MountPoint
             ])
         {
