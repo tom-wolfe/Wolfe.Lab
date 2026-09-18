@@ -1,6 +1,7 @@
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Backup.Steps;
 using Wolfe.Lab.Build.Deploy.Models;
+using Wolfe.Lab.Build.Restic;
 using Wolfe.Lab.Build.Secrets;
 
 namespace Wolfe.Lab.Build.Tests.Backup.Steps;
@@ -16,7 +17,7 @@ public class ResolveRepositoryTests : IDisposable
     {
         var source = _checkout.CreateSubdirectory("files");
         _slice = new Slice("files", new PhysicalDirectory(source.FullName), new PhysicalDirectory(Path.Combine(_checkout.FullName, "release", "files")));
-        _envFile = Path.Combine(_checkout.CreateSubdirectory(ResolveRepository.SliceName).FullName, ResolveRepository.FileName);
+        _envFile = Path.Combine(_checkout.CreateSubdirectory(ResticEnvironment.SliceName).FullName, ResolveRepository.FileName);
         _secrets.Read(SecretReference.From("op://any/item/field"), Arg.Any<CancellationToken>())
             .ReturnsForAnyArgs(call => $"value-of-{call.Arg<SecretReference>().Value}");
     }

@@ -1,4 +1,5 @@
 using Wolfe.Lab.Build.Backup.Models;
+using Wolfe.Lab.Build.Restic.Models;
 
 namespace Wolfe.Lab.Build.Restic;
 
@@ -26,5 +27,32 @@ internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands) : 
     {
         log.Skipped($"Would forget snapshot {snapshot.Id}.");
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task Copy(OffsiteRepository offsite, CancellationToken ct = default)
+    {
+        log.Skipped($"Would copy new snapshots to {offsite.Repository.Location}.");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task Prune(ResticRepository repository, RetentionPolicy policy, CancellationToken ct = default)
+    {
+        log.Skipped($"Would apply retention to {repository.Location}; what it would forget:");
+        await commands.Run(ResticClient.PruneCommand(repository, policy, dryRun: true), ct);
+    }
+
+    /// <inheritdoc />
+    public async Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default)
+    {
+        // The structural check is a read and goes through; the data sample is the part that
+        // costs download, and a rehearsal is not the night to spend it.
+        if (readDataSubset is not null)
+        {
+            log.Skipped($"Would read {readDataSubset} of {repository.Location}'s pack data back; checking its structure only.");
+        }
+
+        await commands.Run(ResticClient.CheckCommand(repository, readDataSubset: null), ct);
     }
 }

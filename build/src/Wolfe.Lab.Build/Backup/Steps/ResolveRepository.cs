@@ -11,7 +11,6 @@ namespace Wolfe.Lab.Build.Backup.Steps;
 [Step("resolve repository", StepKind.Work)]
 internal sealed class ResolveRepository(ISecrets secrets, IWorkflowLog log)
 {
-    internal const string SliceName = "restic";
     internal const string ConfigFile = "config";
 
     /// <summary>
@@ -21,26 +20,13 @@ internal sealed class ResolveRepository(ISecrets secrets, IWorkflowLog log)
 
     public async Task<StepResult<ResticRepository>> Run(Slice slice, CancellationToken ct = default)
     {
-        // Slices are siblings in the checkout; the restic slice is the one with the env files.
-        var file = new PhysicalDirectory(Path.Combine(slice.Source.AbsolutePath, "..", SliceName)).GetFile(FileName);
-        if (!file.Exists)
+        var loaded = await ResticEnvironment.Load(slice, FileName, secrets, ct);
+        if (loaded.IsError)
         {
-            return new Error($"{file.AbsolutePath} does not exist: the checkout has no restic slice beside {slice.Name}.");
+            return StepResult.Failed(loaded.Errors);
         }
 
-        using var reader = new StreamReader(file.OpenRead());
-        var entries = EnvFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath);
-        if (entries.IsError)
-        {
-            return StepResult.Failed(entries.Errors!);
-        }
-
-        if (!entries.Value!.ContainsKey(ResticRepository.LocationVariable))
-        {
-            return new Error($"{file.AbsolutePath} does not set {ResticRepository.LocationVariable}.");
-        }
-
-        var repository = new ResticRepository(await entries.Value.Resolve(secrets, ct));
+        var repository = loaded.Value!;
         if (repository.IsLocal && !new PhysicalDirectory(repository.Location).GetFile(ConfigFile).Exists)
         {
             return new Error($"No restic repository at {repository.Location}: the drive is unmounted, or the repository was never initialised (restic/RUNBOOK.md, Bootstrap).");

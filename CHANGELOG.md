@@ -13,6 +13,11 @@ rather than versioned — the lab is continuous, not released.
   snapshot, start, with the guards — for any slice whose `ritten.json`
   carries a `backup` section. `files` is the first; the shell matrix
   follows it slice by slice.
+- **The CLI ships offsite and verifies.** `lab offsite` (copy to B2,
+  retention on both repositories, the heartbeat) and `lab verify` (both
+  checks, the offsite data sample) on a `restic` workflow, with the
+  policy and the sample in `restic/ritten.json`. The two restic scripts
+  are gone.
 
 ### Changed
 

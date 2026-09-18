@@ -3,6 +3,19 @@
 Procedures: things done in order, at a keyboard. The design and the
 reasons are in `README.md`.
 
+## By hand
+
+From `restic/`, with `--dry-run` unless the side effects are wanted:
+
+```sh
+cd restic
+dotnet run --project ../build/src/Wolfe.Lab.Build -- offsite --dry-run
+dotnet run --project ../build/src/Wolfe.Lab.Build -- verify
+```
+
+A rehearsal copies nothing, lists what retention would forget, checks
+structure only, and pings nothing.
+
 ## Bootstrap (once)
 
 1. Create a Backblaze B2 account. Account → Application Keys → note the

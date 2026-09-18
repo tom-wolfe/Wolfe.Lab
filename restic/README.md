@@ -44,22 +44,22 @@ or its `flows/backup/backup.conf` on the shell path — declaring what to
 snapshot: the paths, the excludes, and the container to stop, or none
 for a warm snapshot. No job keeps or prunes anything, because —
 
-**Retention lives in ONE place:** `flows/offsite/script.sh`, nightly at
-04:35, after every backup has finished:
+**Retention lives in ONE place:** `lab offsite` (`build/`, settings in
+`ritten.json`), nightly at 04:35, after every backup has finished:
 
 1. `restic copy` — ship every snapshot B2 doesn't have. This is
    *idempotent catch-up*, not a timed hand-off: a missed night ships on
    the next run, and a failed service backup just means one less snapshot
    to copy. No step here depends on another step's timing.
-2. `restic forget --keep-daily 7 --keep-weekly 5 --keep-monthly 12
-   --keep-tag pre-upgrade --prune` — the same policy applied to both
-   repos, after the copy so nothing is pruned before it's offsite.
+2. `restic forget --prune` with the policy in `ritten.json` (7 daily, 5
+   weekly, 12 monthly, `pre-upgrade` forever) — the same policy applied
+   to both repos, after the copy so nothing is pruned before it's offsite.
    Snapshots group by path (per service) automatically; `pre-upgrade`
    (labelled dumps taken before upgrades) is kept forever.
 
 **Watching it:** every workflow here alerts on failure (Pushover). The
 job *silently not running* is covered the way the lab's heartbeat is: the
-offsite workflow's last step pings healthchecks.io (`lab-restic-offsite`,
+offsite job's last step pings healthchecks.io (`lab-restic-offsite`,
 declared in `tofu/`) after a green copy — that silence is the only backup
 signal that leaves the building. And the verify workflow (Sundays) runs
 `restic check` on both repos, reading a 5% pack sample back from B2 — an
@@ -109,8 +109,8 @@ hand (`RUNBOOK.md` "A Linux node").
 | Workflow | When | What |
 | --- | --- | --- |
 | `backup.yaml` | 02:20 nightly, one slice after another | stop → snapshot → start, one job per slice |
-| `restic-offsite.yaml` | 04:35 nightly | copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
-| `restic-verify.yaml` | Sun 05:05 | `restic check` both repos, 5% data sample from B2 |
+| `restic-offsite.yaml` | 04:35 nightly | `lab offsite`: copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
+| `restic-verify.yaml` | Sun 05:05 | `lab verify`: `restic check` both repos, 5% data sample from B2 |
 | `tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
 
 Locking: backups take shared locks and may overlap each other safely;

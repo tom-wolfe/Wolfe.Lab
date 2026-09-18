@@ -20,7 +20,7 @@ client that has a dry-run twin, so `--dry-run` rehearses any job
 without a side effect.
 
 Workflows so far: `obsidian` (`sync --vault <name>`), `immich` (`deploy`,
-`import`), `files` (`backup`).
+`import`), `files` (`backup`), `restic` (`offsite`, `verify`).
 
 A job can be shared: `BackupJob<TSettings>` is the backup pipeline for
 any slice whose `ritten.json` carries a `backup` section (paths,
@@ -40,7 +40,12 @@ command runner for every process. The lab adds what Ritten doesn't have:
   `nvm-run` wrapper chezmoi installs.
 - **Restic** — `IRestic` runs the binary with the repository in its
   environment, never on its command line. The rehearsal is restic's own
-  `--dry-run`, so a dry run lists what the snapshot would add.
+  `--dry-run` where it has one (backup, forget), so a dry run lists what
+  a snapshot would add or retention would drop; a copy is skipped and
+  a check keeps to structure.
+- **Heartbeat** — `IHeartbeat` pings a healthchecks.io check, the dead
+  man's switch a scheduled job reports to as its last step. The
+  rehearsal never pings: a switch told the job ran is worse than none.
 
 ## Alerting
 

@@ -15,9 +15,5 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-      - run: restic/flows/offsite/script.sh
-      - run: scripts/heartbeat.sh lab-restic-offsite
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "restic offsite failed"
+      - working-directory: restic
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- offsite

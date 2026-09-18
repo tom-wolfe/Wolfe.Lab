@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Wolfe.Lab.Build.Backup.Models;
+using Wolfe.Lab.Build.Restic.Models;
 
 namespace Wolfe.Lab.Build.Restic;
 
@@ -27,6 +29,54 @@ internal sealed partial class ResticClient(ICommandRunner commands) : IRestic
         await commands.Run(
             Command.Create("restic").WithArguments("forget", snapshot.Id).WithEnvironmentVariables(repository.Environment).QuietOutput().ThrowOnError(),
             ct);
+
+    /// <inheritdoc />
+    public async Task Copy(OffsiteRepository offsite, CancellationToken ct = default) =>
+        await commands.Run(Command.Create("restic").WithArguments("copy").WithEnvironmentVariables(offsite.Repository.Environment).ThrowOnError(), ct);
+
+    /// <inheritdoc />
+    public async Task Prune(ResticRepository repository, RetentionPolicy policy, CancellationToken ct = default) =>
+        await commands.Run(PruneCommand(repository, policy, dryRun: false), ct);
+
+    /// <inheritdoc />
+    public async Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default) =>
+        await commands.Run(CheckCommand(repository, readDataSubset), ct);
+
+    /// <summary>
+    /// The prune invocation, shared with the rehearsal: restic's own <c>--dry-run</c> says what
+    /// forget would remove and prunes nothing.
+    /// </summary>
+    internal static Command PruneCommand(ResticRepository repository, RetentionPolicy policy, bool dryRun)
+    {
+        var arguments = new List<string>
+        {
+            "forget",
+            "--keep-daily", policy.Daily.ToString(CultureInfo.InvariantCulture),
+            "--keep-weekly", policy.Weekly.ToString(CultureInfo.InvariantCulture),
+            "--keep-monthly", policy.Monthly.ToString(CultureInfo.InvariantCulture)
+        };
+        foreach (var tag in policy.KeepTags)
+        {
+            arguments.AddRange(["--keep-tag", tag]);
+        }
+
+        arguments.Add(dryRun ? "--dry-run" : "--prune");
+        return Command.Create("restic").WithArguments([.. arguments]).WithEnvironmentVariables(repository.Environment).ThrowOnError();
+    }
+
+    /// <summary>
+    /// The check invocation.
+    /// </summary>
+    internal static Command CheckCommand(ResticRepository repository, string? readDataSubset)
+    {
+        var command = Command.Create("restic").WithArguments("check");
+        if (readDataSubset is not null)
+        {
+            command = command.AndArguments($"--read-data-subset={readDataSubset}");
+        }
+
+        return command.WithEnvironmentVariables(repository.Environment).ThrowOnError();
+    }
 
     /// <summary>
     /// The backup invocation, shared with the rehearsal: restic's own <c>--dry-run</c> reads the

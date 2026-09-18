@@ -47,8 +47,8 @@ workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 
 **The path there runs through the CLI.** `lab backup` (`build/`) is the
 pipeline for `files/`; each remaining slice moves onto it by declaring a
-`backup` section in its `ritten.json`. Then `lab offsite` and `lab verify`
-replace the two restic scripts and `scripts/backup.sh` goes. A restore
+`backup` section in its `ritten.json`, and `scripts/backup.sh` goes with
+the last of them; `lab offsite` and `lab verify` are already there. A restore
 drill is then a command — `lab restore <slice>` — rather than a runbook
 page, which is what makes the weekly drill above cheap to build.
 

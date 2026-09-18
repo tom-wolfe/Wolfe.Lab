@@ -1,6 +1,7 @@
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Backup.Models;
 using Wolfe.Lab.Build.Restic;
+using Wolfe.Lab.Build.Restic.Models;
 
 namespace Wolfe.Lab.Build.Tests.Restic;
 
@@ -62,5 +63,56 @@ public class ResticClientTests
         var command = ResticClient.BackupCommand(Repository, [new PhysicalDirectory("/x")], [], ["service:files"], dryRun: true);
 
         command.Arguments.Take(3).ShouldBe(["backup", "--dry-run", "--verbose"]);
+    }
+
+    [Fact]
+    public async Task Copy_TakesEverythingFromTheOffsiteEnvironment()
+    {
+        Command? ran = null;
+        _commands.Run(Arg.Do<Command>(c => ran = c), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
+        var offsite = new OffsiteRepository(new ResticRepository(new Dictionary<string, string>
+        {
+            ["RESTIC_REPOSITORY"] = "s3:https://s3.eu.backblazeb2.com/wolfe-lab-restic",
+            ["RESTIC_FROM_REPOSITORY"] = "/Volumes/Data2/restic"
+        }));
+
+        await new ResticClient(_commands).Copy(offsite, TestContext.Current.CancellationToken);
+
+        var command = ran.ShouldNotBeNull();
+        command.Arguments.ShouldBe(["copy"]);
+        command.EnvironmentVariables["RESTIC_FROM_REPOSITORY"].ShouldBe("/Volumes/Data2/restic");
+    }
+
+    [Fact]
+    public async Task Prune_SpellsThePolicyAndPrunesInTheSamePass()
+    {
+        Command? ran = null;
+        _commands.Run(Arg.Do<Command>(c => ran = c), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
+
+        await new ResticClient(_commands).Prune(Repository, new RetentionPolicy(7, 5, 12, ["pre-upgrade"]), TestContext.Current.CancellationToken);
+
+        ran.ShouldNotBeNull().Arguments.ShouldBe(["forget", "--keep-daily", "7", "--keep-weekly", "5", "--keep-monthly", "12", "--keep-tag", "pre-upgrade", "--prune"]);
+    }
+
+    [Fact]
+    public void PruneCommand_RehearsesWithResticsOwnDryRun()
+    {
+        var command = ResticClient.PruneCommand(Repository, new RetentionPolicy(7, 5, 12, []), dryRun: true);
+
+        command.Arguments.ShouldNotContain("--prune");
+        command.Arguments.Last().ShouldBe("--dry-run");
+    }
+
+    [Fact]
+    public async Task Check_ReadsASampleOnlyWhenAsked()
+    {
+        var ran = new List<Command>();
+        _commands.Run(Arg.Do<Command>(ran.Add), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
+
+        await new ResticClient(_commands).Check(Repository, null, TestContext.Current.CancellationToken);
+        await new ResticClient(_commands).Check(Repository, "5%", TestContext.Current.CancellationToken);
+
+        ran[0].Arguments.ShouldBe(["check"]);
+        ran[1].Arguments.ShouldBe(["check", "--read-data-subset=5%"]);
     }
 }
