@@ -30,7 +30,9 @@ internal sealed class ImportTakeout(IDocker docker, ISecrets secrets, ImmichServ
                 "--include-unmatched",
                 // A runner log, not a terminal: the progress screen would be noise.
                 "--no-ui",
-                MountPoint
+                // The archives by name: docker run globs nothing, and a directory means an
+                // extracted Takeout to immich-go.
+                .. takeout.Parts.Select(part => $"{MountPoint}/{part}")
             ])
         {
             Mounts = [new BindMount(takeout.Directory, MountPoint, ReadOnly: true)],
@@ -42,7 +44,7 @@ internal sealed class ImportTakeout(IDocker docker, ISecrets secrets, ImmichServ
             Network = Network
         };
 
-        log.Status($"Importing {takeout.Parts} part{(takeout.Parts == 1 ? "" : "s")} into {server.Url.Value}.");
+        log.Status($"Importing {takeout.Parts.Count} part{(takeout.Parts.Count == 1 ? "" : "s")} into {server.Url.Value}.");
         await docker.Run(run, ct);
         return StepResult.Successful;
     }

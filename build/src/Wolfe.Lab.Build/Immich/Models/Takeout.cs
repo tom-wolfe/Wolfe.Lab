@@ -10,11 +10,12 @@ namespace Wolfe.Lab.Build.Immich.Models;
 public sealed record TakeoutLocation(IDirectory Directory);
 
 /// <summary>
-/// A Google Takeout on the node: the directory its zip parts sit in.
+/// A Google Takeout on the node: the directory its zip parts sit in, and the parts by name.
+/// immich-go reads a directory only as an extracted Takeout; archives are named one by one.
 /// </summary>
 /// <param name="Directory">The directory holding the parts.</param>
-/// <param name="Parts">How many zip parts it holds.</param>
-public sealed record Takeout(IDirectory Directory, int Parts);
+/// <param name="Parts">The zip parts' file names, in order.</param>
+public sealed record Takeout(IDirectory Directory, IReadOnlyList<string> Parts);
 
 /// <summary>
 /// The server the import uploads to. The key stays a reference until the moment of use.

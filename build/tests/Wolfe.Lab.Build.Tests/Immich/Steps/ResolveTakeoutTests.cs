@@ -15,13 +15,13 @@ public class ResolveTakeoutTests : IDisposable
     [Fact]
     public void Run_CountsTheParts()
     {
-        File.WriteAllText(Path.Combine(_takeout.FullName, "takeout-001.zip"), "");
         File.WriteAllText(Path.Combine(_takeout.FullName, "takeout-002.zip"), "");
+        File.WriteAllText(Path.Combine(_takeout.FullName, "takeout-001.zip"), "");
         File.WriteAllText(Path.Combine(_takeout.FullName, "notes.txt"), "");
 
         var result = Step(_takeout.FullName).Run();
 
-        result.Value.ShouldNotBeNull().Parts.ShouldBe(2);
+        result.Value.ShouldNotBeNull().Parts.ShouldBe(["takeout-001.zip", "takeout-002.zip"]);
     }
 
     [Fact]

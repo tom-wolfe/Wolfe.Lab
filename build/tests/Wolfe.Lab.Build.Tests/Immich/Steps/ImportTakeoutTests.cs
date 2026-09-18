@@ -23,7 +23,7 @@ public class ImportTakeoutTests
             new ImmichServer(ServiceUrl.From("http://immich-server:2283"), Key),
             new ImportOptions(4),
             Substitute.For<IWorkflowLog>());
-        var takeout = new Takeout(new PhysicalDirectory("/Volumes/Data2/photos/google"), 5);
+        var takeout = new Takeout(new PhysicalDirectory("/Volumes/Data2/photos/google"), ["takeout-001.zip", "takeout-002.zip"]);
 
         var result = await step.Run(takeout, new ImmichGoImage("lab/immich-go", new PhysicalDirectory("/lab/immich/immich-go")), TestContext.Current.CancellationToken);
 
@@ -31,7 +31,7 @@ public class ImportTakeoutTests
         var run = (ContainerRun)_docker.ReceivedCalls().Single().GetArguments()[0]!;
         run.Image.ShouldBe("lab/immich-go");
         run.Network.ShouldBe(ImportTakeout.Network);
-        run.Arguments.ShouldBe(["upload", "from-google-photos", "--concurrent-tasks", "4", "--pause-immich-jobs", "--session-tag", "--include-unmatched", "--no-ui", ImportTakeout.MountPoint]);
+        run.Arguments.ShouldBe(["upload", "from-google-photos", "--concurrent-tasks", "4", "--pause-immich-jobs", "--session-tag", "--include-unmatched", "--no-ui", "/takeout/takeout-001.zip", "/takeout/takeout-002.zip"]);
         run.Mounts.ShouldHaveSingleItem().ShouldBe(new BindMount(takeout.Directory, ImportTakeout.MountPoint, ReadOnly: true));
         run.Environment["IMMICH_GO_UPLOAD_SERVER"].ShouldBe("http://immich-server:2283");
         run.Environment["IMMICH_GO_UPLOAD_API_KEY"].ShouldBe("k3y");

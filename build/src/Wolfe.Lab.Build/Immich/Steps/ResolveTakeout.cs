@@ -16,13 +16,13 @@ internal sealed class ResolveTakeout(TakeoutLocation location, IWorkflowLog log)
             return new Error($"{directory.AbsolutePath} does not exist.");
         }
 
-        var parts = directory.GetFiles("*.zip").Count();
-        if (parts == 0)
+        var parts = directory.GetFiles("*.zip").Select(f => f.Name).Order(StringComparer.Ordinal).ToList();
+        if (parts.Count == 0)
         {
             return new Error($"{directory.AbsolutePath} holds no zip parts.");
         }
 
-        log.Detail($"{parts} Takeout part{(parts == 1 ? "" : "s")} in {directory.AbsolutePath}.");
+        log.Detail($"{parts.Count} Takeout part{(parts.Count == 1 ? "" : "s")} in {directory.AbsolutePath}.");
         return new Takeout(directory, parts);
     }
 }
