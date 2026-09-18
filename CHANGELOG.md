@@ -4,6 +4,22 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.28.0] - 2026-09-18
+
+### Added
+
+- **`files/`.** Backup of personal files on Data2.
+- **The CLI backs up.** `lab backup` is the backup pipeline — stop,
+  snapshot, start, with the guards — for any slice whose `ritten.json`
+  carries a `backup` section. `files` is the first; the shell matrix
+  follows it slice by slice.
+
+### Changed
+
+- **The runner's job timeout is 24 hours.** Each workflow's
+  `timeout-minutes` is the limit that applies; the runner's own, which
+  was the one-hour default, no longer cuts a first pass short.
+
 ## [0.27.0] - 2026-09-18
 
 ### Added

@@ -43,3 +43,11 @@ jobs:
       - if: failure()
         run: |
           scripts/alert.sh "backup immich failed"
+
+  files:
+    runs-on: MacMini
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: files
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- backup

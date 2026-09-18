@@ -1,0 +1,27 @@
+using Wolfe.Lab.Build.Backup.Models;
+
+namespace Wolfe.Lab.Build.Restic;
+
+/// <summary>
+/// The lab's backup tool.
+/// </summary>
+public interface IRestic
+{
+    /// <summary>
+    /// Snapshots the paths into the repository.
+    /// </summary>
+    /// <param name="repository">The repository written to.</param>
+    /// <param name="paths">The directories to snapshot.</param>
+    /// <param name="excludes">Absolute paths left out.</param>
+    /// <param name="tags">Tags on the snapshot.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task<Snapshot> Backup(ResticRepository repository, IReadOnlyList<IDirectory> paths, IReadOnlyList<string> excludes, IReadOnlyList<string> tags, CancellationToken ct = default);
+
+    /// <summary>
+    /// Drops one snapshot. The data it referenced is rewritten out by the nightly prune.
+    /// </summary>
+    /// <param name="repository">The repository holding it.</param>
+    /// <param name="snapshot">The snapshot to drop.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task Forget(ResticRepository repository, Snapshot snapshot, CancellationToken ct = default);
+}

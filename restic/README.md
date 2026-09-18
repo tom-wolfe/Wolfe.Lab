@@ -29,17 +29,20 @@ one offsite.
 
 **Media splits on whether it can be re-acquired.** Films and television
 can, so they stay out of restic and a lost drive is a re-download.
-Photos and videos taken on a phone cannot, so the Immich library is in,
-and rides the offsite copy at a pound or so a month.
+Photos and videos taken on a phone cannot, and nor can the personal
+files (`files/`), so both are in and ride the offsite copy at a couple
+of pounds a month.
 
 **Per-service backups keep their stop windows.** The stop is the
 load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared
-pipeline, `scripts/backup.sh` (deploy.sh's pattern:
-stop → `restic backup` → start, with the mount, repo and mid-backup
-restart guards); per-slice variation is data, a `flows/backup/backup.conf`
-per slice declaring what to snapshot. No script keeps or prunes
-anything, because —
+pipeline: `lab backup` in `build/` (stop → `restic backup` → start, with
+the mount, repo and mid-backup restart guards), and `scripts/backup.sh`,
+the same pipeline in shell for the slices not yet on the CLI. Per-slice
+variation is data — the `backup` section of the slice's `ritten.json`,
+or its `flows/backup/backup.conf` on the shell path — declaring what to
+snapshot: the paths, the excludes, and the container to stop, or none
+for a warm snapshot. No job keeps or prunes anything, because —
 
 **Retention lives in ONE place:** `flows/offsite/script.sh`, nightly at
 04:35, after every backup has finished:
@@ -105,7 +108,7 @@ hand (`RUNBOOK.md` "A Linux node").
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `backup.yaml` (matrix ×7) | 02:20 nightly, one slice after another | stop → snapshot → start |
+| `backup.yaml` | 02:20 nightly, one slice after another | stop → snapshot → start, one job per slice |
 | `restic-offsite.yaml` | 04:35 nightly | copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
 | `restic-verify.yaml` | Sun 05:05 | `restic check` both repos, 5% data sample from B2 |
 | `tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
@@ -128,14 +131,6 @@ The env files beside this README (`restic.env`, `offsite.env`,
 `scripts/secrets.sh` — the same path every job in the lab uses. The
 repository URL lives in the vault, not the repo, because its region
 segment only exists once the B2 account does.
-
-## Cost
-
-B2 is ~$6/TB/month. Service state is single-digit GB — pennies. The knob
-that matters later is scope, not price: adding sources (the Google Drive
-question, Immich) is adding paths to back up, not redesigning. Both are
-explicitly out of scope for now (Drive content unsorted;
-Immich lands only after this exists — ROADMAP).
 
 ## Runbook
 

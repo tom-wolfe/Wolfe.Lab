@@ -13,7 +13,7 @@ log:
 runner:
   file: {{ .home }}/.config/{{ .dir }}/runner.json
   capacity: {{ .capacity }}
-  timeout: 1h
+  timeout: 24h
   shutdown_timeout: 10m
 {{- if .host }}
   # Host mode: steps run as this user. The env file is the node's bootstrap

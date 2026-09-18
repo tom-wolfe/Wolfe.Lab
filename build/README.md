@@ -19,7 +19,13 @@ sharing state, and reach outside the working directory only through a
 client that has a dry-run twin, so `--dry-run` rehearses any job
 without a side effect.
 
-Workflows so far: `obsidian` (`sync --vault <name>`).
+Workflows so far: `obsidian` (`sync --vault <name>`), `immich` (`deploy`,
+`import`), `files` (`backup`).
+
+A job can be shared: `BackupJob<TSettings>` is the backup pipeline for
+any slice whose `ritten.json` carries a `backup` section (paths,
+excludes, and the container to stop — or none for a warm snapshot), and
+a workflow offers it by listing it beside its own jobs.
 
 ## Clients
 
@@ -32,6 +38,9 @@ command runner for every process. The lab adds what Ritten doesn't have:
   job that has nothing to push never touches the vault.
 - **Obsidian** — `IObsidian` runs the headless client through the
   `nvm-run` wrapper chezmoi installs.
+- **Restic** — `IRestic` runs the binary with the repository in its
+  environment, never on its command line. The rehearsal is restic's own
+  `--dry-run`, so a dry run lists what the snapshot would add.
 
 ## Alerting
 

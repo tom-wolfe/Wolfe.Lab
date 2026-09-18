@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Backup.Models;
 using Wolfe.Lab.Build.Paths;
 
 namespace Wolfe.Lab.Build.Deploy.Models;
@@ -11,4 +12,9 @@ public record SliceSettings : WorkflowSettings
     /// External volumes the stack binds.
     /// </summary>
     public IReadOnlyList<HostPath> Volumes { get; init; } = [];
+
+    /// <summary>
+    /// What the slice's backup snapshots, for a workflow that offers one.
+    /// </summary>
+    public BackupSettings? Backup { get; init; }
 }

@@ -63,7 +63,6 @@ Auth state is device-bound by design; these are the once-per-machine rituals:
       scripts prefer it over the desktop-app session — prompt-free and works
       over SSH; revoke/rotate from 1password.com any time
 - [ ] **App Store** — required before `mas` apps in the Brewfile will install
-- [ ] **Google Drive** — personal
 - [ ] **`gh auth login`** — per-machine token, stays out of the repo
 - [ ] **Obsidian Sync** — per vault; check the "Vault configuration" sync toggles.
       The server's vaults are re-pointed by `obsidian/RUNBOOK.md`, not signed in here

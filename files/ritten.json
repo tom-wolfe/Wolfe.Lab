@@ -1,0 +1,7 @@
+{
+  "workflow": "files",
+  "volumes": ["/Volumes/Data2"],
+  "backup": {
+    "paths": ["/Volumes/Data2/files"]
+  }
+}

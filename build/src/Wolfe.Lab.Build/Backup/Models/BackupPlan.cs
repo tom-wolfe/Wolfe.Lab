@@ -1,0 +1,9 @@
+namespace Wolfe.Lab.Build.Backup.Models;
+
+/// <summary>
+/// What one slice's snapshot holds, and what has to be quiet while it is taken.
+/// </summary>
+/// <param name="Paths">The directories to snapshot.</param>
+/// <param name="Excludes">Absolute paths restic leaves out.</param>
+/// <param name="Container">The container whose stack is stopped for the snapshot, or null for a warm one.</param>
+public sealed record BackupPlan(IReadOnlyList<IDirectory> Paths, IReadOnlyList<string> Excludes, string? Container);
