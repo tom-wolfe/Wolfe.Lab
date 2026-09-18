@@ -27,6 +27,11 @@ Every node writes into the first one. The mini has the drive, and other nodes re
 With the live state on the machines, that's 3-2-1: three copies, two media,
 one offsite.
 
+**Media splits on whether it can be re-acquired.** Films and television
+can, so they stay out of restic and a lost drive is a re-download.
+Photos and videos taken on a phone cannot, so the Immich library is in,
+and rides the offsite copy at a pound or so a month.
+
 **Per-service backups keep their stop windows.** The stop is the
 load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared

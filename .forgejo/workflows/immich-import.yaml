@@ -1,0 +1,20 @@
+name: immich import
+
+# The Google Takeout into Immich. Hand-triggered, and re-runnable: immich-go
+# skips what the server already holds, so a run cut short is resumed by
+# dispatching it again.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: immich-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: MacMini
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: immich
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- import --auto-approve

@@ -17,7 +17,3 @@ jobs:
       - uses: actions/checkout@v4
       - working-directory: obsidian
         run: dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main --auto-approve
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "obsidian main sync failed"

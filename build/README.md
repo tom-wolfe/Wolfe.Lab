@@ -33,6 +33,19 @@ command runner for every process. The lab adds what Ritten doesn't have:
 - **Obsidian** — `IObsidian` runs the headless client through the
   `nvm-run` wrapper chezmoi installs.
 
+## Alerting
+
+A job that fails on a runner pages, the way every workflow's
+`if: failure()` step used to: the CLI detects the runner from the
+environment (Ritten's `ForgejoActionsRuntime`, which the lab's
+`LabRuntime` extends) and that runtime contributes a result sink which posts to
+Pushover when the run did not succeed — job, failed step, first error,
+and the run's page. At a terminal there is no runtime and no page.
+What the sink cannot cover is a run that never reaches the CLI: a
+`dotnet run` that fails to restore or compile exits red without paging,
+which CI on the pull request is there to catch first. The workflows
+still on `scripts/` keep `scripts/alert.sh`.
+
 ## How workflows run it
 
 Today: `dotnet run --project ../build/src/Wolfe.Lab.Build -- <job>`

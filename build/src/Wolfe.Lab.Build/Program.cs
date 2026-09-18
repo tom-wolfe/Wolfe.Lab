@@ -1,11 +1,17 @@
 using System.CommandLine;
 using Ritten.CommandLine;
+using Wolfe.Lab.Build.Immich.Workflows;
 using Wolfe.Lab.Build.Obsidian.Workflows;
+using Wolfe.Lab.Build.Runtimes;
 
 var builder = WorkflowApplication.CreateBuilder();
 
 builder.Workflows
-    .Add<ObsidianWorkflow>();
+    .Add<ObsidianWorkflow>()
+    .Add<ImmichWorkflow>();
+
+builder.Runtimes
+    .Add<LabRuntime>();
 
 var built = builder.Build();
 if (built.IsError)

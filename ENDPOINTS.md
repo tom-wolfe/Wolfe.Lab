@@ -23,6 +23,7 @@ front door is down.
 | `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI          | `gluetun:8080` |
 | `https://sonarr.lab.twolfe.dev`      | Sonarr (TV renamer)         | `sonarr:8989`  |
 | `https://radarr.lab.twolfe.dev`      | Radarr (movie renamer)      | `radarr:7878`  |
+| `https://immich.lab.twolfe.dev`      | Immich (photos; the phone app's server) | `immich-server:2283` |
 | `https://gatus.lab.twolfe.dev`       | Gatus status page           | `wolfe-pi5.tailf823b8.ts.net:8280` (the Pi) |
 
 ## Neat names (tailnet-routed, via the front door)
@@ -46,6 +47,7 @@ the mini's tailnet address, without the wildcard in the name.
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
 | `:3900` | Garage — S3 API                                  | 1P `garage-tofu-state-key` (per-bucket keys)               | `garage`                    |
 | `:3903` | Garage — admin API                               | 1P `garage-s3-admin-token`                                 | `garage`                    |
+| `:2283` | Immich — web, API and the phone app              | Immich accounts (1P `immich-admin`); API: 1P `immich-api-key`; `/api/server/ping` is unauthenticated | `immich`   |
 | `:5900` | Screen Sharing.                                  | macOS account                                              | System Settings             |
 | `:7878` | Radarr — web UI + API                            | Radarr account (1P `radarr-webui` is a copy); `/ping` is unauthenticated | `radarr`     |
 | `:8080` | qBittorrent — web UI (via gluetun's namespace)   | qBittorrent account (1P `qbittorrent-webui` is a copy)     | `qbittorrent`               |

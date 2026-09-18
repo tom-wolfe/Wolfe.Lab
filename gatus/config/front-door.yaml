@@ -92,6 +92,17 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: immich
+    group: front door
+    url: https://immich.lab.twolfe.dev/api/server/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].res == pong"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
   - name: radarr
     group: front door
     url: https://radarr.lab.twolfe.dev/ping

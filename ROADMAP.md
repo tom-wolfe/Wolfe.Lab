@@ -437,30 +437,6 @@ Nextcloud/Seafile if it doesn't, which deserves its own design pass; or
 keep a SaaS for the small subset actually shared and self-host the rest.
 Explicitly not blocking the backup work — they're independent.
 
-### Backing up media
-
-`restic/` deliberately scopes the media out: service
-state is single-digit GB and costs pennies; the library is 1.6 TB. It
-sits on Data1 with no second copy anywhere, and no decision has been
-recorded either way. The options, so the decision can be made rather
-than deferred:
-
-- **Nothing, on purpose.** Media is re-acquirable, and Phase B of #4
-  makes re-acquiring it a list rather than a project. The cost is time
-  and bandwidth on the day, not money every month.
-- **Some of it.** A `keep/` subtree for the things that actually can't
-  be found again — one more path in a `backup.conf`, and B2 charges by
-  the byte. Requires sorting, which is the thing Drive's content also
-  waits on.
-- **All of it.** B2 is ~$6/TB/month, so roughly $10/month for the
-  library as it stands and growing with it; restic dedups and
-  compresses nothing on media, so the bill is the raw size. Restore
-  egress is free up to a multiple of what's stored.
-
-Tom's position: some of it may be worth keeping, and the
-cost is the thing to balance. The middle option is the likely shape;
-the sorting is the work.
-
 ### Pi-hole again — and local DNS for `*.lab`
 
 Today nodes address each other by MagicDNS name
@@ -613,14 +589,11 @@ whose alert thresholds have no file representation at all.
 runner; what is left here is one compose slice, and the Pi's backup path for
 its state.
 
-### New services: Plane, OpenGist, Immich, Paperless-ngx
+### New services: Plane, OpenGist, Paperless-ngx
 
-Wanted, but each adds backup surface. Immich in particular is large and is
-the one where data loss actually hurts — it should land *after* the
-restore drills (#1) have passed, not before. Paperless-ngx (the
-paperwork half of #7) belongs on the mini, needs no new hardware, and
-could be built today; it is listed here so it isn't lost inside the
-Studio item.
+Wanted, but each adds backup surface. Paperless-ngx (the paperwork half
+of #7) belongs on the mini, needs no new hardware, and could be built
+today; it is listed here so it isn't lost inside the Studio item.
 
 ## Hardware worth buying
 

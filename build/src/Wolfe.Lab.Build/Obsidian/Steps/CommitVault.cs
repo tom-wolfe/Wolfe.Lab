@@ -13,16 +13,15 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
 
     public async Task<StepResult> Run(Vault vault, CancellationToken cancellationToken = default)
     {
-        var dotGit = vault.Directory.GetDirectory(".git");
-        if (!dotGit.Exists)
+        var repository = git.InRepository(vault.Directory);
+        if (!await repository.IsRepository(cancellationToken))
         {
             return new Error($"{vault.Directory.AbsolutePath} is not a git repository — see obsidian/RUNBOOK.md.");
         }
 
         // Written before anything is counted, so an excluded path never shows up as a change.
-        WriteExcludes(dotGit);
+        WriteExcludes(vault.Directory.GetDirectory(".git"));
 
-        var repository = git.InRepository(vault.Directory);
         switch (await repository.GetRemoteUrl("origin", cancellationToken))
         {
             case null:

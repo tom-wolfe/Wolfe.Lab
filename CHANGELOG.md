@@ -4,6 +4,26 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.27.0] - 2026-09-18
+
+### Added
+
+- **Immich.** The photo library, on Data2, with the phone app as the
+  place a photo lands after it is taken. The Google Takeout goes in
+  through immich-go, run as a throwaway container by `lab import`.
+- **Personal media is backed up; films and television are not.** The
+  Immich library rides restic and the offsite copy; the media the arr
+  stack can re-acquire stays out. Warm snapshots (`stop=false` in a
+  slice's `backup.conf`) for a service whose files are write-once and
+  whose database is its own dump.
+- **The CLI deploys.** `lab deploy` installs a slice and converges its
+  stack, the same steps as `scripts/deploy.sh`; immich is the first
+  slice on it.
+- **The CLI pages on failure.** A job that fails on a runner alerts
+  through Pushover from inside the CLI, so its workflow carries no
+  `if: failure()` step. `scripts/alert.sh` remains for the workflows
+  still on shell.
+
 ## [0.26.0] - 2026-09-17
 
 ### Changed

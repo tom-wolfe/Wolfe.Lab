@@ -26,6 +26,9 @@ fi
 container="$slice"
 paths=()
 excludes=()
+# stop=false takes a warm snapshot: for a service whose files are
+# write-once and whose database is its own consistent dump (immich).
+stop=true
 # shellcheck disable=SC1090
 source "$conf"
 if [ "${#paths[@]}" -eq 0 ]; then
@@ -56,9 +59,11 @@ else
   env="$repo/restic/sftp.env"
 fi
 
-docker compose --project-directory "$root/$slice" stop
-# Whatever happens below, never leave the stack down.
-trap 'docker compose --project-directory "$root/$slice" start >/dev/null' EXIT
+if [ "$stop" = true ]; then
+  docker compose --project-directory "$root/$slice" stop
+  # Whatever happens below, never leave the stack down.
+  trap 'docker compose --project-directory "$root/$slice" start >/dev/null' EXIT
+fi
 
 # The image rides on the snapshot as a tag — these schemas migrate
 # forward only, so a restore pairs with the version that wrote it (each
@@ -81,7 +86,7 @@ snap="$(printf '%s\n' "$out" | sed -n 's/^snapshot \([0-9a-f]*\) saved$/\1/p')"
 # drops just that snapshot; the data it referenced is rewritten out by
 # the nightly prune. The MacMini concurrency group keeps deploys out of
 # the backup window to make this rare.
-if [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]; then
+if [ "$stop" = true ] && [ "$(docker inspect -f '{{.State.Running}}' "$container" 2>/dev/null)" = "true" ]; then
   if [ -n "$snap" ]; then
     "$secrets" run --env-file "$env" -- restic forget "$snap" >/dev/null
   fi

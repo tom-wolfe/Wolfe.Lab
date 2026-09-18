@@ -1,16 +1,17 @@
 using Ritten.Engine.FileSystem;
 using Vogen;
 
-namespace Wolfe.Lab.Build.Obsidian.Models;
+namespace Wolfe.Lab.Build.Paths;
 
 /// <summary>
-/// Where a vault's checkout is on the node.
+/// A directory on the node. Written the way a person types it, <c>~</c> included; held the way
+/// the machine reads it, so everything downstream sees one absolute path.
 /// </summary>
 [ValueObject<string>(conversions: Conversions.SystemTextJson | Conversions.TypeConverter)]
-public readonly partial struct VaultPath
+public readonly partial struct HostPath
 {
     /// <summary>
-    /// The checkout as a directory.
+    /// The path as a directory.
     /// </summary>
     public IDirectory Directory => new PhysicalDirectory(Value);
 

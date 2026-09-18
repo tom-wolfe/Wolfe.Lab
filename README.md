@@ -49,7 +49,7 @@ a deploy fails; a running stack never notices.
 Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
 runs `chezmoi update` on a node when `chezmoi/` changes. Everything
 scheduled — the nightly backups, restic's offsite copy and weekly verify,
-the obsidian syncs, certificate renewal, the heartbeat and the Gatus probe
+the obsidian syncs, the Immich deploy and import, certificate renewal, the heartbeat and the Gatus probe
 — is a cron-triggered workflow on the mini's host runner, over the same
 scripts. Nothing ticks, nothing chains: one workflow per job, each with
 its own schedule and its own failure alert.

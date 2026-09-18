@@ -1,0 +1,4 @@
+@immich host immich.lab.twolfe.dev immich.ts.twolfe.dev
+handle @immich {
+	reverse_proxy immich-server:2283
+}

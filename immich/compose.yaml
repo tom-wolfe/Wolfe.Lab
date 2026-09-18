@@ -1,0 +1,128 @@
+name: immich
+
+# Immich's reference compose, pinned and bent to the lab's rules: every
+# container runs as the host user (VirtioFS ownership — the postgres
+# first-boot race the kestra slice hit), TZ as env rather than a
+# localtime mount (fleet rule), and only the server joins the edge
+# network. The DB password reaches compose from secrets.env at deploy.
+#
+# Immich fixes its container paths (/data, /cache, /var/lib/postgresql),
+# so the host-equals-container rule the media slices live by does not
+# apply here: nothing else reads these trees.
+
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:v3.2.2
+    container_name: immich-server
+    restart: unless-stopped
+    user: "501:20"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+
+    environment:
+      TZ: Europe/London
+      DB_HOSTNAME: immich-database
+      DB_USERNAME: immich
+      DB_DATABASE_NAME: immich
+      DB_PASSWORD:
+      REDIS_HOSTNAME: immich-redis
+      IMMICH_MACHINE_LEARNING_URL: http://immich-machine-learning:3003
+
+    volumes:
+      - /Volumes/Data2/immich:/data
+
+    ports:
+      - "2283:2283"
+
+    networks:
+      - lab
+      - default
+
+    depends_on:
+      immich-redis:
+        condition: service_healthy
+      immich-database:
+        condition: service_healthy
+
+    healthcheck:
+      disable: false
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3.2.2
+    container_name: immich-machine-learning
+    restart: unless-stopped
+    user: "501:20"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+
+    environment:
+      TZ: Europe/London
+
+    volumes:
+      - /Users/tomwolfe/Docker/immich/model-cache:/cache
+
+    networks:
+      - default
+
+    healthcheck:
+      disable: false
+
+  immich-redis:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+    container_name: immich-redis
+    restart: unless-stopped
+    user: "501:20"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+
+    volumes:
+      - /Users/tomwolfe/Docker/immich/redis:/data
+
+    networks:
+      - default
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  immich-database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+    container_name: immich-database
+    restart: unless-stopped
+    user: "501:20"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+
+    environment:
+      POSTGRES_USER: immich
+      POSTGRES_DB: immich
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+
+    volumes:
+      - /Users/tomwolfe/Docker/immich/postgres:/var/lib/postgresql/data
+
+    shm_size: 128mb
+
+    networks:
+      - default
+
+    healthcheck:
+      disable: false
+
+networks:
+  lab:
+    external: true
+  # The stack's own network: the database, queue and models are reachable
+  # from the server only.
+  default:

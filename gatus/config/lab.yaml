@@ -90,6 +90,16 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: immich
+    group: lab
+    url: http://${LAB_HOST}:2283/api/server/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].res == pong"
+    alerts:
+      - type: pushover
+
   - name: radarr
     group: lab
     url: http://${LAB_HOST}:7878/ping

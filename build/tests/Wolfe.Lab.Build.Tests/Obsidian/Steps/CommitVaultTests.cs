@@ -17,6 +17,7 @@ public class CommitVaultTests : IDisposable
     {
         _vault = new Vault("main", new PhysicalDirectory(_checkout.FullName), RepositoryUrl.From("http://forgejo/obsidian-main.git"));
         _git.InRepository(Arg.Any<IDirectory>()).Returns(_repository);
+        _repository.IsRepository(Arg.Any<CancellationToken>()).Returns(false);
         _repository.GetRemoteUrl("origin", Arg.Any<CancellationToken>()).Returns("http://forgejo/obsidian-main.git");
         _repository.ChangedFiles(".", Arg.Any<CancellationToken>()).Returns([]);
     }
@@ -26,7 +27,14 @@ public class CommitVaultTests : IDisposable
     private CommitVault Step(params string[] excludes) =>
         new(_git, new VaultExcludes(excludes), Substitute.For<IWorkflowLog>());
 
-    private void MakeRepository() => Directory.CreateDirectory(Path.Combine(_checkout.FullName, ".git"));
+    /// <summary>
+    /// The client says it is a repository; the directory exists for the exclude file's sake.
+    /// </summary>
+    private void MakeRepository()
+    {
+        _repository.IsRepository(Arg.Any<CancellationToken>()).Returns(true);
+        Directory.CreateDirectory(Path.Combine(_checkout.FullName, ".git"));
+    }
 
     [Fact]
     public async Task Run_FailsWhenTheCheckoutIsNotARepository()
