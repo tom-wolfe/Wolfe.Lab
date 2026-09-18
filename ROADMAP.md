@@ -20,10 +20,10 @@ failure that is silent until it is total — an unrestorable backup —
 visible on a schedule.
 
 **It is several drills, not one, and that is fine.** Every service is
-snapshotted separately (one `backup.conf` per slice), so there is one
+snapshotted separately (one `backup` section per slice's `ritten.json`), so there is one
 restore per service. But the shape is
 the same shape as the backups: ONE workflow that walks
-the same `backup.conf` files the backup pipeline reads, restores each
+the same `backup` sections the backup job reads, restores each
 service's latest snapshot to a scratch path, and asserts that the thing
 the service needs to boot is there and non-empty — forgejo's `gitea.db`,
 jellyfin's `jellyfin.db`, sonarr's `sonarr.db`, radarr's `radarr.db`,
@@ -45,12 +45,11 @@ see the secret-zero note in #8), and in what order things come up
 (garage before any tofu root, caddy before any route, Forgejo before any
 workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 
-**The path there runs through the CLI.** `lab backup` (`build/`) is the
-pipeline for `files/`; each remaining slice moves onto it by declaring a
-`backup` section in its `ritten.json`, and `scripts/backup.sh` goes with
-the last of them; `lab offsite` and `lab verify` are already there. A restore
-drill is then a command — `lab restore <slice>` — rather than a runbook
-page, which is what makes the weekly drill above cheap to build.
+**The path there runs through the CLI.** Every backup is `lab backup`
+(`build/`) over the `backup` section of its slice's `ritten.json`, and
+`lab offsite` and `lab verify` are the other half. A restore drill is
+then a command — `lab restore <slice>` — rather than a runbook page,
+which is what makes the weekly drill above cheap to build.
 
 ### 2. The platform layer moves to Linux
 
@@ -64,7 +63,7 @@ last (it runs the deploys), and see how much pain is left on the mini.
 If the answer is "most of it", the always-on server becomes a Linux box
 — a hardware decision (an N100-class machine fits the rack) — and the
 mini becomes the media and Apple-specific host. Every one of these has
-state, so each move brings a `backup.conf` on the Pi's SFTP path
+state, so each move keeps its `backup` section and takes the Pi's SFTP path
 (`restic/README.md` "From a Linux node").
 
 **What stays on the mini keeps the one debt this item cannot retire.** A
@@ -201,12 +200,12 @@ publish once their repos flip from mirror to active. Three things remain:
   the containerised runner only are the mitigations, and a host runner
   is assumed reachable by any workflow file on any branch.
 - **The rest of `scripts/` into the CLI.** `build/` exists and the
-  obsidian workflows call it; deploy, backup, apply/plan, alert and the
+  obsidian workflows call it; deploy, apply/plan, alert and the
   heartbeat still run as shell. Each moves as a workflow class with a
   `ritten.json` per slice, and each workflow file changes one line. Node
-  facts the scripts currently infer become inputs there: `backup.sh`
-  decides where the restic repository is by OS, which only holds while
-  the mini is the only macOS server. Two things the CLI does not touch.
+  facts the scripts infer become inputs there: the backup job decides
+  where the restic repository is by OS, which only holds while the mini
+  is the only macOS server. Two things the CLI does not touch.
   The seven tofu roots carry an identical `encryption.tf` and backend
   block each — HCL, not shell — and OpenTofu reads both from the
   environment (`-backend-config` for the backend, `TF_ENCRYPTION` for

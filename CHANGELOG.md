@@ -18,12 +18,22 @@ rather than versioned — the lab is continuous, not released.
   checks, the offsite data sample) on a `restic` workflow, with the
   policy and the sample in `restic/ritten.json`. The two restic scripts
   are gone.
+- **Every backup is the CLI's.** The seven compose slices carry a
+  `backup` section in a `ritten.json` on a `service` workflow, immich's
+  workflow lists the same job, and `backup.yaml` is one matrix over
+  every slice with a backup.
 
 ### Changed
 
 - **The runner's job timeout is 24 hours.** Each workflow's
   `timeout-minutes` is the limit that applies; the runner's own, which
   was the one-hour default, no longer cuts a first pass short.
+
+### Removed
+
+- `scripts/backup.sh`, the `flows/backup/backup.conf` files, and the
+  jellyfin `--with-metadata` hand-run option: artwork is excluded, and a
+  "Refresh Metadata" re-downloads it.
 
 ## [0.27.0] - 2026-09-18
 

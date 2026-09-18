@@ -24,4 +24,11 @@ public sealed record BackupSettings
     /// for a warm snapshot: files nothing is writing, or a service whose database is its own dump.
     /// </summary>
     public string? Stop { get; init; }
+
+    /// <summary>
+    /// The container whose image tags the snapshot when it is not the one stopped: a warm
+    /// snapshot of a service still pairs a restore with the version that wrote it. Defaults to
+    /// <see cref="Stop"/>.
+    /// </summary>
+    public string? Image { get; init; }
 }

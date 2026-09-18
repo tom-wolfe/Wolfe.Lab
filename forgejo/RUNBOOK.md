@@ -53,7 +53,7 @@ upgrade runs irreversible database migrations, and rolling back to an older
 image after that will fail.
 
 ```sh
-scripts/backup.sh forgejo   # snapshot first
+cd forgejo && dotnet run --project ../build/src/Wolfe.Lab.Build -- backup && cd ..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the push deploys it), then
 # either let the forgejo workflow converge it or, by hand:
 cd ~/.local/share/Wolfe.Lab/forgejo
@@ -80,12 +80,13 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 ## Backup
 
 Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
-slice nightly from 02:20, this one among them (`flows/backup/backup.conf`
-declares what). Manual snapshot — run the backup workflow from the
-Actions tab, or:
+slice nightly from 02:20, this one among them (the `backup` section of
+`ritten.json` declares what). Manual snapshot — run the backup workflow
+from the Actions tab, or:
 
 ```sh
-scripts/backup.sh forgejo
+cd forgejo
+dotnet run --project ../build/src/Wolfe.Lab.Build -- backup
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag

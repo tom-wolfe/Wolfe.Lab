@@ -189,8 +189,8 @@ One item, Wolfe.Lab vault:
 
 ## Backup
 
-`scripts/backup.sh` — the shared pipeline; `flows/backup/backup.conf`
-declares the paths — stops the hub, snapshots `~/Docker/beszel/data`
+`lab backup` — the shared pipeline (`build/`); the `backup` section of
+`ritten.json` declares the paths — stops the hub, snapshots `~/Docker/beszel/data`
 into the restic repo on `/Volumes/Data2` (tagged with the image it was
 taken under; `restic-offsite.yaml` ships it to B2 and owns retention — see
 `restic/README.md`), and starts it again, refusing to run if the drive

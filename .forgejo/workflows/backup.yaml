@@ -13,41 +13,19 @@ jobs:
   backup:
     strategy:
       matrix:
-        slice: 
-          - qbittorrent
+        slice:
           - beszel
-          - garage
           - forgejo
+          - garage
           - jellyfin
-          - sonarr
+          - qbittorrent
           - radarr
-    runs-on: MacMini
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v4
-      - run: scripts/backup.sh ${{ matrix.slice }}
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "backup ${{ matrix.slice }} failed"
-
-  # Its own job for its own timeout: a warm snapshot needs no stop window,
-  # but the first pass reads the whole library.
-  immich:
+          - sonarr
+          - immich
+          - files
     runs-on: MacMini
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/backup.sh immich
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "backup immich failed"
-
-  files:
-    runs-on: MacMini
-    timeout-minutes: 180
-    steps:
-      - uses: actions/checkout@v4
-      - working-directory: files
+      - working-directory: ${{ matrix.slice }}
         run: dotnet run --project ../build/src/Wolfe.Lab.Build -- backup

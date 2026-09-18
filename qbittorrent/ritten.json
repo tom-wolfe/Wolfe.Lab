@@ -1,0 +1,9 @@
+{
+  "workflow": "service",
+  "backup": {
+    "paths": [
+      "~/Docker/qbittorrent/config"
+    ],
+    "stop": "qbittorrent"
+  }
+}

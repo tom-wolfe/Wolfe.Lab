@@ -42,6 +42,7 @@ internal sealed class BackupJob<TSettings> : LabJob<TSettings> where TSettings :
         builder.Services.AddSingleton(new BackupPlan(
             [.. settings.Backup!.Paths.Select(p => p.Directory)],
             [.. settings.Backup.Excludes.Select(p => p.Value)],
-            settings.Backup.Stop));
+            settings.Backup.Stop,
+            settings.Backup.Image ?? settings.Backup.Stop));
     }
 }

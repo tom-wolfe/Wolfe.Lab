@@ -1,0 +1,16 @@
+{
+  "workflow": "service",
+  "backup": {
+    "paths": [
+      "~/Docker/sonarr/config"
+    ],
+    "excludes": [
+      "~/Docker/sonarr/config/Backups",
+      "~/Docker/sonarr/config/MediaCover",
+      "~/Docker/sonarr/config/logs",
+      "~/Docker/sonarr/config/logs.db",
+      "~/Docker/sonarr/config/logs.db-*"
+    ],
+    "stop": "sonarr"
+  }
+}

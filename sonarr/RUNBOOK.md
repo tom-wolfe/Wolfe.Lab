@@ -57,7 +57,7 @@ updater is inert in the linuxserver image (the container is the
 release), which is the point: the version is the tag in `compose.yaml`.
 
 ```sh
-scripts/backup.sh sonarr   # snapshot first
+cd sonarr && dotnet run --project ../build/src/Wolfe.Lab.Build -- backup && cd ..   # snapshot first
 # bump the tag (normal PR; the tick ships it)
 ```
 
@@ -67,7 +67,7 @@ Current stable tags: https://github.com/linuxserver/docker-sonarr/releases
 ## Backup and restore
 
 The nightly backup workflow snapshots `~/Docker/sonarr/config`
-via the shared pipeline (`scripts/backup.sh`, `flows/backup/backup.conf`):
+via the shared pipeline (`lab backup`; the `backup` section of `ritten.json`):
 stops the container, `restic backup`, starts it. Excluded: `Backups/`
 (Sonarr's own zips — restic is the backup), `MediaCover/` (artwork
 TVDB re-serves), logs. Restore is the generic recipe in

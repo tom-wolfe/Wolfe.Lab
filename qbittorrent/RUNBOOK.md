@@ -47,8 +47,8 @@ The nightly backup workflow, from 02:20: cold restic snapshot of
 `config/` — qBittorrent.conf (including the web UI password hash),
 categories, and BT_backup/ (.torrent files + fastresume); the parts
 configured in the UI rather than declared here. Mount-guarded,
-integrity-guarded — the shared `scripts/backup.sh` pipeline, with this
-slice's paths declared in `flows/backup/backup.conf`; retention and the
+integrity-guarded — the shared `lab backup` pipeline, with this
+slice's paths declared in `ritten.json`; retention and the
 offsite copy belong to `restic-offsite.yaml` (`restic/README.md`).
 `gluetun/` is deliberately excluded: a disposable server-list cache.
 

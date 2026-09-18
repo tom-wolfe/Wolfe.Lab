@@ -35,7 +35,7 @@ At the desk, after the Jellyfin 12.0 upgrade and its full scan.
 ## Upgrading, backup, restore
 
 As `sonarr/README.md`, substituting `radarr`: tag bump after a snapshot
-(`scripts/backup.sh radarr`), current stable tags at
+(`lab backup` from `radarr/`), current stable tags at
 https://github.com/linuxserver/docker-radarr/releases (`nightly-…` and
 `develop-…` are prereleases), nightly backup at 04:20 excluding
 `Backups/`, `MediaCover/` and logs. The file a restore drill should

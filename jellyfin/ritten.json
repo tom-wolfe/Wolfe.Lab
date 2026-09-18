@@ -1,0 +1,18 @@
+{
+  "workflow": "service",
+  "backup": {
+    "paths": [
+      "~/Library/Application Support/jellyfin"
+    ],
+    "excludes": [
+      "~/Library/Application Support/jellyfin/cache",
+      "~/Library/Application Support/jellyfin/log",
+      "~/Library/Application Support/jellyfin/transcodes",
+      "~/Library/Application Support/jellyfin/data/library.db.old",
+      "~/Library/Application Support/jellyfin/data/library.db-wal",
+      "~/Library/Application Support/jellyfin/data/library.db-shm",
+      "~/Library/Application Support/jellyfin/metadata"
+    ],
+    "stop": "jellyfin"
+  }
+}

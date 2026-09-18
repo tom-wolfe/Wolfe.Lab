@@ -1,0 +1,16 @@
+{
+  "workflow": "service",
+  "backup": {
+    "paths": [
+      "~/Docker/radarr/config"
+    ],
+    "excludes": [
+      "~/Docker/radarr/config/Backups",
+      "~/Docker/radarr/config/MediaCover",
+      "~/Docker/radarr/config/logs",
+      "~/Docker/radarr/config/logs.db",
+      "~/Docker/radarr/config/logs.db-*"
+    ],
+    "stop": "radarr"
+  }
+}

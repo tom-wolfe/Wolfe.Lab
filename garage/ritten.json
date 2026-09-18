@@ -1,0 +1,10 @@
+{
+  "workflow": "service",
+  "backup": {
+    "paths": [
+      "~/Docker/garage/meta",
+      "~/Docker/garage/data"
+    ],
+    "stop": "garage"
+  }
+}

@@ -37,12 +37,10 @@ of pounds a month.
 load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared
 pipeline: `lab backup` in `build/` (stop → `restic backup` → start, with
-the mount, repo and mid-backup restart guards), and `scripts/backup.sh`,
-the same pipeline in shell for the slices not yet on the CLI. Per-slice
-variation is data — the `backup` section of the slice's `ritten.json`,
-or its `flows/backup/backup.conf` on the shell path — declaring what to
-snapshot: the paths, the excludes, and the container to stop, or none
-for a warm snapshot. No job keeps or prunes anything, because —
+the mount, repo and mid-backup restart guards). Per-slice variation is
+data — the `backup` section of the slice's `ritten.json` — declaring
+what to snapshot: the paths, the excludes, the container to stop (or
+none for a warm snapshot), and the container whose image tags it. No job keeps or prunes anything, because —
 
 **Retention lives in ONE place:** `lab offsite` (`build/`, settings in
 `ritten.json`), nightly at 04:35, after every backup has finished:
@@ -68,7 +66,7 @@ unverified backup is a hope, not a backup.
 ## From a secondary node
 
 The backups drive hangs off the mini, and the pipeline does not change
-shape for a node that doesn't have it: `scripts/backup.sh` runs on the
+shape for a node that doesn't have it: `lab backup` runs on the
 node the slice lives on (`runs-on` is placement, as for deploys), stops
 the stack there, and writes into the **same** repository — over SFTP to
 the mini, which is restic's `sftp:` backend: restic runs `ssh`, and
@@ -84,7 +82,7 @@ What a Linux node needs, all of it chezmoi's (`chezmoi/home/`):
 | `~/.ssh/restic` | `private_dot_ssh/create_private_restic.tmpl`, from the vault | SSH Key item `restic-sftp-<node>`, generated in the vault, written once |
 | `Host macmini.tailf823b8.ts.net` | `private_dot_ssh/config.tmpl`, the `pi-node` block | user, the key, `accept-new` — the tailnet already authenticates the peer, and a first contact must not block a non-interactive job |
 | the mini's `authorized_keys` line | `private_dot_ssh/private_authorized_keys.tmpl`, the `macmini-node` block | `restrict,command="/usr/libexec/sftp-server"` — the key cannot open a shell, forward a port or run anything else; the public half is read from the same vault item |
-| `sftp.env` | this directory | `restic.env`'s twin: the same password, the repository as an `sftp:` URL. `backup.sh` picks it on Linux |
+| `sftp.env` | this directory | `restic.env`'s twin: the same password, the repository as an `sftp:` URL. `lab backup` picks it off macOS |
 
 **What the key can do,** plainly: sftp-server runs as the mini's user, so
 the key reads and writes what that user can — not just the repository.

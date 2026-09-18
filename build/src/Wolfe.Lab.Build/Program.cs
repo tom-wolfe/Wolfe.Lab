@@ -5,6 +5,7 @@ using Wolfe.Lab.Build.Immich.Workflows;
 using Wolfe.Lab.Build.Obsidian.Workflows;
 using Wolfe.Lab.Build.Restic.Workflows;
 using Wolfe.Lab.Build.Runtimes;
+using Wolfe.Lab.Build.Service.Workflows;
 
 var builder = WorkflowApplication.CreateBuilder();
 
@@ -12,7 +13,8 @@ builder.Workflows
     .Add<ObsidianWorkflow>()
     .Add<ImmichWorkflow>()
     .Add<FilesWorkflow>()
-    .Add<ResticWorkflow>();
+    .Add<ResticWorkflow>()
+    .Add<ServiceWorkflow>();
 
 builder.Runtimes
     .Add<LabRuntime>();

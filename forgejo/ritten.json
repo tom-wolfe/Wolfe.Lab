@@ -1,0 +1,9 @@
+{
+  "workflow": "service",
+  "backup": {
+    "paths": [
+      "~/Docker/forgejo/data"
+    ],
+    "stop": "forgejo"
+  }
+}

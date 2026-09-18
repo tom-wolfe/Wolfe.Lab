@@ -24,7 +24,7 @@ State lives outside the container, so upgrades are a tag bump. **Back up first**
 image afterwards will fail.
 
 ```sh
-scripts/backup.sh jellyfin   # snapshot first
+cd jellyfin && dotnet run --project ../build/src/Wolfe.Lab.Build -- backup && cd ..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let the jellyfin workflow converge it or, by hand:
 cd ~/.local/share/Wolfe.Lab/jellyfin
@@ -42,13 +42,15 @@ curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep 
 ## Backup
 
 Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
-slice nightly from 02:20, this one among them (`flows/backup/backup.conf`
-declares what). Manual snapshot — run the backup workflow from the
-Actions tab, or:
+slice nightly from 02:20, this one among them (the `backup` section of
+`ritten.json` declares what: config, database, library roots and
+plugins; `metadata/` is ~670 MB of artwork a "Refresh Metadata"
+re-downloads, so it is excluded). Manual snapshot — run the backup
+workflow from the Actions tab, or:
 
 ```sh
-scripts/backup.sh jellyfin                  # from a checkout: config + database + library roots + plugins
-scripts/backup.sh jellyfin --with-metadata  # the above plus ~670 MB of posters/fanart
+cd jellyfin
+dotnet run --project ../build/src/Wolfe.Lab.Build -- backup
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag

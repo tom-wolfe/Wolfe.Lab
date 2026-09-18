@@ -1,4 +1,6 @@
+using Wolfe.Lab.Build.Backup.Jobs;
 using Wolfe.Lab.Build.Immich.Jobs;
+using Wolfe.Lab.Build.Immich.Models;
 
 namespace Wolfe.Lab.Build.Immich.Workflows;
 
@@ -14,5 +16,9 @@ public sealed class ImmichWorkflow : IWorkflow
     public string Label => "immich";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new DeployJob(), new ImportJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [
+        new DeployJob(),
+        new ImportJob(),
+        new BackupJob<ImmichSettings>()
+    ];
 }
