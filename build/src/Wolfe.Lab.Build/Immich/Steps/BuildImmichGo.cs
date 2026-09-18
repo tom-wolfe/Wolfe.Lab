@@ -22,7 +22,7 @@ internal sealed class BuildImmichGo(IDocker docker, IWorkflowLog log)
             return new Error($"{context.AbsolutePath} has no Dockerfile.");
         }
 
-        await docker.Build(context, Tag, cancellationToken: ct);
+        await docker.Build(context, Tag, ct: ct);
         log.Status($"Built {Tag}.");
         return new ImmichGoImage(Tag, context);
     }
