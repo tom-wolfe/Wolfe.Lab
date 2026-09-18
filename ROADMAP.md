@@ -12,31 +12,19 @@ a failure visible outranks anything that adds a new thing to fail.
 
 ### 1. Restore drills — prove the backups before anything depends on them
 
-`restic/` shipped in 0.16 and nothing has been restored from it. `restic/README.md` asks for a drill after bootstrap and gates
-deleting the old tarball farm on it; the vault exit (#8) was sequenced
-"after restic ships". A backup nobody has restored from has not shipped,
-so this is the first item by the ordering principle: it makes the one
-failure that is silent until it is total — an unrestorable backup —
-visible on a schedule.
-
-**It is several drills, not one, and that is fine.** Every service is
-snapshotted separately (one `backup` section per slice's `ritten.json`), so there is one
-restore per service. But the shape is
-the same shape as the backups: ONE workflow that walks
-the same `backup` sections the backup job reads, restores each
-service's latest snapshot to a scratch path, and asserts that the thing
-the service needs to boot is there and non-empty — forgejo's `gitea.db`,
-jellyfin's `jellyfin.db`, sonarr's `sonarr.db`, radarr's `radarr.db`,
-beszel's `data.db`. Weekly, after `verify`, alerting on failure. Honest scope: this proves the
-files come back, not that the service boots on them.
+A backup nobody has restored from has not shipped, so this is the first
+item by the ordering principle: it makes the one failure that is silent
+until it is total — an unrestorable backup — visible. The weekly half is
+in place: each slice's `lab verify` restores its `backup.verify` paths
+from its latest snapshot and asserts them, and `lab restore` is the
+restore itself. Honest scope: that proves the files come back, not that
+the service boots on them.
 
 **The boot-on-restore drill is manual and occasional.** Once a quarter:
-pick a service, stop it, move its state aside, restore, start it on the
-tagged image, confirm it works, put the original back. This is the one
-that catches the "restored but the app doesn't like it" class, and it
-is what turns each slice's `RUNBOOK.md` restore steps into something someone has
-actually followed. Those sections are where the steps live; the docs
-site (#9) is what makes them followable from a phone.
+pick a service and run `lab restore` on it, confirm it works, and delete
+the `.bak` it set aside (or move it back). This is the one that catches
+the "restored but the app doesn't like it" class, and it is what turns
+the command into something someone has actually run in anger.
 
 **A cold-start runbook belongs here too.** Mini and Data2 both gone:
 what is needed from outside the building (the restic password, the tofu
@@ -44,12 +32,8 @@ state passphrase, the B2 credentials, the vault's own master password —
 see the secret-zero note in #8), and in what order things come up
 (garage before any tofu root, caddy before any route, Forgejo before any
 workflow). Nothing in the repo says this today; `setup.sh` is the closest.
-
-**The path there runs through the CLI.** Every backup is `lab backup`
-(`build/`) over the `backup` section of its slice's `ritten.json`, and
-`lab offsite` and `lab verify` are the other half. A restore drill is
-then a command — `lab restore <slice>` — rather than a runbook page,
-which is what makes the weekly drill above cheap to build.
+`lab restore` from the offsite repository is the missing piece of that
+runbook: today both jobs read the local one.
 
 ### 2. The platform layer moves to Linux
 

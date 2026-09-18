@@ -61,7 +61,13 @@ offsite job's last step pings healthchecks.io (`lab-restic-offsite`,
 declared in `tofu/`) after a green copy — that silence is the only backup
 signal that leaves the building. And the verify workflow (Sundays) runs
 `restic check` on both repos, reading a 5% pack sample back from B2 — an
-unverified backup is a hope, not a backup.
+unverified backup is a hope, not a backup. Each slice's own `verify`
+job drills its restore every night, straight after its backup: the
+slice's `backup.verify` paths — the files it needs to boot — come back
+from the snapshot just taken into a scratch directory and are asserted
+non-empty, so a snapshot that cannot be restored from is found the
+same night. This slice checks the repositories; what a slice's snapshot
+must hold is that slice's to say.
 
 ## From a secondary node
 
@@ -98,7 +104,7 @@ behind the VM boundary that every macOS container fault in the changelog
 comes from. sshd is native and the drive is native; when the platform
 layer moves to Linux (ROADMAP.md) and the drive's host changes, revisit.
 
-A Linux slice's backup is a job in `backup.yaml` that runs on its node;
+A Linux slice's backup is its own `<slice>-backup.yaml` running on its node;
 until the first stateful slice lands on the Pi, the path is proven by
 hand (`RUNBOOK.md` "A Linux node").
 
@@ -106,9 +112,9 @@ hand (`RUNBOOK.md` "A Linux node").
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `backup.yaml` | 02:20 nightly, one slice after another | stop → snapshot → start, one job per slice |
+| `<slice>-backup.yaml` | nightly, 02:20 to 03:30, one slice each | `lab backup` then `lab verify`: stop → snapshot → start, then the snapshot restored to scratch and asserted |
 | `restic-offsite.yaml` | 04:35 nightly | `lab offsite`: copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
-| `restic-verify.yaml` | Sun 05:05 | `lab verify`: `restic check` both repos, 5% data sample from B2 |
+| `restic-verify.yaml` | Sun 05:05 | `lab verify` here: `restic check` both repos, 5% data sample from B2 |
 | `tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
 
 Locking: backups take shared locks and may overlap each other safely;

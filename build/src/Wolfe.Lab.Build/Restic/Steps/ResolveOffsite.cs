@@ -16,13 +16,11 @@ internal sealed class ResolveOffsite(ISecrets secrets, IWorkflowLog log)
 
     public async Task<StepResult<OffsiteRepository>> Run(Slice slice, CancellationToken ct = default)
     {
-        var loaded = await ResticEnvironment.Load(slice, FileName, secrets, ct);
-        if (loaded.IsError)
+        if (!(await ResticEnvironment.Load(slice, FileName, secrets, ct)).TryGetValue(out var repository, out var errors))
         {
-            return StepResult.Failed(loaded.Errors!);
+            return StepResult.Failed(errors);
         }
 
-        var repository = loaded.Value!;
         if (!repository.Environment.ContainsKey(SourceVariable))
         {
             return new Error($"{FileName} does not set {SourceVariable}: the copy would have no source.");

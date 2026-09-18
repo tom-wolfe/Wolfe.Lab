@@ -24,7 +24,7 @@ for the size of it.
 The snapshot is warm — no stop window, unlike the SQLite services. The
 originals under `library/`, `upload/` and `profile/` are write-once, and
 the database comes back from Immich's own nightly dump in `backups/`,
-taken at 02:00 before the 02:20 pass and the documented restore path;
+taken at 02:00 before the 03:00 pass and the documented restore path;
 the Postgres directory is not what a restore uses. `thumbs/` and
 `encoded-video/` are excluded: Immich regenerates them from the
 originals, as Jellyfin regenerates its artwork.

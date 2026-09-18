@@ -24,7 +24,7 @@ bootstrap only creates what must exist before the admin API answers.
   `ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/garage restart"`
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
-  nightly `backup.yaml` (`lab backup`; the `backup` section of `ritten.json`) does a cold copy from 02:20
+  nightly `garage-backup.yaml` (`lab backup`; the `backup` section of `ritten.json`) does a cold copy at 02:30
   — stop, restic snapshot of both, start; `restic-offsite.yaml` ships it
   to B2 and owns retention (`restic/README.md`); refuses to run if the
   drive isn't mounted. The secrets are not on disk to include — the

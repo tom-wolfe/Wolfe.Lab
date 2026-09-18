@@ -20,13 +20,11 @@ internal sealed class ResolveRepository(ISecrets secrets, IWorkflowLog log)
 
     public async Task<StepResult<ResticRepository>> Run(Slice slice, CancellationToken ct = default)
     {
-        var loaded = await ResticEnvironment.Load(slice, FileName, secrets, ct);
-        if (loaded.IsError)
+        if (!(await ResticEnvironment.Load(slice, FileName, secrets, ct)).TryGetValue(out var repository, out var errors))
         {
-            return StepResult.Failed(loaded.Errors);
+            return StepResult.Failed(errors);
         }
 
-        var repository = loaded.Value!;
         if (repository.IsLocal && !new PhysicalDirectory(repository.Location).GetFile(ConfigFile).Exists)
         {
             return new Error($"No restic repository at {repository.Location}: the drive is unmounted, or the repository was never initialised (restic/RUNBOOK.md, Bootstrap).");

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 namespace Wolfe.Lab.Build.Secrets;
 
 /// <summary>
@@ -33,7 +34,7 @@ public static class EnvFile
 
             var name = line[..separator].Trim();
             var value = line[(separator + 1)..].Trim().Trim('"');
-            entries[name] = SecretReference.TryFrom(value, out var reference) ? new EnvValue(null, reference) : new EnvValue(value, null);
+            entries[name] = SecretReference.TryFrom(value, out var reference) ? new EnvValue.Secret(reference) : new EnvValue.Literal(value);
         }
 
         return errors.Count > 0 ? errors : entries;
@@ -50,7 +51,12 @@ public static class EnvFile
         var variables = new Dictionary<string, string>();
         foreach (var (name, value) in entries)
         {
-            variables[name] = value.Reference is { } reference ? await secrets.Read(reference, ct) : value.Literal!;
+            variables[name] = value switch
+            {
+                EnvValue.Secret secret => await secrets.Read(secret.Reference, ct),
+                EnvValue.Literal literal => literal.Value,
+                _ => throw new UnreachableException()
+            };
         }
 
         return variables;

@@ -7,4 +7,5 @@ namespace Wolfe.Lab.Build.Backup.Models;
 /// <param name="Excludes">Absolute paths restic leaves out.</param>
 /// <param name="Container">The container whose stack is stopped for the snapshot, or null for a warm one.</param>
 /// <param name="Image">The container whose image tags the snapshot, or null for none.</param>
-public sealed record BackupPlan(IReadOnlyList<IDirectory> Paths, IReadOnlyList<string> Excludes, string? Container, string? Image);
+/// <param name="Verify">Absolute paths a restore must bring back non-empty.</param>
+public sealed record BackupPlan(IReadOnlyList<IDirectory> Paths, IReadOnlyList<string> Excludes, string? Container, string? Image, IReadOnlyList<string> Verify);

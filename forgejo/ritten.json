@@ -4,6 +4,9 @@
     "paths": [
       "~/Docker/forgejo/data"
     ],
-    "stop": "forgejo"
+    "stop": "forgejo",
+    "verify": [
+      "~/Docker/forgejo/data/gitea/forgejo.db"
+    ]
   }
 }

@@ -27,7 +27,7 @@ reasons are in `README.md`.
 7. **Let machine learning catch up** — Administration → Jobs shows the
    queues draining over a day or two.
 8. **The backup needs nothing turned on.** Its job in
-   `.forgejo/workflows/backup.yaml` runs nightly from the merge, and a
+   `.forgejo/workflows/immich-backup.yaml` runs nightly from the merge, and a
    warm snapshot of a half-imported library is just a smaller snapshot;
    retention prunes it. The job has its own three-hour timeout for the
    first pass over the finished library, which is the long one.
@@ -48,7 +48,7 @@ the Postgres and Valkey digests separately. Immich's release notes are
 where breaking changes live, and it has them often; read them before a
 bump, and never skip a major. Then a normal PR — the push deploys it.
 Immich migrates its database forward on start; the snapshot the backup
-job took at 02:20 is the way back.
+job took at 03:00 is the way back.
 
 ## Restore
 
@@ -59,8 +59,12 @@ else. Immich takes a restore point first.
 **The library**, from restic, into `/Volumes/Data2/immich`:
 
 ```sh
-scripts/secrets.sh run --env-file restic/restic.env -- restic restore latest --tag service:immich --target /
+cd immich
+dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
 ```
+
+The library is set aside as `/Volumes/Data2/immich.bak-<timestamp>`
+and the snapshot restored in its place (`restic/RUNBOOK.md` "Restore").
 
 Then Administration → Jobs → run the thumbnail and transcode jobs to
 regenerate what was excluded.

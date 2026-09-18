@@ -5,6 +5,9 @@
       "~/Docker/garage/meta",
       "~/Docker/garage/data"
     ],
-    "stop": "garage"
+    "stop": "garage",
+    "verify": [
+      "~/Docker/garage/meta"
+    ]
   }
 }

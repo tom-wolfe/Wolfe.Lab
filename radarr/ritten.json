@@ -11,6 +11,9 @@
       "~/Docker/radarr/config/logs.db",
       "~/Docker/radarr/config/logs.db-*"
     ],
-    "stop": "radarr"
+    "stop": "radarr",
+    "verify": [
+      "~/Docker/radarr/config/radarr.db"
+    ]
   }
 }

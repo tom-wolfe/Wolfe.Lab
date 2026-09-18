@@ -13,7 +13,7 @@ covers what is different about movies.
 | Image | `linuxserver/radarr` pinned in `compose.yaml` |
 | State | `~/Docker/radarr/config` — `radarr.db` (movies, root folders, naming), `config.xml` (API key, auth) |
 | Root folders | `/Volumes/Data2/videos/movies`; `/Volumes/Data1/video/movies` is the Movies library's other root and is empty |
-| Backups | `backup.yaml`, nightly from 02:20 (serial, one slice at a time), into the restic repo (`restic/README.md`) |
+| Backups | `radarr-backup.yaml`, nightly at 02:45, into the restic repo (`restic/README.md`); the restore drilled straight after |
 
 ## What is different about movies
 

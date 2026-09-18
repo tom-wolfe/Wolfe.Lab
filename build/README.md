@@ -20,13 +20,17 @@ client that has a dry-run twin, so `--dry-run` rehearses any job
 without a side effect.
 
 Workflows so far: `obsidian` (`sync --vault <name>`), `immich` (`deploy`,
-`import`), `files` (`backup`), `restic` (`offsite`, `verify`), `service`
-(`backup`, for the compose slices the shell still deploys).
+`import`, `backup`, `restore`, `verify`), `files` (`backup`, `restore`,
+`verify`), `restic` (`offsite`, `verify`), `service` (`backup`, `restore`
+and `verify`, for the compose slices the shell still deploys).
 
-A job can be shared: `BackupJob<TSettings>` is the backup pipeline for
-any slice whose `ritten.json` carries a `backup` section (paths,
-excludes, and the container to stop — or none for a warm snapshot), and
-a workflow offers it by listing it beside its own jobs.
+A job can be shared: `BackupJob<TSettings>`, `RestoreJob<TSettings>` and
+`VerifyJob<TSettings>` are the backup, restore and restore-drill
+pipelines for any slice whose `ritten.json` carries a `backup` section
+(paths, excludes, the container to stop — or none for a warm snapshot —
+and the `verify` paths a restore must bring back), and a workflow offers
+them by listing them beside its own jobs. A job reads its own slice's
+declaration and no other's.
 
 ## Clients
 

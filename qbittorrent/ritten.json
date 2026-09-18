@@ -4,6 +4,9 @@
     "paths": [
       "~/Docker/qbittorrent/config"
     ],
-    "stop": "qbittorrent"
+    "stop": "qbittorrent",
+    "verify": [
+      "~/Docker/qbittorrent/config/qBittorrent/qBittorrent.conf"
+    ]
   }
 }

@@ -1,0 +1,29 @@
+name: sonarr backup
+
+on:
+  schedule:
+    - cron: "50 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: MacMini
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: sonarr
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- backup
+
+  # The snapshot just taken, restored to scratch and asserted.
+  verify:
+    needs: backup
+    runs-on: MacMini
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: sonarr
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- verify

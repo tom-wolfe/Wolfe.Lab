@@ -49,4 +49,24 @@ public interface IRestic
     /// <param name="readDataSubset">The share of pack data read, as restic spells it, or null for a structural check only.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
     Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default);
+
+    /// <summary>
+    /// Finds one snapshot: the one with the id, or the latest carrying the tag.
+    /// </summary>
+    /// <param name="repository">The repository searched.</param>
+    /// <param name="tag">The tag the snapshot must carry.</param>
+    /// <param name="id">A specific snapshot, or null for the latest.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task<ResticSnapshot?> FindSnapshot(ResticRepository repository, string tag, string? id, CancellationToken ct = default);
+
+    /// <summary>
+    /// Restores a snapshot under the target directory, keeping its absolute paths, and only the
+    /// includes when any are given.
+    /// </summary>
+    /// <param name="repository">The repository read.</param>
+    /// <param name="snapshotId">The snapshot restored.</param>
+    /// <param name="target">The directory it lands under; <c>/</c> puts everything back where it was.</param>
+    /// <param name="includes">Absolute paths within the snapshot to restore, or none for all of it.</param>
+    /// <param name="ct">A token to monitor for cancellation requests.</param>
+    Task Restore(ResticRepository repository, string snapshotId, IDirectory target, IReadOnlyList<string> includes, CancellationToken ct = default);
 }

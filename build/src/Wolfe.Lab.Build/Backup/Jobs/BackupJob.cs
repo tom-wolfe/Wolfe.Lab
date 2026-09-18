@@ -31,18 +31,14 @@ internal sealed class BackupJob<TSettings> : LabJob<TSettings> where TSettings :
     public override JobKind Kind => JobKind.Work;
 
     protected override void ValidateSettings(SettingsValidator<TSettings> settings) => settings
-        .Require(s => s.Backup is { Paths.Count: > 0 }, "'backup.paths' names nothing to snapshot.")
-        .Require(s => s.Backup?.Stop is null or { Length: > 0 }, "'backup.stop' must name a container, or be left out for a warm snapshot.");
+        .Require(s => s.Backup.Paths.Count > 0, "'backup.paths' names nothing to snapshot.")
+        .Require(s => s.Backup.Stop is null or { Length: > 0 }, "'backup.stop' must name a container, or be left out for a warm snapshot.");
 
     protected override void Configure(IWorkflowBuilder builder, TSettings settings)
     {
         base.Configure(builder, settings);
         builder.AddDocker().AddRestic();
         builder.Services.AddSingleton(new RequiredVolumes([.. settings.Volumes.Select(v => v.Directory)]));
-        builder.Services.AddSingleton(new BackupPlan(
-            [.. settings.Backup!.Paths.Select(p => p.Directory)],
-            [.. settings.Backup.Excludes.Select(p => p.Value)],
-            settings.Backup.Stop,
-            settings.Backup.Image ?? settings.Backup.Stop));
+        builder.Services.AddSingleton(settings.Backup.ToPlan());
     }
 }

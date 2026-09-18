@@ -12,8 +12,8 @@ public class EnvFileTests
             "restic.env");
 
         var entries = result.Value.ShouldNotBeNull();
-        entries["RESTIC_REPOSITORY"].ShouldBe(new EnvValue("/Volumes/Data2/restic", null));
-        entries["RESTIC_PASSWORD"].ShouldBe(new EnvValue(null, SecretReference.From("op://Wolfe.Lab/restic-repo/password")));
+        entries["RESTIC_REPOSITORY"].ShouldBe(new EnvValue.Literal("/Volumes/Data2/restic"));
+        entries["RESTIC_PASSWORD"].ShouldBe(new EnvValue.Secret(SecretReference.From("op://Wolfe.Lab/restic-repo/password")));
     }
 
     [Fact]

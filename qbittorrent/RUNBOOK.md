@@ -43,7 +43,7 @@ route.
 
 ## Backup
 
-The nightly backup workflow, from 02:20: cold restic snapshot of
+`qbittorrent-backup.yaml`, nightly at 02:40: cold restic snapshot of
 `config/` — qBittorrent.conf (including the web UI password hash),
 categories, and BT_backup/ (.torrent files + fastresume); the parts
 configured in the UI rather than declared here. Mount-guarded,

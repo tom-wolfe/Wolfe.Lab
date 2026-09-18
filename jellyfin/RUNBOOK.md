@@ -41,8 +41,8 @@ curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep 
 
 ## Backup
 
-Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
-slice nightly from 02:20, this one among them (the `backup` section of
+Runs itself: `.forgejo/workflows/jellyfin-backup.yaml` snapshots this
+slice nightly at 02:35 and drills the restore straight after (the `backup` section of
 `ritten.json` declares what: config, database, library roots and
 plugins; `metadata/` is ~670 MB of artwork a "Refresh Metadata"
 re-downloads, so it is excluded). Manual snapshot — run the backup
@@ -70,22 +70,14 @@ the library definitions.
 ## Restore
 
 ```sh
-lab=~/.local/share/chezmoi   # the repo on the mini
-cd ~/.local/share/Wolfe.Lab/jellyfin
-$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic snapshots --tag service:jellyfin
-docker compose down
-$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic restore <id> --target /tmp/restore
-mv ~/Library/Application\ Support/jellyfin ~/Library/Application\ Support/jellyfin.bak
-mv "/tmp/restore/Users/tomwolfe/Library/Application Support/jellyfin" \
-   ~/Library/Application\ Support/
-docker compose up -d
+cd jellyfin
+dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
 ```
 
-(restic reproduces the snapshot's full original path under `--target`,
-hence the nested `mv`.) If you restore a metadata-less snapshot over a
-wiped directory, artwork will be missing until the "Refresh Metadata"
-task re-downloads it. Move the old directory aside rather than deleting
-it, so you can copy `metadata/` back.
+`restic/RUNBOOK.md` "Restore" for what it does and its options. The
+snapshot carries no `metadata/`, so artwork is missing until the
+"Refresh Metadata" task re-downloads it — or copy `metadata/` back from
+the `.bak` directory the job set aside.
 
-Make sure the image tag in `compose.yaml` matches the version the backup was
-taken with (the `image:` tag on the snapshot records it).
+The job refuses to restore onto an image other than the one the
+snapshot was taken under; pin `compose.yaml` first.

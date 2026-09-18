@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Wolfe.Lab.Build.Backup.Models;
 using Wolfe.Lab.Build.Restic.Models;
@@ -41,6 +43,39 @@ internal sealed partial class ResticClient(ICommandRunner commands) : IRestic
     /// <inheritdoc />
     public async Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default) =>
         await commands.Run(CheckCommand(repository, readDataSubset), ct);
+
+    /// <inheritdoc />
+    public async Task<ResticSnapshot?> FindSnapshot(ResticRepository repository, string tag, string? id, CancellationToken ct = default)
+    {
+        var command = Command.Create("restic").WithArguments("snapshots", "--json", "--tag", tag);
+        command = id is null ? command.AndArguments("--latest", "1") : command.AndArguments(id);
+        var result = await commands.Run(command.WithEnvironmentVariables(repository.Environment).QuietOutput().ThrowOnError(), ct);
+        var listed = JsonSerializer.Deserialize<List<ListedSnapshot>>(result.StandardOutput, ListingOptions) ?? [];
+        return listed.Select(s => new ResticSnapshot(s.ShortId, s.Time, s.Tags ?? [], s.Paths ?? [])).FirstOrDefault();
+    }
+
+    /// <inheritdoc />
+    public async Task Restore(ResticRepository repository, string snapshotId, IDirectory target, IReadOnlyList<string> includes, CancellationToken ct = default)
+    {
+        var arguments = new List<string> { "restore", snapshotId, "--target", target.AbsolutePath };
+        foreach (var include in includes)
+        {
+            arguments.AddRange(["--include", include]);
+        }
+
+        await commands.Run(Command.Create("restic").WithArguments([.. arguments]).WithEnvironmentVariables(repository.Environment).ThrowOnError(), ct);
+    }
+
+    private static readonly JsonSerializerOptions ListingOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+
+    /// <summary>
+    /// A snapshot as <c>restic snapshots --json</c> prints it, the fields the lab reads.
+    /// </summary>
+    private sealed record ListedSnapshot(
+        [property: JsonPropertyName("short_id")] string ShortId,
+        DateTimeOffset Time,
+        IReadOnlyList<string>? Tags,
+        IReadOnlyList<string>? Paths);
 
     /// <summary>
     /// The prune invocation, shared with the rehearsal: restic's own <c>--dry-run</c> says what

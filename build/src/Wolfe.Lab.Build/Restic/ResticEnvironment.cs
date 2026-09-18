@@ -28,17 +28,16 @@ internal static class ResticEnvironment
         }
 
         using var reader = new StreamReader(file.OpenRead());
-        var entries = EnvFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath);
-        if (entries.IsError)
+        if (!EnvFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath).TryGetValue(out var entries, out var errors))
         {
-            return entries.Errors!;
+            return errors;
         }
 
-        if (!entries.Value!.ContainsKey(ResticRepository.LocationVariable))
+        if (!entries.ContainsKey(ResticRepository.LocationVariable))
         {
             return new Error($"{file.AbsolutePath} does not set {ResticRepository.LocationVariable}.");
         }
 
-        return new ResticRepository(await entries.Value.Resolve(secrets, ct));
+        return new ResticRepository(await entries.Resolve(secrets, ct));
     }
 }

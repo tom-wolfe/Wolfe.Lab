@@ -16,5 +16,5 @@ public record SliceSettings : WorkflowSettings
     /// <summary>
     /// What the slice's backup snapshots, for a workflow that offers one.
     /// </summary>
-    public BackupSettings? Backup { get; init; }
+    public BackupSettings Backup { get; init; } = new();
 }

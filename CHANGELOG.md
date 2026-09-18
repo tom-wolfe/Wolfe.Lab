@@ -18,10 +18,17 @@ rather than versioned — the lab is continuous, not released.
   checks, the offsite data sample) on a `restic` workflow, with the
   policy and the sample in `restic/ritten.json`. The two restic scripts
   are gone.
-- **Every backup is the CLI's.** The seven compose slices carry a
-  `backup` section in a `ritten.json` on a `service` workflow, immich's
-  workflow lists the same job, and `backup.yaml` is one matrix over
-  every slice with a backup.
+- **`lab restore`.** On every slice with a backup. Stops, restores, and
+  starts the slice.
+- **`lab verify` on every slice with a backup.** The slice's
+  `backup.verify` restores the verify paths from the latest snapshot 
+  into a scratch directory and are asserted non-empty, every night after 
+  the slice's backup.
+- **Every backup is the CLI's, and every slice owns its schedule.** The
+  seven compose slices carry a `backup` section in a `ritten.json` on a
+  `service` workflow, immich's workflow lists the same job, and each
+  slice's `<slice>-backup.yaml` runs its backup nightly with the restore
+  drilled straight after. The central `backup.yaml` matrix is gone.
 
 ### Changed
 

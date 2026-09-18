@@ -11,6 +11,9 @@
       "~/Docker/sonarr/config/logs.db",
       "~/Docker/sonarr/config/logs.db-*"
     ],
-    "stop": "sonarr"
+    "stop": "sonarr",
+    "verify": [
+      "~/Docker/sonarr/config/sonarr.db"
+    ]
   }
 }

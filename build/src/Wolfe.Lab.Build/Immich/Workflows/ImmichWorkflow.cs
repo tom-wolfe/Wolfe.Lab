@@ -19,6 +19,8 @@ public sealed class ImmichWorkflow : IWorkflow
     public IReadOnlyList<IJob> Jobs { get; } = [
         new DeployJob(),
         new ImportJob(),
-        new BackupJob<ImmichSettings>()
+        new BackupJob<ImmichSettings>(),
+        new RestoreJob<ImmichSettings>(),
+        new VerifyJob<ImmichSettings>()
     ];
 }

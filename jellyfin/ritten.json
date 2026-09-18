@@ -13,6 +13,9 @@
       "~/Library/Application Support/jellyfin/data/library.db-shm",
       "~/Library/Application Support/jellyfin/metadata"
     ],
-    "stop": "jellyfin"
+    "stop": "jellyfin",
+    "verify": [
+      "~/Library/Application Support/jellyfin/data/jellyfin.db"
+    ]
   }
 }

@@ -21,6 +21,9 @@
       "/Volumes/Data2/immich/thumbs",
       "/Volumes/Data2/immich/encoded-video"
     ],
-    "image": "immich-server"
+    "image": "immich-server",
+    "verify": [
+      "/Volumes/Data2/immich/backups"
+    ]
   }
 }

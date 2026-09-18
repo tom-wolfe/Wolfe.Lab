@@ -31,4 +31,20 @@ public sealed record BackupSettings
     /// <see cref="Stop"/>.
     /// </summary>
     public string? Image { get; init; }
+
+    /// <summary>
+    /// What a restore must bring back non-empty.
+    /// </summary>
+    public IReadOnlyList<HostPath> Verify { get; init; } = [];
+
+    /// <summary>
+    /// The settings as the steps consume them.
+    /// </summary>
+    public BackupPlan ToPlan() => new(
+        [.. Paths.Select(p => p.Directory)],
+        [.. Excludes.Select(p => p.Value)],
+        Stop,
+        Image ?? Stop,
+        [.. Verify.Select(p => p.Value)]
+    );
 }

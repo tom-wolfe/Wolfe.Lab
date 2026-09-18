@@ -1,8 +1,23 @@
 namespace Wolfe.Lab.Build.Secrets;
 
 /// <summary>
-/// One env file entry: a literal, or a reference not yet read. Exactly one is set.
+/// One env file entry: a literal, or a reference not yet read.
 /// </summary>
-/// <param name="Literal">The value as written, when it is not a reference.</param>
-/// <param name="Reference">The vault reference, when it is one.</param>
-public sealed record EnvValue(string? Literal, SecretReference? Reference);
+public abstract record EnvValue
+{
+    private EnvValue()
+    {
+    }
+
+    /// <summary>
+    /// A value as written.
+    /// </summary>
+    /// <param name="Value">The value.</param>
+    public sealed record Literal(string Value) : EnvValue;
+
+    /// <summary>
+    /// A vault reference, read at the moment of use.
+    /// </summary>
+    /// <param name="Reference">The reference.</param>
+    public sealed record Secret(SecretReference Reference) : EnvValue;
+}

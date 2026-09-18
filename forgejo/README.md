@@ -372,9 +372,9 @@ Brewfile), but launchd supervises it through a plist.
 Bring-up is in `RUNBOOK.md` "The mini's runner".
 
 Everything scheduled on the mini is a cron workflow on this runner:
-`backup.yaml`, `restic-offsite.yaml`, `restic-verify.yaml`,
-`obsidian.yaml`, `renew-certs.yaml`, `heartbeat.yaml` and
-`gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
+each slice's `<slice>-backup.yaml`, `restic-offsite.yaml`,
+`restic-verify.yaml`, the two `obsidian-*.yaml`, `renew-certs.yaml`,
+`heartbeat.yaml` and `gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
 probe never queue behind a long job; stateful jobs serialise through the
 `MacMini` concurrency group.
 

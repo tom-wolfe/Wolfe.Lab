@@ -21,14 +21,13 @@ internal sealed class ResolveComposeSecrets(ISecrets secrets, IWorkflowLog log)
         }
 
         using var reader = new StreamReader(file.OpenRead());
-        var references = SecretsFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath);
-        if (references.IsError)
+        if (!SecretsFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath).TryGetValue(out var references, out var errors))
         {
-            return StepResult.Failed(references.Errors!);
+            return StepResult.Failed(errors);
         }
 
         var variables = new Dictionary<string, string>();
-        foreach (var (name, reference) in references.Value!)
+        foreach (var (name, reference) in references)
         {
             variables[name] = await secrets.Read(reference, ct);
         }

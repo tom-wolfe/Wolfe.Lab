@@ -4,6 +4,9 @@
     "paths": [
       "~/Docker/beszel/data"
     ],
-    "stop": "beszel"
+    "stop": "beszel",
+    "verify": [
+      "~/Docker/beszel/data/data.db"
+    ]
   }
 }

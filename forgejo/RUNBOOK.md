@@ -79,8 +79,8 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 
 ## Backup
 
-Runs itself: `.forgejo/workflows/backup.yaml` snapshots every stateful
-slice nightly from 02:20, this one among them (the `backup` section of
+Runs itself: `.forgejo/workflows/forgejo-backup.yaml` snapshots this
+slice nightly at 02:25 and drills the restore straight after (the `backup` section of
 `ritten.json` declares what). Manual snapshot — run the backup workflow
 from the Actions tab, or:
 
@@ -106,21 +106,14 @@ the backup script before anything risky.
 ## Restore
 
 ```sh
-cd ~/.local/share/Wolfe.Lab/forgejo
-lab=~/.local/share/chezmoi   # the repo on the mini
-$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic snapshots --tag service:forgejo
-docker compose down
-$lab/scripts/secrets.sh run --env-file $lab/restic/restic.env -- restic restore <id> --target /tmp/restore
-mv ~/Docker/forgejo/data ~/Docker/forgejo/data.bak
-mv /tmp/restore/Users/tomwolfe/Docker/forgejo/data ~/Docker/forgejo/data
-docker compose up -d
+cd forgejo
+dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
 ```
 
-(restic reproduces the snapshot's full original path under `--target`,
-hence the nested `mv`.) Make sure the image tag in `compose.yaml`
-matches the version the backup was taken with (the `image:` tag on the
-snapshot records it), or Forgejo may refuse to start against an older
-schema.
+`restic/RUNBOOK.md` "Restore" for what it does and its options. The
+image check matters here more than anywhere: Forgejo refuses to start
+against a newer schema, so the job refuses to restore onto an image
+other than the snapshot's.
 
 ## One-time setup
 

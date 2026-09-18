@@ -9,7 +9,7 @@ native process on each monitored machine).
 | Concern | Handled by |
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
-| Hub state (`~/Docker/beszel/data`) | nightly cold backup, `backup.yaml` (below) |
+| Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
 | Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins"), supervised by `brew services` |
 | Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
 | Agent config (`~/.config/beszel/beszel-agent.env`) | chezmoi `create_` template (`chezmoi/home/dot_config/beszel/`) — materialized from 1Password (`beszel-agent`) only while the file is missing |
@@ -194,8 +194,8 @@ One item, Wolfe.Lab vault:
 into the restic repo on `/Volumes/Data2` (tagged with the image it was
 taken under; `restic-offsite.yaml` ships it to B2 and owns retention — see
 `restic/README.md`), and starts it again, refusing to run if the drive
-isn't mounted. Nightly via `backup.yaml` (from 02:20, one slice at a time), ahead of
-garage's 02:50.
+isn't mounted. Nightly via `beszel-backup.yaml` at 02:20, the restore
+drilled straight after.
 
 The stop is not optional: PocketBase runs SQLite in WAL mode, and copying
 that live can capture a database file without the `-wal` that completes it.

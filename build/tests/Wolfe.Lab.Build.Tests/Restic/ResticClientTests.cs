@@ -115,4 +115,45 @@ public class ResticClientTests
         ran[0].Arguments.ShouldBe(["check"]);
         ran[1].Arguments.ShouldBe(["check", "--read-data-subset=5%"]);
     }
+
+    [Fact]
+    public async Task FindSnapshot_ReadsTheLatestByTagFromResticsJson()
+    {
+        Command? ran = null;
+        _commands.Run(Arg.Do<Command>(c => ran = c), Arg.Any<CancellationToken>()).Returns(new CommandResult(
+            0,
+            """[{"id":"0ff3ec5cabcdef","short_id":"0ff3ec5c","time":"2026-09-18T02:20:00+01:00","tags":["service:forgejo","image:forgejo:13"],"paths":["/Users/lab/Docker/forgejo/data"],"hostname":"MacMini.local"}]""",
+            ""));
+
+        var snapshot = await new ResticClient(_commands).FindSnapshot(Repository, "service:forgejo", null, TestContext.Current.CancellationToken);
+
+        ran.ShouldNotBeNull().Arguments.ShouldBe(["snapshots", "--json", "--tag", "service:forgejo", "--latest", "1"]);
+        var found = snapshot.ShouldNotBeNull();
+        found.Id.ShouldBe("0ff3ec5c");
+        found.Image.ShouldBe("forgejo:13");
+        found.Paths.ShouldHaveSingleItem().ShouldBe("/Users/lab/Docker/forgejo/data");
+    }
+
+    [Fact]
+    public async Task FindSnapshot_NamesTheIdWhenGivenOneAndIsNullForNothing()
+    {
+        Command? ran = null;
+        _commands.Run(Arg.Do<Command>(c => ran = c), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "[]", ""));
+
+        var snapshot = await new ResticClient(_commands).FindSnapshot(Repository, "service:forgejo", "5c27134a", TestContext.Current.CancellationToken);
+
+        ran.ShouldNotBeNull().Arguments.ShouldBe(["snapshots", "--json", "--tag", "service:forgejo", "5c27134a"]);
+        snapshot.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Restore_TargetsTheDirectoryAndIncludesOnlyWhatIsAsked()
+    {
+        Command? ran = null;
+        _commands.Run(Arg.Do<Command>(c => ran = c), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
+
+        await new ResticClient(_commands).Restore(Repository, "0ff3ec5c", new PhysicalDirectory("/tmp/drill"), ["/Users/lab/Docker/forgejo/data/gitea/forgejo.db"], TestContext.Current.CancellationToken);
+
+        ran.ShouldNotBeNull().Arguments.ShouldBe(["restore", "0ff3ec5c", "--target", Path.GetFullPath("/tmp/drill"), "--include", "/Users/lab/Docker/forgejo/data/gitea/forgejo.db"]);
+    }
 }

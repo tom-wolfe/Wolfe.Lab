@@ -33,14 +33,16 @@ internal sealed class OffsiteJob : ResticJob
     protected override void ValidateSettings(SettingsValidator<ResticSettings> settings) => settings
         .Require(s => s.Retention is { Daily: >= 0, Weekly: >= 0, Monthly: >= 0 }, "'retention' counts cannot be negative.")
         .Require(s => s.Retention.Daily + s.Retention.Weekly + s.Retention.Monthly > 0, "'retention' keeps nothing: every snapshot would be pruned.")
-        .Require(s => s.Heartbeat.Check is { Length: > 0 }, "'heartbeat.check' not set in ritten.json.")
-        .Require(s => s.Heartbeat.Key is not null, "'heartbeat.key' not set in ritten.json.");
+        .Require(s => s.Heartbeat.ToCheck() is not null, "'heartbeat.check' and 'heartbeat.key' must both be set in ritten.json.");
 
     protected override void Configure(IWorkflowBuilder builder, ResticSettings settings)
     {
         base.Configure(builder, settings);
         builder.AddHeartbeat();
         builder.Services.AddSingleton(new RetentionPolicy(settings.Retention.Daily, settings.Retention.Weekly, settings.Retention.Monthly, settings.Retention.KeepTags));
-        builder.Services.AddSingleton(new HeartbeatCheck(settings.Heartbeat.Check!, settings.Heartbeat.Key!.Value));
+        if (settings.Heartbeat.ToCheck() is { } check)
+        {
+            builder.Services.AddSingleton(check);
+        }
     }
 }

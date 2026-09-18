@@ -89,20 +89,29 @@ apply` on both machines — render both halves again.
 
 ## Restore
 
-Find the snapshot, check the image it was taken under, restore like-for-like:
+One command, from the slice's directory, with `--dry-run` first:
 
 ```sh
-scripts/secrets.sh run --env-file restic/restic.env -- restic snapshots --tag service:forgejo
-scripts/secrets.sh run --env-file restic/restic.env -- restic restore <id> --target /tmp/restore
+cd forgejo
+dotnet run --project ../build/src/Wolfe.Lab.Build -- restore --dry-run
+dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
 ```
 
-The `image:` tag on every snapshot is the pin to restore onto — schema
-migrates forward only, on every one of these services. Stop the stack,
-put the restored directory where the service's compose file expects it,
-start with the tagged image, then converge upward.
+It takes the slice's latest snapshot (`--snapshot <id>` for another —
+`restic snapshots --tag service:forgejo` lists them), refuses unless the
+stack runs the image the snapshot was taken under (schema migrates
+forward only; pin `compose.yaml` and converge first, or `--any-image`),
+asks, then stops the stack, sets the live state aside as
+`<path>.bak-<timestamp>`, restores in place and starts the stack. A
+restore that fails puts the live state back before the start. Delete
+the `.bak` once the service has proved itself.
 
-From a secondary node, the same commands with `restic/sftp.env`; the restored
-tree lands on the node, and `docker compose` there.
+Each slice's own `verify` job drills its restore nightly, straight after
+its backup: its `backup.verify` paths come back from the latest snapshot
+into a scratch directory and are asserted non-empty. A slice whose
+`backup` names no `verify` paths cannot run it.
+
+From a secondary node, the same command; the state lands on the node.
 
 Disaster case (mini and Data2 both gone): `restic.env`'s repo path is
 dead, but `offsite.env` works from any machine with restic, op and the

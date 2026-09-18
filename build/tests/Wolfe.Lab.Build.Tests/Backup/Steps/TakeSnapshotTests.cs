@@ -20,7 +20,7 @@ public class TakeSnapshotTests
             .Returns(new Snapshot("0ff3ec5c"));
 
     private TakeSnapshot Step(string? container, bool dryRun = false) =>
-        new(_docker, _restic, new BackupPlan([State], ["/Users/lab/Docker/jellyfin/cache"], container, container), new WorkflowJob("jellyfin", "backup", dryRun), Substitute.For<IWorkflowLog>());
+        new(_docker, _restic, new BackupPlan([State], ["/Users/lab/Docker/jellyfin/cache"], container, container, []), new WorkflowJob("jellyfin", "backup", dryRun), Substitute.For<IWorkflowLog>());
 
     [Fact]
     public async Task Run_SnapshotsWarmWithoutTouchingDocker()

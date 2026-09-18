@@ -7,7 +7,7 @@ namespace Wolfe.Lab.Build.Restic;
 /// restic has its own rehearsal, which lists what a backup would add, so a dry run shows the
 /// snapshot the real one would take rather than saying nothing.
 /// </summary>
-internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands) : IRestic
+internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands, ResticClient inner) : IRestic
 {
     /// <summary>
     /// What the rehearsal hands back in a snapshot's place.
@@ -41,6 +41,17 @@ internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands) : 
     {
         log.Skipped($"Would apply retention to {repository.Location}; what it would forget:");
         await commands.Run(ResticClient.PruneCommand(repository, policy, dryRun: true), ct);
+    }
+
+    /// <inheritdoc />
+    public Task<ResticSnapshot?> FindSnapshot(ResticRepository repository, string tag, string? id, CancellationToken ct = default) =>
+        inner.FindSnapshot(repository, tag, id, ct);
+
+    /// <inheritdoc />
+    public Task Restore(ResticRepository repository, string snapshotId, IDirectory target, IReadOnlyList<string> includes, CancellationToken ct = default)
+    {
+        log.Skipped($"Would restore snapshot {snapshotId}{(includes.Count == 0 ? "" : $" ({includes.Count} path{(includes.Count == 1 ? "" : "s")})")} under {target.AbsolutePath}.");
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Wolfe.Lab.Build.Restic;
@@ -16,7 +17,8 @@ public static class WorkflowBuilderExtensions
         public IWorkflowBuilder AddRestic()
         {
             builder.AddCommandRunner();
-            builder.Services.TryAddSingleton<IRestic, ResticClient>();
+            builder.Services.TryAddSingleton<ResticClient>();
+            builder.Services.TryAddSingleton<IRestic>(s => s.GetRequiredService<ResticClient>());
             builder.Decorators.Replace<IRestic, DryRunRestic>();
             return builder;
         }
