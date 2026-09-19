@@ -35,29 +35,111 @@ workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 `lab restore` from the offsite repository is the missing piece of that
 runbook: today both jobs read the local one.
 
-### 2. The platform layer moves to Linux
+### 2. The primary node becomes a Linux box
 
-Every container fault in the changelog is the VM boundary on macOS, and
-no runtime crosses it (OrbStack's host networking does not carry mDNS to
-the Wi-Fi interface). The mini keeps what genuinely needs it — the
-drives and everything that reads them, Homebrew. Nothing in the platform layer does:
-Forgejo, its Postgres-free SQLite, Caddy, Garage and the Beszel hub all
-publish arm64 images. Move them to the Pi one slice at a time, Forgejo
-last (it runs the deploys), and see how much pain is left on the mini.
-If the answer is "most of it", the always-on server becomes a Linux box
-— a hardware decision (an N100-class machine fits the rack) — and the
-mini becomes the media and Apple-specific host. Every one of these has
-state, so each move keeps its `backup` section and takes the Pi's SFTP path
-(`restic/README.md` "From a Linux node").
+The VM boundary is the proximate cause of nearly every container fault in
+the changelog, but the decisive constraint is narrower and physical: **a
+Mac cannot host a storage controller.** No Mac takes internal drives, none
+takes an HBA, and Apple Silicon has no third-party driver path for one over
+Thunderbolt. Every disk the lab owns therefore arrives through a bridge
+chip in an external enclosure, which is what caps storage at "whatever fits
+in a Thunderbolt DAS" — a measured 4U for four bays, two of them used. That
+is the reason to move, and it is independent of CPU: the mini has compute
+to spare and a Linux box does not need to beat it.
 
-**What stays on the mini keeps the one debt this item cannot retire.** A
-macOS node's control plane is session state, not files: Docker Desktop
-(installed and upgraded by hand, deliberately outside the Brewfile),
-automatic login, and the Local Network grant in
-TCC. chezmoi cannot write any of it and no plan can diff it, and a
-Homebrew upgrade of the runner replaces the binary the TCC grant was
-made for, so the grant wants checking after each one. It is the price
-of the mini's performance, paid knowingly.
+The destination is a mini-ITX NAS board in the 10" rack with drives on real
+SATA ports. Specced, not bought — roughly £1200 before the last three items
+below — so this waits on money rather than on design:
+
+- **i3-N305 mini-ITX NAS board** — 6× SATA, M.2, 4× 2.5GbE, 24+4 ATX, 32 GB
+  DDR5 SODIMM. The CPU is deliberately modest: the heavy work goes to the
+  Studio (#7), and the platform layer is a rounding error on any of this.
+- **10" 2U mini-ITX case** — Pico-PSU only, one 80 mm fan, 223 mm deep, no
+  5.25" bay.
+- **IcyDock MB326SP-B** — six 2.5" SATA bays, in a 1U 10" mount. Six bays
+  in 3U total, against 4U for four today.
+- **A Pico-PSU and a 12 V brick.** A Pico moves AC→DC conversion out to an
+  external brick and plugs into the 24-pin header to derive 5 V and 3.3 V.
+  **Size the 5 V rail, not the headline wattage** — 2.5" SSDs draw almost
+  entirely on 5 V and that is the small rail. The usual
+  Pico-PSU-in-a-NAS warning is about 3.5" spin-up surge on 12 V and does
+  not apply.
+- **An NVMe boot drive**, so all six SATA ports stay data.
+- **One new SATA SSD** large enough to stage the migration — see below.
+- **An 80 mm fan.**
+
+**Two things absent from every parts list.** Six SATA data cables and a
+SATA power lead have to leave a sealed case and reach the cage a unit
+below; running the case lid-off solves that but costs the single fan its
+directed airflow, so take the Beszel temperature baseline first and cut a
+pass-through only if the package temperature says so. And **the existing
+drives are macOS-formatted** — Linux reads APFS only through unreliable
+read-only tooling, so nothing can simply be re-seated in the cage. The data
+comes off onto a Linux-formatted disk, the old pair is wiped, and it goes
+back. That is what the staging disk is for, and it is why it is not
+optional.
+
+**The backup transport gets revisited here, by its own instruction.**
+`restic/README.md` declines a `rest-server` on the mini because sshd is
+native and the drive is native, and says to revisit "when the platform
+layer moves to Linux and the drive's host changes" — which is this. An
+append-only mode and a path jail are the gain; a container in the backup
+path is the cost, and on Linux it is no longer a container behind a VM.
+
+**The filesystem is a decision, not a default.** ext4 or xfs is the simple
+answer. ZFS or btrfs adds checksumming and scheduled scrubs, which is the
+only thing that would ever notice bit rot in the media library —
+deliberately unbacked, and today watched by nothing, because restic
+verifies its own repository and not files it was never given.
+
+**Sequence.** Every step is safe to stop at, and the lab keeps running on
+the mini throughout:
+
+1. Build and burn in off the rack, with no lab data: Linux on the NVMe, the
+   staging disk in the cage, memtest and a disk burn-in.
+2. Make it a node that does nothing — chezmoi profile, Tailscale, host
+   runner, Beszel agent, Gatus check. The mini is untouched and still
+   primary; this proves the machine before anything depends on it.
+3. Migrate slices one at a time, Forgejo last because it runs the deploys.
+   Each keeps its `backup` section, and each takes the node's own restic
+   path (`restic/README.md`, "From a Linux node").
+4. Media across, old SSDs wiped and reformatted, into the cage.
+5. The mini stops being primary.
+
+Step 3 restores each slice's state onto new hardware and boots the service
+on it, which **is** the boot-on-restore drill #1 asks for — provided it
+goes through `lab restore` rather than by hand. Done that way, the
+migration retires that half of #1 instead of deferring it.
+
+**Superseded: moving the platform layer to the Pi.** It was written here as
+the cheap first step and it no longer is one — it would migrate slices to
+arm64 en route to amd64, twice the work for a destination that is coming
+anyway. The Pi keeps the roles it already has and the ones already designed
+for it: the containerised CI runner, Gatus, and Home Assistant and Pi-hole
+when they land, all of which want real host networking rather than more
+CPU. The cheap mini fixes that depend on none of this — Wi-Fi off, a DHCP
+reservation — are on the rack build's list and should just be done.
+
+**What the mini becomes.** Not a server, and that is the point: it stops
+being the one machine the lab dies with. What genuinely cannot move:
+
+- **An Apple-platform build runner.** Xcode, codesigning and notarization
+  are practical only on Apple hardware, and it slots in as another
+  `runs-on` label with no new architecture.
+- **macOS VMs for bootstrap testing.** Virtualization.framework runs only
+  on Apple silicon, and the `macbook` / `work-macbook` / `macmini-node`
+  profiles have no test target today short of wiping a real machine. A
+  disposable macOS VM is the one use that fits this repo's ethos exactly.
+- **Apple-local data, if the assistant grows past Obsidian and mail.**
+  Messages, Notes, Contacts and Photos live in `~/Library` on a logged-in
+  Mac and nothing else can read them. It needs Full Disk Access, so it
+  carries the TCC debt — now confined to a machine nothing depends on,
+  which is where that debt belongs.
+- **Batch transcoding.** Off Docker, VideoToolbox is reachable, so
+  re-encoding the library to HEVC or AV1 to reclaim space becomes viable.
+  Real, but not exclusive — Intel's encoders do this too.
+
+Nothing currently in the lab is on that list. Everything else moves.
 
 ### 3. A UPS
 
@@ -183,6 +265,19 @@ publish once their repos flip from mirror to active. Three things remain:
   and run unmerged code on a node; branch protection on main and CI on
   the containerised runner only are the mitigations, and a host runner
   is assumed reachable by any workflow file on any branch.
+- **Branch protection, which does not exist yet.** The bullet above names
+  it as a mitigation, and the repo is already run as though it were in
+  place — every change arrives as a pull request — but nothing enforces
+  it. `svalabs/forgejo` carries `forgejo_branch_protection`, so this is a
+  resource in `forgejo/tofu/primary.tf` beside
+  `forgejo_repository.wolfe_lab`, applied by the existing workflow: block
+  direct pushes to `main`, require `ci.yaml` to pass. **Required approvals
+  must be zero** — Forgejo will not let an author approve their own pull
+  request and there is one author, so any other value locks the repo. What
+  it does not buy: a `pull_request` workflow runs the workflow file *from
+  the branch*, so protecting `main` does not stop a branch naming a host
+  runner's label. The containment there is that only one person can push at
+  all.
 - **The rest of `scripts/` into the CLI.** `build/` exists and the
   obsidian workflows call it; deploy, apply/plan, alert and the
   heartbeat still run as shell. Each moves as a workflow class with a
@@ -208,47 +303,48 @@ publish once their repos flip from mirror to active. Three things remain:
   credential lives; and the Beszel token is minted by the hub and
   harvested by hand, so only the apply-and-restart half is a workflow.
 
-### 7. Local models on the Mac Studio (hardware lands ~late Sept 2026)
+### 7. The Mac Studio as a compute node
 
-Pre-ordered M5 Ultra, ~4 weeks out. **Decided: it is a second node, not the
-mini's replacement — and it is a workstation, not a server.** WiFi, powered
-off when unused, and deliberately kept free of ambient load. That single
-fact settles most of the design.
+**Decided: a second node, not the mini's replacement, and a hybrid — a
+workstation that also serves.** That is a change from workstation-only, and
+it comes with one rule that keeps it safe: **the Studio may serve, but
+nothing may depend on it.** A daily driver sleeps, reboots for updates and
+gets fiddled with; this repo already refuses to let a watcher share the
+fate of the thing it watches, and this is that principle one level up.
+Anything the Studio provides must degrade rather than break.
 
-**It is shaped like the laptops, not like the mini.** A chezmoi machine
-that Tailscale can reach; *not* a deploy target and not a runner host,
-because both assume always-on. Correcting
-something written here earlier: the Studio does **not** put a deadline on
-the multi-host fleet work — that pressure comes entirely from the Pi,
-which is the machine that will actually run services. The Studio needs
-Tailscale and nothing else structural — though it is the second machine
-after the Pi that gives the Tailscale policy (`tailscale/tofu`) a reason to say
-something: a workstation that reaches services and is reached by nothing.
+**What it takes on.**
 
-**"Not always on" costs nothing here, because the jobs are interactive.**
-Querying the vault and dictating notes are things done *sitting at the
-machine*. There is no unattended workload to strand.
+- **Immich's machine learning.** `immich/README.md` already anticipates
+  this — Immich accepts a remote machine-learning URL and nothing else
+  moves. The Studio asleep means search results go stale, not that Immich
+  is down, which is exactly the degradation the rule asks for. The single
+  best use of the hardware against what the lab already runs.
+- **Ollama, as a host process, not a container.** A container on macOS gets
+  no access to the Apple GPU, so a containerised model runs on CPU and is
+  uselessly slow. This is the clearest correct case in the fleet for
+  running on the host, and unified memory is the reason the hardware is
+  worth anything here. `ollama` is already in the Brewfile's personal
+  section, so this is a widening rather than a new dependency.
+- **Whisper-family transcription**, local, for captured notes.
 
-The three stated jobs are three different tools:
+**What it does not take on:** anything in the platform layer, the drives,
+or any job whose failure is an outage.
 
-- **Vault querying** — Ollama plus a RAG front end. The corpus is a
-  clone of the vault repositories on Forgejo (`obsidian/`), not a mount.
-- **Capturing notes** — Whisper-family transcription, local.
-- **Filing paperwork** — Paperless-ngx, and **this one belongs on the
-  mini**, not the Studio. It is an always-on ingest-and-index service, its
-  OCR is CPU-bound, and it wants to accept documents whether or not the
-  desktop is awake. Only LLM-assisted tagging would reach for the Studio,
-  and that can degrade to "tag it later" when the machine is off. It
-  needs no new hardware, so it is listed with the other new services
-  below rather than waiting here.
+**What it needs structurally:** a chezmoi profile, Tailscale, a Beszel
+agent, a Gatus check at a softer severity than a server's, and — as a
+hybrid rather than a pure workstation — a host runner.
 
-**Ollama must be a HOST process, not a container** — a container on macOS
-gets no access to the Apple GPU, so a containerised model runs on CPU and is
-uselessly slow. `ollama` is already in the Brewfile's personal section, so
-this is a widening rather than a new dependency. Run it **on demand rather
-than via `brew services`**, per the no-ambient-load requirement; an idle
-Ollama is cheap (it unloads models after a keep-alive) but "cheap" is not
-"nothing" on a machine being used for other work.
+**The vault-querying front end.** Ollama plus a RAG layer over a clone of
+the vault repositories on Forgejo (`obsidian/`), not a mount. The corpus is
+already versioned and already synced by workflows, so the index job is an
+ordinary `lab` job with a clean input.
+
+**Paperless-ngx belongs on the primary node, not here.** It is an always-on
+ingest-and-index service, its OCR is CPU-bound, and it wants to accept
+documents whether or not the desktop is awake. Only LLM-assisted tagging
+would reach for the Studio, and that degrades to "tag it later". It is
+listed with the other new services below rather than waiting here.
 
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
@@ -397,6 +493,42 @@ Forgejo's for the repo. A static front end that reads those over the
 It does not replace Gatus, Beszel or the Actions tab; it is the page
 that saves opening four of them.
 
+### 10. Mail: Proton Bridge, and an event scanner into the calendar
+
+Two things want the same credential and have been waiting on each other.
+Item #5 needs SMTP for a report that is a list rather than an alert; this
+one needs IMAP.
+
+**Bridge as a slice, not as session state.** #5 dismissed Proton Bridge as
+"a logged-in session that has to live somewhere", the same shape as `op` on
+the mini, and on macOS that was right. On the Linux node (#2) it is an
+ordinary container: credentials in its own volume, the one-time login an
+interactive RUNBOOK step rather than a standing session, and a `backup`
+section like everything else. The honest costs — the images are community
+work that Proton does not support, and Bridge versions get cut off if they
+fall far enough behind, so it wants a pin and a Renovate watch like any
+other image (#5).
+
+**The scanner.** Detect events in incoming mail and put them in Proton
+Calendar, the way Gmail does. The write half is the constrained one.
+
+- **Writing. Decided: mail the event to yourself as an `.ics`.** Proton
+  Calendar has no public API and CalDAV is not on the plan, but Proton
+  Calendar recognises an iCalendar invitation received by mail — so the
+  write path is SMTP through the same Bridge, using only supported
+  surfaces. The alternative, if a tap per event grates, is publishing an
+  `.ics` that Caddy serves and Proton subscribes to: that makes the lab the
+  source of truth, but it is read-only into Proton and refreshes on
+  Proton's schedule rather than on the lab's.
+- **Detection, in tiers, because most of it needs no model at all.** An
+  attached `.ics` first. Then schema.org JSON-LD in the HTML — bookings,
+  tickets and reservations carry it, and it is how Gmail does most of this:
+  deterministic, high precision, no inference. Only prose falls through to
+  the Studio's model, which makes the LLM tier optional by construction. If
+  the Studio is asleep the first two tiers still run and the rest is picked
+  up next time, provided processed message IDs are tracked so the job is
+  idempotent. That keeps #7's rule intact.
+
 ## Debt no item above retires
 
 ### Jellyfin's state directory is where the native app left it
@@ -414,6 +546,10 @@ is a one-time move: stop, copy to `~/Docker/jellyfin`, rewrite the path
 columns in `jellyfin.db` (or accept a full rescan and lost watch state),
 change the four variables. Only worth doing after the restore drills
 (#1), and only if the exception bothers you more than the rewrite does.
+
+#2 removes the choice. `~/Library/Application Support` does not exist on
+Linux, so the path moves when the slice migrates and the rewrite becomes
+part of that step rather than optional cleanup.
 
 ## Undecided
 
@@ -496,34 +632,22 @@ and should just be done.
 
 ### The container runtime
 
-Tom is not set on Docker, only on containers, and is
-open to a better runtime or orchestrator. The changelog is the argument
-for looking: `network_mode: host` is a silent no-op (dead mDNS/SSDP
-discovery, no Home Assistant on the mini), VirtioFS races on first
-boot, every container's port 53 intercepted by the VM, keychain-bound
-registry pulls in headless sessions, and an update that took the lab
-down (0.18.1). Worth being precise about where those come from, because
-it decides what a switch could fix.
+Tom is not set on Docker, only on containers, and is open to a better
+runtime or orchestrator. The changelog is the argument for looking:
+`network_mode: host` is a silent no-op (dead mDNS/SSDP discovery, no Home
+Assistant on the mini), VirtioFS races on first boot, every container's
+port 53 intercepted by the VM, keychain-bound registry pulls in headless
+sessions, and an update that took the lab down (0.18.1).
 
 **Nearly all of it is the VM, not Docker.** macOS cannot run Linux
-containers; every runtime on the mini — Docker Desktop, OrbStack,
-Colima, Podman — boots a Linux VM and shares files and ports across the
-boundary. The filesystem races, the port interception and the no-host-
-network problem live at that boundary. OrbStack is the one worth an
-afternoon: faster, lighter, free for personal use, and it advertises
-host networking — verify that mDNS discovery actually works through it
-before believing it. Colima is the open-source equivalent without that
-claim. Neither changes the compose files.
-
-**The Pi is the first non-VM runtime the lab has**: Docker
-Engine on Linux, natively, where host networking is real and the VM
-problems simply don't exist. The honest experiment is to move the
-workloads that suffer from the VM there and see how much pain is left
-on the mini before switching anything on it. If the answer is "most of
-it", the bigger question is whether the always-on server should be a
-Linux box at all — which is a hardware decision (an N100-class machine
-sits in the same rack unit as the router candidates above), not a
-runtime one, and the mini becomes the media and Apple-specific host.
+containers; every runtime on the mini — Docker Desktop, OrbStack, Colima,
+Podman — boots a Linux VM and shares files and ports across the boundary.
+The filesystem races, the port interception and the no-host-network problem
+all live at that boundary, and **#2 removes the boundary rather than
+changing the runtime**, which answers most of this section: Docker Engine
+on Linux, natively, as the Pi already runs it. Trying OrbStack or Colima on
+the mini is worth an afternoon only if #2 stays unfunded long enough to
+hurt.
 
 **Orchestration is a separate question** and mostly the k8s one below.
 Between "compose per host" and Kubernetes there is Docker Swarm (a
@@ -591,6 +715,10 @@ Not roadmap items, but the physical constraints the items above assume.
 
 **A UPS** — promoted to roadmap item #3; the rack plan places it.
 
+**The Linux primary node** — specced in item #2. The largest planned
+expense in the lab, and the one that unblocks storage growth past what a
+Thunderbolt enclosure can hold.
+
 **A second backup drive — resolved, no purchase needed.** Backups moved to
 `/Volumes/Data2`, which is a separate physical drive with far more room.
 What that buys is *decorrelation*: Data1 previously held 1.5 TB of media and
@@ -599,6 +727,10 @@ one thing. Be clear about what it does not buy — the two drives share an
 enclosure, so a controller or PSU failure still takes both, as does theft,
 fire, or an accidental delete. Restic to B2 remains the actual second
 copy; this is a cheap improvement on the way there, not a substitute.
+#2 changes the enclosure, not this
+property: a cage and a Pico-PSU correlate the same way a DAS and its
+controller do. Decorrelation past that point is what the offsite copy is
+for.
 
 **Not needed yet:** a Zigbee/Thread coordinator only matters if Home
 Assistant grows past the Hue bridge into Matter devices. And the mini's
