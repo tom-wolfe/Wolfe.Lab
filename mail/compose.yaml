@@ -1,0 +1,62 @@
+name: mail
+
+services:
+  bridge:
+    # Pinned, and deliberately NOT shenxn/protonmail-bridge — the image most
+    # guides name. That one stopped at Bridge 3.19.0 in April 2025 while
+    # upstream is on 3.27.0, and Proton cuts off Bridge versions that fall
+    # far enough behind. This is the maintained fork: it tracks upstream,
+    # and it disables the bridge's own auto-updater, which on arm64 fetched
+    # an amd64 build and crashed. The version is the tag, like every other
+    # pin in the lab — see README.md "The image is community work".
+    image: dancwilliams/protonmail-bridge:v3.26.0-4
+    container_name: proton-bridge
+    restart: unless-stopped
+
+    environment:
+      # Encrypts the GPG key guarding the stored Proton session. It must be
+      # the SAME value the one-time login ran under, or the store will not
+      # open — which is why RUNBOOK.md resolves it from the vault for both.
+      KEYRING_PASSPHRASE: ${KEYRING_PASSPHRASE}
+      # Host /etc/localtime is a symlink into /var/db/timezone and dangles
+      # inside a Linux container (jellyfin pattern).
+      TZ: Europe/London
+
+    volumes:
+      # A NAMED volume, unlike every other slice's bind mount, and on
+      # purpose: /root holds a GPG home and a `pass` store, and GPG refuses
+      # to run unless its directory is 0700 — which a VirtioFS bind mount
+      # from macOS does not reliably present. Inside the VM the question
+      # never arises. The cost is that the host cannot snapshot it, which
+      # suits a volume the lab has decided not to back up anyway.
+      - bridge:/root
+
+    networks:
+      - lab
+
+    # NO published ports. Bridge binds 127.0.0.1 inside the container and
+    # the image mirrors 143/25 onto 0.0.0.0 with socat, so anything else on
+    # the `lab` network reaches it as `bridge:143` — and nothing outside
+    # that network reaches it at all. The watcher is the only client.
+
+    healthcheck:
+      # The socat mirror rather than bridge itself: if this answers, a
+      # client on the lab network can connect. VERIFY on first deploy that
+      # the image has bash — a healthcheck that can never pass is worse
+      # than none, which caddy's spent 33 hours proving.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/143"]
+      interval: 120s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  # Not declared external: this slice owns it, and losing it costs one
+  # interactive login rather than any data.
+  bridge:
+
+networks:
+  # The shared edge network — owned and created by the caddy slice. This
+  # slice publishes no route; it joins only so the watcher can reach bridge.
+  lab:
+    external: true

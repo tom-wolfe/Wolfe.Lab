@@ -15,6 +15,8 @@ rather than versioned — the lab is continuous, not released.
   job PATH in the runner's config — so the CLI runs on either node.
 - **Models are declared.** `ollama/ritten.json` names them and the deploy
   pulls what is missing; a model must name its tag.
+- **`mail/`** — Proton Bridge as a slice, so the lab can read and send
+  mail at all.
 
 ### Changed
 
