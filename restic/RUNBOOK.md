@@ -106,7 +106,7 @@ asks, then stops the stack, sets the live state aside as
 restore that fails puts the live state back before the start. Delete
 the `.bak` once the service has proved itself.
 
-Each slice's own `verify` job drills its restore nightly, straight after
+Each slice's own `restore-drill` job runs nightly, straight after
 its backup: its `backup.verify` paths come back from the latest snapshot
 into a scratch directory and are asserted non-empty. A slice whose
 `backup` names no `verify` paths cannot run it.

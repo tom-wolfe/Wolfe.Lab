@@ -1,4 +1,5 @@
 using Wolfe.Lab.Build.Backup.Jobs;
+using Wolfe.Lab.Build.Deploy.Jobs;
 using Wolfe.Lab.Build.Immich.Jobs;
 using Wolfe.Lab.Build.Immich.Models;
 
@@ -17,10 +18,10 @@ public sealed class ImmichWorkflow : IWorkflow
 
     /// <inheritdoc />
     public IReadOnlyList<IJob> Jobs { get; } = [
-        new DeployJob(),
+        new DeployJob<ImmichSettings>(),
         new ImportJob(),
         new BackupJob<ImmichSettings>(),
         new RestoreJob<ImmichSettings>(),
-        new VerifyJob<ImmichSettings>()
+        new DrillJob<ImmichSettings>()
     ];
 }

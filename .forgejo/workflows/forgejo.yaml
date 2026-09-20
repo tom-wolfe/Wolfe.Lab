@@ -3,7 +3,7 @@ name: forgejo
 on:
   push:
     branches: [main]
-    paths: [forgejo/**, scripts/deploy.sh, .forgejo/workflows/forgejo.yaml]
+    paths: [forgejo/**, .forgejo/workflows/forgejo.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +16,5 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/deploy.sh forgejo
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "deploy forgejo failed on MacMini"
+      - working-directory: forgejo
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

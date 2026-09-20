@@ -10,7 +10,7 @@ replaces Google Photos as the place a photo lands after it is taken.
 
 Two things a job does here, both through the CLI in `build/`:
 `lab deploy` installs the slice and converges the stack — the first
-slice deployed that way rather than by `scripts/deploy.sh` — and
+slice deployed that way — and
 `lab import` brings the Google Takeout in. `ritten.json` declares both.
 
 ## What is backed up, and what is not

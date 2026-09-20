@@ -5,7 +5,7 @@ namespace Wolfe.Lab.Build.Agents.Models;
 /// <summary>
 /// The shape of an agent-owning slice's <c>ritten.json</c>.
 /// </summary>
-public sealed record AgentsSettings : SliceSettings
+public record AgentsSettings : SliceSettings
 {
     /// <summary>
     /// The agents this slice wants running, by name. The name becomes the label, so

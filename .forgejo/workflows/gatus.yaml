@@ -3,7 +3,7 @@ name: gatus
 on:
   push:
     branches: [main]
-    paths: [gatus/**, scripts/deploy.sh, .forgejo/workflows/gatus.yaml]
+    paths: [gatus/**, .forgejo/workflows/gatus.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +16,5 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/deploy.sh gatus
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "deploy gatus failed on wolfe-pi5"
+      - working-directory: gatus
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

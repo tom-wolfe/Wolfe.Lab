@@ -8,7 +8,7 @@ State lives at `~/Docker/garage/{meta,data}` on the mini; config is
 
 | Concern | Handled by |
 | --- | --- |
-| Secrets | `secrets.env` names the vault items (`garage-rpc-secret`, `garage-s3-admin-token`); the deploy resolves them into the environment of the `up` that creates the container. Never generated: the vault is the origin, so a recreated container gets the same values back. Nothing is on disk — bring the stack up with `scripts/deploy.sh garage`, never a bare `compose up` |
+| Secrets | `secrets.env` names the vault items (`garage-rpc-secret`, `garage-s3-admin-token`); the deploy resolves them into the environment of the `up` that creates the container. Never generated: the vault is the origin, so a recreated container gets the same values back. Nothing is on disk — bring the stack up with `lab deploy`, never a bare `compose up` |
 | Container | `.forgejo/workflows/garage.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
 | Cluster layout (one-time) | `scripts/init-layout.sh`, invoked by `setup.sh` |
 | Buckets, keys, grants | OpenTofu — this slice's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |

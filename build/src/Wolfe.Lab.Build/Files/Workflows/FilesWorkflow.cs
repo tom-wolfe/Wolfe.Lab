@@ -15,5 +15,5 @@ public sealed class FilesWorkflow : IWorkflow
     public string Label => "files";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new BackupJob<FilesSettings>(), new RestoreJob<FilesSettings>(), new VerifyJob<FilesSettings>()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new BackupJob<FilesSettings>(), new RestoreJob<FilesSettings>(), new DrillJob<FilesSettings>()];
 }

@@ -1,8 +1,14 @@
 {
-  "workflow": "agents",
+  "workflow": "ollama",
   "volumes": [
     "/Volumes/Data2"
   ],
+  "models": {
+    "store": "/Volumes/Data2/ollama/models",
+    "pull": [
+      "qwen3:8b"
+    ]
+  },
   "agents": {
     "ollama": {
       "program": "/opt/homebrew/bin/ollama",

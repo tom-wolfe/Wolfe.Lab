@@ -17,7 +17,7 @@ public class DrillRestoreTests : IDisposable
     public void Dispose() => _scratch.Delete(recursive: true);
 
     private DrillRestore Step(IReadOnlyList<string> verify, bool dryRun = false) =>
-        new(_restic, new BackupPlan([new PhysicalDirectory("/Users/lab/Docker/forgejo/data")], [], "forgejo", "forgejo", verify), new WorkflowJob("forgejo", "verify", dryRun), Substitute.For<IWorkflowLog>());
+        new(_restic, new BackupPlan([new PhysicalDirectory("/Users/lab/Docker/forgejo/data")], [], "forgejo", "forgejo", verify), new WorkflowJob("forgejo", "restore-drill", dryRun), Substitute.For<IWorkflowLog>());
 
     [Fact]
     public async Task Run_PassesWhenTheProofComesBackNonEmpty()

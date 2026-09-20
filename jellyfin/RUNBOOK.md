@@ -11,7 +11,7 @@ on their own after a reboot. If Docker Desktop has quit for any other reason
 (it has, without a reboot), bring it back by hand:
 
 ```sh
-open -a Docker && scripts/deploy.sh jellyfin /Volumes/Data1 /Volumes/Data2
+open -a Docker && lab deploy
 ```
 
 Note this is tied to **signing in**, not to boot — a Mac mini sitting at the

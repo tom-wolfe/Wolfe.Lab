@@ -15,7 +15,7 @@ a failure visible outranks anything that adds a new thing to fail.
 A backup nobody has restored from has not shipped, so this is the first
 item by the ordering principle: it makes the one failure that is silent
 until it is total — an unrestorable backup — visible. The weekly half is
-in place: each slice's `lab verify` restores its `backup.verify` paths
+in place: each slice's `lab restore-drill` restores its `backup.verify` paths
 from its latest snapshot and asserts them, and `lab restore` is the
 restore itself. Honest scope: that proves the files come back, not that
 the service boots on them.

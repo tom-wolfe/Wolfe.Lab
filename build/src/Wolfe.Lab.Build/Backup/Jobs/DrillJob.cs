@@ -10,9 +10,9 @@ namespace Wolfe.Lab.Build.Backup.Jobs;
 /// Proves the slice's backup can be restored from.
 /// </summary>
 /// <typeparam name="TSettings">The slice's <c>ritten.json</c> shape, which carries the <c>backup</c> section.</typeparam>
-internal sealed class VerifyJob<TSettings> : LabJob<TSettings> where TSettings : SliceSettings
+internal sealed class DrillJob<TSettings> : LabJob<TSettings> where TSettings : SliceSettings
 {
-    public override string Name => "verify";
+    public override string Name => "restore-drill";
 
     public override string Description => "Restores what proves the slice's latest snapshot into a scratch directory and asserts it came back.";
 

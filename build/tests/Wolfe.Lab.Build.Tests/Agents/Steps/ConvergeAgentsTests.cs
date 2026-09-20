@@ -11,7 +11,7 @@ public class ConvergeAgentsTests
     private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
 
     private ConvergeAgents Step(bool dryRun = false) =>
-        new(_supervisor, new WorkflowJob("agents", "converge", dryRun, AutoApprove: true), _log);
+        new(_supervisor, new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), _log);
 
     private static AgentPlan Plan() => new([
         new AgentDefinition(

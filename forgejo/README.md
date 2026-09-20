@@ -17,7 +17,7 @@ the mini's host runner. Manual converge: run the workflow from the Actions
 tab, or on the mini:
 
 ```sh
-scripts/deploy.sh forgejo
+lab deploy
 ```
 
 ## Day-to-day
@@ -29,7 +29,7 @@ docker compose ps            # status
 docker compose logs -f       # follow logs
 docker compose restart       # restart
 docker compose down          # stop (data is untouched)
-scripts/deploy.sh forgejo    # start — from a checkout: the deploy is what
+lab deploy                   # start — from a checkout: the deploy is what
                              # puts the sidecar's auth key in its environment
 ```
 
@@ -346,7 +346,7 @@ not typed again.
 How a deploy job gets the repo: `actions/checkout`, like any pipeline,
 into the job's workspace, which the runner disposes of afterwards. What
 containers need to keep reading — config directories, route snippets —
-is not read from the checkout: `scripts/deploy.sh` installs the slice into
+is not read from the checkout: the deploy installs the slice into
 `$LAB_ROOT/<slice>` (`~/.local/share/Wolfe.Lab`, rsync so nothing a
 running container has open vanishes) and runs compose there. The front
 door's hook gathers every slice's `caddy.caddyfile` into that tree, so

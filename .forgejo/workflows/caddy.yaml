@@ -3,7 +3,7 @@ name: caddy
 on:
   push:
     branches: [main]
-    paths: [caddy/**, scripts/deploy.sh, .forgejo/workflows/caddy.yaml, '*/caddy.caddyfile', caddy/flows/deploy/post.sh]
+    paths: [caddy/**, .forgejo/workflows/caddy.yaml, '*/caddy.caddyfile']
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +16,5 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/deploy.sh caddy
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "deploy caddy failed on MacMini"
+      - working-directory: caddy
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

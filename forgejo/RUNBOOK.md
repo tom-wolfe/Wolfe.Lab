@@ -215,7 +215,7 @@ Then lock it down, since this is a LAN server that doesn't need public signups:
 2. Set `FORGEJO__service__DISABLE_REGISTRATION: "true"` in `compose.yaml`
    (this one *is* safe to manage via env — it's ordinary config, and setting it
    is idempotent)
-3. Redeploy — merge, or `scripts/deploy.sh forgejo` from a checkout.
+3. Redeploy — merge, or `lab deploy` from the slice in a checkout.
 
 ## After a reboot
 

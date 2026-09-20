@@ -11,10 +11,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  converge:
+  deploy:
     runs-on: MacMini
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - working-directory: ollama
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- converge --auto-approve
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

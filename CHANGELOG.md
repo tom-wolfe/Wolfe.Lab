@@ -4,6 +4,49 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.29.0] - 2026-09-20
+
+### Added
+
+- **`ollama/`** — the lab's model endpoint at `ai.twolfe.dev`, and the
+  first slice whose stack is a host process. A container on macOS gets 
+  no access to the Apple GPU, so a containerised model runs on CPU and is uselessly slow.
+- **The Pi has the .NET SDK**, pinned by a chezmoi script and put on the
+  runner's PATH by its unit — so the CLI runs on either node.
+- **Models are declared.** `ollama/ritten.json` names them and the deploy
+  pulls what is missing; a model must name its tag.
+
+### Changed
+
+- **One name per service.** A single `*.twolfe.dev` record replaces the
+  two wildcards that sat a label deeper, and every service answers to
+  exactly one name at the mini's Tailscale address.
+- **One Gatus check per service.** The `lab` and `front door` groups 
+  have been merged.
+- **Supervised agents are declared, not scripted.** A slice names the
+  agents it wants running in its `ritten.json` — the program, its
+  arguments, environment and log — and `lab deploy` renders the
+  platform's unit and makes the supervisor match it.
+- **Every slice deploys with `lab deploy`.** `scripts/deploy.sh` is gone;
+  the volumes it took as arguments are declared in each slice's
+  `ritten.json`, and caddy's route-gathering hook is two steps in a
+  workflow of its own.
+- **Job names read from the slice they run in.** The slice-level check is
+  `restore-drill` — `verify` said nothing in `forgejo/` — and restic
+  keeps `verify` for its repositories. One intent, one verb: `converge`
+  is `deploy`.
+- **`sync` is `Work`, not `Deploy`.** It deploys nothing.
+
+### Fixed
+
+- **ollama could not start as a launchd agent.** Reading the model store
+  on Data2 is gated behind a macOS privacy prompt an agent cannot show;
+  it bound its port and blocked. Approving it once at the desk is a
+  bootstrap step now.
+- **The front door could not reach ollama**, which answers 403 to a Host
+  or Origin it does not recognise. The route rewrites both.
+- **A rehearsed `compose up` no longer claims it converged.**
+
 ## [0.28.0] - 2026-09-18
 
 ### Added

@@ -25,7 +25,11 @@ handle @ai {
 	# The health check is /api/tags rather than /, because ollama answers
 	# / with "Ollama is running" before it can serve a single model: a
 	# root check would route to a server with nothing loaded.
+	# ollama refuses a request whose Host or Origin it does not recognise.
 	reverse_proxy host.docker.internal:11434 {
+		header_up Host {upstream_hostport}
+		header_up -Origin
+
 		lb_policy first
 		health_uri /api/tags
 		health_interval 10s

@@ -3,7 +3,7 @@ name: garage
 on:
   push:
     branches: [main]
-    paths: [garage/**, scripts/deploy.sh, .forgejo/workflows/garage.yaml]
+    paths: [garage/**, .forgejo/workflows/garage.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +16,5 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/deploy.sh garage
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "deploy garage failed on MacMini"
+      - working-directory: garage
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

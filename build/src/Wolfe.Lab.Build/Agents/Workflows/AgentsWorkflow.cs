@@ -14,5 +14,5 @@ public sealed class AgentsWorkflow : IWorkflow
     public string Label => "agents";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new ConvergeJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new DeployJob()];
 }

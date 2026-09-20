@@ -61,8 +61,8 @@ offsite job's last step pings healthchecks.io (`lab-restic-offsite`,
 declared in `tofu/`) after a green copy — that silence is the only backup
 signal that leaves the building. And the verify workflow (Sundays) runs
 `restic check` on both repos, reading a 5% pack sample back from B2 — an
-unverified backup is a hope, not a backup. Each slice's own `verify`
-job drills its restore every night, straight after its backup: the
+unverified backup is a hope, not a backup. Each slice's own `restore-drill`
+job runs every night, straight after its backup: the
 slice's `backup.verify` paths — the files it needs to boot — come back
 from the snapshot just taken into a scratch directory and are asserted
 non-empty, so a snapshot that cannot be restored from is found the
@@ -112,7 +112,7 @@ hand (`RUNBOOK.md` "A Linux node").
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `<slice>-backup.yaml` | nightly, 02:20 to 03:30, one slice each | `lab backup` then `lab verify`: stop → snapshot → start, then the snapshot restored to scratch and asserted |
+| `<slice>-backup.yaml` | nightly, 02:20 to 03:30, one slice each | `lab backup` then `lab restore-drill`: stop → snapshot → start, then the snapshot restored to scratch and asserted |
 | `restic-offsite.yaml` | 04:35 nightly | `lab offsite`: copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
 | `restic-verify.yaml` | Sun 05:05 | `lab verify` here: `restic check` both repos, 5% data sample from B2 |
 | `tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |

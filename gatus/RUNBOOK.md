@@ -8,7 +8,7 @@ reasons are in `README.md`.
 1. **Mint the Forgejo token** ("The runners group" below) — the deploy
    resolves it and stays red until the vault item exists.
 2. **Bring the container up**: the gatus workflow on the merge, or
-   `scripts/deploy.sh gatus` from a checkout on the Pi.
+   `lab deploy` from the slice in a checkout on the Pi.
 3. **Re-issue the certificate** so it carries `status.twolfe.dev` (and
    `code.twolfe.dev`, added in the same change) — `caddy/README.md`
    "Neat names", step 4. At the desk. Until then the `.lab` and `.ts`
@@ -40,7 +40,7 @@ reasons are in `README.md`.
    A runner re-registered with a NEW secret gets a new id; update the
    file. Re-running `forgejo/scripts/register-runner.sh` with the
    existing vault item keeps it.
-3. Run the gatus workflow (or `scripts/deploy.sh gatus` on the Pi); the
+3. Run the gatus workflow (or `lab deploy` on the Pi); the
    `runners` group is green within two minutes.
 
 ## Upgrading

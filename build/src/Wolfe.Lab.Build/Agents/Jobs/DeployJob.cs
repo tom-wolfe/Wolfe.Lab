@@ -10,9 +10,9 @@ namespace Wolfe.Lab.Build.Agents.Jobs;
 /// <summary>
 /// Deploys the slice's supervised agents.
 /// </summary>
-internal sealed class ConvergeJob : LabJob<AgentsSettings>
+internal sealed class DeployJob : LabJob<AgentsSettings>
 {
-    public override string Name => "converge";
+    public override string Name => "deploy";
 
     public override string Description => "Makes the node's supervised agents match what the slice declares.";
 

@@ -3,7 +3,7 @@ name: jellyfin
 on:
   push:
     branches: [main]
-    paths: [jellyfin/**, scripts/deploy.sh, .forgejo/workflows/jellyfin.yaml]
+    paths: [jellyfin/**, .forgejo/workflows/jellyfin.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +16,5 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/deploy.sh jellyfin /Volumes/Data1 /Volumes/Data2
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "deploy jellyfin failed on MacMini"
+      - working-directory: jellyfin
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

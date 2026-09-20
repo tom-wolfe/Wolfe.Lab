@@ -3,7 +3,7 @@ name: sonarr
 on:
   push:
     branches: [main]
-    paths: [sonarr/**, scripts/deploy.sh, .forgejo/workflows/sonarr.yaml]
+    paths: [sonarr/**, .forgejo/workflows/sonarr.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -16,8 +16,5 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/deploy.sh sonarr /Volumes/Data1 /Volumes/Data2
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "deploy sonarr failed on MacMini"
+      - working-directory: sonarr
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

@@ -1,14 +1,41 @@
 # ollama runbook
 
-## Pull a model
+## First run: approve the file-access prompt
 
-Models are not in the repo and not in the backups. Pulling one is a
-manual act on the node, because which model the lab runs is a decision
-rather than a deployment.
+Once per machine, before the agent can work. ollama reads the model store
+on `/Volumes/Data2`, which macOS gates behind a privacy prompt that a
+launchd agent cannot display — it blocks forever instead. Trigger the
+prompt from a session that CAN show it, at the mini itself:
 
     ssh macmini.local
-    ollama pull <model>
+    ollama serve
+
+Approve the access prompt on the mini's screen, then stop it with ctrl-C.
+The grant is recorded for the binary, so the agent gets it too:
+
+    launchctl kickstart -k gui/$(id -u)/dev.twolfe.ollama
+    curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:11434/api/tags
+
+200 means it is serving. A hang means the prompt was not approved, or was
+approved for a different binary than the agent runs.
+
+## Change which models the node holds
+
+Models are declared, not pulled by hand: the `models.pull` list in
+`ritten.json` is what the node should have, and `lab deploy` fetches
+whatever is missing. Add or remove a line and push.
+
+A model must name its tag — `qwen3:8b`, never `qwen3` — so the version
+the lab runs is the version it declared.
+
+Removing a line does NOT delete the model. The deploy reports anything on
+the node it did not ask for and leaves it alone; several gigabytes that
+somebody pulled on purpose is not something a config file should silently
+bin. To reclaim the space, at the desk:
+
+    ssh macmini.local
     ollama list
+    ollama rm <model>
 
 ## Check it is serving
 
@@ -36,10 +63,10 @@ Its output, both streams:
 
 ## Change how it runs
 
-Edit `ritten.json` and push. The converge job rewrites the unit and
+Edit `ritten.json` and push. The deploy job rewrites the unit and
 restarts the agent only if the rendered unit actually changed, so a
 re-run that changes nothing is a no-op.
 
 To rehearse the change first, from the slice directory on the node:
 
-    dotnet run --project ../build/src/Wolfe.Lab.Build -- converge --dry-run
+    dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --dry-run

@@ -19,7 +19,7 @@ the mini's host runner. Manual converge: run the workflow from the Actions
 tab, or on the mini:
 
 ```sh
-scripts/deploy.sh jellyfin /Volumes/Data1 /Volumes/Data2
+lab deploy
 ```
 
 ## Where account passwords live

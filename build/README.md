@@ -20,10 +20,27 @@ client that has a dry-run twin, so `--dry-run` rehearses any job
 without a side effect.
 
 Workflows so far: `obsidian` (`sync --vault <name>`), `immich` (`deploy`,
-`import`, `backup`, `restore`, `verify`), `files` (`backup`, `restore`,
-`verify`), `restic` (`offsite`, `verify`), `service` (`backup`, `restore`
-and `verify`, for the compose slices the shell still deploys), `agents`
-(`converge`).
+`import`, `backup`, `restore`, `restore-drill`), `files` (`backup`,
+`restore`, `restore-drill`), `restic` (`offsite`, `verify`), `service`
+(`deploy`, `backup`, `restore`, `restore-drill` — an ordinary compose
+slice with nothing of its own to declare), `caddy` (`deploy`), `agents`
+(`deploy`), `ollama` (`deploy`).
+
+A job's name has to read from inside the slice it runs in, because that
+is all the context there is. `verify` says enough in `restic/`, where
+the repositories are the only thing it could mean; in `forgejo/` it says
+nothing at all, which is why the slice-level check carries its subject
+and is called `restore-drill`. One intent gets one verb, too: making a
+node match its slice is `deploy` whether the stack is containers, a
+supervised agent, or both.
+
+A workflow of its own is for what only that slice does. `caddy` is the
+deploy every compose slice runs plus the two steps that belong to the
+front door: gathering every slice's `caddy.caddyfile` and reloading the
+running container. That gather is the one step that reads other slices,
+and it reads the CHECKOUT rather than the install root on purpose — a
+route added in the same push as its slice would otherwise depend on
+which of the two workflows the runner reached first.
 
 A slice is a unit of deployment, not necessarily a container. The
 `agents` workflow is for the ones whose stack is a supervised host
@@ -32,9 +49,14 @@ reach. Such a slice declares what it wants running under `agents` in its
 `ritten.json` (the program, its arguments and environment, where its log
 goes) and carries no compose file at all.
 
-A job can be shared: `BackupJob<TSettings>`, `RestoreJob<TSettings>` and
-`VerifyJob<TSettings>` are the backup, restore and restore-drill
-pipelines for any slice whose `ritten.json` carries a `backup` section
+A job can be shared. `DeployJob<TSettings>` installs a slice and
+converges its compose stack for any slice that has one. Every compose
+slice runs it, on either node: the Pi gets the SDK from its own chezmoi
+profile, so there is no longer a machine where the lab's jobs cannot
+run, and the shell script this replaced is gone.
+`BackupJob<TSettings>`, `RestoreJob<TSettings>` and `DrillJob<TSettings>`
+are the backup, restore and restore-drill pipelines for any slice whose
+`ritten.json` carries a `backup` section
 (paths, excludes, the container to stop — or none for a warm snapshot —
 and the `verify` paths a restore must bring back), and a workflow offers
 them by listing them beside its own jobs. A job reads its own slice's

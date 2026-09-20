@@ -1,11 +1,11 @@
 using Wolfe.Lab.Build.Backup.Jobs;
+using Wolfe.Lab.Build.Deploy.Jobs;
 using Wolfe.Lab.Build.Service.Models;
 
 namespace Wolfe.Lab.Build.Service.Workflows;
 
 /// <summary>
-/// A compose slice the shell still deploys: <c>"workflow": "service"</c>. The CLI's job in it
-/// is the backup, its restore and the drill that proves it; deploy joins them when <c>scripts/deploy.sh</c> moves here.
+/// A compose slice.
 /// </summary>
 public sealed class ServiceWorkflow : IWorkflow
 {
@@ -16,5 +16,5 @@ public sealed class ServiceWorkflow : IWorkflow
     public string Label => "service";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new BackupJob<ServiceSettings>(), new RestoreJob<ServiceSettings>(), new VerifyJob<ServiceSettings>()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new DeployJob<ServiceSettings>(), new BackupJob<ServiceSettings>(), new RestoreJob<ServiceSettings>(), new DrillJob<ServiceSettings>()];
 }

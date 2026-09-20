@@ -15,7 +15,7 @@ internal sealed class SyncJob : LabJob<ObsidianSettings>
     public override string Description =>
         "Pulls the vault from Obsidian Sync, commits what changed and pushes it to Forgejo.";
 
-    public override JobKind Kind => JobKind.Deploy;
+    public override JobKind Kind => JobKind.Work;
 
     public override IReadOnlyList<Step> Steps { get; } =
     [

@@ -1,0 +1,35 @@
+{{ if eq .profile "pi-node" -}}
+#!/bin/bash
+# The .NET SDK on the Pi. The lab's jobs ARE the CLI, and this node runs
+# them like every other — `lab deploy` for gatus, and whatever follows.
+#
+# Not a chezmoi external: those are single pinned binaries under
+# ~/.local/bin, and this is a 200 MB tree. Pinned and checksummed here
+# instead, to the same discipline. run_onchange_ means it re-runs when
+# this file changes, which is exactly what bumping the two values does.
+#
+# The Macs get theirs from the Brewfile's dotnet-sdk cask. Versions:
+# dotnet.microsoft.com/download/dotnet/10.0 — keep this at or above the
+# SDK build/global.json asks for.
+set -euo pipefail
+
+version="10.0.301"
+sha512="4ee438b363cb8468930d50b6bdc738a375e2f33b25bfd0c8dcb55853dda7f0fb187693e0f49dfc31556e68320b961a50dcf3b74c1f25abe3a5bd916db607db99"
+root="$HOME/.dotnet"
+
+# Side-by-side by design: the tarball extracts into sdk/<version>, so an
+# upgrade adds rather than replaces and a rollback is a re-run of the old
+# value. Nothing to do when this exact SDK is already there.
+[ -d "$root/sdk/$version" ] && exit 0
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+curl -fsSL \
+  "https://builds.dotnet.microsoft.com/dotnet/Sdk/$version/dotnet-sdk-$version-linux-arm64.tar.gz" \
+  -o "$tmp/sdk.tar.gz"
+echo "$sha512  $tmp/sdk.tar.gz" | sha512sum -c - >/dev/null
+
+mkdir -p "$root"
+tar -xzf "$tmp/sdk.tar.gz" -C "$root"
+{{ end -}}

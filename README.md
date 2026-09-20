@@ -14,7 +14,7 @@ its tick job.
 | `<name>/`                          | one slice per thing the lab runs: a compose stack + configs and/or jobs (a `ritten.json` declaring the CLI's jobs in it, or `flows/<job>/` directories holding a job's script; the schedule is the workflow in `.forgejo/workflows/`), a `tofu/` root where the service has API resources, one README |
 | `chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
 | `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: a slice with a `ritten.json` is run by it, and `scripts/` is moving into it one job at a time                                                                                                                        |
-| `scripts/`                         | what every workflow runs: `deploy.sh`, `apply.sh`/`plan.sh`, `alert.sh` — and `secrets.sh`, the one door to the vault                                                                                                                                    |
+| `scripts/`                         | `apply.sh`/`plan.sh`, `alert.sh` — and `secrets.sh`, the one door to the vault. Deployment is the CLI's                                                                                                                                                  |
 | `setup.sh`                         | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence)                                                                                                                                                                     |
 | `k8s/`                             | *(planned)* Argo CD applications and manifests                                                                                                                                                                                                                        |
 | `RUNBOOK.md`, `<slice>/RUNBOOK.md` | procedures — bootstrap, upgrade, backup, restore — kept apart from the design prose so they can be followed step by step                                                                                                                                              |
@@ -28,15 +28,15 @@ Chezmoi declares; Forgejo Actions acts. Every slice has a workflow in
 `.forgejo/workflows/<slice>.yaml` that fires on the push touching it, runs
 on the node the slice lives on (`runs-on` is placement — the mini's host
 runner or the Pi's), checks the repo out into a disposable workspace, and
-runs `scripts/deploy.sh <slice>`: install the slice into
+runs `lab deploy` from the slice's directory: install the slice into
 `~/.local/share/Wolfe.Lab/<slice>` (containers bind-mount files from it
 after the job is gone) and `docker compose up -d` there. `docker compose up -d` is convergent, so
 a manual run is always safe. OpenTofu roots have `tofu-<root>.yaml`: apply
 on the push that changes them, a daily plan for drift. Nothing ticks.
 
 Secrets never sit in a file. A slice that needs one commits a
-`secrets.env` of vault *references* beside its compose file, and
-`deploy.sh` resolves them into the environment of the one `compose up`
+`secrets.env` of vault *references* beside its compose file, and the
+deploy resolves them into the environment of the one `compose up`
 that creates the container — through `scripts/secrets.sh`, the only
 thing in the repo that speaks to the vault, so changing vaults changes
 one script. A container keeps the environment it was created with, so a

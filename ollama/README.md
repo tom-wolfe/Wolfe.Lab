@@ -12,7 +12,7 @@ be a host process, and this slice is the first of a second kind: a slice
 whose stack is a supervised agent rather than a container.
 
 What that means concretely — `ritten.json` declares an `agents` section
-instead of naming a compose file, `lab converge` renders it to a launchd
+instead of naming a compose file, `lab deploy` renders it to a launchd
 unit and bootstraps it, and there is nothing to install into the release
 directory because nothing on the node reads from there. The declaration
 is platform-neutral, so when the primary node stops being a Mac this
@@ -60,7 +60,7 @@ They live on Data2, not where ollama would put them. The mini has a
 4–10 GB of that — so the default `~/.ollama/models` would put the lab one
 careless `ollama pull` away from a full boot drive, which macOS handles
 badly. `OLLAMA_MODELS` points at `/Volumes/Data2/ollama/models` and the
-slice declares the volume, so `lab converge` refuses to run while the
+slice declares the volume, so `lab deploy` refuses to run while the
 drive is unmounted rather than converging onto a shadow path.
 
 They are not backed up: a model is a re-pullable artefact, not state.
@@ -86,7 +86,7 @@ serves whatever is there.
 ## Order of operations
 
 `brew "ollama"` is in the mini's chezmoi profile, so the binary arrives
-with a chezmoi apply. `lab converge` refuses an agent whose program is
+with a chezmoi apply. `lab deploy` refuses an agent whose program is
 not on the node rather than installing a unit that could only fail, so
 on a first run the chezmoi job has to land before this one. Both trigger
 off a push; if this one goes first, re-run it.

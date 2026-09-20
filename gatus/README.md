@@ -15,7 +15,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 
 | Concern | Handled by |
 | --- | --- |
-| Container | **on the Pi** — `.forgejo/workflows/gatus.yaml`, on every push that touches this slice; `scripts/deploy.sh gatus` on the node itself |
+| Container | **on the Pi** — `.forgejo/workflows/gatus.yaml`, on every push that touches this slice; `lab deploy` from the slice on the node itself |
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
 | Pushover credentials | `secrets.env` names the existing `pushover` vault item; the deploy resolves both fields into the container's environment |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
@@ -164,7 +164,7 @@ It lives on the Pi, and everything the move changed is in files:
 - `compose.yaml` — no `lab` network; paths under `${HOME}` (the runner's
   job environment carries the login user's `HOME`). The project directory
   is the slice's install, `~/.local/share/Wolfe.Lab/gatus`, which
-  `scripts/deploy.sh` refreshes from the checkout on every deploy.
+  the deploy refreshes it from the checkout every time.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).
 - `.forgejo/workflows/gatus.yaml` deploys on push; `gatus-health.yaml`

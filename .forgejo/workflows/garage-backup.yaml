@@ -19,11 +19,11 @@ jobs:
         run: dotnet run --project ../build/src/Wolfe.Lab.Build -- backup
 
   # The snapshot just taken, restored to scratch and asserted.
-  verify:
+  restore-drill:
     needs: backup
     runs-on: MacMini
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - working-directory: garage
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- verify
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- restore-drill
