@@ -1,4 +1,4 @@
-name: mail
+name: mail-bridge
 
 services:
   bridge:
@@ -58,7 +58,5 @@ volumes:
     name: mail_bridge
 
 networks:
-  # The shared edge network — owned and created by the caddy slice. This
-  # slice publishes no route; it joins only so the watcher can reach bridge.
   lab:
     external: true

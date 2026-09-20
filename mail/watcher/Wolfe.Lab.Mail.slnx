@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/watcher/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="Dockerfile" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Wolfe.Lab.Mail/Wolfe.Lab.Mail.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Wolfe.Lab.Mail.Tests/Wolfe.Lab.Mail.Tests.csproj" />
+  </Folder>
+</Solution>

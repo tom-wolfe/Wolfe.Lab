@@ -6,8 +6,8 @@ could read or send mail before this.
 
 What it is for is the event scanner — detecting events in incoming mail
 and putting them in Proton Calendar, which Proton itself only does for an
-attached invitation. That is the watcher, and it is the next thing to
-land here; this slice is the door it needs.
+attached invitation. That is `watcher/`, and it is the other half of this
+slice.
 
 ## Why Bridge can be a slice now
 
@@ -51,6 +51,67 @@ B2, and the volume is entirely re-creatable: losing it costs one
 interactive login, which `RUNBOOK.md` documents anyway. The cost is that
 a restore of the mini is not complete until somebody logs in again.
 
+## The watcher
+
+Its own solution under `watcher/`, with its own dependencies and its own
+tests, built into `lab/mail-watcher` by the compose component's deploy, which
+declares it, and run beside bridge. It is the mail slice's artefact rather than part of the lab's
+CLI: the CLI runs jobs and exits, and this is a process that stays up.
+
+**It holds the connection open rather than polling.** IMAP IDLE means an
+invitation is on its way back seconds after the booking arrives, instead
+of at the top of the next hour — which is the difference between one
+buzz and two. The cost is a connection to nurse: IDLE is capped at about
+half an hour by the protocol and servers hang up when they like, so it is
+a reconnect loop with backoff.
+
+**A UID watermark says where to resume**, and it is what makes
+reconnecting cheap: nothing that arrived during a disconnection is
+missed, and nothing already handled is handled twice. A UID rather than a
+date because IMAP's date search has *day* granularity — a date watermark
+would re-read the whole of today, all day. `UIDVALIDITY` is stored beside
+it, because a renumbered mailbox makes every stored UID mean something
+else.
+
+**It starts at now and never backfills.** A first run takes the current
+UID as the mark, so the years of mail Bridge is indexing are not read.
+Reading them would send a great many invitations for events long past.
+
+### What it looks at, in order
+
+1. **Already an invitation** — skipped entirely. Proton offers to add
+   these itself, so acting on them would duplicate the mail client.
+2. **schema.org JSON-LD** in the message's HTML. Deterministic, no
+   inference, and the way bookings, tickets and reservations actually
+   describe themselves. A reservation nests the event under
+   `reservationFor`, so the search recurses.
+3. **Prose**, to the model at `ai.twolfe.dev`. Only what the first two
+   could not answer reaches here. The endpoint is OpenAI-compatible, so
+   the Studio can take it over without the watcher changing; with no
+   model configured this tier does nothing and the other two still work.
+
+A model's reading is treated as weaker evidence than a sender's own
+structured data: an answer it cannot parse whole is discarded, an event
+dated before the mail announcing it is refused, and the invitation says
+in its body that a model read it.
+
+### What it sends
+
+A **reply**, in the same conversation — `In-Reply-To` and `References`
+carried from the source — so the "Add to calendar" click happens next to
+the booking that caused it rather than in a message about nothing.
+
+The calendar part declares `METHOD:REQUEST`, which is what makes a client
+offer to add it rather than treating it as a file, and the same method is
+on the MIME part. An `.ics` attachment rides along too: that is the shape
+proven to work by hand, kept even though the invitation semantics should
+make it redundant.
+
+**The recipient is configuration, never the message.** Nothing is read
+off the source's `From`, `To` or `Reply-To`. A reply-shaped mail is one
+field away from answering the airline, and there is a test whose only job
+is to keep it that way.
+
 ## Reachability
 
 No published ports and no route through the front door. Bridge binds
@@ -59,10 +120,12 @@ No published ports and no route through the front door. Bridge binds
 `bridge:143` and `bridge:25` — and nothing outside that network reaches
 it at all. The watcher will be the only client.
 
-Nothing in Gatus watches this yet for the same reason: there is no port
-to probe from the Pi. The watcher is what will carry the check, because
-"can the lab still read its mail" is a question about the whole path
-rather than about whether a container is running.
+Nothing in Gatus watches this: there is no port to probe from the Pi, and
+the watcher deliberately publishes none. What is visible is the container
+— Beszel sees it, and bridge's healthcheck is the socat mirror answering
+— which says a process is running rather than that mail is being read.
+Closing that gap properly needs the watcher to answer a health request,
+and it can wait until there is a reason to believe it is needed.
 
 ## Order of operations
 

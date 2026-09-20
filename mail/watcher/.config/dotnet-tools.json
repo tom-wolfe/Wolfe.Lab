@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "ritten": {
+      "version": "0.14.0",
+      "commands": [
+        "ritten"
+      ],
+      "rollForward": false
+    }
+  }
+}
