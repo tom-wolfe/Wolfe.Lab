@@ -17,6 +17,10 @@ rather than versioned — the lab is continuous, not released.
   pulls what is missing; a model must name its tag.
 - **`mail/`** — Proton Bridge as a slice, so the lab can read and send
   mail at all.
+- **The mail watcher.** `mail/watcher/`, its own solution built into an
+  image by `lab deploy`. It holds IMAP IDLE open and answers an event it
+  finds with a threaded invitation, skipping what Proton already handles
+  and reading structured data before asking a model.
 
 ### Changed
 
