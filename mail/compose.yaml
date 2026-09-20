@@ -51,9 +51,11 @@ services:
       start_period: 30s
 
 volumes:
-  # Not declared external: this slice owns it, and losing it costs one
-  # interactive login rather than any data.
+  # The name is spelled out because an external volume is not prefixed
+  # with the project the way a compose-created one is.
   bridge:
+    external: true
+    name: mail_bridge
 
 networks:
   # The shared edge network — owned and created by the caddy slice. This
