@@ -27,6 +27,6 @@
       "host" true
       "labels" (list (printf "%s:host" $node))
       "cache" false
-      "path" (printf "%s/.local/bin:/usr/local/bin:/usr/bin:/bin" .chezmoi.homeDir)
+      "path" (printf "%s/.local/bin:%s/.dotnet:%s/.dotnet/tools:/usr/local/bin:/usr/bin:/bin" .chezmoi.homeDir .chezmoi.homeDir .chezmoi.homeDir)
       "envs" (dict "LAB_ROOT" $root)) -}}
 {{- end -}}

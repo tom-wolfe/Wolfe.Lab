@@ -8,10 +8,6 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Environment=DOTNET_ROOT=%h/.dotnet
-Environment=PATH=%h/.dotnet:%h/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
-Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
-Environment=DOTNET_NOLOGO=1
 ExecStart=%h/.local/bin/forgejo-runner daemon --config %h/.config/forgejo-runner/config.yaml
 WorkingDirectory=%h/.config/forgejo-runner
 Restart=always

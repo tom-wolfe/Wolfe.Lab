@@ -11,8 +11,8 @@ rather than versioned — the lab is continuous, not released.
 - **`ollama/`** — the lab's model endpoint at `ai.twolfe.dev`, and the
   first slice whose stack is a host process. A container on macOS gets 
   no access to the Apple GPU, so a containerised model runs on CPU and is uselessly slow.
-- **The Pi has the .NET SDK**, pinned by a chezmoi script and put on the
-  runner's PATH by its unit — so the CLI runs on either node.
+- **The Pi has the .NET SDK**, pinned by a chezmoi script and added to the
+  job PATH in the runner's config — so the CLI runs on either node.
 - **Models are declared.** `ollama/ritten.json` names them and the deploy
   pulls what is missing; a model must name its tag.
 
