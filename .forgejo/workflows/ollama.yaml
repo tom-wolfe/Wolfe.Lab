@@ -1,0 +1,20 @@
+name: ollama
+
+on:
+  push:
+    branches: [main]
+    paths: [ollama/**, .forgejo/workflows/ollama.yaml]
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  converge:
+    runs-on: MacMini
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: ollama
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- converge --auto-approve

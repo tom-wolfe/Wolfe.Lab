@@ -14,7 +14,7 @@ native process on each monitored machine).
 | Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
 | Agent config (`~/.config/beszel/beszel-agent.env`) | chezmoi `create_` template (`chezmoi/home/dot_config/beszel/`) — materialized from 1Password (`beszel-agent`) only while the file is missing |
 | Hub liveness | Gatus, from the Pi (`gatus/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
-| Route (`beszel.lab.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
+| Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
 | Systems, thresholds, notification URLs | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
 
 ## Why the agent is a host process
@@ -58,7 +58,7 @@ in. Two values make that work, both in `~/.config/beszel/beszel-agent.env`:
 - `KEY` — the hub's **public** key, which is how the agent decides the
   thing answering is really our hub.
 
-`HUB_URL` is `http://localhost:8090`, not `https://beszel.lab.twolfe.dev`,
+`HUB_URL` is `http://localhost:8090`, not `https://beszel.twolfe.dev`,
 and deliberately: routing host monitoring through a public DNS name would
 mean the lab stops watching itself the moment the internet goes down, which
 is exactly when you want it watching. Names are for humans

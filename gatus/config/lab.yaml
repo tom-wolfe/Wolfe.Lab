@@ -1,16 +1,7 @@
-# Group "lab" — each of the mini's services asked DIRECTLY by published
-# port, from the Pi. Answers the question "is the application up and
-# answering", independent of DNS, the certificate and caddy; those are
-# front-door.yaml's job. Together the two groups localise a fault: lab
-# green + front door red = the edge; both red = the service; ALL of lab
-# red = the mini itself, which is the one failure a monitor on the mini
-# could never see and the reason Gatus lives on the Pi.
-#
-# ${LAB_HOST} is the mini's MagicDNS name, set once in compose.yaml, so
-# these checks ride the tailnet and depend on it. Deliberate, and still
-# legible: dependencies.yaml checks the tailnet path on its own, so lab red
-# + dependencies green = the mini; both red = the tailnet. Ports are the
-# published ones in ENDPOINTS.md.
+# Group "lab" — every service the lab runs, asked ONCE, the way a browser
+# asks: by public name, over TLS, through caddy. Each check exercises the
+# whole chain — Netlify DNS resolving the wildcard, the lego-renewed
+# certificate being valid, caddy routing by Host, the upstream answering.
 #
 # Intervals: 2m across the board. Tighter buys nothing — the alert waits
 # for three failures anyway — and a slow check must never hold the others
@@ -28,84 +19,96 @@ endpoints:
 
   - name: forgejo
     group: lab
-    url: http://${LAB_HOST}:3000/api/healthz
+    url: https://code.twolfe.dev/api/healthz
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[BODY].status == pass"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
 
   - name: jellyfin
     group: lab
-    url: http://${LAB_HOST}:8096/health
+    url: https://jellyfin.twolfe.dev/health
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
 
   - name: garage
     group: lab
-    # The admin API's unauthenticated liveness route — the S3 API on 3900
-    # has no equivalent (a bare GET is 403 AccessDenied; see front-door.yaml
-    # for why that is still useful through caddy).
-    url: http://${LAB_HOST}:3903/health
+    url: https://s3.twolfe.dev/
     interval: 2m
     conditions:
-      - "[STATUS] == 200"
+      - "[STATUS] == 403"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
 
   - name: beszel
     group: lab
-    url: http://${LAB_HOST}:8090/api/health
+    url: https://beszel.twolfe.dev/api/health
     interval: 2m
     conditions:
       - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
 
   - name: qbittorrent
     group: lab
-    url: http://${LAB_HOST}:8080/
+    url: https://qbittorrent.twolfe.dev/
     interval: 2m
-    headers:
-      Host: qbittorrent.lab.twolfe.dev
     conditions:
       - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
 
   - name: sonarr
     group: lab
-    # /ping is the one route the *arr apps answer without a login —
-    # everything else, including /api/v3/health, wants the API key.
-    url: http://${LAB_HOST}:8989/ping
+    url: https://sonarr.twolfe.dev/ping
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[BODY].status == OK"
-    alerts:
-      - type: pushover
-
-  - name: immich
-    group: lab
-    url: http://${LAB_HOST}:2283/api/server/ping
-    interval: 2m
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].res == pong"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover
 
   - name: radarr
     group: lab
-    url: http://${LAB_HOST}:7878/ping
+    url: https://radarr.twolfe.dev/ping
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[BODY].status == OK"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: immich
+    group: lab
+    url: https://immich.twolfe.dev/api/server/ping
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].res == pong"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
+  - name: ollama
+    group: lab
+    url: https://ai.twolfe.dev/api/tags
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "len([BODY].models) > 0"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
     alerts:
       - type: pushover

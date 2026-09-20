@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Ritten.CommandLine;
+using Wolfe.Lab.Build.Agents.Workflows;
 using Wolfe.Lab.Build.Files.Workflows;
 using Wolfe.Lab.Build.Immich.Workflows;
 using Wolfe.Lab.Build.Obsidian.Workflows;
@@ -14,7 +15,8 @@ builder.Workflows
     .Add<ImmichWorkflow>()
     .Add<FilesWorkflow>()
     .Add<ResticWorkflow>()
-    .Add<ServiceWorkflow>();
+    .Add<ServiceWorkflow>()
+    .Add<AgentsWorkflow>();
 
 builder.Runtimes
     .Add<LabRuntime>();

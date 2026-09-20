@@ -20,7 +20,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | Pushover credentials | `secrets.env` names the existing `pushover` vault item; the deploy resolves both fields into the container's environment |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
 | Gatus's own liveness | `.forgejo/workflows/gatus-health.yaml`, from the mini — a status page cannot show itself being down, and the watcher is on the other machine |
-| Route (`gatus.lab.twolfe.dev`, `gatus.ts.twolfe.dev`, `status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
+| Route (`status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
 | The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `.forgejo/workflows/tofu-gatus.yaml` on push, drift-checked by the same workflow daily |
 
 ## Why Gatus and not Uptime Kuma
@@ -51,17 +51,11 @@ only file that sets any).
 
 | File | Group | Asks |
 | --- | --- | --- |
-| `lab.yaml` | `lab` | each service **directly**, by container name over the `lab` network: is the app up and answering? |
-| `front-door.yaml` | `front door` | the same services **as a browser would** — public name, TLS, through caddy. One request exercises Netlify DNS, the wildcard cert, caddy's routing and the upstream |
+| `lab.yaml` | `lab` | every service the lab runs, once each, **as a browser would** — public name, TLS, through caddy. One request exercises Netlify DNS, the wildcard cert, caddy's routing and the upstream. Plus `mini`, the one check that does not go through the front door |
 | `runners.yaml` | `runners` | each Actions runner's status, asked of Forgejo's API: is the thing that runs every deploy, backup and alert still polling? |
 | `dependencies.yaml` | `dependencies` | the third parties the lab stands on: 1Password, Backblaze, GitHub, healthchecks.io, Pushover, Netlify DNS, Tailscale |
 | `personal.yaml` | `personal` | services cared about that the lab doesn't depend on: Proton Mail |
 | `gatus.yaml` | — | UI, storage, alerting — everything that isn't a check |
-
-**Direct and front door together localise a fault.** Lab green, front
-door red: the edge — DNS, certificate, caddy. Both red: the service. Front
-door green alone would be enough for a status light; the split is what
-makes the light useful at 2am.
 
 **Third parties get two kinds of check where both are possible.** The
 vendor's status page, read as JSON — Atlassian Statuspage exposes
@@ -73,8 +67,8 @@ outage never appeared on any status page. Backblaze is the
 odd one out (FireHydrant, not Statuspage) — its check is marked
 unverified in the file, for reasons the comment there explains.
 
-**Alert priorities follow the lab's `alert: high/low` idea.** Lab and
-front-door failures push at Pushover priority 0; third parties at -1
+**Alert priorities follow the lab's `alert: high/low` idea.** Lab
+failures push at Pushover priority 0; third parties at -1
 (quiet) — things to know, not things anyone here can fix. Recoveries are
 always quiet. Three consecutive failures before any push, so at the
 2-minute lab interval a service is ~6 minutes down before the phone
@@ -142,22 +136,6 @@ repo nor the node's disk carries the values.
 Rotation: update the vault item and re-run the gatus workflow — a changed
 environment is a changed container, so compose recreates it.
 
-## The neat name
-
-`status.twolfe.dev` is the `git.twolfe.dev` pattern for a web route: a
-CNAME to `gatus.ts.twolfe.dev` in `tofu/records.tf`, so it resolves to
-wherever caddy's `*.ts` wildcard points — the mini's tailnet address —
-and this root never holds an IP. Tailnet path on purpose: the people who
-want a status page carry the tailnet. The two wildcard names still work
-and are what the lab's own checks and flows use (`gatus:8080` on the
-Docker network, never a public name — names are for humans).
-
-An apex-level name matches no wildcard, so the front door needs it in
-two places — the site address and the certificate's SAN list — and the
-certificate has to be re-issued once. The full recipe, including the
-re-issue ritual, is `caddy/README.md` "Neat names"; the record itself is
-the smallest tofu root in the repo and the template for the next one.
-
 ## Nothing to back up
 
 `~/Docker/gatus/data/gatus.db` holds check history: the uptime bars and
@@ -172,11 +150,13 @@ that decision reverses.
 
 It lives on the Pi, and everything the move changed is in files:
 
-- `front-door.yaml`, `dependencies.yaml`, `personal.yaml` — unchanged.
-- `lab.yaml` — every URL is now `${LAB_HOST}:<published port>`, the
-  mini's MagicDNS name set once in `compose.yaml` — no address in the repo;
-  Tailscale resolves and routes it from a Pi container (verified), the same
-  choice the Beszel agent made for its hub URL. One check went:
+- `runners.yaml`, `dependencies.yaml`, `personal.yaml` — unchanged.
+- `lab.yaml` — the service checks ask by public name over the tailnet, so
+  the Pi needs no address for any of them. Only `mini` still uses
+  `${LAB_HOST}`, the mini's MagicDNS name set once in `compose.yaml` — no
+  address in the repo; Tailscale resolves and routes it from a Pi
+  container (verified), the same choice the Beszel agent made for its hub
+  URL. One check went:
   "forgejo ssh" (the container's `:22` is not on the LAN;
   `dependencies.yaml` already checks it by its tailnet route).
   One check is new: `mini`, sshd on the host — when it and everything

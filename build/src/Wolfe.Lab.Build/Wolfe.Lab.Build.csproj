@@ -21,8 +21,14 @@
     <PackageReference Include="Ritten.Docker" />
     <PackageReference Include="Ritten.Forgejo" />
     <PackageReference Include="Ritten.Git" />
+    <PackageReference Include="Scriban" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Vogen" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The units the supervisor writes: read them as the file they become. -->
+    <EmbeddedResource Include="Agents/Templates/*.sbn" />
   </ItemGroup>
 
   <ItemGroup>

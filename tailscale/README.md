@@ -84,15 +84,20 @@ the LAN and the API over the internet, none of them through the tailnet.
 
 ## How the lab uses it
 
-1. **Two wildcards, not a repoint.** Repointing `*.lab` at the Tailscale
-   address would have cut off non-tailnet LAN devices (a TV Jellyfin app,
-   guests), so the lab runs TWO wildcards: `*.lab` stays on the LAN address,
-   `*.ts.twolfe.dev` points at 100.x. Every device has an option; one
-   cert carries both SANs; every route snippet matches both names. The
-   mechanics live in the caddy slice (`tofu/records.tf` records the
-   decision). Consequence: the router's DHCP-DNS workaround STAYS —
-   `*.lab` still resolves to RFC1918 — and both it and the dual
-   wildcard retire together if local DNS on a Pi ever lands
+1. **One wildcard, at the Tailscale address.** `*.twolfe.dev` points at
+   100.x and that is the only path in. The lab used to run two wildcards
+   — a LAN one alongside it — because repointing everything at the
+   tailnet would have cut off devices that cannot join it, a TV's
+   Jellyfin app being the case that mattered. That premise no longer
+   holds: the TV is deliberately dumb and offline, and Jellyfin is
+   watched on an Apple TV that IS on the tailnet. Nothing left in the
+   house needs the LAN path, so every service went down to one name.
+   At home this costs nothing — Tailscale connects directly over the LAN
+   rather than relaying. The mechanics live in the caddy slice
+   (`tofu/records.tf` records the decision). Consequence: the router's
+   DHCP-DNS workaround is probably retired with it, since the names now
+   resolve to 100.x rather than RFC1918 — verify before removing it,
+   because some routers rebind-protect the CGNAT range too
    (ROADMAP.md).
 2. **The Pi is a native Linux client** — `tag:server`, like the mini —
    and its lab traffic rides the tailnet: the Beszel agent reaches the hub

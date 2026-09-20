@@ -10,7 +10,7 @@ client hook-up, Jellyseerr — is Phase B and is deliberately not here.
 
 | | |
 |---|---|
-| Web UI | https://sonarr.lab.twolfe.dev (fallback http://macmini.local:8989) |
+| Web UI | https://sonarr.twolfe.dev (fallback http://macmini.local:8989) |
 | Image | `linuxserver/sonarr` pinned in `compose.yaml` |
 | State | `~/Docker/sonarr/config` — `sonarr.db` (series, root folders, naming), `config.xml` (API key, auth) |
 | Root folders | `/Volumes/Data1/video/shows`, `/Volumes/Data2/videos/shows` — the Shows library's two roots in `jellyfin/` |

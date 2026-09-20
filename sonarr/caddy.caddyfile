@@ -1,4 +1,4 @@
-@sonarr host sonarr.lab.twolfe.dev sonarr.ts.twolfe.dev
+@sonarr host sonarr.twolfe.dev
 handle @sonarr {
 	reverse_proxy sonarr:8989
 }

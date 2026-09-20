@@ -2,7 +2,7 @@
 
 The lab's front door: one container terminating TLS on `:443` and routing
 by hostname to containers on the shared `lab` Docker network. Exists so
-addresses are names (`https://jellyfin.lab.twolfe.dev`), not ports
+addresses are names (`https://jellyfin.twolfe.dev`), not ports
 (`macmini.local:8096`).
 
 This slice deliberately owns ONLY the shared edge concerns:
@@ -10,12 +10,9 @@ This slice deliberately owns ONLY the shared edge concerns:
 - the Caddy container — the STOCK image, a pure proxy: it terminates TLS
   and routes, and does nothing else;
 - the `lab` Docker network every proxied service joins;
-- the two wildcard DNS records (`tofu/`): `*.lab.twolfe.dev` → the
-  mini's LAN address, `*.ts.twolfe.dev` → its Tailscale address. Same
-  door, two ways in — `.lab` for anything in the house, `.ts` for
-  tailnet devices anywhere (see tofu/records.tf for the decision). Both
-  point at the front door itself, so the front door owns them;
-- the wildcard certificate — ONE cert carrying both wildcard SANs —
+- the wildcard DNS record (`tofu/`): `*.twolfe.dev` → the mini's
+  Tailscale address, plus `lab.twolfe.dev` for the door itself, which is what a slice CNAMEs to when it wants a name of its own.
+- the wildcard certificate — ONE cert for `*.twolfe.dev` —
   obtained and renewed OUTSIDE caddy by the `renew-certs` job
   (`flows/renew-certs/`): lego solves DNS-01 against Netlify nightly and
   reloads caddy when the cert changes.
@@ -36,15 +33,18 @@ Everything happens in the service's own slice; this one is never edited.
 2. Drop a `<slice>/caddy.caddyfile` next to the compose file:
 
    ```
-   @myservice host myservice.lab.twolfe.dev myservice.ts.twolfe.dev
+   @myservice host myservice.twolfe.dev
    handle @myservice {
        reverse_proxy myservice:1234
    }
    ```
 
-   Both hostnames, always — `.lab` is the LAN path, `.ts` the tailnet
-   path, and one handle serves both. A service whose app validates the
-   Host header (qbittorrent) must whitelist both.
+   ONE hostname. The slice picks it and nothing else has to agree: the
+   wildcard record and the wildcard certificate already cover whatever
+   it chose, so there is no DNS to write, no SAN to add and no edit to
+   this slice. Pick the name a person would say — `code`, not
+   `forgejo` — because it is the only one there will be. A service whose
+   app validates the Host header (qbittorrent) must be told it.
 
    The upstream is the CONTAINER name and port, not the host publish.
    The matcher/handle shape (rather than a site block) is because snippets
@@ -57,49 +57,29 @@ Everything happens in the service's own slice; this one is never edited.
    bind mount and don't change compose's config hash.
 4. Add the row in `ENDPOINTS.md`, same commit.
 
-## Neat names
+## The one name that is not a route
 
-`git.twolfe.dev`, `code.twolfe.dev`, `status.twolfe.dev`: a service's
-human name at the apex, owned by the service's slice. Two shapes:
+`git.twolfe.dev` is an A record at the forgejo sidecar's own tailnet IP,
+not a route through this door, because SSH needs a machine where port 22
+is free. It lives in `forgejo/tofu` and has nothing to do with this
+slice.
 
-- **A dedicated address** — `git.twolfe.dev` is an A record at the
-  forgejo sidecar's own tailnet IP, because SSH needs a machine where
-  port 22 is free. Nothing to do with this slice.
-- **A neat name for a web route** — `code.twolfe.dev`,
-  `status.twolfe.dev`: a **CNAME to the slice's `.ts` twin**
-  (`forgejo.ts.twolfe.dev`, `gatus.ts.twolfe.dev`), so it resolves to
-  wherever `tofu/records.tf` here points the `*.ts` wildcard and the
-  owning root never holds an IP. Tailnet path on purpose: people carry
-  the tailnet, the TV doesn't need a status page.
+Everything else is just a name under the wildcard. There used to be a
+second shape here — a "neat name" at the apex, which matched no wildcard
+and so needed a CNAME, a line in this slice's `Caddyfile`, its own
+`--domains` SAN and a forced re-issue. That whole procedure is gone: the
+wildcard moved up a label and swallowed it.
 
-The second shape is the one exception to "this slice is never edited",
-because an apex-level name matches no wildcard. The recipe, per name:
-
-1. The CNAME, in the owning slice's tofu root (`gatus/tofu/records.tf`
-   is the template — a root can be that small).
-2. The name in the slice's `caddy.caddyfile` host matcher.
-3. **Here:** the name in `Caddyfile`'s site address, and a `--domains`
-   line in `flows/renew-certs/script.sh`. Two lines, same commit.
-4. **Re-issue the certificate.** An edited domain list does NOT reissue
-   by itself (lego converges on expiry, not SANs — the script's comment
-   explains). At the desk: move `_.lab.twolfe.dev.*` out of
-   `~/Docker/caddy/lego/certificates`, run the renew-certs workflow,
-   confirm with
-   `openssl x509 -in ~/Docker/caddy/lego/certificates/_.lab.twolfe.dev.crt -noout -text | grep DNS`.
-   Until this is done the new name answers with a certificate that
-   doesn't cover it — browsers refuse, and so does the front-door check
-   in `gatus/`.
-5. `ENDPOINTS.md`, "Neat names" table, same commit.
-
-Neat names go in public Certificate Transparency logs — that is fine for
-`code` and `status`, and it is why internal names stay under the
-wildcards.
+One consequence worth keeping: with a single `*.twolfe.dev` certificate,
+NO service name appears in public Certificate Transparency logs — not
+even the human ones, which used to be listed individually. The lab's
+shape is no longer readable from the outside.
 
 ## Names are for humans
 
 Service-to-service traffic on the mini uses the Docker network directly
 (`http://forgejo:3000`), never the public names. The lab must keep working
-with the internet down; DNS for `*.lab.twolfe.dev` lives on Netlify's
+with the internet down; DNS for `*.twolfe.dev` lives on Netlify's
 nameservers and resolves only while the internet is up. The names are
 sugar for browsers, not plumbing.
 

@@ -1,4 +1,4 @@
-@radarr host radarr.lab.twolfe.dev radarr.ts.twolfe.dev
+@radarr host radarr.twolfe.dev
 handle @radarr {
 	reverse_proxy radarr:7878
 }

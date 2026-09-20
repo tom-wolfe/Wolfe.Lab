@@ -12,7 +12,7 @@ services:
     environment:
       # Only used to build links in outbound notifications — so it must be
       # the name a PHONE can open, not a container-network address.
-      APP_URL: https://beszel.lab.twolfe.dev
+      APP_URL: https://beszel.twolfe.dev
       # Host /etc/localtime is a symlink into /var/db/timezone — dangles
       # inside a Linux container. Set TZ instead (jellyfin pattern).
       TZ: Europe/London
@@ -28,7 +28,7 @@ services:
     ports:
       # Published because the AGENT needs it: the agent is a host process
       # (see README.md) and dials the hub at http://localhost:8090. Going
-      # via beszel.lab.twolfe.dev instead would make host monitoring depend
+      # via beszel.twolfe.dev instead would make host monitoring depend
       # on public DNS, so the lab would stop watching itself the moment the
       # internet went down — exactly when you want to be watching.
       - "8090:8090"

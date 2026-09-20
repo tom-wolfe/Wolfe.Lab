@@ -1,41 +1,33 @@
 # Endpoints
 
 Every service address in the lab. Hosts resolve via mDNS on the LAN;
-`*.lab.twolfe.dev` names resolve via public DNS (wildcard record → the
-mini's LAN address, owned by `caddy/tofu`). Every hostname below also
-has a `*.ts.twolfe.dev` twin resolving to the mini's Tailscale address —
-same front door, for tailnet devices anywhere; prefer it off the LAN.
-Nothing is exposed to the internet.
+`*.twolfe.dev` names resolve via public DNS to the mini's Tailscale
+address (one wildcard record, owned by `caddy/tofu`). ONE name per
+service, working wherever the tailnet is — at home included, where
+Tailscale connects directly over the LAN rather than relaying. Nothing
+is exposed to the internet: the address these names resolve to is a
+100.x, which is not routable from it.
 
 ## Hostnames (via the Caddy front door)
 
-TLS terminates at Caddy on `:443`; each name routes to the container named
-in the owning slice's `caddy.caddyfile`. Prefer these in browsers; the
-port addresses below remain the automation path and the fallback when the
-front door is down.
+TLS terminates at Caddy on `:443` with one `*.twolfe.dev` certificate;
+each name routes to the container named in the owning slice's
+`caddy.caddyfile`, and the slice picks the name. Prefer these in
+browsers; the port addresses below remain the automation path and the
+fallback when the front door is down.
 
-| Hostname                             | Service                     | Upstream       |
-| ------------------------------------ | --------------------------- | -------------- |
-| `https://forgejo.lab.twolfe.dev`     | Forgejo                     | `forgejo:3000` |
-| `https://jellyfin.lab.twolfe.dev`     | Jellyfin                     | `jellyfin:8096` |
-| `https://s3.lab.twolfe.dev`          | Garage S3 (path-style only) | `garage:3900`  |
-| `https://beszel.lab.twolfe.dev`      | Beszel monitoring hub       | `beszel:8090`  |
-| `https://qbittorrent.lab.twolfe.dev` | qBittorrent web UI          | `gluetun:8080` |
-| `https://sonarr.lab.twolfe.dev`      | Sonarr (TV renamer)         | `sonarr:8989`  |
-| `https://radarr.lab.twolfe.dev`      | Radarr (movie renamer)      | `radarr:7878`  |
-| `https://immich.lab.twolfe.dev`      | Immich (photos; the phone app's server) | `immich-server:2283` |
-| `https://gatus.lab.twolfe.dev`       | Gatus status page           | `wolfe-pi5.tailf823b8.ts.net:8280` (the Pi) |
-
-## Neat names (tailnet-routed, via the front door)
-
-Human names at the apex, each a CNAME to the owning service's `.ts` twin
-(caddy/README.md "Neat names") — so the same caddy, the same certificate,
-the mini's tailnet address, without the wildcard in the name.
-
-| Hostname                    | Service                         | Aliases           | Defined in |
-| --------------------------- | ------------------------------- | ----------------- | ---------- |
-| `https://code.twolfe.dev`   | Forgejo web + HTTPS clone (`ROOT_URL`) | `forgejo.ts.twolfe.dev` | `forgejo/tofu` |
-| `https://status.twolfe.dev` | Gatus status page               | `gatus.ts.twolfe.dev` | `gatus/tofu` |
+| Hostname                         | Service                                 | Upstream                                      |
+| -------------------------------- | --------------------------------------- | --------------------------------------------- |
+| `https://code.twolfe.dev`        | Forgejo                                 | `forgejo:3000`                                |
+| `https://jellyfin.twolfe.dev`    | Jellyfin                                | `jellyfin:8096`                               |
+| `https://s3.twolfe.dev`          | Garage S3 (path-style only)             | `garage:3900`                                 |
+| `https://beszel.twolfe.dev`      | Beszel monitoring hub                   | `beszel:8090`                                 |
+| `https://qbittorrent.twolfe.dev` | qBittorrent web UI                      | `gluetun:8080`                                |
+| `https://sonarr.twolfe.dev`      | Sonarr (TV renamer)                     | `sonarr:8989`                                 |
+| `https://radarr.twolfe.dev`      | Radarr (movie renamer)                  | `radarr:7878`                                 |
+| `https://immich.twolfe.dev`      | Immich (photos; the phone app's server) | `immich-server:2283`                          |
+| `https://status.twolfe.dev`      | Gatus status page                       | `wolfe-pi5.tailf823b8.ts.net:8280` (the Pi)   |
+| `https://ai.twolfe.dev`          | Model endpoint (ollama)                 | `host.docker.internal:11434` (a host process) |
 
 ## macmini.local
 
@@ -82,7 +74,7 @@ Notes:
   `127.0.0.1:45876` only and nothing connects to it — it dials the hub
   outbound — so it is deliberately not a LAN endpoint.
 - Jellyfin's discovery port (`7359/udp`) is published but non-functional through Docker Desktop's VM; 
-  point clients at `jellyfin.lab.twolfe.dev` (or `macmini.local:8096`) manually.
+  point clients at `jellyfin.twolfe.dev` (or `macmini.local:8096`) manually.
 - SSH sessions (port 22) don't get the login keychain or `path_helper` — Docker registry pulls and 
   other keychain-dependent operations only work in the GUI session (`:5900` or physically).
 

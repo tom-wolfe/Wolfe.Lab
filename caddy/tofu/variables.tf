@@ -10,20 +10,10 @@ variable "state_passphrase" {
   sensitive   = true
 }
 
-variable "lab_ipv4" {
-  description = <<-EOT
-    The mini's LAN address — target of the *.lab wildcard record. Must stay
-    stable: give the mini a DHCP reservation in the router if it doesn't
-    have one. When Tailscale lands, repointing this to the mini's 100.x
-    address is the whole remote-access migration.
-  EOT
-  type        = string
-  default     = "192.168.0.7"
-}
-
 variable "lab_tailscale_ipv4" {
   description = <<-EOT
-    The mini's Tailscale address — target of the *.ts wildcard record.
+    The mini's Tailscale address — target of the wildcard and of the front
+    door's own record, and so of every name the lab answers to.
     Stable for the life of the node key (disabling key expiry on the mini
     is part of the tailscale slice's bootstrap, and this variable is why
     it matters); a re-enrolment that mints a new address means updating

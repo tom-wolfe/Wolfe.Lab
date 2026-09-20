@@ -36,11 +36,13 @@ mkdir -p "$lego_dir"
 # Changing the DOMAIN LIST below does not reissue by itself: lego keys
 # its stored state by the FIRST domain's filename and its convergence
 # logic is about expiry, not SANs — do not assume an edited list forces
-# a new certificate. The deterministic path: move the
-# _.lab.twolfe.dev.* files out of ~/Docker/caddy/lego/certificates and
-# re-run this job. Fresh issuance, same filenames (first domain), so the
-# Caddyfile's tls paths never change. Verify with:
-#   openssl x509 -in ~/Docker/caddy/lego/certificates/_.lab.twolfe.dev.crt -noout -text | grep DNS
+# a new certificate. The deterministic path: move the _.twolfe.dev.*
+# files out of ~/Docker/caddy/lego/certificates and re-run this job.
+# Note the filename FOLLOWS the first domain, so the Caddyfile's tls
+# paths change with it — they did when this became *.twolfe.dev, and
+# caddy cannot start until a cert exists at the path it names. Verify
+# with:
+#   openssl x509 -in ~/Docker/caddy/lego/certificates/_.twolfe.dev.crt -noout -text | grep DNS
 "$secrets" run --env-file "$job/secrets.env" -- docker run --rm \
   -e NETLIFY_TOKEN \
   -v "$lego_dir:/state" \
@@ -50,10 +52,7 @@ mkdir -p "$lego_dir"
   --accept-tos \
   --email trwolfe13@gmail.com \
   --dns netlify \
-  --domains '*.lab.twolfe.dev' \
-  --domains '*.ts.twolfe.dev' \
-  --domains 'code.twolfe.dev' \
-  --domains 'status.twolfe.dev' \
+  --domains '*.twolfe.dev' \
   --path /state \
   --dns.propagation.wait 90s
 

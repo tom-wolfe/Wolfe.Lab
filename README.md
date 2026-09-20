@@ -64,7 +64,7 @@ watches.**
 |-------------------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
 | every workflow's failure step | its own job failing → Pushover (`scripts/alert.sh`)                                                                                | Forgejo or the node's runner does |
 | Beszel agent                  | each node's CPU, memory, disks (incl. `/Volumes/Data1`), containers                                                                | that node does                    |
-| Gatus (`gatus/`, on the Pi)   | every service by REQUEST — direct and through the front door — plus the third parties the lab stands on; the Beszel hub among them | the Pi does                       |
+| Gatus (`gatus/`, on the Pi)   | every service by REQUEST, once each through the front door, plus the third parties the lab stands on; the Beszel hub among them | the Pi does                       |
 | `gatus-health.yaml`           | Gatus itself, from the mini — a dead status page looks like one you haven't opened                                                 | the mini does                     |
 | healthchecks.io               | the heartbeat still pings → **the only observer outside the building**                                                             | never (it's SaaS)                 |
 | `heartbeat.yaml`              | sends that ping every 15 minutes from the mini's runner — proof Forgejo, the runner and its schedules are alive                    | the mini does                     |

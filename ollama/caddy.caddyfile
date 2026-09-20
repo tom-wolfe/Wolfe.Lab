@@ -1,0 +1,33 @@
+# This slice's route through the front door — see forgejo/caddy.caddyfile
+# for the shape's rationale.
+#
+# The NAME IS THE CAPABILITY, not the implementation. `ai` rather than
+# `ollama` because the upstream behind it is expected to change — the
+# Studio joins it, and the runtime itself may be swapped — and nothing
+# that consumes it should have to care which.
+#
+# Everything behind this door is tailnet-only now, which is the whole of
+# what this route can do for an endpoint with no authentication of any
+# kind. It does nothing about the port itself — see README.md.
+@ai host ai.twolfe.dev
+handle @ai {
+	# host.docker.internal, because ollama is a HOST process rather than a
+	# container: a container on macOS gets no access to the Apple GPU, so
+	# the model server is the one thing in the lab that cannot sit on the
+	# `lab` network. This is the only route in the lab that leaves it.
+	#
+	# lb_policy first is the Studio's seat, kept warm. Adding the Studio
+	# as an upstream ABOVE this one is the whole change: it serves while
+	# it is awake, the mini takes over when it sleeps, and nothing that
+	# calls this notices either way. ROADMAP #7's rule — the Studio may
+	# serve, but nothing may depend on it.
+	#
+	# The health check is /api/tags rather than /, because ollama answers
+	# / with "Ollama is running" before it can serve a single model: a
+	# root check would route to a server with nothing loaded.
+	reverse_proxy host.docker.internal:11434 {
+		lb_policy first
+		health_uri /api/tags
+		health_interval 10s
+	}
+}

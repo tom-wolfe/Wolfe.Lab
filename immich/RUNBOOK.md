@@ -17,7 +17,7 @@ reasons are in `README.md`.
    Postgres initialises on first start, which takes a minute, and the
    machine-learning container downloads its models on its first job.
 4. **The admin account.** The first visitor to
-   `https://immich.lab.twolfe.dev` creates it: do that straight after
+   `https://immich.twolfe.dev` creates it: do that straight after
    the deploy goes green. Item `immich-admin` in the vault, a Login item.
 5. **The API key** for the import: Account settings → API keys → New,
    named `lab import`. Item `immich-api-key`, key in `credential`.
@@ -38,7 +38,7 @@ reasons are in `README.md`.
 10. **Then, and only then, delete the Takeout zips** from
     `/Volumes/Data2/photos/google`.
 11. **The phone**: install the Immich app, server
-    `https://immich.ts.twolfe.dev`, sign in, turn on background backup.
+    `https://immich.twolfe.dev`, sign in, turn on background backup.
     Turn off Google Photos backup.
 
 ## Upgrading

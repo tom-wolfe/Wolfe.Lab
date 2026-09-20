@@ -476,7 +476,7 @@ available today: Forgejo renders every README in the browser, so
 `code.twolfe.dev` on a phone already works. The real thing is a static
 docs site built from the repo's markdown — MkDocs Material or similar,
 built by a workflow on push on the containerised runner (#6), served by a static container behind caddy at
-`docs.lab.twolfe.dev`. One convention decides the rest: procedures
+`docs.twolfe.dev`. One convention decides the rest: procedures
 meant to be followed live in a `runbooks/` tree (or a "Runbook" section
 per slice README) so the site can put them on a page of their own, apart
 from the design prose nobody reads at 2 a.m.
@@ -578,7 +578,7 @@ networking, which is exactly what macOS cannot give a container.
 
 The argument is not ad-blocking, though. `caddy/README.md` already concedes
 the weakness: *"The lab must keep working with the internet down; DNS for
-`*.lab.twolfe.dev` lives on Netlify's nameservers and resolves only while
+`*.twolfe.dev` lives on Netlify's nameservers and resolves only while
 the internet is up."* Local DNS records on a Pi-hole would make lab names
 resolve on the LAN with the internet unplugged, closing a gap the repo has
 been honest about but has not fixed. It would also retire the router's

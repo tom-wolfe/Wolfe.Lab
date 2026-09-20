@@ -4,7 +4,7 @@ The photo library: Immich, pinned, four containers from its reference
 compose bent to the lab's rules. Originals live at `/Volumes/Data2/immich`
 with the rest of the media; the database on the internal disk beside the
 other slices' state, where Postgres wants an SSD; the machine-learning
-models beside it. The phone app talks to `immich.ts.twolfe.dev`, the
+models beside it. The phone app talks to `immich.twolfe.dev`, the
 tailnet twin of the front-door name, and its background upload is what
 replaces Google Photos as the place a photo lands after it is taken.
 

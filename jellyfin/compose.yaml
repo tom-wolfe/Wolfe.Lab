@@ -55,7 +55,7 @@ services:
       - "8096:8096"
       # Client auto-discovery. Published for completeness, but it does NOT
       # work through Docker Desktop on macOS — LAN broadcast packets don't
-      # reach the VM. Point clients at https://jellyfin.lab.twolfe.dev (or
+      # reach the VM. Point clients at https://jellyfin.twolfe.dev (or
       # http://macmini.local:8096 as fallback) by hand.
       - "7359:7359/udp"
 

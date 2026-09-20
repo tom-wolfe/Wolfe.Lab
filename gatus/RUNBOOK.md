@@ -21,7 +21,7 @@ reasons are in `README.md`.
    Or by hand from a laptop: `scripts/apply.sh gatus` — plan tripwire:
    1 to add.
 6. **Open the board** at https://status.twolfe.dev (fallbacks
-   `https://gatus.lab.twolfe.dev`, `http://macmini.local:8280`) and work
+   `https://status.twolfe.dev`, `http://macmini.local:8280`) and work
    through the verification list.
 
 ## The runners group

@@ -22,7 +22,7 @@ route.
    one is set. Log in at `macmini.local:8080` and set, in
    Settings → Web UI:
    - a permanent password → mirror it to 1P `qbittorrent-webui`;
-   - `qbittorrent.lab.twolfe.dev,qbittorrent.ts.twolfe.dev` in
+   - `qbittorrent.twolfe.dev,qbittorrent.twolfe.dev` in
      **Server domains** — qBittorrent validates the Host header, so the
      caddy routes 401 until this is set (the `macmini.local:8080`
      fallback keeps working regardless);

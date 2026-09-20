@@ -98,12 +98,12 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   same port on 127.0.0.1 of the shared namespace — forgejo's sshd on 22,
   and incidentally its web server on 3000. Nothing dials *out* through
   the sidecar, and userspace mode couldn't offer that to forgejo anyway.
-- **Why `git.twolfe.dev` and not `forgejo.lab.twolfe.dev`.** One name
+- **Why `git.twolfe.dev` and not `code.twolfe.dev`.** One name
   resolves to one address, and the web name and the SSH name point at
-  *different machines*: `forgejo.lab.twolfe.dev` must keep resolving to
+  *different machines*: `code.twolfe.dev` must keep resolving to
   the mini so the web UI routes through caddy, and port 22 at the mini's
   address is macOS Remote Login — the very conflict that created :2222.
-  (`forgejo.ts.twolfe.dev` has the same trap: the `*.ts` wildcard is
+  (`code.twolfe.dev` has the same trap: the `*.ts` wildcard is
   also the mini.) So SSH gets its own name — the per-service "neat
   public name in the owning slice's tofu, pointing at a Tailscale IP"
   pattern from `caddy/README.md`, here in its first instance. The cost:
@@ -111,7 +111,7 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   MagicDNS name, `forgejo.tailf823b8.ts.net`, is the same endpoint with
   no DNS dependency — the fallback when Netlify is the broken thing.
 - **And the web gets `code.twolfe.dev`**, the same
-  pattern from the other side: a CNAME to `forgejo.ts.twolfe.dev` in
+  pattern from the other side: a CNAME to `code.twolfe.dev` in
   `tofu/records.tf`, so it resolves to the *mini* and routes through
   caddy like the `.ts` name it aliases — it just doesn't look like a
   wildcard. It is `ROOT_URL`, so it is what the UI prints in every HTTPS

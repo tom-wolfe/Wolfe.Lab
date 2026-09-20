@@ -22,7 +22,15 @@ without a side effect.
 Workflows so far: `obsidian` (`sync --vault <name>`), `immich` (`deploy`,
 `import`, `backup`, `restore`, `verify`), `files` (`backup`, `restore`,
 `verify`), `restic` (`offsite`, `verify`), `service` (`backup`, `restore`
-and `verify`, for the compose slices the shell still deploys).
+and `verify`, for the compose slices the shell still deploys), `agents`
+(`converge`).
+
+A slice is a unit of deployment, not necessarily a container. The
+`agents` workflow is for the ones whose stack is a supervised host
+process instead — a model server needing a GPU no container on macOS can
+reach. Such a slice declares what it wants running under `agents` in its
+`ritten.json` (the program, its arguments and environment, where its log
+goes) and carries no compose file at all.
 
 A job can be shared: `BackupJob<TSettings>`, `RestoreJob<TSettings>` and
 `VerifyJob<TSettings>` are the backup, restore and restore-drill
@@ -51,6 +59,17 @@ command runner for every process. The lab adds what Ritten doesn't have:
 - **Heartbeat** — `IHeartbeat` pings a healthchecks.io check, the dead
   man's switch a scheduled job reports to as its last step. The
   rehearsal never pings: a switch told the job ran is worse than none.
+- **Agents** — `IServiceSupervisor` renders a slice's declared agents to
+  the platform's units and converges the supervisor onto them: launchd
+  today, systemd user units when the primary node is a Linux box. The
+  declaration is platform-neutral, so that day changes one registration
+  and no slice. A converge compares the whole rendered unit and restarts
+  only on a difference; the executable's own timestamp is part of that
+  text, so upgrading the binary counts as a change to the agent without
+  anyone having edited the declaration. An agent whose program is not on
+  the node is refused rather than installed to fail. The rehearsal reads
+  the node — which units are installed, what the supervisor is running —
+  and writes nothing.
 
 ## Alerting
 

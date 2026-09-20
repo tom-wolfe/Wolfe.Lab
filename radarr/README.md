@@ -9,7 +9,7 @@ covers what is different about movies.
 
 | | |
 |---|---|
-| Web UI | https://radarr.lab.twolfe.dev (fallback http://macmini.local:7878) |
+| Web UI | https://radarr.twolfe.dev (fallback http://macmini.local:7878) |
 | Image | `linuxserver/radarr` pinned in `compose.yaml` |
 | State | `~/Docker/radarr/config` — `radarr.db` (movies, root folders, naming), `config.xml` (API key, auth) |
 | Root folders | `/Volumes/Data2/videos/movies`; `/Volumes/Data1/video/movies` is the Movies library's other root and is empty |

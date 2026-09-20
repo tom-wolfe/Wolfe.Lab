@@ -1,5 +1,5 @@
 # Gatus — everything that is NOT a check. The checks live one file per
-# group beside this one (lab.yaml, front-door.yaml, dependencies.yaml,
+# group beside this one (lab.yaml, runners.yaml, dependencies.yaml,
 # personal.yaml); GATUS_CONFIG_PATH points at the directory and Gatus
 # deep-merges all of it. Scalars may only be set in ONE file, so this is
 # the only file that sets any.
@@ -12,7 +12,7 @@ ui:
   default-sort-by: group
   buttons:
     - name: Beszel
-      link: https://beszel.lab.twolfe.dev
+      link: https://beszel.twolfe.dev
     - name: Actions
       link: https://code.twolfe.dev/tom-wolfe/Wolfe.Lab/actions
     - name: healthchecks.io

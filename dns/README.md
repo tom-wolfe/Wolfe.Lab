@@ -14,8 +14,8 @@ still exist with the lab torn down — it exists because the *domain*
 exists. A record that exists because a service exists lives with the
 service:
 
-- **The two front-door wildcards** (`*.lab`, `*.ts`) stay in
-  `caddy/tofu` — they point at the front door, so the front door owns
+- **The front-door records** (`*.twolfe.dev` and `lab.twolfe.dev`) stay
+  in `caddy/tofu` — they point at the front door, so the front door owns
   them (`caddy/tofu/records.tf` records the decision).
 - **Per-service public names** (`git.twolfe.dev`) stay in the owning
   slice's tofu root — the contract in `caddy/README.md`, untouched.

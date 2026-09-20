@@ -1,0 +1,17 @@
+{
+  "workflow": "agents",
+  "volumes": [
+    "/Volumes/Data2"
+  ],
+  "agents": {
+    "ollama": {
+      "program": "/opt/homebrew/bin/ollama",
+      "arguments": ["serve"],
+      "environment": {
+        "OLLAMA_HOST": "0.0.0.0:11434",
+        "OLLAMA_MODELS": "/Volumes/Data2/ollama/models"
+      },
+      "log": "~/Library/Logs/ollama.log"
+    }
+  }
+}
