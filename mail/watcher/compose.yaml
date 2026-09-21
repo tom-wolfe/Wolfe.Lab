@@ -16,7 +16,7 @@ services:
       Model__Name: qwen3:8b
       TZ: Europe/London
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      test: ["CMD", "curl", "-sS", "--fail-with-body", "http://127.0.0.1:8080/health"]
       interval: 60s
       timeout: 10s
       retries: 3
