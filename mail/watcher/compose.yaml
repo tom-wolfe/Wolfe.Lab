@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     pull_policy: never
 
-  environment:
+    environment:
       Watcher__BridgeHost: proton-bridge
       Watcher__Username: ${BRIDGE_USERNAME}
       Watcher__Password: ${BRIDGE_PASSWORD}

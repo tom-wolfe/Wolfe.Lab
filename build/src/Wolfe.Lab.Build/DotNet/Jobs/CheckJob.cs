@@ -1,4 +1,6 @@
+using Ritten.Docker;
 using Ritten.DotNet;
+using Wolfe.Lab.Build.Docker.Steps;
 using Wolfe.Lab.Build.DotNet.Models;
 using Wolfe.Lab.Build.DotNet.Steps;
 using Wolfe.Lab.Build.Steps;
@@ -6,7 +8,7 @@ using Wolfe.Lab.Build.Steps;
 namespace Wolfe.Lab.Build.DotNet.Jobs;
 
 /// <summary>
-/// Proves the component's code is sound before anything is built from it.
+/// Proves the component is sound before anything is built or deployed from it.
 /// </summary>
 internal sealed class CheckJob : LabJob<DotNetServiceSettings>
 {
@@ -17,6 +19,7 @@ internal sealed class CheckJob : LabJob<DotNetServiceSettings>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<ComposeCheck>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormatCheck>(),
         Step.FromType<DotnetBuild>(),
@@ -28,6 +31,6 @@ internal sealed class CheckJob : LabJob<DotNetServiceSettings>
     protected override void Configure(IWorkflowBuilder builder, DotNetServiceSettings settings)
     {
         base.Configure(builder, settings);
-        builder.AddBuildReporting().AddDotNet([], settings.Configuration);
+        builder.AddDocker().AddBuildReporting().AddDotNet([], settings.Configuration);
     }
 }
