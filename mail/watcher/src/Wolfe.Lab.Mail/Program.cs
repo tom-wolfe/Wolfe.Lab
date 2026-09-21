@@ -1,11 +1,15 @@
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Builder;
 using Wolfe.Lab.Mail.Extensions;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddMailboxWatcher()
     .AddChatClient()
     .AddEventDetector();
 
-await builder.Build().RunAsync();
+var app = builder.Build();
+
+app.MapHealthChecks("/health");
+
+await app.RunAsync();

@@ -15,6 +15,13 @@ services:
       Model__Endpoint: https://ai.twolfe.dev
       Model__Name: qwen3:8b
       TZ: Europe/London
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      # The first IMAP session has to connect before there is anything healthy to report.
+      start_period: 90s
 
     volumes:
       - /Users/tomwolfe/Docker/mail/watcher:/state

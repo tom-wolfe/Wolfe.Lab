@@ -39,6 +39,17 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: mail watcher
+    group: lab
+    url: https://mail.twolfe.dev/health
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
   - name: garage
     group: lab
     url: https://s3.twolfe.dev/

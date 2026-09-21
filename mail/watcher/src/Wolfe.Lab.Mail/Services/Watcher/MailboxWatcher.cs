@@ -7,7 +7,6 @@ using MimeKit;
 using Wolfe.Lab.Mail.Detection;
 using Wolfe.Lab.Mail.Invitations;
 using Wolfe.Lab.Mail.Mailbox;
-
 using Microsoft.Extensions.Options;
 using Wolfe.Lab.Mail.Services.Ai;
 
@@ -24,7 +23,8 @@ internal sealed class MailboxWatcher(
     ILogger<MailboxWatcher> log,
     IOptions<MailboxWatcherOptions> options,
     InvitationSender sender,
-    IEventDetector events
+    IEventDetector events,
+    MailboxState state
 )
 {
     /// <summary>
@@ -49,7 +49,9 @@ internal sealed class MailboxWatcher(
             }
             catch (Exception failure)
             {
-                log.LogWarning(failure, "Lost the mailbox; reconnecting in {Backoff}.", backoff);
+                state.Lost($"{failure.GetType().Name}: {failure.Message}");
+                log.LogWarning(failure, "Lost {Host}:{Port}; reconnecting in {Backoff}.",
+                    options.Value.BridgeHost, options.Value.ImapPort, backoff);
                 await Task.Delay(backoff, ct);
                 backoff = TimeSpan.FromSeconds(Math.Min(backoff.TotalSeconds * 2, 300));
             }
@@ -75,6 +77,9 @@ internal sealed class MailboxWatcher(
 
         while (!ct.IsCancellationRequested)
         {
+            // Every pass round the loop, which IDLE caps at IdleLimit — so a stale one means
+            // the session has stopped turning over, whatever the process is doing.
+            state.Cycled();
             watermark = await Drain(inbox, watermark, ct);
             await WaitForMail(client, inbox, ct);
         }

@@ -26,6 +26,10 @@ internal static class ServiceCollectionExtensions
                 .Validate(options => options.Password is { Length: > 0 }, "Password is required")
                 .ValidateOnStart();
 
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<MailboxState>();
+            services.AddHealthChecks().AddCheck<MailboxHealthCheck>("mailbox");
+
             services.AddSingleton<InvitationSender>();
             services.AddSingleton<MailboxWatcher>();
             services.AddHostedService<MailboxWatcherHost>();

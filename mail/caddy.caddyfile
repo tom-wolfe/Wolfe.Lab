@@ -1,0 +1,4 @@
+@mail host mail.twolfe.dev
+handle @mail {
+	reverse_proxy mail-watcher:8080
+}
