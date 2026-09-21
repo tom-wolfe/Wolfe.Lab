@@ -1,3 +1,10 @@
 {
-  "workflow": "dotnet"
+  "workflow": "dotnet-service",
+  "release": "mail-watcher",
+  "images": [
+    {
+      "tag": "lab/mail-watcher",
+      "context": "."
+    }
+  ]
 }

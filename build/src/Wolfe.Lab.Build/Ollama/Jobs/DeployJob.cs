@@ -28,7 +28,7 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<EnsureModelStore>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<ConvergeAgents>(),
         Step.FromType<ResolveModels>(),
         Step.FromType<PullModels>()

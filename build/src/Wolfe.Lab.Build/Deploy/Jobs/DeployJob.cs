@@ -29,7 +29,7 @@ internal sealed class DeployJob<TSettings> : LabJob<TSettings> where TSettings :
         Step.FromType<CheckVolumes>(),
         Step.FromType<InstallSlice>(),
         Step.FromType<ResolveComposeSecrets>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<ComposeUp>()
     ];
 

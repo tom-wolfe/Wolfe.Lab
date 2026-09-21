@@ -3,14 +3,18 @@
        time, and the cache server on for actions/cache. The `docker` label
        is a ROLE shared by every node that runs one, so a build lands on
        whichever node is idle; the image after `docker://` is the default
-       a job gets unless it names its own `container:`. Node is in it
-       because JS actions (actions/checkout) need node in the job image. */ -}}
+       a job gets unless it names its own `container:`. That image is the
+       lab's own (ci/): node for JS actions like actions/checkout, the .NET
+       SDK for the CLI, and docker's CLIENT for a compose check — the client
+       only, because `compose config` parses the file and never calls a
+       daemon. It is built on the node by the `ci image` workflow and never
+       pulled; see force_pull in the shared template. */ -}}
 {{- template "forgejo-runner/config.yaml" (dict
       "home" .chezmoi.homeDir
       "dir" "forgejo-runner-docker"
       "capacity" 2
       "host" false
-      "labels" (list "docker:docker://node:22-bookworm")
+      "labels" (list "docker:docker://lab/ci:latest")
       "cache" true
       "path" ""
       "envs" (dict)) -}}

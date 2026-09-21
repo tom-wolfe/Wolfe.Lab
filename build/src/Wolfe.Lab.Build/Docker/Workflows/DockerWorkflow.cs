@@ -1,4 +1,5 @@
 using Wolfe.Lab.Build.Docker.Jobs;
+using Wolfe.Lab.Build.Docker.Models;
 
 namespace Wolfe.Lab.Build.Docker.Workflows;
 
@@ -20,5 +21,5 @@ public sealed class DockerWorkflow : IWorkflow
     public string Label => "docker";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new DeployJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DockerSettings>(), new DeployJob<DockerSettings>()];
 }

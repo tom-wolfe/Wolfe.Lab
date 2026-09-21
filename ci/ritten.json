@@ -1,0 +1,9 @@
+{
+  "workflow": "image",
+  "images": [
+    {
+      "tag": "lab/ci",
+      "context": "."
+    }
+  ]
+}

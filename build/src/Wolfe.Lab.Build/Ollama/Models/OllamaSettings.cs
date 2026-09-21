@@ -12,15 +12,3 @@ public sealed record OllamaSettings : AgentsSettings
     /// </summary>
     public ModelSettings Models { get; init; } = new();
 }
-
-/// <summary>
-/// The model store as the steps consume it.
-/// </summary>
-/// <param name="Directory">The directory ollama keeps models in.</param>
-public sealed record ModelStore(IDirectory Directory);
-
-/// <summary>
-/// The models a deploy will make sure the node has.
-/// </summary>
-/// <param name="Models">The declared models, in a stable order.</param>
-public sealed record ModelPlan(IReadOnlyList<OllamaModel> Models);

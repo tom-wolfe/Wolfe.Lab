@@ -20,7 +20,7 @@ internal sealed class ImportJob : ImmichJob
         Step.FromType<ResolveSlice>(),
         Step.FromType<ResolveTakeout>(),
         Step.FromType<BuildImmichGo>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<ImportTakeout>()
     ];
 

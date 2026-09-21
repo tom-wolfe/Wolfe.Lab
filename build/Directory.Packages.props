@@ -4,14 +4,16 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Ritten.CommandLine" Version="0.14.0" />
+    <PackageVersion Include="Ritten.CommandLine" Version="0.16.1" />
     <PackageVersion Include="Scriban" Version="7.4.0" />
-    <PackageVersion Include="Ritten.Core" Version="0.14.0" />
-    <PackageVersion Include="Ritten.Docker" Version="0.14.0" />
-    <PackageVersion Include="Ritten.Forgejo" Version="0.14.0" />
-    <PackageVersion Include="Ritten.Git" Version="0.14.0" />
+    <PackageVersion Include="Ritten.Core" Version="0.16.1" />
+    <PackageVersion Include="Ritten.Docker" Version="0.16.1" />
+    <PackageVersion Include="Ritten.DotNet" Version="0.16.1" />
+    <PackageVersion Include="Ritten.Forgejo" Version="0.16.1" />
+    <PackageVersion Include="Ritten.Git" Version="0.16.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />
     <PackageVersion Include="System.CommandLine" Version="2.0.12" />
     <PackageVersion Include="Vogen" Version="8.0.7" />
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.11.2" />

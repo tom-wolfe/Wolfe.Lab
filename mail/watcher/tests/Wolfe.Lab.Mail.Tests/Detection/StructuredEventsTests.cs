@@ -1,4 +1,5 @@
 using Wolfe.Lab.Mail.Detection;
+using Wolfe.Lab.Mail.Models;
 
 namespace Wolfe.Lab.Mail.Tests.Detection;
 

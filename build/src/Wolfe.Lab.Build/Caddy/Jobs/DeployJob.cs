@@ -25,7 +25,7 @@ internal sealed class DeployJob : LabJob<CaddySettings>
         Step.FromType<CheckVolumes>(),
         Step.FromType<InstallSlice>(),
         Step.FromType<ResolveComposeSecrets>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<ComposeUp>(),
         Step.FromType<GatherRoutes>(),
         Step.FromType<ReloadCaddy>()

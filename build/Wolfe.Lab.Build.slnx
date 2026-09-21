@@ -1,5 +1,5 @@
 <Solution>
-  <Folder Name="/build/">
+  <Folder Name="/.build/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="global.json" />

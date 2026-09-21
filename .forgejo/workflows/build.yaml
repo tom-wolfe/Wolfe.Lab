@@ -1,0 +1,28 @@
+name: build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [build/**, .forgejo/workflows/build.yaml]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: docker
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
+      - run: dotnet restore Wolfe.Lab.Build.slnx
+      - run: dotnet format Wolfe.Lab.Build.slnx --no-restore --verify-no-changes
+      - run: dotnet build Wolfe.Lab.Build.slnx --no-restore --configuration Release
+      - run: dotnet test --solution Wolfe.Lab.Build.slnx --no-build --configuration Release

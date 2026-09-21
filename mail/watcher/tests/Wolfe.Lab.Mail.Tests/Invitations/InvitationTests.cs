@@ -1,6 +1,6 @@
 using MimeKit;
-using Wolfe.Lab.Mail.Detection;
 using Wolfe.Lab.Mail.Invitations;
+using Wolfe.Lab.Mail.Models;
 
 namespace Wolfe.Lab.Mail.Tests.Invitations;
 

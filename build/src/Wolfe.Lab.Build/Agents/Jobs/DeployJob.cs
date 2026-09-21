@@ -20,7 +20,7 @@ internal sealed class DeployJob : LabJob<AgentsSettings>
     [
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<ConvergeAgents>()
     ];
 

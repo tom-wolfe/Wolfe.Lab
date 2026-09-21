@@ -22,7 +22,7 @@ internal sealed class SyncJob : LabJob<ObsidianSettings>
         Step.FromType<ResolveVault>(),
         Step.FromType<SyncVault>(),
         Step.FromType<CommitVault>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<PushVault>()
     ];
 

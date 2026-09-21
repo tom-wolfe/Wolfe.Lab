@@ -1,13 +1,47 @@
 name: chezmoi
 
 on:
+  pull_request:
   push:
     branches: [main]
     paths: [chezmoi/**]
   workflow_dispatch:
 
 jobs:
-  update:
+  check:
+    runs-on: docker
+    timeout-minutes: 15
+    concurrency:
+      group: chezmoi-check-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install linters
+        run: |
+          apt-get update -q
+          apt-get install -y -q --no-install-recommends shellcheck >/dev/null
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin >/dev/null
+
+      - name: Every profile renders
+        # The whole source, for each machine, with the vault stubbed — a
+        # template that only breaks on one profile fails here, not on the
+        # merge. The listing is the review aid: what each machine gets.
+        run: |
+          for profile in macbook work-macbook macmini-node pi-node; do
+            scripts/chezmoi-render.sh "$profile" "/tmp/render/$profile"
+          done
+
+      - name: Rendered scripts are valid shell
+        # Only the output is shell: everything in the source is a Go template
+        # first, so this is the earliest point either can be checked at all.
+        # chezmoi-render.sh is chezmoi's own tool, so it is checked here too.
+        run: |
+          find /tmp/render -path '*/.chezmoiscripts/*' -type f | xargs -r shellcheck
+          shellcheck scripts/chezmoi-render.sh
+
+  deploy:
+    if: github.event_name != 'pull_request'
     strategy:
       matrix:
         node: [MacMini, wolfe-pi5]

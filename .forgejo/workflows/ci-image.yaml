@@ -1,0 +1,25 @@
+# The image every containerised job runs in.
+#
+# Built on the HOST runner, not the containerised one: this job produces the
+# image that the containerised runner needs, so it must not depend on that
+# image existing. Nothing here is required by branch protection — the job is
+# named `build`, not `check`.
+name: ci image
+
+on:
+  push:
+    branches: [main]
+    paths: [ci/**, .forgejo/workflows/ci-image.yaml]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: wolfe-pi5
+    timeout-minutes: 30
+    concurrency:
+      group: wolfe-pi5
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: ci
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- build

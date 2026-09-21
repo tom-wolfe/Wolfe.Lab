@@ -2,11 +2,11 @@ using Wolfe.Lab.Build.Steps;
 
 namespace Wolfe.Lab.Build.Tests.Steps;
 
-public class ApprovalGateTests
+public class GateApprovalTests
 {
     private readonly IWorkflowPrompt _prompt = Substitute.For<IWorkflowPrompt>();
 
-    private ApprovalGate Gate(bool dryRun = false, bool autoApprove = false) =>
+    private GateApproval Gate(bool dryRun = false, bool autoApprove = false) =>
         new(new WorkflowJob("obsidian", "sync", dryRun, autoApprove), Substitute.For<IWorkflowLog>(), _prompt);
 
     [Fact]

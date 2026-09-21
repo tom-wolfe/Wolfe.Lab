@@ -1,5 +1,5 @@
 <Solution>
-  <Folder Name="/watcher/">
+  <Folder Name="/.build/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="Dockerfile" />

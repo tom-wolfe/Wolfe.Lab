@@ -41,6 +41,9 @@ container:
   # "-": the runner finds the daemon itself but never mounts the socket into
   # a job container — a build cannot reach the host's Docker.
   docker_host: "-"
+  # The job image is built on this node, not fetched: pulling would look for
+  # `lab/ci` in a registry that does not have it and fail every job.
+  force_pull: false
 
 host:
   workdir_parent: {{ .home }}/.cache/{{ .dir }}

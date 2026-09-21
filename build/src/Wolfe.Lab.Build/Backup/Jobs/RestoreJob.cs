@@ -39,7 +39,7 @@ internal sealed class RestoreJob<TSettings> : LabJob<TSettings> where TSettings 
         Step.FromType<ResolveSnapshot>(),
         Step.FromType<ResolveImage>(),
         Step.FromType<CheckImage>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<RestoreState>()
     ];
 

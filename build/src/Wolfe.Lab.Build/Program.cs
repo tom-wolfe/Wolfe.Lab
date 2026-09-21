@@ -3,6 +3,7 @@ using Ritten.CommandLine;
 using Wolfe.Lab.Build.Agents.Workflows;
 using Wolfe.Lab.Build.Caddy.Workflows;
 using Wolfe.Lab.Build.Docker.Workflows;
+using Wolfe.Lab.Build.DotNet.Workflows;
 using Wolfe.Lab.Build.Files.Workflows;
 using Wolfe.Lab.Build.Immich.Workflows;
 using Wolfe.Lab.Build.Obsidian.Workflows;
@@ -22,7 +23,9 @@ builder.Workflows
     .Add<AgentsWorkflow>()
     .Add<OllamaWorkflow>()
     .Add<CaddyWorkflow>()
-    .Add<DockerWorkflow>();
+    .Add<DockerWorkflow>()
+    .Add<DotNetServiceWorkflow>()
+    .Add<ImageWorkflow>();
 
 builder.Runtimes
     .Add<LabRuntime>();

@@ -12,7 +12,7 @@ namespace Wolfe.Lab.Build.Docker.Jobs;
 /// <summary>
 /// Installs a compose component on the node and converges its stack.
 /// </summary>
-internal sealed class DeployJob : LabJob<DockerSettings>
+internal sealed class DeployJob<TSettings> : LabJob<TSettings> where TSettings : DockerSettings
 {
     public override string Name => "deploy";
 
@@ -25,20 +25,20 @@ internal sealed class DeployJob : LabJob<DockerSettings>
         Step.FromType<InstallSlice>(),
         Step.FromType<BuildImages>(),
         Step.FromType<ResolveComposeSecrets>(),
-        Step.FromType<ApprovalGate>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<ComposeUp>()
     ];
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<DockerSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<TSettings> settings) => settings
         .Require(s => s.Images.All(image => image.ToImage() is not null), "every entry in 'images' needs a 'tag' and a 'context'.");
 
-    protected override void Configure(IWorkflowBuilder builder, DockerSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, TSettings settings)
     {
         base.Configure(builder, settings);
         builder.AddDocker().AddSliceInstaller();
-        builder.Services.AddSingleton(settings);
+        builder.Services.AddSingleton<DockerSettings>(settings);
         builder.Services.AddSingleton(new RequiredVolumes([.. settings.Volumes.Select(volume => volume.Directory)]));
         builder.Services.AddSingleton(new ImagePlan([.. settings.Images.Select(image => image.ToImage()).OfType<BuildableImage>()]));
     }

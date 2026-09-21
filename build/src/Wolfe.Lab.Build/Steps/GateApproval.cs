@@ -4,7 +4,7 @@ namespace Wolfe.Lab.Build.Steps;
 /// Stops and asks before a job publishes.
 /// </summary>
 [Step("approval gate", StepKind.Gate)]
-internal sealed class ApprovalGate(WorkflowJob job, IWorkflowLog log, IWorkflowPrompt prompt)
+internal sealed class GateApproval(WorkflowJob job, IWorkflowLog log, IWorkflowPrompt prompt)
 {
     public async Task<StepResult> Run(CancellationToken cancellationToken = default)
     {

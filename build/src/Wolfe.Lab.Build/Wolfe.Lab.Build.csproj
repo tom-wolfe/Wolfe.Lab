@@ -16,9 +16,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Ritten.CommandLine" />
     <PackageReference Include="Ritten.Core" />
     <PackageReference Include="Ritten.Docker" />
+    <PackageReference Include="Ritten.DotNet" />
     <PackageReference Include="Ritten.Forgejo" />
     <PackageReference Include="Ritten.Git" />
     <PackageReference Include="Scriban" />
