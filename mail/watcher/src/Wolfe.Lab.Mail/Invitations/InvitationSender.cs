@@ -73,26 +73,21 @@ internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, 
         // The MIME part has to declare the same method the body does, or a client reads it as
         // a file rather than an invitation.
         invitation.ContentType.Parameters["method"] = InvitationBuilder.Method;
+        invitation.ContentType.Name = "invite.ics";
 
         var summary = new TextPart("plain")
         {
             Text = Describe(detected)
         };
 
-        // The shape a calendar invitation normally arrives in: the alternative carries the
-        // invitation semantics, and the attachment is the copy that a client with no
-        // invitation handling can still open. The attachment is what was proven to work by
-        // hand, so it stays even though the alternative should make it redundant.
-        var body = new MultipartAlternative { summary, invitation };
-        var attachment = new MimePart("application", "ics")
-        {
-            Content = new MimeContent(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(calendar))),
-            ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
-            ContentTransferEncoding = ContentEncoding.Base64,
-            FileName = "invite.ics"
-        };
+        // ONE calendar part, and the whole body. An earlier version also attached the same
+        // bytes as an application/ics file, on the theory that a client with no invitation
+        // handling could still open it — but a client that understands invitations then
+        // receives the event twice, shows two .ics attachments, and interprets neither. The
+        // alternative is the shape iTIP specifies; the plain text is what a client that cannot
+        // read it falls back to.
+        message.Body = new MultipartAlternative { summary, invitation };
 
-        message.Body = new Multipart("mixed") { body, attachment };
         return message;
     }
 

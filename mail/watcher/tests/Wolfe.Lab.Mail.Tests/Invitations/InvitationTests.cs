@@ -30,11 +30,15 @@ public class InvitationTests
     {
         var ics = InvitationBuilder.Build(Event(), "tom@twolfe.dev", "uid-1", Stamp);
 
-        // Without METHOD:REQUEST a client treats this as a file, and offers nothing.
-        ics.ShouldContain("METHOD:REQUEST");
+        // Without a METHOD a client treats this as a file, and offers nothing. PUBLISH rather
+        // than REQUEST: there is nobody to invite, and a REQUEST the recipient organises is one
+        // a client declines to offer.
+        ics.ShouldContain("METHOD:PUBLISH");
         ics.ShouldContain("BEGIN:VEVENT");
         ics.ShouldContain("SUMMARY:Hamilton");
         ics.ShouldContain("UID:uid-1");
+        // The pair that made a client treat it as its own event and offer nothing.
+        ics.ShouldNotContain("ATTENDEE");
     }
 
     [Fact]
@@ -92,17 +96,22 @@ public class InvitationTests
         var calendar = reply.BodyParts.OfType<TextPart>()
             .Single(part => part.ContentType.IsMimeType("text", "calendar"));
 
-        calendar.ContentType.Parameters["method"].ShouldBe("REQUEST");
-        calendar.Text.ShouldContain("METHOD:REQUEST");
+        calendar.ContentType.Parameters["method"].ShouldBe("PUBLISH");
+        calendar.Text.ShouldContain("METHOD:PUBLISH");
     }
 
     [Fact]
-    public void Compose_AlsoAttachesTheFile()
+    public void Compose_SendsTheCalendarExactlyOnce()
     {
-        // The shape proven to work by hand, kept alongside the invitation semantics.
+        // It used to send the same bytes twice — once as the invitation and once as an
+        // application/ics attachment — which arrived as two .ics files and left the client
+        // interpreting neither.
         var reply = InvitationSender.Compose(Event(), Source(), "tom@twolfe.dev", Stamp);
 
-        reply.Attachments.OfType<MimePart>().ShouldContain(part => part.FileName == "invite.ics");
+        reply.BodyParts.Count(part => part.ContentType.IsMimeType("text", "calendar")
+                                      || part.ContentType.IsMimeType("application", "ics"))
+            .ShouldBe(1);
+        reply.Attachments.ShouldBeEmpty();
     }
 
     [Fact]

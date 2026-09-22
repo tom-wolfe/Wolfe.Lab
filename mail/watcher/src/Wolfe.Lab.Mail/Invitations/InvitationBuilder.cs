@@ -9,21 +9,15 @@ namespace Wolfe.Lab.Mail.Invitations;
 /// <summary>
 /// Turns a detected event into the iCalendar text Proton Calendar will offer to add.
 /// </summary>
-/// <remarks>
-/// <c>METHOD:REQUEST</c> is the whole point. Without it a client treats the attachment as a
-/// file rather than an invitation, and nothing is offered — which is the difference between
-/// this working and doing nothing at all. The MIME part has to carry the same method; see
-/// <see cref="InvitationSender"/>.
-/// </remarks>
 internal static class InvitationBuilder
 {
-    internal const string Method = "REQUEST";
+    internal const string Method = "PUBLISH";
 
     /// <summary>
     /// The iCalendar body for one event.
     /// </summary>
     /// <param name="detected">The event to invite to.</param>
-    /// <param name="organiser">The address the invitation comes from and goes to.</param>
+    /// <param name="organiser">The address the event is published from.</param>
     /// <param name="uid">A stable identity for the event, so a second send updates rather than duplicates.</param>
     /// <param name="stamp">When the invitation was produced.</param>
     public static string Build(DetectedEvent detected, string organiser, string uid, DateTimeOffset stamp)
@@ -41,11 +35,8 @@ internal static class InvitationBuilder
             Organizer = new Organizer($"mailto:{organiser}")
         };
 
-        appointment.Attendees.Add(new Attendee($"mailto:{organiser}")
-        {
-            ParticipationStatus = "NEEDS-ACTION",
-            Rsvp = true
-        });
+        // No ATTENDEE. Under PUBLISH there is nobody to RSVP, and listing the recipient as an
+        // attendee of an event they also organise is what stops a client offering to add it.
 
         var calendar = new Calendar { Method = Method };
         calendar.Events.Add(appointment);
