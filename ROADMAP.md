@@ -35,219 +35,22 @@ workflow). Nothing in the repo says this today; `setup.sh` is the closest.
 `lab restore` from the offsite repository is the missing piece of that
 runbook: today both jobs read the local one.
 
-### 2. The primary node becomes a Linux box
+### 2. Finish the *arr stack
 
-The VM boundary is the proximate cause of nearly every container fault in
-the changelog, but the decisive constraint is narrower and physical: **a
-Mac cannot host a storage controller.** No Mac takes internal drives, none
-takes an HBA, and Apple Silicon has no third-party driver path for one over
-Thunderbolt. Every disk the lab owns therefore arrives through a bridge
-chip in an external enclosure, which is what caps storage at "whatever fits
-in a Thunderbolt DAS" — a measured 4U for four bays, two of them used. That
-is the reason to move, and it is independent of CPU: the mini has compute
-to spare and a Linux box does not need to beat it.
+Add Prowlarr and Jellyseerr to the existing Radarr/Sonarr/Jellyfin stack.
 
-The destination is a mini-ITX NAS board in the 10" rack with drives on real
-SATA ports. Specced, not bought — roughly £1200 before the last three items
-below — so this waits on money rather than on design:
+### 3. Renovate support
 
-- **i3-N305 mini-ITX NAS board** — 6× SATA, M.2, 4× 2.5GbE, 24+4 ATX, 32 GB
-  DDR5 SODIMM. The CPU is deliberately modest: the heavy work goes to the
-  Studio (#7), and the platform layer is a rounding error on any of this.
-- **10" 2U mini-ITX case** — Pico-PSU only, one 80 mm fan, 223 mm deep, no
-  5.25" bay.
-- **IcyDock MB326SP-B** — six 2.5" SATA bays, in a 1U 10" mount. Six bays
-  in 3U total, against 4U for four today.
-- **A Pico-PSU and a 12 V brick.** A Pico moves AC→DC conversion out to an
-  external brick and plugs into the 24-pin header to derive 5 V and 3.3 V.
-  **Size the 5 V rail, not the headline wattage** — 2.5" SSDs draw almost
-  entirely on 5 V and that is the small rail. The usual
-  Pico-PSU-in-a-NAS warning is about 3.5" spin-up surge on 12 V and does
-  not apply.
-- **An NVMe boot drive**, so all six SATA ports stay data.
-- **One new SATA SSD** large enough to stage the migration — see below.
-- **An 80 mm fan.**
-
-**Two things absent from every parts list.** Six SATA data cables and a
-SATA power lead have to leave a sealed case and reach the cage a unit
-below; running the case lid-off solves that but costs the single fan its
-directed airflow, so take the Beszel temperature baseline first and cut a
-pass-through only if the package temperature says so. And **the existing
-drives are macOS-formatted** — Linux reads APFS only through unreliable
-read-only tooling, so nothing can simply be re-seated in the cage. The data
-comes off onto a Linux-formatted disk, the old pair is wiped, and it goes
-back. That is what the staging disk is for, and it is why it is not
-optional.
-
-**The backup transport gets revisited here, by its own instruction.**
-`restic/README.md` declines a `rest-server` on the mini because sshd is
-native and the drive is native, and says to revisit "when the platform
-layer moves to Linux and the drive's host changes" — which is this. An
-append-only mode and a path jail are the gain; a container in the backup
-path is the cost, and on Linux it is no longer a container behind a VM.
-
-**The filesystem is a decision, not a default.** ext4 or xfs is the simple
-answer. ZFS or btrfs adds checksumming and scheduled scrubs, which is the
-only thing that would ever notice bit rot in the media library —
-deliberately unbacked, and today watched by nothing, because restic
-verifies its own repository and not files it was never given.
-
-**Sequence.** Every step is safe to stop at, and the lab keeps running on
-the mini throughout:
-
-1. Build and burn in off the rack, with no lab data: Linux on the NVMe, the
-   staging disk in the cage, memtest and a disk burn-in.
-2. Make it a node that does nothing — chezmoi profile, Tailscale, host
-   runner, Beszel agent, Gatus check. The mini is untouched and still
-   primary; this proves the machine before anything depends on it.
-3. Migrate slices one at a time, Forgejo last because it runs the deploys.
-   Each keeps its `backup` section, and each takes the node's own restic
-   path (`restic/README.md`, "From a Linux node").
-4. Media across, old SSDs wiped and reformatted, into the cage.
-5. The mini stops being primary.
-
-Step 3 restores each slice's state onto new hardware and boots the service
-on it, which **is** the boot-on-restore drill #1 asks for — provided it
-goes through `lab restore` rather than by hand. Done that way, the
-migration retires that half of #1 instead of deferring it.
-
-**Superseded: moving the platform layer to the Pi.** It was written here as
-the cheap first step and it no longer is one — it would migrate slices to
-arm64 en route to amd64, twice the work for a destination that is coming
-anyway. The Pi keeps the roles it already has and the ones already designed
-for it: the containerised CI runner, Gatus, and Home Assistant and Pi-hole
-when they land, all of which want real host networking rather than more
-CPU. The cheap mini fixes that depend on none of this — Wi-Fi off, a DHCP
-reservation — are on the rack build's list and should just be done.
-
-**What the mini becomes.** Not a server, and that is the point: it stops
-being the one machine the lab dies with. What genuinely cannot move:
-
-- **An Apple-platform build runner.** Xcode, codesigning and notarization
-  are practical only on Apple hardware, and it slots in as another
-  `runs-on` label with no new architecture.
-- **macOS VMs for bootstrap testing.** Virtualization.framework runs only
-  on Apple silicon, and the `macbook` / `work-macbook` / `macmini-node`
-  profiles have no test target today short of wiping a real machine. A
-  disposable macOS VM is the one use that fits this repo's ethos exactly.
-- **Apple-local data, if the assistant grows past Obsidian and mail.**
-  Messages, Notes, Contacts and Photos live in `~/Library` on a logged-in
-  Mac and nothing else can read them. It needs Full Disk Access, so it
-  carries the TCC debt — now confined to a machine nothing depends on,
-  which is where that debt belongs.
-- **Batch transcoding.** Off Docker, VideoToolbox is reachable, so
-  re-encoding the library to HEVC or AV1 to reclaim space becomes viable.
-  Real, but not exclusive — Intel's encoders do this too.
-
-Nothing currently in the lab is on that list. Everything else moves.
-
-### 3. A UPS
-
-Not bought yet. The rack plan already places it: a ~650 VA unit on the floor beside the
-rack, one battery-backed outlet feeding a plain (non-surge) strip on the
-rear rail, so the router and switch ride out a blip along with the mini.
-The case is unchanged: everything runs on one mini with USB-attached
-drives, and the nightly backups stop and start SQLite and LMDB stores.
-A power cut mid-write is how those corrupt, silently, until a restore
-fails — which is why this sits directly under the drills.
-
-**Buying it is the smaller half.** The item is what happens on battery:
-
-- **USB to the mini, and macOS does the shutdown natively** — System
-  Settings → Energy → UPS: shut down after N minutes on battery. Set it
-  short; the point is a clean stop, not runtime. `pmset -g batt` shows
-  what the OS sees.
-- **"Start up automatically after a power failure"** in the same pane,
-  so the return of mains brings the mini back without a hand. Docker
-  Desktop starts on login, the media stacks already carry mount guards
-  for the drive race — verify the whole chain once by pulling the plug.
-  That is a drill, and it belongs on the same quarterly rota as the
-  restore drill.
-- **Making it visible.** Beszel does not read UPS state. NUT (`nut` in
-  Homebrew) on the mini exposes it — battery charge, load, on-battery
-  events — and both Home Assistant and Gatus can consume that later.
-  Not required for the shutdown to work; required for "the battery is
-  five years old and holds nothing" to be noticed before the day it
-  matters.
-
-### 4. The *arr stack, Phase B — acquisition
-
-Phase A shipped in 0.19.0 (`sonarr/`, `radarr/` as renamers, alongside
-the Jellyfin 12.0 upgrade), so what remains is the half that was always
-the smaller value and the larger cost.
-
-**Phase B — acquisition.** Prowlarr for indexers, and Jellyseerr as the
-"write it down and forget it" front end: request something, it lands on
-a list, and it arrives without further involvement. Jellyseerr reads the
-Jellyfin library, so it won't offer what's already there. The download
-client and its `gluetun` sidecar shipped as `qbittorrent/` (0.12); the
-renamers shipped as Phase A — so Phase B is two new containers plus
-wiring: Prowlarr → Sonarr/Radarr (API keys, which today sit unused in
-each app's `config.xml`), Sonarr/Radarr → qBittorrent (categories with
-per-category save paths on `/Volumes/Data2`), and Connect → Jellyfin so
-each import triggers a library update instead of the manual scans Phase
-A needed.
-
-**The cost, plainly:** two or three more containers to pin, upgrade,
-back up and monitor — the "each adds backup surface" line below, and
-this item is the first to really test it. Mitigating: the configs are
-small SQLite databases, nothing like the Immich case. The media itself
-is not backed up at all — 1.6 TB, against single-digit GB of service
-state in restic — and whether it should be is an open question
-("Backing up media" under Undecided). Phase B changes that question's
-shape: a library that re-acquires itself is a library whose loss is an
-inconvenience.
-
-### 5. Knowing what's stale — Renovate, and a report for everything else
-
-**Renovate as a workflow.** A dozen pinned images across the slices
-(caddy, forgejo, jellyfin, garage, lego, beszel, gatus, gluetun,
-qbittorrent, sonarr, radarr, tailscale). Renovate runs fine as a container task — it does **not** need
-the Actions runner — and it automates the "bump the pin via a normal PR
-first" ritual the slice READMEs ask for by hand.
-
-**The report.** Renovate reads pins in the repo. It
-does not read a Brewfile, and it knows nothing about macOS or Docker
-Desktop — and since 0.18.2 removed the nightly upgrade flow (unattended
-upgrades on a lone server were unwise, and kept failing on prompts),
-nothing bumps those and nothing says they are behind. That is the gap:
-not the upgrading, which is rightly manual now, but the *knowing*. One
-weekly workflow that runs `brew outdated` and
-`softwareupdate -l` on the mini and reports — never applies. Same
-principle as the free-space check: one poller that reports, not N guards
-that act.
-
-**Where the report goes.** Pushover is fine for "3 packages outdated";
-it is a poor fit for a list (1024-character messages, no formatting).
-This is the first thing in the lab that is a *report* rather than an
-*alert*, and reports want email. Nothing in the lab can send one today.
-Options, with the honest costs:
-
-- **Proton, directly: not on a personal plan.** Proton offers SMTP
-  submission only on business plans. Proton Bridge exposes a local
-  SMTP port and has a headless mode, but it is a logged-in session
-  that has to live somewhere — the same shape as `op` on the mini, and
-  it went about as well. Possible, not recommended.
-- **A transactional provider, sending as `lab@twolfe.dev`** —
-  recommended. Resend, Postmark, Mailgun, SES; the free tiers cover a
-  lab's volume many times over. Sending from the domain needs the
-  provider's DKIM record and its `include:` added to the SPF record —
-  both in `dns/tofu`, which already holds Proton's; SPF is ONE record
-  per domain, so the two includes share it. Receiving is untouched:
-  Proton still owns MX, so mail *to* the domain lands where it does
-  now, and a reply to a lab report arrives in the inbox. Gatus has a
-  native email alert and a workflow step can submit over SMTP, so both
-  consume the same credential from the vault. Cost: one more third-party
-  dependency, one more `dependencies` check in Gatus.
+Add Renovate for things like outdated Docker images, and nuget packages.
 
 ### 6. CI, the build pool, and pipelines as a CLI
 
 Every node runs a **host** runner for the lab's own CD: repo-scoped, host
 mode, holding the node's vault token. The Pi also runs a **containerised**
 runner: instance-scoped, the role label `docker`, no host environment and
-no socket in a job, where CI runs today (`ci.yaml`: shellcheck and YAML
-parsing on every pull request) and where Ritten and NSchema will build and
-publish once their repos flip from mirror to active. Three things remain:
+no socket in a job, where CI runs today (`build.yaml`, and each slice's
+`check` on every pull request) and where Ritten and NSchema will build and
+publish once their repos flip from mirror to active. One thing remains:
 
 - **The mini joins the build pool.** The containerised runner as a compose
   slice, identical on every node — the runner image, socket-mounted so it
@@ -257,51 +60,6 @@ publish once their repos flip from mirror to active. Three things remain:
   a runner in a container hands job containers bind mounts by host path,
   so its work directory must be the same path inside and out; Forgejo's
   own compose example does exactly that.
-- **Plan-on-PR and the changelog check.** Plan-on-PR needs provider
-  credentials in a pre-merge context, and handing secrets to a workflow
-  that pre-merge code can edit is the classic `pull_request_target`
-  foot-gun — theoretical while every PR is Tom's own, but it decides the
-  design. A `pull_request` workflow can also name a host runner's label
-  and run unmerged code on a node; branch protection on main and CI on
-  the containerised runner only are the mitigations, and a host runner
-  is assumed reachable by any workflow file on any branch.
-- **Branch protection, which does not exist yet.** The bullet above names
-  it as a mitigation, and the repo is already run as though it were in
-  place — every change arrives as a pull request — but nothing enforces
-  it. `svalabs/forgejo` carries `forgejo_branch_protection`, so this is a
-  resource in `forgejo/tofu/primary.tf` beside
-  `forgejo_repository.wolfe_lab`, applied by the existing workflow: block
-  direct pushes to `main`, require `ci.yaml` to pass. **Required approvals
-  must be zero** — Forgejo will not let an author approve their own pull
-  request and there is one author, so any other value locks the repo. What
-  it does not buy: a `pull_request` workflow runs the workflow file *from
-  the branch*, so protecting `main` does not stop a branch naming a host
-  runner's label. The containment there is that only one person can push at
-  all.
-- **The rest of `scripts/` into the CLI.** `build/` exists and the
-  obsidian workflows call it; deploy, apply/plan, alert and the
-  heartbeat still run as shell. Each moves as a workflow class with a
-  `ritten.json` per slice, and each workflow file changes one line. Node
-  facts the scripts infer become inputs there: the backup job decides
-  where the restic repository is by OS, which only holds while the mini
-  is the only macOS server. Two things the CLI does not touch.
-  The seven tofu roots carry an identical `encryption.tf` and backend
-  block each — HCL, not shell — and OpenTofu reads both from the
-  environment (`-backend-config` for the backend, `TF_ENCRYPTION` for
-  the encryption block), so they belong beside the state credentials in
-  `scripts/tofu-state.env`, declared once. And the CLI is compiled from
-  the checkout on every run today; packed as a tool and installed on
-  each node by chezmoi, the short-cycle workflows (heartbeat, the Gatus
-  probe, obsidian) need no `actions/checkout` through node at all.
-- **One-offs as `workflow_dispatch` workflows.**
-  `forgejo/scripts/register-runner.sh`, the Beszel agent's enrolment
-  (`beszel/RUNBOOK.md`) and `garage/scripts/init-layout.sh` are run at a
-  desk today; as hand-triggered workflows the run is logged and alerts
-  like everything else. One constraint decides how far each moves: the
-  nodes' vault credential is read-only by design, so a workflow can
-  *register* a runner but minting its secret stays wherever a writable
-  credential lives; and the Beszel token is minted by the hub and
-  harvested by hand, so only the apply-and-restart half is a workflow.
 
 ### 7. The Mac Studio as a compute node
 
@@ -356,9 +114,8 @@ the restore drills (#1) have passed — the offsite copy exists first and
 is proven, then the origin moves.
 
 **The config half.** The first cross-slice values are already here,
-homed nowhere: `scripts/alert.sh` regex-scrapes Forgejo's `ROOT_URL` out
-of `forgejo/compose.yaml`, the runner registration template reads the
-same file with a cross-tree `include`, seven tofu roots carry the Garage
+homed nowhere: the runner registration template reads Forgejo's
+`ROOT_URL` out of `forgejo/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
 (`caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
@@ -378,7 +135,7 @@ breaks bootstrap cycles, and the daily plan's nag makes the eventual
 consistency visible instead of silent. Two caveats, named at design
 time. The failure mode INVERTS — absent config is a green plan that
 deploys nothing, so every consumer carries a tofu `check` making absence
-at least a named warning (the `chezmoi/tofu` pattern). And published
+at least a named warning (the `heartbeat/tofu` pattern). And published
 config is declared truth, not liveness — proving someone answers is
 monitoring's job (`gatus/`), not this one's.
 
@@ -410,9 +167,10 @@ from them rather than relitigating:
   accounts — check *its* rate limits before trusting it with the lesson
   of 0.16.0) or `bw`/`rbw` with a local cache — rbw's agent holds the
   vault locally, which is the Connect-shaped property: reads cost no
-  quota and survive cloud outages. `scripts/secrets.sh` is already the
-  run-style shim every caller goes through, so the machine half is its
-  backend plus the reference syntax in the env files — no caller changes;
+  quota and survive cloud outages. Ritten's `ISecretProvider` is already
+  the one door every caller goes through, so the machine half is a second
+  provider package plus the reference syntax in the env files — no caller
+  changes;
   chezmoi has native `bitwarden`/`rbw` template functions for the
   `create_` files that remain (the runner registrations, the Beszel
   agent, the Pi's restic key).
@@ -492,42 +250,6 @@ Forgejo's for the repo. A static front end that reads those over the
 `lab` network, in a container behind caddy, is a slice like any other.
 It does not replace Gatus, Beszel or the Actions tab; it is the page
 that saves opening four of them.
-
-### 10. Mail: Proton Bridge, and an event scanner into the calendar
-
-Two things want the same credential and have been waiting on each other.
-Item #5 needs SMTP for a report that is a list rather than an alert; this
-one needs IMAP.
-
-**Bridge as a slice, not as session state.** #5 dismissed Proton Bridge as
-"a logged-in session that has to live somewhere", the same shape as `op` on
-the mini, and on macOS that was right. On the Linux node (#2) it is an
-ordinary container: credentials in its own volume, the one-time login an
-interactive RUNBOOK step rather than a standing session, and a `backup`
-section like everything else. The honest costs — the images are community
-work that Proton does not support, and Bridge versions get cut off if they
-fall far enough behind, so it wants a pin and a Renovate watch like any
-other image (#5).
-
-**The scanner.** Detect events in incoming mail and put them in Proton
-Calendar, the way Gmail does. The write half is the constrained one.
-
-- **Writing. Decided: mail the event to yourself as an `.ics`.** Proton
-  Calendar has no public API and CalDAV is not on the plan, but Proton
-  Calendar recognises an iCalendar invitation received by mail — so the
-  write path is SMTP through the same Bridge, using only supported
-  surfaces. The alternative, if a tap per event grates, is publishing an
-  `.ics` that Caddy serves and Proton subscribes to: that makes the lab the
-  source of truth, but it is read-only into Proton and refreshes on
-  Proton's schedule rather than on the lab's.
-- **Detection, in tiers, because most of it needs no model at all.** An
-  attached `.ics` first. Then schema.org JSON-LD in the HTML — bookings,
-  tickets and reservations carry it, and it is how Gmail does most of this:
-  deterministic, high precision, no inference. Only prose falls through to
-  the Studio's model, which makes the LLM tier optional by construction. If
-  the Studio is asleep the first two tiers still run and the rest is picked
-  up next time, provided processed message IDs are tracked so the job is
-  idempotent. That keeps #7's rule intact.
 
 ## Debt no item above retires
 

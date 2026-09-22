@@ -10,11 +10,8 @@ on:
 jobs:
   ping:
     runs-on: MacMini
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - run: scripts/heartbeat.sh lab-chezmoi-update
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "heartbeat failed (the pinger, not the lab)"
+      - working-directory: heartbeat
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- ping

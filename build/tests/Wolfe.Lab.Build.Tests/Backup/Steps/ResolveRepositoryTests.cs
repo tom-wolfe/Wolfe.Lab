@@ -1,15 +1,14 @@
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Backup.Steps;
-using Wolfe.Lab.Build.Deploy.Models;
-using Wolfe.Lab.Build.Restic;
-using Wolfe.Lab.Build.Secrets;
+using Wolfe.Lab.Build.Clients.Restic;
+using Wolfe.Lab.Build.Slices;
 
 namespace Wolfe.Lab.Build.Tests.Backup.Steps;
 
 public class ResolveRepositoryTests : IDisposable
 {
     private readonly DirectoryInfo _checkout = Directory.CreateTempSubdirectory("lab-checkout-");
-    private readonly ISecrets _secrets = Substitute.For<ISecrets>();
+    private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
     private readonly Slice _slice;
     private readonly string _envFile;
 
@@ -18,8 +17,8 @@ public class ResolveRepositoryTests : IDisposable
         var source = _checkout.CreateSubdirectory("files");
         _slice = new Slice("files", new PhysicalDirectory(source.FullName), new PhysicalDirectory(Path.Combine(_checkout.FullName, "release", "files")));
         _envFile = Path.Combine(_checkout.CreateSubdirectory(ResticEnvironment.SliceName).FullName, ResolveRepository.FileName);
-        _secrets.Read(SecretReference.From("op://any/item/field"), Arg.Any<CancellationToken>())
-            .ReturnsForAnyArgs(call => $"value-of-{call.Arg<SecretReference>().Value}");
+        _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<string>().StartsWith("op://", StringComparison.Ordinal) ? $"value-of-{call.Arg<string>()}" : call.Arg<string>());
     }
 
     public void Dispose() => _checkout.Delete(recursive: true);
@@ -81,7 +80,7 @@ public class ResolveRepositoryTests : IDisposable
         var result = await Step().Run(_slice, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
-        await _secrets.DidNotReceiveWithAnyArgs().Read(SecretReference.From("op://a/b/c"), TestContext.Current.CancellationToken);
+        await _secrets.DidNotReceiveWithAnyArgs().Resolve("", TestContext.Current.CancellationToken);
     }
 
     [Fact]

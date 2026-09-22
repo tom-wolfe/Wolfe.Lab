@@ -16,9 +16,9 @@ reasons are in `README.md`.
 4. **Reload caddy's routes** — the caddy workflow (it fires on any `*/caddy.caddyfile` change) does
    this on its next run; by hand,
    `docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile`.
-5. **The record**: `tofu-gatus.yaml` creates the CNAME on the push;
-   `tofu-forgejo.yaml` creates `code.twolfe.dev` the same way.
-   Or by hand from a laptop: `scripts/apply.sh gatus` — plan tripwire:
+5. **The record**: `gatus-tofu.yaml` creates the CNAME on the push;
+   `forgejo-tofu.yaml` creates `code.twolfe.dev` the same way.
+   Or by hand from a laptop: `lab deploy` from `gatus/tofu` — plan tripwire:
    1 to add.
 6. **Open the board** at https://status.twolfe.dev (fallbacks
    `https://status.twolfe.dev`, `http://macmini.local:8280`) and work
@@ -38,8 +38,8 @@ reasons are in `README.md`.
    ```
 
    A runner re-registered with a NEW secret gets a new id; update the
-   file. Re-running `forgejo/scripts/register-runner.sh` with the
-   existing vault item keeps it.
+   file. Re-running `lab register-runner` with the existing vault item
+   keeps it.
 3. Run the gatus workflow (or `lab deploy` on the Pi); the
    `runners` group is green within two minutes.
 

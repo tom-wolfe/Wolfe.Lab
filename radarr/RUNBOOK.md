@@ -7,16 +7,13 @@ reasons are in `README.md`.
 
 At the desk, after the Jellyfin 12.0 upgrade and its full scan.
 
-1. Fold the loose files, dry run first, then for real:
-
-   ```sh
-   cd ~/.local/share/Wolfe.Lab
-   DRY=1 radarr/scripts/fold-movies.sh /Volumes/Data2/videos/movies   # prints the plan
-   radarr/scripts/fold-movies.sh /Volumes/Data2/videos/movies
-   ```
-
-   Anything reported as `skip:` (a loose file whose stem already exists
-   as a folder) gets folded by hand.
+1. Fold the loose files: for every video sitting loose in
+   `/Volumes/Data2/videos/movies`, make a folder named for its stem and
+   move it in with every same-stem sidecar (`<stem>.en.srt`,
+   `<stem>-poster.jpg`, `<stem>-backdrop.jpg`). Same-filesystem renames,
+   so it is instant and touches no media bytes. Skip the `._*` AppleDouble
+   litter, and a loose file whose stem already exists as a folder gets
+   folded by hand.
 2. Deploy: merge — the radarr workflow converges it on the push.
 3. Create the login through the API — the same recipe as
    `sonarr/README.md` bootstrap step 2 with `radarr` for `sonarr` and

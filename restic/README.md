@@ -115,7 +115,7 @@ hand (`RUNBOOK.md` "A Linux node").
 | `<slice>-backup.yaml` | nightly, 02:20 to 03:30, one slice each | `lab backup` then `lab restore-drill`: stop → snapshot → start, then the snapshot restored to scratch and asserted |
 | `restic-offsite.yaml` | 04:35 nightly | `lab offsite`: copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
 | `restic-verify.yaml` | Sun 05:05 | `lab verify` here: `restic check` both repos, 5% data sample from B2 |
-| `tofu-restic.yaml` | push / daily | the tofu root, standard OpenTofu CD |
+| `restic-tofu.yaml` | push / daily | the tofu root, standard OpenTofu CD |
 
 Locking: backups take shared locks and may overlap each other safely;
 `forget --prune` needs an exclusive lock, which is why offsite sits an
@@ -131,8 +131,8 @@ Sunday's verify, the verify fails on the lock — rerun it.
 | `b2-master-key` | API Credential | `username` = master keyID, `credential` = master key — used only by `tofu/` to mint the scoped key |
 
 The env files beside this README (`restic.env`, `offsite.env`,
-`sftp.env`) are op:// references, resolved at spawn by
-`scripts/secrets.sh` — the same path every job in the lab uses. The
+`sftp.env`) are op:// references, resolved at spawn by the CLI's
+secrets provider — the same path every job in the lab uses. The
 repository URL lives in the vault, not the repo, because its region
 segment only exists once the B2 account does.
 

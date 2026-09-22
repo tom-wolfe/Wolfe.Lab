@@ -1,5 +1,5 @@
 {
-  "workflow": "service",
+  "workflow": "garage",
   "backup": {
     "paths": [
       "~/Docker/garage/meta",
@@ -9,5 +9,9 @@
     "verify": [
       "~/Docker/garage/meta"
     ]
+  },
+  "layout": {
+    "zone": "home",
+    "capacity": "500G"
   }
 }

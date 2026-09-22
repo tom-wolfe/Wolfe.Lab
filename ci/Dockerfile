@@ -42,3 +42,15 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*; \
     docker --version; \
     docker compose version
+
+# shellcheck and chezmoi, for the chezmoi slice's check: every profile renders,
+# and what it renders is valid shell. chezmoi pinned to what the Brewfile
+# installs on the nodes; bump both together.
+ARG CHEZMOI_VERSION=2.72.2
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends shellcheck; \
+    rm -rf /var/lib/apt/lists/*; \
+    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "v${CHEZMOI_VERSION}"; \
+    chezmoi --version; \
+    shellcheck --version

@@ -1,5 +1,4 @@
 using Ritten.Git;
-using Wolfe.Lab.Build.Secrets;
 
 namespace Wolfe.Lab.Build;
 
@@ -14,6 +13,5 @@ public abstract class LabJob<TSettings> : Job<TSettings> where TSettings : Workf
     {
         builder.AddCommandRunner();
         builder.AddGit();
-        builder.AddSecrets();
     }
 }

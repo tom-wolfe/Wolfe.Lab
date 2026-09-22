@@ -1,7 +1,6 @@
 using Wolfe.Lab.Build.Agents;
-using Wolfe.Lab.Build.Agents.Models;
 using Wolfe.Lab.Build.Agents.Steps;
-using Wolfe.Lab.Build.Paths;
+using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Agents.Steps;
 

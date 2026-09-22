@@ -1,8 +1,8 @@
 name: immich
 
 # Immich's reference compose, pinned and bent to the lab's rules: every
-# container runs as the host user (VirtioFS ownership — the postgres
-# first-boot race the kestra slice hit), TZ as env rather than a
+# container runs as the host user (VirtioFS ownership — a postgres
+# first-boot race otherwise), TZ as env rather than a
 # localtime mount (fleet rule), and only the server joins the edge
 # network. The DB password reaches compose from secrets.env at deploy.
 #

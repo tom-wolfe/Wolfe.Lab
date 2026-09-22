@@ -1,4 +1,4 @@
-using Wolfe.Lab.Build.Agents.Models;
+using Wolfe.Lab.Build.Agents;
 
 namespace Wolfe.Lab.Build.Tests.Agents;
 

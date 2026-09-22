@@ -8,13 +8,14 @@ reasons are in `README.md`.
 1. **1Password items** (Wolfe.Lab vault): `netlify-pat` (exists) and
    `tofu-state-passphrase` — create as a Password item, e.g.
    `op item create --vault Wolfe.Lab --category password --title tofu-state-passphrase --generate-password=64,letters,digits`.
-2. **DNS records**: `scripts/apply.sh caddy` from the repo root.
+2. **DNS records**: `lab deploy` from `caddy/tofu` (the `tofu caddy` workflow,
+   or by hand: `cd caddy/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy`).
    Check `lab_tailscale_ipv4` still matches the mini first — the record
    is only as stable as the address, and a re-enrolment that mints a new
    one means updating the variable and re-applying.
-3. **First certificate**: run `flows/renew-certs/script.sh` on the mini
-   (or the renew-certs workflow); it resolves the Netlify token from the
-   vault for the DNS-01 challenge (`flows/renew-certs/secrets.env`).
+3. **First certificate**: `lab renew-certs` from `caddy/` on the mini (or
+   the `caddy renew-certs` workflow); it reads the Netlify token the
+   `certificate` section of `ritten.json` names, for the DNS-01 challenge.
    Caddy loads the cert from files and cannot START without them —
    setup.sh encodes this ordering.
 4. **First deploy**: run the caddy workflow (or
@@ -51,11 +52,10 @@ workflow:
   stays red for an hour over a name that is actually fine. So DNS goes
   in BEFORE the merge, not as part of it.
 
-1. **Certificate.** Dispatch the `renew certs` workflow **on this
-   branch** — the script lives in `flows/`, which the installer excludes,
-   so there is no copy of it on the node to run by hand and no clone of
-   the repo there either. The runner checks the branch out on the mini,
-   where `op` can answer.
+1. **Certificate.** Dispatch the `caddy renew-certs` workflow **on this
+   branch** — there is no clone of the repo on the node to run it from by
+   hand. The runner checks the branch out on the mini, where `op` can
+   answer.
 
    Nothing needs moving out of the way first. The usual ritual — shifting
    the old files aside so lego reissues — exists for a changed SAN list
@@ -73,24 +73,12 @@ workflow:
 
 2. **DNS**, by hand from the branch, on the LAN — the state backend is
    `http://macmini.local:3900`, so this only works where mDNS resolves
-   the mini. One root at a time, plan then apply as SEPARATE commands:
+   the mini. One root at a time; `deploy` plans first and stops at the
+   gate with the plan on screen, so read it there before approving:
 
-       scripts/plan.sh caddy
-       scripts/apply.sh caddy
-
-       scripts/plan.sh forgejo
-       scripts/apply.sh forgejo
-
-       scripts/plan.sh gatus
-       scripts/apply.sh gatus
-
-   Do not chain them with `&&`. `plan.sh` uses `-detailed-exitcode` and
-   exits 2 when there are changes to make, which is the expected result
-   here — so `plan && apply` applies only when there is nothing to do,
-   which is exactly backwards.
-
-   Plan FIRST, every time: `apply.sh` runs with `-auto-approve` and will
-   never stop to show you anything.
+       cd caddy/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
+       cd ../../forgejo/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
+       cd ../../gatus/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
 
    What the plans should say. For `caddy`: two destroys and two creates.
    Those old wildcards carry `prevent_destroy`, which only protects a
@@ -106,7 +94,7 @@ workflow:
    error — comment the `lifecycle` block out of that one record, apply,
    then put it back in the same commit.
 
-   By hand on purpose. `tofu-caddy.yaml` applies on push WITHOUT a plan
+   By hand on purpose. `caddy-tofu.yaml` applies on push WITHOUT a plan
    review, so merging would do all of this unattended — and this is the
    one apply in the repo that destroys something.
 
@@ -134,6 +122,6 @@ re-run of the caddy workflow.
 
 ## Upgrading
 
-Caddy: bump the `image:` pin in `compose.yaml`, redeploy. lego: bump the
-image tag in `flows/renew-certs/script.sh`, and check the lego release
+Caddy: bump the `image:` pin in `compose.yaml`, redeploy. lego: bump
+`certificate.image` in `ritten.json`, and check the lego release
 notes — a major bump can change the CLI (v4→v5 did).

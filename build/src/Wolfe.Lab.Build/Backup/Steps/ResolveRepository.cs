@@ -1,7 +1,6 @@
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Build.Deploy.Models;
-using Wolfe.Lab.Build.Restic;
-using Wolfe.Lab.Build.Secrets;
+using Wolfe.Lab.Build.Clients.Restic;
+using Wolfe.Lab.Build.Slices;
 
 namespace Wolfe.Lab.Build.Backup.Steps;
 
@@ -9,7 +8,7 @@ namespace Wolfe.Lab.Build.Backup.Steps;
 /// Reads the repository from the restic slice's env file.
 /// </summary>
 [Step("resolve repository", StepKind.Work)]
-internal sealed class ResolveRepository(ISecrets secrets, IWorkflowLog log)
+internal sealed class ResolveRepository(ISecretProvider secrets, IWorkflowLog log)
 {
     internal const string ConfigFile = "config";
 

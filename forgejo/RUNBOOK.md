@@ -22,7 +22,7 @@ the deploy fails resolving it and the workflow goes red.
    `tailscale status | grep forgejo` from any machine), write it in as
    the **default** of `forgejo_tailscale_ipv4` in `tofu/variables.tf`
    (caddy's `lab_tailscale_ipv4` pattern) and commit; then from the repo
-   root: `scripts/apply.sh forgejo`. Tripwire: **1 to add**
+   root: `lab deploy` from `forgejo/tofu`. Tripwire: **1 to add**
    (the `git.twolfe.dev` record), 0 changed, 0 destroyed. Until the
    default is written in, every plan of this root prompts for the
    variable — deliberate: it means the record isn't real yet.
@@ -131,7 +131,7 @@ other than the snapshot's.
    are cattle — tofu recreates all of them uniformly):
 
    ```sh
-   export FORGEJO_TOKEN=...   # or scripts/secrets.sh read
+   export FORGEJO_TOKEN=...   # or op read op://Wolfe.Lab/forgejo-api-token/credential
    curl -s -H "Authorization: token $FORGEJO_TOKEN" \
      'http://macmini.local:3000/api/v1/users/tom-wolfe/repos?limit=50' \
      | jq -r '.[] | select(.mirror) | .name' \
@@ -139,14 +139,15 @@ other than the snapshot's.
          "http://macmini.local:3000/api/v1/repos/tom-wolfe/{}"
    ```
 
-3. `scripts/plan.sh forgejo` — init, then a plan to read before applying.
+3. `lab check` from `forgejo/tofu` — init, then a plan to read before applying.
 
 ## Bringing up the Pi (runbook, at the desk)
 
 The Pi is already a chezmoi machine (profile `pi-node`, source cloned
 from this instance over its deploy key). In order:
 
-1. **Register server-side** (mini): `forgejo/scripts/register-runner.sh wolfe-pi5`.
+1. **Register server-side**: mint the vault item, then `lab register-runner --node wolfe-pi5`
+   from `forgejo/` on the mini (or the `forgejo register-runner` workflow) — "The mini's runner" below has both halves.
 2. **Binaries first** (Pi): `chezmoi git pull` (apply does not pull), then
    `chezmoi apply --include externals` — the registration template needs
    `op` to exist before it can render. It prints nothing on success; check
@@ -171,7 +172,7 @@ from this instance over its deploy key). In order:
    runner appears under the repo's Settings → Actions → Runners as
    `wolfe-pi5`, label `wolfe-pi5:host`, idle.
 7. **The containerized runner** on the same node is the same two halves:
-   `forgejo/scripts/register-runner.sh wolfe-pi5 docker` on the mini
+   `lab register-runner --node wolfe-pi5 --kind docker` on the mini
    (vault item `forgejo-runner-wolfe-pi5-docker`, instance scope, label
    `docker:docker://node:22-bookworm`), then on the Pi delete nothing and
    `chezmoi apply` — its config and registration render beside the host
@@ -249,9 +250,17 @@ start, so a config change is not live until the runner is.
 
 ## The mini's runner
 
-1. `forgejo/scripts/register-runner.sh MacMini` (from a machine with a
-   writable `op` the first time — the mini's service account is read-only,
-   so mint the vault item from the laptop and re-run on the mini).
+1. Mint the secret and register. The mini's service account is read-only,
+   so the item is created from the laptop, once; the registration runs
+   wherever the forgejo container is, and is safe to repeat:
+
+       secret=$(ssh macmini.local docker exec -u git forgejo forgejo forgejo-cli actions generate-secret)
+       op item create --category "API Credential" --vault Wolfe.Lab --title forgejo-runner-MacMini "credential=$secret"
+       cd forgejo
+       dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node MacMini
+
+   A containerised runner is the same with `--kind docker` and the item
+   `forgejo-runner-<node>-docker`.
 2. Seed the bootstrap env: `install -D -m 600 /dev/null
    ~/.config/forgejo-runner/env` and write
    `OP_SERVICE_ACCOUNT_TOKEN=$(cat ~/Docker/1password/service-account-token)`.

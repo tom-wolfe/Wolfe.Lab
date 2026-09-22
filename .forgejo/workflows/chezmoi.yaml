@@ -4,11 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [chezmoi/**]
+    paths: [chezmoi/**, .forgejo/workflows/chezmoi.yaml]
   workflow_dispatch:
 
 jobs:
   check:
+    if: github.event_name == 'pull_request'
     runs-on: docker
     timeout-minutes: 15
     concurrency:
@@ -16,29 +17,13 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install linters
-        run: |
-          apt-get update -q
-          apt-get install -y -q --no-install-recommends shellcheck >/dev/null
-          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin >/dev/null
-
-      - name: Every profile renders
-        # The whole source, for each machine, with the vault stubbed — a
-        # template that only breaks on one profile fails here, not on the
-        # merge. The listing is the review aid: what each machine gets.
-        run: |
-          for profile in macbook macstudio work-macbook macmini-node pi-node; do
-            scripts/chezmoi-render.sh "$profile" "/tmp/render/$profile"
-          done
-
-      - name: Rendered scripts are valid shell
-        # Only the output is shell: everything in the source is a Go template
-        # first, so this is the earliest point either can be checked at all.
-        # chezmoi-render.sh is chezmoi's own tool, so it is checked here too.
-        run: |
-          find /tmp/render -path '*/.chezmoiscripts/*' -type f | xargs -r shellcheck
-          shellcheck scripts/chezmoi-render.sh
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
+      - working-directory: chezmoi
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- check
 
   deploy:
     if: github.event_name != 'pull_request'
@@ -52,8 +37,5 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: chezmoi update --init --no-tty
-
-      - if: failure()
-        run: |
-          scripts/alert.sh "chezmoi update failed on ${{ matrix.node }}"
+      - working-directory: chezmoi
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve

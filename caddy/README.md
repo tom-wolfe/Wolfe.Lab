@@ -13,9 +13,9 @@ This slice deliberately owns ONLY the shared edge concerns:
 - the wildcard DNS record (`tofu/`): `*.twolfe.dev` → the mini's
   Tailscale address, plus `lab.twolfe.dev` for the door itself, which is what a slice CNAMEs to when it wants a name of its own.
 - the wildcard certificate — ONE cert for `*.twolfe.dev` —
-  obtained and renewed OUTSIDE caddy by the `renew-certs` job
-  (`flows/renew-certs/`): lego solves DNS-01 against Netlify nightly and
-  reloads caddy when the cert changes.
+  obtained and renewed OUTSIDE caddy by `lab renew-certs`, declared
+  under `certificate` in `ritten.json`: lego solves DNS-01 against
+  Netlify nightly and reloads caddy when the cert changes.
 
 Routes and public DNS names do NOT live here — see the contract below.
 Netlify is a *provider*, not a slice: any slice needing a DNS record
@@ -94,7 +94,7 @@ sugar for browsers, not plumbing.
   broke with weeks of certificate lifetime still banked.
 - **After any certificate change, the reload must be `--force`.** A
   plain `caddy reload` with an unchanged Caddyfile is a no-op and does
-  not re-read the certificate files. The renew-certs script does this;
+  not re-read the certificate files. The renew-certs job does this;
   if you ever re-issue by hand and reload yourself, so must you. The
   proof is what caddy serves, not what's on disk:
   `echo | openssl s_client -connect macmini.local:443 -servername code.twolfe.dev 2>/dev/null | openssl x509 -noout -text | grep DNS:`

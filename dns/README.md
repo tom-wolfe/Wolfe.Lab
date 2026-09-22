@@ -37,10 +37,10 @@ to a thing that isn't a deployment.
 
 ## Operational notes
 
-- Plans run themselves: `.forgejo/workflows/tofu-dns.yaml` daily, alerting on
-  drift or a pending change; applying is the same workflow on the push that
-  changes the root — the OpenTofu CD model. (`scripts/plan.sh dns` from a workstation still works for
-  development; applies go through the flow.) Same 1Password items as the
+- `.forgejo/workflows/dns-tofu.yaml` plans on every pull request and
+  applies on the merge that changes the root — the OpenTofu CD model.
+  (`lab check` from `dns/tofu` on a workstation still works for
+  development; applies go through the workflow.) Same 1Password items as the
   other roots (`netlify-pat`, `tofu-state-passphrase`, garage state key)
   — nothing new to create.
 - TTLs are declared at 300 because that is what the Proton setup

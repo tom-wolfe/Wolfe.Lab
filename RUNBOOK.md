@@ -90,6 +90,12 @@ are done once per fresh server, in order.
      Forgejo's database, so a fresh Forgejo knows none of them, while each
      node's runner.json still holds its vault secret and will poll with it
      until the server knows it again (forgejo/README.md "Runners"):
-       forgejo/scripts/register-runner.sh MacMini
-       forgejo/scripts/register-runner.sh wolfe-pi5
+       cd forgejo
+       dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node MacMini
+       dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node wolfe-pi5
+       dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node wolfe-pi5 --kind docker
      Same secret, same UUID: the node side needs no change.
+
+  4. Repoint the chezmoi checkout at the primary: the bootstrap cloned the
+     GitHub mirror, and CD should not depend on it.
+       git -C ~/.local/share/chezmoi remote set-url origin http://localhost:3000/tom-wolfe/Wolfe.Lab.git

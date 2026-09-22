@@ -1,0 +1,32 @@
+name: heartbeat tofu
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [heartbeat/tofu/**, .forgejo/workflows/heartbeat-tofu.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: MacMini
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - working-directory: heartbeat/tofu
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: MacMini
+    timeout-minutes: 30
+    concurrency:
+      group: MacMini
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: heartbeat/tofu
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve

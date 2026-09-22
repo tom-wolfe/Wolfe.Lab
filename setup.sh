@@ -1,57 +1,32 @@
 #!/bin/bash
-# Fresh-server bring-up — the one imperative sequence that can't converge by
-# itself: Forgejo (which runs the deploys, through Actions) can't deploy
-# itself into existence. Everything here is idempotent; re-runs are safe no-ops.
-# Day-to-day this script is never needed: the chezmoi tick and the per-slice
-# deploy flows own convergence (see README.md "How deployment works").
+# Fresh-server bring-up: the one imperative sequence, because Forgejo, which
+# runs every other deploy, cannot deploy itself into existence. Every job is
+# convergent, so re-runs are no-ops. Extra arguments reach every job:
+# `./setup.sh --dry-run` rehearses the lot.
 #
-# Before running (see README.md "New machine bootstrap" for the details):
-#   1. 1Password signed in, profile "macmini-node" chosen during:
-#   2. sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
-#      — run `chezmoi apply` a second time: authorized_keys can only template
-#      the job-bridge public key after the first apply has materialized it.
-#   3. Docker Desktop installed and running. NOT from the Brewfile — the
-#      cask sits in the non-server branch on purpose: the whole lab runs
-#      inside it, so an unattended cask upgrade is an outage (see the
-#      Brewfile comment). Install it by hand here
-#      (`brew install --cask docker-desktop`; it requires macOS >= 14), and
-#      upgrade it by hand too: Docker Desktop's own "Check for updates" over
-#      Screen Sharing, or `brew upgrade --cask docker-desktop` followed by
-#      `open -a Docker`, at a time you're watching.
-# Then, from this repo's checkout:  ./setup.sh
-#
-# AFTER forgejo is up, repoint the chezmoi checkout at the primary — the
-# bootstrap above necessarily clones the GitHub mirror, but CD should not
-# depend on it (and the poke fires against the primary's push, so pulling
-# the mirror races it):
-#   git -C ~/.local/share/chezmoi remote set-url origin http://localhost:3000/tom-wolfe/Wolfe.Lab.git
-# Anonymous loopback HTTP: the repo is public (forgejo/tofu/primary.tf),
-# and the tick only ever pulls.
+# Before: 1Password signed in, chezmoi applied, Docker Desktop running
+# (RUNBOOK.md "New machine bootstrap"). After: RUNBOOK.md "After setup.sh".
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")" && pwd)"
+extra=("$@")
 
-converge() {
-  echo "==> $1"
-  "$repo/scripts/deploy.sh" "$@"
+lab() {
+  local slice=$1
+  shift
+  echo "==> $slice $1"
+  (cd "$repo/$slice" && dotnet run --project "$repo/build/src/Wolfe.Lab.Build" -- "$@" --auto-approve ${extra[@]+"${extra[@]}"})
 }
 
-# Caddy first — its compose OWNS the shared `lab` network.
-"$repo/caddy/flows/renew-certs/script.sh"
-converge caddy
+lab caddy renew-certs
+lab caddy deploy
+lab garage deploy
+lab garage init-layout
+lab forgejo deploy
+lab jellyfin deploy
+lab sonarr deploy
+lab radarr deploy
+lab beszel deploy
 
-# Garage next — it hosts the tofu state everything else's IaC backends onto.
-converge garage
-"$repo/garage/scripts/init-layout.sh"
-
-converge forgejo
-converge jellyfin /Volumes/Data1 /Volumes/Data2
-converge sonarr /Volumes/Data1 /Volumes/Data2
-converge radarr /Volumes/Data1 /Volumes/Data2
-converge beszel
-
-
-cat <<'EOF'
-
-Stacks are up. What remains is by hand: RUNBOOK.md "After setup.sh".
-EOF
+echo
+echo "Stacks are up. What remains is by hand: RUNBOOK.md \"After setup.sh\"."

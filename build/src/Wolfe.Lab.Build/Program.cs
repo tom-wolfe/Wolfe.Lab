@@ -1,16 +1,21 @@
 using System.CommandLine;
 using Ritten.CommandLine;
-using Wolfe.Lab.Build.Agents.Workflows;
-using Wolfe.Lab.Build.Caddy.Workflows;
-using Wolfe.Lab.Build.Docker.Workflows;
-using Wolfe.Lab.Build.DotNet.Workflows;
-using Wolfe.Lab.Build.Files.Workflows;
-using Wolfe.Lab.Build.Immich.Workflows;
-using Wolfe.Lab.Build.Obsidian.Workflows;
-using Wolfe.Lab.Build.Ollama.Workflows;
-using Wolfe.Lab.Build.Restic.Workflows;
-using Wolfe.Lab.Build.Runtimes;
-using Wolfe.Lab.Build.Service.Workflows;
+using Ritten.OnePassword;
+using Wolfe.Lab.Build;
+using Wolfe.Lab.Build.Workflows.Caddy;
+using Wolfe.Lab.Build.Workflows.Chezmoi;
+using Wolfe.Lab.Build.Workflows.Docker;
+using Wolfe.Lab.Build.Workflows.Files;
+using Wolfe.Lab.Build.Workflows.Forgejo;
+using Wolfe.Lab.Build.Workflows.Garage;
+using Wolfe.Lab.Build.Workflows.Gatus;
+using Wolfe.Lab.Build.Workflows.Heartbeat;
+using Wolfe.Lab.Build.Workflows.Immich;
+using Wolfe.Lab.Build.Workflows.Obsidian;
+using Wolfe.Lab.Build.Workflows.Ollama;
+using Wolfe.Lab.Build.Workflows.Restic;
+using Wolfe.Lab.Build.Workflows.Service;
+using Wolfe.Lab.Build.Workflows.Tofu;
 
 var builder = WorkflowApplication.CreateBuilder();
 
@@ -20,15 +25,22 @@ builder.Workflows
     .Add<FilesWorkflow>()
     .Add<ResticWorkflow>()
     .Add<ServiceWorkflow>()
-    .Add<AgentsWorkflow>()
     .Add<OllamaWorkflow>()
     .Add<CaddyWorkflow>()
     .Add<DockerWorkflow>()
     .Add<DotNetServiceWorkflow>()
-    .Add<ImageWorkflow>();
+    .Add<ImageWorkflow>()
+    .Add<TofuWorkflow>()
+    .Add<ChezmoiWorkflow>()
+    .Add<HeartbeatWorkflow>()
+    .Add<GatusWorkflow>()
+    .Add<ForgejoWorkflow>()
+    .Add<GarageWorkflow>();
 
 builder.Runtimes
     .Add<LabRuntime>();
+
+builder.AddOnePassword(options => options.ServiceAccountTokenFile = "~/Docker/1password/service-account-token");
 
 var built = builder.Build();
 if (built.IsError)

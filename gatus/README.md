@@ -21,7 +21,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
 | Gatus's own liveness | `.forgejo/workflows/gatus-health.yaml`, from the mini — a status page cannot show itself being down, and the watcher is on the other machine |
 | Route (`status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
-| The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `.forgejo/workflows/tofu-gatus.yaml` on push, drift-checked by the same workflow daily |
+| The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `.forgejo/workflows/gatus-tofu.yaml` on push, drift-checked by the same workflow daily |
 
 ## Why Gatus and not Uptime Kuma
 
@@ -103,9 +103,9 @@ the full table.
 
 ## Who watches the watcher
 
-`.forgejo/workflows/gatus-health.yaml` — the mini's runner polls Gatus's
-`/health` on the Pi at 11/26/41/56 past the hour and pages if it isn't
-`UP`. Gatus's Pushover alerts cannot report Gatus being down, and the
+`.forgejo/workflows/gatus-health.yaml` — `lab health` from the mini's
+runner reads Gatus's `/health` on the Pi (`health.url` in `ritten.json`)
+at 11/26/41/56 past the hour and pages if it isn't `UP`. Gatus's Pushover alerts cannot report Gatus being down, and the
 deploy workflow is a convergent no-op that stays green regardless, so
 without this a dead status page looks exactly like a page you haven't
 opened.
@@ -118,12 +118,12 @@ down turns the whole `lab` group red in two minutes; the Pi down turns
 a runner `offline` a minute after its last poll, and a dead runner is
 otherwise silence — its scheduled workflows simply stop being run, and
 nothing inside the lab noticed until the dead man's switch fired. Neither is the dead man's switch —
-healthchecks.io is, and it stays outside the building (`chezmoi/tofu/`).
+healthchecks.io is, and it stays outside the building (`heartbeat/`).
 
 ## Secrets
 
 The Pushover application token and user key are the same `pushover`
-item `scripts/alert.sh` and Beszel use, so every alert in the lab lands
+item the CLI's failure alert and Beszel use, so every alert in the lab lands
 in one place. `forgejo-gatus-token` is the one item of Gatus's own: a
 Forgejo token scoped `read:repository`, because the runners route wants
 a login and the `forgejo-api-token` the tofu holds can write. Minted by

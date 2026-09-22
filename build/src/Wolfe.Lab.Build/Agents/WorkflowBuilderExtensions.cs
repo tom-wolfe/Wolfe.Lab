@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Wolfe.Lab.Build.Agents.Models;
 
 namespace Wolfe.Lab.Build.Agents;
 

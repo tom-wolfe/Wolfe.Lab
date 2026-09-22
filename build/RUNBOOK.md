@@ -25,7 +25,7 @@ build never shadows the published one:
 
 ```sh
 feed=/tmp/ritten-feed; cache=/tmp/ritten-cache
-for p in Ritten.Core Ritten.CommandLine Ritten.Git Ritten.Docker; do
+for p in Ritten.Core Ritten.CommandLine Ritten.Git Ritten.Docker Ritten.DotNet Ritten.Forgejo Ritten.OnePassword Ritten.OpenTofu; do
   dotnet pack ~/Development/Ritten/Ritten/src/$p/$p.csproj -c Release -p:Version=<version> -o "$feed"
 done
 export NUGET_PACKAGES="$cache"

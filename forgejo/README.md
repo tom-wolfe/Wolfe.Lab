@@ -203,15 +203,16 @@ Forgejo cannot convert between mirror and regular in place, so a mode flip
 ### Day-to-day
 
 ```sh
-scripts/plan.sh forgejo
-scripts/apply.sh forgejo
+cd forgejo/tofu
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
 ```
 
 Anything else against the root, with its secrets resolved:
 
 ```sh
 cd forgejo/tofu
-run="../../scripts/secrets.sh run --env-file ../../scripts/tofu-state.env --env-file secrets.env --"
+run="op run --env-file ../../build/tofu-state.env --env-file secrets.env --"
 $run tofu state list
 ```
 
@@ -304,7 +305,8 @@ two halves:
 **Server half — one command, on the mini, op signed in:**
 
 ```sh
-forgejo/scripts/register-runner.sh wolfe-pi5
+cd forgejo
+dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node wolfe-pi5
 ```
 
 Mints a 40-hex secret with `forgejo-cli actions generate-secret`, stores it
@@ -360,8 +362,8 @@ source is a separate clone and no part of a deploy.
 
 Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
 (`~/.config/forgejo-runner/env`, hand-seeded, mode 600) carries the node's
-`OP_SERVICE_ACCOUNT_TOKEN`; steps read the vault through
-`scripts/secrets.sh`. One bootstrap secret per node, same as the mini.
+`OP_SERVICE_ACCOUNT_TOKEN`; jobs read the vault through the CLI's
+secrets provider. One bootstrap secret per node, same as the mini.
 
 ### The mini's runner
 
@@ -373,7 +375,7 @@ Bring-up is in `RUNBOOK.md` "The mini's runner".
 
 Everything scheduled on the mini is a cron workflow on this runner:
 each slice's `<slice>-backup.yaml`, `restic-offsite.yaml`,
-`restic-verify.yaml`, the two `obsidian-*.yaml`, `renew-certs.yaml`,
+`restic-verify.yaml`, the two `obsidian-*.yaml`, `caddy-renew-certs.yaml`,
 `heartbeat.yaml` and `gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
 probe never queue behind a long job; stateful jobs serialise through the
 `MacMini` concurrency group.

@@ -74,7 +74,7 @@ name tags that already exist.
 
    ```sh
    cd tailscale/tofu
-   run="../../scripts/secrets.sh run --env-file ../../scripts/tofu-state.env --env-file secrets.env --"
+   run="op run --env-file ../../build/tofu-state.env --env-file secrets.env --"
    $run tofu init
    $run tofu import tailscale_acl.lab acl
    $run tofu plan
@@ -84,7 +84,7 @@ name tags that already exist.
    change, 1 DNS preference to add**, nothing to destroy. Tailscale
    returns the console's policy with its own formatting, so the acl
    diff is the whole file — read it once.
-4. **Merge.** `tofu-tailscale.yaml` applies. Or by hand: `tofu apply`
+4. **Merge.** `tailscale-tofu.yaml` applies. Or by hand: `tofu apply`
    from the same shell.
 5. **Verify.** `tailscale status` from a laptop: the three servers show
    `tag:server` and their addresses are unchanged (`caddy/tofu` and

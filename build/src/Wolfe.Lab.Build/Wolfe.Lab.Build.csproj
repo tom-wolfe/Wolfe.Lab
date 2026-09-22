@@ -23,6 +23,8 @@
     <PackageReference Include="Ritten.DotNet" />
     <PackageReference Include="Ritten.Forgejo" />
     <PackageReference Include="Ritten.Git" />
+    <PackageReference Include="Ritten.OnePassword" />
+    <PackageReference Include="Ritten.OpenTofu" />
     <PackageReference Include="Scriban" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Vogen" />

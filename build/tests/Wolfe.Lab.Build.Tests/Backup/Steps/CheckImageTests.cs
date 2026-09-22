@@ -1,5 +1,6 @@
-using Wolfe.Lab.Build.Backup.Models;
+using Wolfe.Lab.Build.Backup;
 using Wolfe.Lab.Build.Backup.Steps;
+using Wolfe.Lab.Build.Clients.Restic;
 
 namespace Wolfe.Lab.Build.Tests.Backup.Steps;
 

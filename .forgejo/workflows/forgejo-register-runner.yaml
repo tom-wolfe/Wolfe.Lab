@@ -1,0 +1,28 @@
+name: forgejo register-runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      node:
+        description: "The node whose runner to register: MacMini, wolfe-pi5"
+        required: true
+        type: string
+      kind:
+        description: "Which runner"
+        required: true
+        type: choice
+        options: [host, docker]
+        default: host
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  register-runner:
+    runs-on: MacMini
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: forgejo
+        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node "${{ inputs.node }}" --kind "${{ inputs.kind }}" --auto-approve

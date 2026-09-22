@@ -1,5 +1,5 @@
-using Wolfe.Lab.Build.Deploy.Models;
-using Wolfe.Lab.Build.Secrets;
+using Wolfe.Lab.Build.Clients.Secrets;
+using Wolfe.Lab.Build.Slices;
 
 namespace Wolfe.Lab.Build.Deploy.Steps;
 
@@ -7,7 +7,7 @@ namespace Wolfe.Lab.Build.Deploy.Steps;
 /// Reads every reference the slice's <c>secrets.env</c> names, for the compose invocation.
 /// </summary>
 [Step("resolve compose secrets", StepKind.Work)]
-internal sealed class ResolveComposeSecrets(ISecrets secrets, IWorkflowLog log)
+internal sealed class ResolveComposeSecrets(ISecretProvider secrets, IWorkflowLog log)
 {
     internal const string FileName = "secrets.env";
 
@@ -21,15 +21,23 @@ internal sealed class ResolveComposeSecrets(ISecrets secrets, IWorkflowLog log)
         }
 
         using var reader = new StreamReader(file.OpenRead());
-        if (!SecretsFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath).TryGetValue(out var references, out var errors))
+        if (!EnvironmentFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath).TryGetValue(out var entries, out var errors))
         {
             return StepResult.Failed(errors);
         }
 
-        var variables = new Dictionary<string, string>();
-        foreach (var (name, reference) in references)
+        // Every value must be a reference: a literal here is a secret in the repository, which
+        // is the one place a secret must never be, so it is refused before anything is read.
+        var literals = entries.Where(entry => !SecretReference.TryFrom(entry.Value, out _)).Select(entry => entry.Key).ToList();
+        if (literals.Count > 0)
         {
-            variables[name] = await secrets.Read(reference, ct);
+            return new Error($"{file.AbsolutePath}: {string.Join(", ", literals)} must be op://<vault>/<item>/<field> references.");
+        }
+
+        var variables = new Dictionary<string, string>();
+        foreach (var (name, reference) in entries)
+        {
+            variables[name] = await secrets.Resolve(reference, ct);
         }
 
         log.Detail($"Resolved {variables.Count} secret{(variables.Count == 1 ? "" : "s")} for compose.");

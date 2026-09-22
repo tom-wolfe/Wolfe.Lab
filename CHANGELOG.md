@@ -4,6 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.31.0] - 2026-09-23
+
+### Changed
+
+- **`scripts/` is gone.** Every job runs from the CLI: `lab register-runner` on the forgejo workflow and `lab init-layout` on the garage workflow replace the one-off scripts, each with a dispatch workflow; `alert.sh` is the runtime's failure sink and `secrets.sh` is Ritten's provider, with runbooks using `op run` directly; `setup.sh` is the bring-up order as `lab` calls; the finished radarr fold and the repository import are deleted.
+- **The Gatus probe runs from the CLI.** `gatus/` has its own workflow: the deploy, plus `lab health` reading `health.url` from `ritten.json`.
+- **The heartbeat is its own slice.** `heartbeat/` holds the ping (`lab ping`) and the check's tofu root, moved from `chezmoi/tofu`; `scripts/heartbeat.sh` is gone.
+- **The chezmoi check and update run from the CLI.** shellcheck and chezmoi are in the CI image.
+- **Certificate renewal now runs from the CLI.**
+- **Tofu stacks are deployed from the CLI.**
+  
 ## [0.30.0] - 2026-09-22
 
 ### Added

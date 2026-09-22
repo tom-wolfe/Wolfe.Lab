@@ -29,8 +29,4 @@
     <ProjectReference Include="..\..\src\Wolfe.Lab.Build\Wolfe.Lab.Build.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Obsidian\Jobs\" />
-  </ItemGroup>
-
 </Project>

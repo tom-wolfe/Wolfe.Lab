@@ -25,9 +25,9 @@ flat layout "highly unlikely" ever. Before the fold, the Data2 root held
 `-poster.jpg`/`-backdrop.jpg` sidecars beside them. Library Import would
 simply not see those.
 
-So there is one bespoke step after all, and it is `scripts/fold-movies.sh`:
-each loose video becomes `<stem>/<stem>.<ext>`, sidecars with the same
-stem ride along, and existing folders are left alone. Same-filesystem
+So there is one bespoke step after all, done once at the desk: each
+loose video becomes `<stem>/<stem>.<ext>`, sidecars with the same stem
+ride along, and existing folders are left alone. Same-filesystem
 renames — instant, no media bytes touched — and Radarr's importer then
 reads the title and year out of the folder name exactly as it does for
 the 62 movies that already had folders. It is a one-off; nothing in the
@@ -56,7 +56,7 @@ separate call, not a default.
 ## Notes
 
 - After Radarr renames a file, the `-poster.jpg` and `.nfo` sidecars
-  that `fold-movies.sh` carried into the folder no longer share its
+  that the fold carried into the folder no longer share its
   stem. Jellyfin re-saves artwork and NFO under the new name on the next
   scan (`SaveLocalMetadata` is on for Movies); the originals are
   orphans to sweep afterwards, not a loss.

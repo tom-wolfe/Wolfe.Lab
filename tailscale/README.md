@@ -47,7 +47,7 @@ Three things already written down wait on it:
   console clicks until now. Not in it: auth keys (the sidecar's is minted
   by hand and spent once), global nameservers (the default), split DNS
   (arrives with local DNS on a Pi — ROADMAP.md). Applied like every root:
-  `.forgejo/workflows/tofu-tailscale.yaml` on the push, a daily plan for
+  `.forgejo/workflows/tailscale-tofu.yaml` on the push, a daily plan for
   drift.
 
 ## The policy

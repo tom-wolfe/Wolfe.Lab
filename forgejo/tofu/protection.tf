@@ -19,6 +19,13 @@ resource "forgejo_branch_protection" "main" {
     "chezmoi / check*",
     "mail bridge / check*",
     "mail watcher / check*",
+    "caddy tofu / check*",
+    "heartbeat tofu / check*",
+    "dns tofu / check*",
+    "forgejo tofu / check*",
+    "gatus tofu / check*",
+    "restic tofu / check*",
+    "tailscale tofu / check*",
   ]
 
   # A pull request must be current with main before it merges, so the checks
