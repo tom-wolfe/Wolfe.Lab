@@ -50,6 +50,18 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: proton bridge
+    group: lab
+    # Probed BY the watcher, because nothing else can reach it.
+    url: https://mail.twolfe.dev/health/bridge
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY] == Healthy"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
   - name: garage
     group: lab
     url: https://s3.twolfe.dev/

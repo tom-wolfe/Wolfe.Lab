@@ -12,8 +12,19 @@ builder.Services
     .AddEventDetector();
 
 var app = builder.Build();
-app.MapHealthChecks("/health", new HealthCheckOptions
+
+app.MapHealthChecks("/health", Only("mailbox"));
+app.MapHealthChecks("/health/bridge", Only("bridge"));
+
+await app.RunAsync();
+
+static HealthCheckOptions Only(string check) => new()
 {
+    Predicate = registration => registration.Name == check,
+
+    // The default writer says only "Healthy" or "Unhealthy", which leaves whoever is reading a
+    // failed check with nowhere to go but the container's logs. The healthy body stays exactly
+    // "Healthy" because Gatus matches on it; the reason is added only when there is one.
     ResponseWriter = async (context, report) =>
     {
         context.Response.ContentType = "text/plain";
@@ -29,6 +40,4 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 
         await context.Response.WriteAsync($"Unhealthy: {string.Join("; ", reasons)}".TrimEnd(':', ' '));
     }
-});
-
-await app.RunAsync();
+};

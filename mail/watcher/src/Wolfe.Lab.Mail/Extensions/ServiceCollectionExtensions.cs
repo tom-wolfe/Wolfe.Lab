@@ -28,7 +28,9 @@ internal static class ServiceCollectionExtensions
 
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<MailboxState>();
-            services.AddHealthChecks().AddCheck<MailboxHealthCheck>("mailbox");
+            services.AddHealthChecks()
+                .AddCheck<MailboxHealthCheck>("mailbox")
+                .AddCheck<BridgeHealthCheck>("bridge");
 
             services.AddSingleton<InvitationSender>();
             services.AddSingleton<MailboxWatcher>();
