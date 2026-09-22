@@ -51,7 +51,7 @@ so a template that only breaks on the Pi fails before the merge.
 
 | Job | When | Does |
 | --- | --- | --- |
-| `.chezmoiscripts/install-packages.sh` | every `chezmoi apply`, every machine | `brew bundle install --no-upgrade` — installs what's missing, nothing more |
+| `.chezmoiscripts/00-install-packages.sh` | every `chezmoi apply`, every machine | `brew bundle install --no-upgrade` — installs what's missing, nothing more |
 | `.forgejo/workflows/chezmoi.yaml` | the push that touches `chezmoi/` | runs `chezmoi update` on each server, which is the apply above |
 | you, at the desk | when you choose | `brew bundle install --file ~/.Brewfile --upgrade` on the mini, then `chezmoi apply` — the only thing that moves versions there |
 

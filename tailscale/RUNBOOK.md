@@ -13,7 +13,7 @@ In order. Step 1 is the precondition and happens at the desk.
    streaming, and streaming is one of the reasons this exists.
 2. Install — **the mini FIRST, and before this branch merges.** The cask
    is a `.pkg`, which needs sudo, and the headless, sudo-less
-   chezmoi workflow (`install-packages.sh` on apply) can't provide it: once the Brewfile
+   chezmoi workflow (`00-install-packages.sh` on apply) can't provide it: once the Brewfile
    change reaches the mini, that flow fails on every tick (an instant
    sudo error, alerting each time) until the cask exists. Pre-empt it:
    `brew install --cask tailscale-app` once in an SSH or Screen Sharing

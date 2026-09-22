@@ -22,7 +22,7 @@ structure only, and pings nothing.
    **master** key into 1P item `b2-master-key`; create the `restic-repo`
    Password item (generated, letters+digits).
 2. Merge this slice; let the tick ship it. `brew "restic"` is in the
-   Brewfile, so the chezmoi workflow (`install-packages.sh` on apply) installs it on every machine.
+   Brewfile, so the chezmoi workflow (`00-install-packages.sh` on apply) installs it on every machine.
 3. Apply the tofu root (from the mini or via `tofu-restic.yaml` once the
    flows land): creates the bucket, the scoped key, the check. Then fill
    the `restic-b2` item: `username`/`credential` from

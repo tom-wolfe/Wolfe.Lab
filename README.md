@@ -91,7 +91,7 @@ chezmoi add ~/.zshrc   # start managing a new dotfile
 Edit the Brewfile at `chezmoi/home/dot_Brewfile.tmpl`. chezmoi renders it to
 `~/.Brewfile` and stops there — it *declares* the package set, it does not
 install it. On a laptop the apply-time script installs whatever is missing;
-on the mini that's the chezmoi workflow (`install-packages.sh` on apply). Nothing upgrades
+on the mini that's the chezmoi workflow (`00-install-packages.sh` on apply). Nothing upgrades
 automatically on the mini: versions move when you run `brew bundle install
 --file ~/.Brewfile --upgrade` there. See `chezmoi/README.md`.
 

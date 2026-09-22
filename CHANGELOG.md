@@ -16,6 +16,13 @@ rather than versioned — the lab is continuous, not released.
 - **Personal git identity is `tom@twolfe.dev`** on every profile but the
   work laptop.
 
+### Fixed
+
+- **A fresh Mac died before its Brewfile ran.** chezmoi runs a phase's
+  scripts in alphabetical order of target name, so the dotnet-tools and
+  node scripts ran before the one that installs the SDK and nvm. The
+  package script is now `00-install-packages.sh` and goes first.
+
 ## [0.29.0] - 2026-09-20
 
 ### Added
