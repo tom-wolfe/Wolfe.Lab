@@ -1,14 +1,4 @@
-{{ if eq .profile "macbook" -}}
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# .NET SDK tools
-export PATH="$PATH:$HOME/.dotnet/tools"
-
-# JetBrains Toolbox scripts
-export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
-{{ end -}}
-
-{{ if eq .profile "work-macbook" -}}
+{{ if has .profile (list "macbook" "macstudio" "work-macbook") -}}
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # .NET SDK tools

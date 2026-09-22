@@ -11,6 +11,7 @@ cask "vorssaint"
 
 # Developer Tools
 brew "chezmoi"
+cask "claude"
 cask "claude-code"
 cask "dotnet-sdk"
 brew "gh"
@@ -60,7 +61,6 @@ cask "nordvpn"
 cask "raspberry-pi-imager"
 
 # Productivity
-cask "claude"
 cask "chatgpt"
 cask "obsidian"
 mas  "Things", id: 904280696
@@ -72,6 +72,44 @@ cask "affinity"
 
 # Social
 cask "discord"
+mas  "WhatsApp", id: 310633997
+
+# Developer Tools
+brew "cloc"
+cask "docker-desktop"
+cask "jetbrains-toolbox"
+brew "ollama"
+{{ end -}}
+
+{{ if eq .profile "macstudio" -}}
+# =========================================================
+# macstudio
+# =========================================================
+
+# Drivers
+cask "logi-options+"
+
+# Utilities
+cask "airbuddy"
+cask "daisydisk"
+cask "proton-mail"
+mas  "Paste", id: 967805235
+cask "nordvpn"
+cask "raspberry-pi-imager"
+
+# Productivity
+cask "chatgpt"
+cask "obsidian"
+mas  "Things", id: 904280696
+
+# Media
+cask "spotify"
+mas  "forScore", id: 363738376
+cask "affinity"
+
+# Social
+cask "discord"
+cask "slack"
 mas  "WhatsApp", id: 310633997
 
 # Developer Tools
@@ -94,7 +132,6 @@ cask "logi-options+"
 cask "airbuddy"
 
 # Productivity
-cask "claude"
 cask "chatgpt"
 cask "obsidian"
 mas  "Microsoft Excel", id: 462058435
@@ -118,9 +155,6 @@ cask "jetbrains-toolbox"
 # =========================================================
 # macmini-node
 # =========================================================
-
-# Utilities
-cask "tailscale-app"
 
 # Mine
 cask "daisydisk"

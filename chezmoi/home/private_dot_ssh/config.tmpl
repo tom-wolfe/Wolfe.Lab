@@ -2,14 +2,8 @@ Host macmini
   HostName macmini.local
   User tomwolfe
 
-{{ if eq .profile "macbook" -}}
+{{ if has .profile (list "macbook" "macstudio" "work-macbook") -}}
 # The 1Password SSH agent/
-Host *
-  IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-{{ end -}}
-
-{{ if eq .profile "work-macbook" -}}
-# The 1Password SSH agent.
 Host *
   IdentityAgent "~/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
 {{ end -}}

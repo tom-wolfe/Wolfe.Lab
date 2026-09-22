@@ -10,8 +10,8 @@ reasons are in `README.md`.
    ```sh
    sh -c "$(curl -fsLS get.chezmoi.io)" -- init --ssh --apply tom-wolfe/Wolfe.Lab
    ```
-3. You'll be asked which machine this is — `macbook`, `work-macbook`,
-   `macmini-node` or `pi-node` — and every file in the source says what
+3. You'll be asked which machine this is — `macbook`, `macstudio`,
+   `work-macbook`, `macmini-node` or `pi-node` — and every file in the source says what
    that profile gets (`chezmoi/README.md` "Profiles").
 4. Servers additionally: `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Forgejo Actions — the script header documents the details.
 

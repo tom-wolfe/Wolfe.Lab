@@ -28,7 +28,7 @@ jobs:
         # template that only breaks on one profile fails here, not on the
         # merge. The listing is the review aid: what each machine gets.
         run: |
-          for profile in macbook work-macbook macmini-node pi-node; do
+          for profile in macbook macstudio work-macbook macmini-node pi-node; do
             scripts/chezmoi-render.sh "$profile" "/tmp/render/$profile"
           done
 

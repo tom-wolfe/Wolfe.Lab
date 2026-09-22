@@ -13,7 +13,7 @@ Laptops apply it by hand; the nodes apply it through
 ## Profiles
 
 One prompted value, `profile`, says which machine this is: `macbook`,
-`work-macbook`, `macmini-node` or `pi-node`
+`macstudio`, `work-macbook`, `macmini-node` or `pi-node`
 (`home/.chezmoi.toml.tmpl`). There are no derived facts — no "is a
 server", no OS test. A machine is its profile, and every file says what
 each profile gets:

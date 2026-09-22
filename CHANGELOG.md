@@ -4,6 +4,18 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.30.0] - 2026-09-22
+
+### Added
+
+- **The `macstudio` profile.** The Mac Studio is a workstation like the
+  laptop and currently mirrors the `macbook`. It will be expanded later.
+
+### Changed
+
+- **Personal git identity is `tom@twolfe.dev`** on every profile but the
+  work laptop.
+
 ## [0.29.0] - 2026-09-20
 
 ### Added
