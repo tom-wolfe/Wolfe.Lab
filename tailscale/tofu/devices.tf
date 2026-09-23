@@ -24,3 +24,23 @@ resource "tailscale_device_key" "server" {
   device_id           = each.value.node_id
   key_expiry_disabled = true
 }
+
+# The hybrid nodes: the same two declarations, their own tag.
+data "tailscale_device" "hybrid" {
+  for_each = toset(var.hybrids)
+  name     = "${each.key}.${var.tailnet_dns_suffix}"
+}
+
+resource "tailscale_device_tags" "hybrid" {
+  for_each  = data.tailscale_device.hybrid
+  device_id = each.value.node_id
+  tags      = ["tag:hybrid"]
+
+  depends_on = [tailscale_acl.lab]
+}
+
+resource "tailscale_device_key" "hybrid" {
+  for_each            = data.tailscale_device.hybrid
+  device_id           = each.value.node_id
+  key_expiry_disabled = true
+}

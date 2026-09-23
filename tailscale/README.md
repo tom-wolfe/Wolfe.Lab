@@ -53,9 +53,9 @@ Three things already written down wait on it:
 ## The policy
 
 `tofu/policy.hujson` is the whole tailnet policy; the console shows it
-verbatim, comments included. It says three things:
+verbatim, comments included. It says four things:
 
-- **One tag, `tag:server`,** on the always-on nodes (`tofu/variables.tf`
+- **`tag:server`** on the always-on nodes (`tofu/variables.tf`
   `servers`: the mini, the Pi, the forgejo sidecar). A tagged device
   belongs to its tag rather than to a user, which is what a server is:
   nobody is logged in to vouch for it. Tagged devices don't expire their
@@ -63,18 +63,31 @@ verbatim, comments included. It says three things:
   the default — a server whose key silently expires drops off the tailnet
   with nothing to notice, and `caddy/tofu` and `forgejo/tofu` carry
   tailnet addresses as record targets.
+- **`tag:hybrid`** on the Studio (`hybrids`): a workstation that also
+  serves while it is on (ROADMAP.md #7). Tagged for the same reasons as a
+  server — it is a node, and its runner cannot re-auth interactively —
+  but not `tag:server`, because servers reach each other on every port
+  and the desk should be reachable only on the ports it serves. The cost
+  of tagging it is its user identity: Taildrop to and from my own devices
+  stops working there.
 - **Workstations are not a tag.** Tagging a laptop would strip its user
   identity and the interactive re-auth that goes with it; "my devices" is
   `autogroup:member`, which is every user-owned device and no tagged one.
-  The Studio joins by signing in, and is a workstation by doing nothing.
-- **Two rules:** my devices reach every server; servers reach each other.
-  Nothing reaches a workstation, from anywhere. The server↔server rule is
-  what the lab's own traffic rides — the Pi's Beszel agent to the hub,
-  Gatus to the mini, caddy to the Pi, the Pi to the sidecar and to the
-  mini's sftp — and the day one of those needs narrowing is the day the
-  policy grows a line.
+- **The rules:** my devices reach every node; servers reach each other;
+  the Studio reaches every server, as my devices do. Servers reach the
+  Studio only on the ports it serves, one rule per port, added with the
+  thing that serves it. Nothing reaches a workstation, from anywhere. The
+  server↔server rule is what the lab's own traffic rides — the Pi's
+  Beszel agent to the hub, Gatus to the mini, caddy to the Pi, the Pi to
+  the sidecar and to the mini's sftp — and the day one of those needs
+  narrowing is the day the policy grows a line.
 
-A new server is one entry in `servers`; a new workstation is nothing.
+The tofu root's OAuth client carries `tag:server` only; `tag:hybrid`
+lists `tag:server` among its owners, which is what lets that client
+apply it without being re-minted.
+
+A new server is one entry in `servers`, a new hybrid one in `hybrids`;
+a new workstation is nothing.
 
 **If a bad policy ever locks the lab out of itself,** the admin console is
 the out-of-band fix — that is the coordination server being a cloud

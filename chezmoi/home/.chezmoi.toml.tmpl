@@ -1,17 +1,11 @@
 {{- /* One value decides everything: which machine this is.
        macbook        my laptop
-       macstudio      the desk: a workstation like the laptop, not a node
+       macstudio      the desk: the primary workstation, and a hybrid node
        work-macbook   the employer's laptop — SSO, work email, no lab access
        macmini-node   the always-on server: the drives and the platform layer
        pi-node        the Linux node: the runners, Gatus, the Beszel agent
      Every file opts in per profile (README.md "Profiles"). */ -}}
 {{- $profile := promptChoiceOnce . "profile" "Which machine is this" (list "macbook" "macstudio" "work-macbook" "macmini-node" "pi-node") -}}
-
-{{/* When the monorepo working copy exists, use it as the chezmoi source */ -}}
-{{- $repo := joinPath .chezmoi.homeDir "Development/Wolfe/Wolfe.Lab" -}}
-{{- if stat $repo }}
-sourceDir = {{ $repo | quote }}
-{{- end }}
 
 [data]
     profile = {{ $profile | quote }}

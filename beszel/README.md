@@ -231,6 +231,22 @@ Container stats: the agent reads `/var/run/docker.sock` as the login
 user, who is in the `docker` group. Same reasoning as on the mini — a
 native process that already owns the socket gains nothing from reading it.
 
+## The Studio
+
+The mini's shape — the Homebrew agent under `brew services` — with the
+Pi's `HUB_URL`, since the hub is on another machine. No `DOCKER_HOST`:
+the Studio runs no lab containers (ROADMAP.md #7).
+
+**Status alerts OFF.** The Studio is a hybrid node: off is its normal
+state most of the day, and nothing depends on it being on. A down alert
+would fire every evening and teach you to ignore Beszel. What it is
+worth watching for is load while it is on — how much a background model
+costs the desk — so set thresholds, and leave status alone.
+
+First enrolment is at the desk: `chezmoi apply` renders the env through
+the 1Password app, `brew bundle install --file ~/.Brewfile` installs and
+starts the agent, and the Studio appears in the hub.
+
 ## Runbook
 
 Bootstrap, upgrade, backup and restore procedures are in `RUNBOOK.md`.

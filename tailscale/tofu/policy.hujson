@@ -1,24 +1,32 @@
 // The lab's tailnet policy. Managed by tailscale/tofu (policy.tf).
 //
-// One tag. A tagged device belongs to its tag rather than to a user, which
-// is what an always-on node is: nobody is logged in to vouch for it, and
-// its key must not expire. Workstations stay user-owned on purpose —
-// tagging one would strip its user identity and its interactive re-auth —
-// so "my devices" is autogroup:member, not a second tag.
+// Two tags. A tagged device belongs to its tag rather than to a user, which
+// is what a node is: nobody is logged in to vouch for it, and its key must
+// not expire. Workstations stay user-owned on purpose — tagging one would
+// strip its user identity and its interactive re-auth — so "my devices" is
+// autogroup:member, not a tag.
+//
+// tag:server is an always-on node. tag:hybrid is the Studio.
 {
   "tagOwners": {
     "tag:server": ["autogroup:admin"],
+    "tag:hybrid": ["autogroup:admin", "tag:server"],
   },
 
   "acls": [
-    // My devices reach every server, on any port.
-    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:server:*"]},
+    // My devices reach every node, on any port.
+    {"action": "accept", "src": ["autogroup:member"], "dst": ["tag:server:*", "tag:hybrid:*"]},
 
     // Servers reach each other: the Pi's Beszel agent dials the hub, Gatus
     // on the Pi probes the mini, caddy on the mini proxies to the Pi, the
     // Pi clones from the forgejo sidecar and backs up to the mini over SFTP.
     {"action": "accept", "src": ["tag:server"], "dst": ["tag:server:*"]},
 
+    // The Studio is my desk, so it reaches every server as my devices do —
+    // and, as a node, its runner reaches Forgejo and its Beszel agent the hub.
+    {"action": "accept", "src": ["tag:hybrid"], "dst": ["tag:server:*"]},
+
     // Nothing reaches a workstation — not a server, not another workstation.
+    // Servers reach the Studio only on the ports it serves, one rule each.
   ],
 }

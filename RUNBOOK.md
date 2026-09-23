@@ -15,7 +15,22 @@ reasons are in `README.md`.
    that profile gets (`chezmoi/README.md` "Profiles").
 4. Servers additionally: `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Forgejo Actions — the script header documents the details.
 
-If the machine has (or later gets) a working copy at `~/Development/Wolfe/Wolfe.Lab`, chezmoi uses it as the source automatically after `chezmoi init` — otherwise it manages its own clone in `~/.local/share/chezmoi`.
+chezmoi always applies its own clone in `~/.local/share/chezmoi`, never
+a working copy: a change reaches a machine by being merged, not by being
+on disk. On a machine with a runner (the nodes and the Studio) the
+runner pulls that clone unattended, so it must not need an SSH agent to
+do it — the repo is public on Forgejo, so point it at anonymous HTTPS:
+
+    git -C ~/.local/share/chezmoi remote set-url origin https://code.twolfe.dev/tom-wolfe/Wolfe.Lab.git
+
+To try an unmerged change on a workstation, apply from the working copy
+explicitly, once: `chezmoi apply --source ~/Development/Wolfe/Wolfe.Lab`.
+The next merge puts the machine back on `main`.
+
+**Moving a workstation off the old working-copy source** (the override
+went in 0.33.0): `chezmoi init https://code.twolfe.dev/tom-wolfe/Wolfe.Lab.git`,
+then `chezmoi diff` — it should be empty if the working copy was on
+`main`.
 
 ## Secondary node bootstrap
 

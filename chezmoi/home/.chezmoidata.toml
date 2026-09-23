@@ -3,5 +3,8 @@
 [profiles.macmini-node]
 node = "MacMini"
 
+[profiles.macstudio]
+node = "MacStudio"
+
 [profiles.pi-node]
 node = "wolfe-pi5"

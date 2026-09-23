@@ -1,4 +1,4 @@
 {
   "workflow": "chezmoi",
-  "profiles": ["macbook", "work-macbook", "macmini-node", "pi-node"]
+  "profiles": ["macbook", "macstudio", "work-macbook", "macmini-node", "pi-node"]
 }

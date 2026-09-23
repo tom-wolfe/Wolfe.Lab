@@ -61,42 +61,107 @@ publish once their repos flip from mirror to active. One thing remains:
   so its work directory must be the same path inside and out; Forgejo's
   own compose example does exactly that.
 
-### 7. The Mac Studio as a compute node
+### 7. The Mac Studio as a hybrid node
 
-**Decided: a second node, not the mini's replacement, and a hybrid — a
-workstation that also serves.** That is a change from workstation-only, and
-it comes with one rule that keeps it safe: **the Studio may serve, but
-nothing may depend on it.** A daily driver sleeps, reboots for updates and
-gets fiddled with; this repo already refuses to let a watcher share the
-fate of the thing it watches, and this is that principle one level up.
-Anything the Studio provides must degrade rather than break.
+**Decided: a second node, not the mini's replacement, and a new node
+type — the hybrid.** The Studio (M5 Ultra, 96 GB) is the primary
+workstation, on when it is being used and off otherwise, and it serves
+while it is on. One rule keeps that safe: **the Studio may serve, but
+nothing may depend on it.** A daily driver sleeps, reboots for updates
+and gets fiddled with; this repo already refuses to let a watcher share
+the fate of the thing it watches, and this is that principle one level
+up. Anything the Studio provides must degrade rather than break.
 
-**What it takes on.**
+**What it takes on: models, through ollama.** A host process, not a
+container — a container on macOS gets no GPU — as the mini's already is
+(`ollama/`). The Studio sits above the mini as a second upstream behind
+`ai.twolfe.dev` (`lb_policy first`, already in the route), so a caller
+never knows which machine answered. **Where a model runs is not which
+model runs**, though: the caller names the model, so the Studio holding
+the mini's `qwen3:8b` would buy speed and nothing else. The Studio earns
+its place by holding models the mini cannot, in two roles sized against
+it being somebody's workstation at the time:
 
-- **Immich's machine learning.** `immich/README.md` already anticipates
-  this — Immich accepts a remote machine-learning URL and nothing else
-  moves. The Studio asleep means search results go stale, not that Immich
-  is down, which is exactly the degradation the rule asks for. The single
-  best use of the hardware against what the lab already runs.
-- **Ollama, as a host process, not a container.** A container on macOS gets
-  no access to the Apple GPU, so a containerised model runs on CPU and is
-  uselessly slow. This is the clearest correct case in the fleet for
-  running on the host, and unified memory is the reason the hardware is
-  worth anything here. `ollama` is already in the Brewfile's personal
-  section, so this is a widening rather than a new dependency.
-- **Whisper-family transcription**, local, for captured notes.
+- **Background** — the mail event scanner, any future batch job.
+  Cheap enough never to be noticed at the desk: a small resident
+  footprint, one request at a time, unloaded quickly when idle. The
+  caller asks for the Studio's background model and falls back to the
+  mini's on "model not found" — which is exactly what the mini answers
+  when the Studio is off and the route falls through to it. Nothing
+  waits for the Studio; it only raises the quality while it is on.
+- **Interactive** — asking the Obsidian vaults a question, from the desk.
+  A person is there and waiting, so this may use most of what the
+  machine has for as long as the question takes, and has no fallback:
+  the Studio is on because the person asking is sitting at it.
 
-**What it does not take on:** anything in the platform layer, the drives,
-or any job whose failure is an outage.
+Which models fill the roles is decided when each consumer lands, and
+declared in the Studio's component like the mini's `models.pull`.
 
-**What it needs structurally:** a chezmoi profile, Tailscale, a Beszel
-agent, a Gatus check at a softer severity than a server's, and — as a
-hybrid rather than a pure workstation — a host runner.
+**What it does not take on: Immich's machine learning.** Search quality
+is the CLIP model Immich is configured with, not the machine it runs on
+— and every search query needs the text half of that model, so whatever
+is chosen must run on the mini anyway, as the thing that answers when
+the Studio is off. The Studio could only make the job faster, and speed
+does not matter when the box is switched off. (Should the model ever be
+upgraded, the Studio can go at the head of Immich's machine-learning URL
+list for the one-off re-index and come off again after.) Nor: anything
+in the platform layer, the drives, or any job whose failure is an outage.
 
-**The vault-querying front end.** Ollama plus a RAG layer over a clone of
-the vault repositories on Forgejo (`obsidian/`), not a mount. The corpus is
-already versioned and already synced by workflows, so the index job is an
-ordinary `lab` job with a clean input.
+**Its own tag, `tag:hybrid`.** Not `tag:server`, which would let every
+server reach every port on the desk, and not a user-owned workstation,
+which nothing may reach at all. Tagged, it is a node: its key does not
+expire, and the policy says exactly what reaches it — the ports it
+serves, nothing else. The cost is the user identity: Taildrop to and
+from my own devices stops working.
+
+**A host runner, holding no privacy grants.** Chezmoi updates and the
+Studio's own deploys arrive through Forgejo like every node's. Every
+job it runs keeps out of TCC-protected places — models on the internal
+disk, no Docker, no `/Volumes` — so the runner needs no Full Disk
+Access, and a Homebrew upgrade that moves its binary costs nothing. A
+job that would need a grant does not belong on the Studio. The chezmoi
+matrix includes it: a deploy goes green only when every target has it,
+and a job queued while the Studio is off runs when it next wakes
+(Forgejo's abandoned-job timeout raised so that "next" can be a week).
+Chezmoi applies its own clone, never the working copy (0.33.0).
+
+**Waking it remotely.** A Mac cannot be woken from *off* over the
+network, and a cold boot behind FileVault stops at the login window
+anyway, before any LaunchAgent — the runner, ollama — can start. From
+*sleep*, with "Wake for network access" on, a Wake-on-LAN packet from
+the Pi brings it back with the session intact. So "switched off" wants
+to mean asleep, and a wake step is worth adding to workflows that
+target it once the rest is working.
+
+**What it needs structurally:** a chezmoi profile (in), `tag:hybrid`,
+a Beszel agent with its down-alert off, a Gatus check that never
+alerts (the alerting check stays on `ai.twolfe.dev`, which the mini
+keeps up), and the host runner.
+
+**In order.**
+
+1. The profile checked like every other, the working-copy source gone.
+2. `tag:hybrid` and the Beszel agent.
+3. The host runner; chezmoi CD reaches the Studio.
+4. ollama on the Studio above the mini; the Gatus check.
+5. The scanner's background model, with the mini's as fallback.
+6. The vault-querying front end — ollama plus a RAG layer over a clone
+   of the vault repositories on Forgejo (`obsidian/`), not a mount. The
+   corpus is already versioned and already synced by workflows, so the
+   index job is an ordinary `lab` job with a clean input. The first
+   interactive-role consumer.
+
+Whisper-family transcription stays an idea until captured notes want it.
+
+**The mini's runner and Full Disk Access — alongside, not part of it.**
+The mini's runner does need Full Disk Access (the drives), and the grant
+is lost on every upgrade: launchd runs Homebrew's `opt` symlink, TCC
+records the versioned Cellar path it resolves to, and an ad-hoc-signed
+binary's identity is its hash, so even a stable path would not hold it.
+The fix is both halves: a chezmoi script copies the binary to
+`~/.local/bin/forgejo-runner` on a version change and signs it with a
+lab self-signed identity kept in the mini's keychain. The grant then
+attaches to a fixed path and a signing identity that no upgrade moves.
 
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 

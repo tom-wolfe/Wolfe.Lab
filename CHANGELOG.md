@@ -4,6 +4,24 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.33.0] - 2026-09-23
+
+### Added
+
+- **`tag:hybrid`, the Studio's own tag.** A workstation that also serves
+  while it is on.
+- **The Studio has a Beszel agent**, with its status alert off: off is
+  its normal state.
+
+### Changed
+
+- **The `macstudio` profile is checked** by `lab check` like every
+  other, and has a node name (`MacStudio`) in the inventory.
+- **chezmoi never applies a working copy.** The `sourceDir` override is
+  gone: every machine applies its own clone, so a runner's `chezmoi
+  update` can never pull a half-finished branch. To try an unmerged
+  change, `chezmoi apply --source` the working copy (RUNBOOK.md).
+
 ## [0.32.0] - 2026-09-23
 
 ### Added

@@ -1,5 +1,13 @@
-{{ if has .profile (list "macbook" "macstudio" "work-macbook") -}}
+{{ if has .profile (list "macbook" "work-macbook") -}}
 .config/beszel
+.config/forgejo-runner
+.config/forgejo-runner-docker
+.config/systemd
+.docker-headless
+.local/share/forgejo-runner
+{{ end -}}
+
+{{ if eq .profile "macstudio" -}}
 .config/forgejo-runner
 .config/forgejo-runner-docker
 .config/systemd
