@@ -1,0 +1,13 @@
+{
+  "workflow": "backup",
+  "release": "files",
+  "volumes": [
+    "/Volumes/Data2"
+  ],
+  "paths": [
+    "/Volumes/Data2/files"
+  ],
+  "verify": [
+    "/Volumes/Data2/files/1password/1Password Emergency Kit.pdf"
+  ]
+}

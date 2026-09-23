@@ -1,0 +1,7 @@
+{
+  "workflow": "docker",
+  "release": "paperless",
+  "volumes": [
+    "/Volumes/Data2"
+  ]
+}

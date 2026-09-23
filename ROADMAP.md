@@ -98,12 +98,6 @@ the vault repositories on Forgejo (`obsidian/`), not a mount. The corpus is
 already versioned and already synced by workflows, so the index job is an
 ordinary `lab` job with a clean input.
 
-**Paperless-ngx belongs on the primary node, not here.** It is an always-on
-ingest-and-index service, its OCR is CPU-bound, and it wants to accept
-documents whether or not the desktop is awake. Only LLM-assisted tagging
-would reach for the Studio, and that degrades to "tag it later". It is
-listed with the other new services below rather than waiting here.
-
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
 Two halves because they are the same move —
@@ -115,7 +109,7 @@ is proven, then the origin moves.
 
 **The config half.** The first cross-slice values are already here,
 homed nowhere: the runner registration template reads Forgejo's
-`ROOT_URL` out of `forgejo/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
+`ROOT_URL` out of `forgejo/compose/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
 (`caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
@@ -425,11 +419,9 @@ whose alert thresholds have no file representation at all.
 runner; what is left here is one compose slice, and the Pi's backup path for
 its state.
 
-### New services: Plane, OpenGist, Paperless-ngx
+### New services: Plane, OpenGist
 
-Wanted, but each adds backup surface. Paperless-ngx (the paperwork half
-of #7) belongs on the mini, needs no new hardware, and could be built
-today; it is listed here so it isn't lost inside the Studio item.
+Wanted, but each adds backup surface.
 
 ## Hardware worth buying
 

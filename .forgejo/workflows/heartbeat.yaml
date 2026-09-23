@@ -13,5 +13,5 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - working-directory: heartbeat
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- ping
+      - working-directory: heartbeat/ping
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- ping

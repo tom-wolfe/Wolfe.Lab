@@ -8,10 +8,10 @@ models beside it. The phone app talks to `immich.twolfe.dev`, the
 tailnet twin of the front-door name, and its background upload is what
 replaces Google Photos as the place a photo lands after it is taken.
 
-Two things a job does here, both through the CLI in `build/`:
-`lab deploy` installs the slice and converges the stack — the first
-slice deployed that way — and
-`lab import` brings the Google Takeout in. `ritten.json` declares both.
+Three components, each a job through the CLI in `build/`: `compose/`
+(`lab deploy` installs the stack and converges it), `backup/` (what
+restic keeps of the library) and `import/` (`lab import` brings the
+Google Takeout in, with immich-go built from the Dockerfile beside it).
 
 ## What is backed up, and what is not
 

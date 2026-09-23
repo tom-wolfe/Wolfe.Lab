@@ -26,6 +26,7 @@ fallback when the front door is down.
 | `https://sonarr.twolfe.dev`      | Sonarr (TV renamer)                     | `sonarr:8989`                                 |
 | `https://radarr.twolfe.dev`      | Radarr (movie renamer)                  | `radarr:7878`                                 |
 | `https://immich.twolfe.dev`      | Immich (photos; the phone app's server) | `immich-server:2283`                          |
+| `https://paperless.twolfe.dev`   | Paperless-ngx (documents)               | `paperless:8000`                              |
 | `https://status.twolfe.dev`      | Gatus status page                       | `wolfe-pi5.tailf823b8.ts.net:8280` (the Pi)   |
 | `https://ai.twolfe.dev`          | Model endpoint (ollama)                 | `host.docker.internal:11434` (a host process) |
 
@@ -42,6 +43,7 @@ fallback when the front door is down.
 | `:2283` | Immich — web, API and the phone app              | Immich accounts (1P `immich-admin`); API: 1P `immich-api-key`; `/api/server/ping` is unauthenticated | `immich`   |
 | `:5900` | Screen Sharing.                                  | macOS account                                              | System Settings             |
 | `:7878` | Radarr — web UI + API                            | Radarr account (1P `radarr-webui` is a copy); `/ping` is unauthenticated | `radarr`     |
+| `:8000` | Paperless-ngx — web UI + API                     | Paperless accounts (1P `paperless-admin` creates the first); `/accounts/login/` is unauthenticated | `paperless` |
 | `:8080` | qBittorrent — web UI (via gluetun's namespace)   | qBittorrent account (1P `qbittorrent-webui` is a copy)     | `qbittorrent`               |
 | `:8090` | Beszel — hub UI + API                            | Beszel superuser account; `/api/health` is unauthenticated | `beszel`                    |
 | `:8096` | Jellyfin — web + clients                          | Jellyfin accounts                                           | `jellyfin`                   |

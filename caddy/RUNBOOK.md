@@ -13,12 +13,12 @@ reasons are in `README.md`.
    Check `lab_tailscale_ipv4` still matches the mini first — the record
    is only as stable as the address, and a re-enrolment that mints a new
    one means updating the variable and re-applying.
-3. **First certificate**: `lab renew-certs` from `caddy/` on the mini (or
-   the `caddy renew-certs` workflow); it reads the Netlify token the
-   `certificate` section of `ritten.json` names, for the DNS-01 challenge.
+3. **First certificate**: `lab renew` from `caddy/certs/` on the mini (or
+   the `caddy certs` workflow); it reads the Netlify token its
+   `ritten.json` names, for the DNS-01 challenge.
    Caddy loads the cert from files and cannot START without them —
    setup.sh encodes this ordering.
-4. **First deploy**: run the caddy workflow (or
+4. **First deploy**: run the `caddy compose` workflow, then `caddy routes` (or
    `docker compose up -d` in this directory on the mini). Must happen
    ONCE before redeploying any proxied slice — this compose creates the
    `lab` network the others reference as external.
@@ -52,7 +52,7 @@ workflow:
   stays red for an hour over a name that is actually fine. So DNS goes
   in BEFORE the merge, not as part of it.
 
-1. **Certificate.** Dispatch the `caddy renew-certs` workflow **on this
+1. **Certificate.** Dispatch the `caddy certs` workflow **on this
    branch** — there is no clone of the repo on the node to run it from by
    hand. The runner checks the branch out on the mini, where `op` can
    answer.
@@ -118,10 +118,10 @@ workflow:
 
 If step 3 lands before step 1, caddy will not start, because the
 certificate file it names does not exist. The fix is step 1 followed by a
-re-run of the caddy workflow.
+re-run of the `caddy routes` workflow.
 
 ## Upgrading
 
-Caddy: bump the `image:` pin in `compose.yaml`, redeploy. lego: bump
-`certificate.image` in `ritten.json`, and check the lego release
+Caddy: bump the `image:` pin in `compose/compose.yaml`, redeploy. lego: bump
+`image` in `certs/ritten.json`, and check the lego release
 notes — a major bump can change the CLI (v4→v5 did).

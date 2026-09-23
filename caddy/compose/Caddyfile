@@ -1,0 +1,49 @@
+# The lab's front door: one container on 443 terminating TLS for
+# *.twolfe.dev, routing by hostname to containers on the shared `lab`
+# network.
+#
+# Routes do NOT live in this file. A component that wants a hostname
+# drops a caddy.caddyfile beside its compose file — a named host matcher
+# plus a handle block — and the caddy/routes component gathers every one
+# of them into its own release, which the import glob below reads.
+# Adding a service never edits this component. See README.md for the
+# snippet shape.
+#
+# This file is read in place from the install mount (/etc/caddy/lab/caddy/
+# Caddyfile — see compose.yaml for why not a file bind), so the import
+# glob is relative to THIS directory: `..` is the release root,
+# ~/.local/share/Wolfe.Lab, where every component is installed, and
+# `caddy-routes` is the routes component's release name (its ritten.json
+# declares it; the two must agree).
+#
+# Certificates do NOT live here either: caddy is a pure proxy. The
+# caddy/certs component obtains and renews ONE cert with the wildcard SAN
+# via lego + DNS-01 and reloads caddy; this file just loads the result
+# from the read-only /certs mount. One wildcard cert on purpose — per-name
+# certs would list every internal hostname in public Certificate
+# Transparency logs.
+
+{
+	# Caddy must NEVER obtain certificates itself: the certs component
+	# owns issuance, and the tls directive below loads the result from
+	# files. Without this, any site-address name the loaded cert doesn't
+	# cover makes caddy quietly start its own ACME orders for it — which
+	# happened 2026-09-02 when the container was recreated a minute before
+	# the re-issued cert landed (five failed orders against Let's Encrypt,
+	# retrying for up to 30 days). `disable_certs` keeps the HTTP→HTTPS
+	# redirect and drops only the certificate management; a name with no
+	# matching SAN now just fails its handshake until the renewal runs.
+	auto_https disable_certs
+}
+
+*.twolfe.dev {
+	tls /certs/_.twolfe.dev.crt /certs/_.twolfe.dev.key
+
+	import ../caddy-routes/*.caddyfile
+
+	# Matcher-less handle matches anything the snippets didn't claim.
+	# Must stay LAST: handle blocks run in order, first match wins.
+	handle {
+		respond "no such service" 404
+	}
+}

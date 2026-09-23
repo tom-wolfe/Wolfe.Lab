@@ -16,5 +16,5 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - working-directory: ollama
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve
+      - working-directory: ollama/server
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve

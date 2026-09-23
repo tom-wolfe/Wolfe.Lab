@@ -1,9 +1,9 @@
 using Ritten.Docker;
+using Ritten.Docker.Steps;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
-using Wolfe.Lab.Build.Workflows.Common.Steps;
+using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
-using Wolfe.Lab.Build.Workflows.Docker.Steps;
 
 namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 

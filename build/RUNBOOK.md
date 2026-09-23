@@ -9,10 +9,10 @@ From the slice's directory, with `--dry-run` unless the side effects
 are wanted; without it the gate asks before the push:
 
 ```sh
-cd obsidian
-dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main --dry-run
-dotnet run --project ../build/src/Wolfe.Lab.Build -- sync --vault main
-dotnet run --project ../build/src/Wolfe.Lab.Build -- --help
+cd obsidian/vaults
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- sync --vault main --dry-run
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- sync --vault main
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- --help
 ```
 
 ## Building against an unreleased Ritten

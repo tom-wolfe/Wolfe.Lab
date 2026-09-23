@@ -1,0 +1,8 @@
+{
+  "workflow": "docker",
+  "release": "radarr",
+  "volumes": [
+    "/Volumes/Data1",
+    "/Volumes/Data2"
+  ]
+}

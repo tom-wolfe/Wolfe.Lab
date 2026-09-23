@@ -1,6 +1,6 @@
 using Ritten.OpenTofu;
 using Ritten.OpenTofu.Steps;
-using Wolfe.Lab.Build.Workflows.Common.Steps;
+using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.Tofu.Models;
 using Wolfe.Lab.Build.Workflows.Tofu.Steps;
 

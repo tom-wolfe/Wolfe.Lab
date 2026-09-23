@@ -12,21 +12,23 @@ repo="$(cd "$(dirname "$0")" && pwd)"
 extra=("$@")
 
 lab() {
-  local slice=$1
+  local component=$1
   shift
-  echo "==> $slice $1"
-  (cd "$repo/$slice" && dotnet run --project "$repo/build/src/Wolfe.Lab.Build" -- "$@" --auto-approve ${extra[@]+"${extra[@]}"})
+  echo "==> $component $1"
+  (cd "$repo/$component" && dotnet run --project "$repo/build/src/Wolfe.Lab.Build" -- "$@" --auto-approve ${extra[@]+"${extra[@]}"})
 }
 
-lab caddy renew-certs
-lab caddy deploy
-lab garage deploy
-lab garage init-layout
-lab forgejo deploy
-lab jellyfin deploy
-lab sonarr deploy
-lab radarr deploy
-lab beszel deploy
+lab caddy/certs renew
+lab caddy/compose deploy
+lab caddy/routes deploy
+lab garage/compose deploy
+lab garage/layout init
+lab forgejo/compose deploy
+lab jellyfin/compose deploy
+lab sonarr/compose deploy
+lab radarr/compose deploy
+lab paperless/compose deploy
+lab beszel/compose deploy
 
 echo
 echo "Stacks are up. What remains is by hand: RUNBOOK.md \"After setup.sh\"."

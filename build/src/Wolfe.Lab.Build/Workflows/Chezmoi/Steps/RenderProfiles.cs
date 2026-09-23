@@ -18,7 +18,9 @@ internal sealed class RenderProfiles(IChezmoi chezmoi, Profiles profiles, IFileS
 {
     public async Task<StepResult<RenderedProfiles>> Run(CancellationToken ct = default)
     {
-        var source = new PhysicalDirectory(Path.GetDirectoryName(fileSystem.ProjectRoot.AbsolutePath) ?? fileSystem.ProjectRoot.AbsolutePath);
+        // The checkout, two levels up from the component: chezmoi's own .chezmoiroot lives there
+        // and names the source tree, so the renderer reads the repository exactly as a node does.
+        var source = new PhysicalDirectory(Path.GetFullPath(Path.Combine(fileSystem.ProjectRoot.AbsolutePath, "..", "..")));
         var scratch = new PhysicalDirectory(Directory.CreateTempSubdirectory("lab-render-").FullName);
         var rendered = new List<RenderedProfile>();
         foreach (var profile in profiles.Names)

@@ -1,0 +1,7 @@
+{
+  "workflow": "docker",
+  "release": "immich",
+  "volumes": [
+    "/Volumes/Data2"
+  ]
+}

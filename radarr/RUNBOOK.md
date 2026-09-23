@@ -14,7 +14,7 @@ At the desk, after the Jellyfin 12.0 upgrade and its full scan.
    so it is instant and touches no media bytes. Skip the `._*` AppleDouble
    litter, and a loose file whose stem already exists as a folder gets
    folded by hand.
-2. Deploy: merge — the radarr workflow converges it on the push.
+2. Deploy: merge — the `radarr compose` workflow converges it on the push.
 3. Create the login through the API — the same recipe as
    `sonarr/README.md` bootstrap step 2 with `radarr` for `sonarr` and
    port `7878`. Then mirror to 1P `radarr-webui`.

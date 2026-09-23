@@ -9,7 +9,7 @@ At the desk, not remotely — the last steps change the mini's default
 route.
 
 1. Create `nordvpn-wireguard` in the Wolfe.Lab vault (see Secrets).
-2. Deploy: merge — the qbittorrent workflow converges it on the push.
+2. Deploy: merge — the `qbittorrent compose` workflow converges it on the push.
 3. Verify the tunnel from inside the namespace (the LSIO image has curl;
    gluetun's own image is shell-less):
    `docker exec qbittorrent curl -s https://ipinfo.io/ip` — expect a

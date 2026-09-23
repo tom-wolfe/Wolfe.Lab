@@ -14,7 +14,7 @@ keeping the existing library, watch history and artwork exactly as they were.
 
 ## Deployment
 
-`.forgejo/workflows/jellyfin.yaml` converges this stack on every push that touches it, on
+`.forgejo/workflows/jellyfin-compose.yaml` converges this stack on every push that touches `compose/`, on
 the mini's host runner. Manual converge: run the workflow from the Actions
 tab, or on the mini:
 

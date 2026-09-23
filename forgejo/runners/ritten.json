@@ -1,0 +1,6 @@
+{
+  "workflow": "forgejo-runners",
+  "vault": "Wolfe.Lab",
+  "repository": "tom-wolfe/Wolfe.Lab",
+  "image": "node:22-bookworm"
+}

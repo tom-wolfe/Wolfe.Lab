@@ -38,8 +38,8 @@ plan.
 
 **Every watched job carries the same section.** A scheduled job that
 must not silently stop pings its own check as its last step, declared
-under `heartbeat` in its slice's `ritten.json` the way `restic/` does;
-the check itself goes in that slice's `tofu/`. None of them collect in
+under `heartbeat` in its component's `ritten.json` the way
+`restic/repositories/` does; the check itself goes in that slice's `tofu/`. None of them collect in
 a shared root: a check belongs beside the thing it watches, and this
 slice's is the scheduler itself.
 

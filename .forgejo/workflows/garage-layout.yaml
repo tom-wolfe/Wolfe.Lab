@@ -1,0 +1,17 @@
+name: garage layout
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  init:
+    runs-on: MacMini
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: garage/layout
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- init --auto-approve

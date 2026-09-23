@@ -74,7 +74,7 @@ Consequences worth knowing:
 - **`nordvpn-wireguard`** (Password item, `credential` field) →
   `WIREGUARD_PRIVATE_KEY`: named in `secrets.env`, resolved into
   gluetun's environment by the deploy, on disk nowhere. Rotation =
-  update the item, re-run the qbittorrent workflow (compose recreates
+  update the item, re-run the `qbittorrent compose` workflow (compose recreates
   gluetun, and qbittorrent with it). The key is
   the WireGuard private key from the Nord dashboard →
   *Manual configuration*. It is NOT the account password and NOT the

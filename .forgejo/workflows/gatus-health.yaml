@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  health:
+  probe:
     runs-on: MacMini
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - working-directory: gatus
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- health
+      - working-directory: gatus/health
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- probe

@@ -1,5 +1,4 @@
 using Wolfe.Lab.Build.Clients.Restic;
-using Wolfe.Lab.Build.Slices;
 using Wolfe.Lab.Build.Workflows.Restic.Models;
 
 namespace Wolfe.Lab.Build.Workflows.Restic.Steps;
@@ -9,14 +8,14 @@ namespace Wolfe.Lab.Build.Workflows.Restic.Steps;
 /// local repository as the copy's source as well.
 /// </summary>
 [Step("resolve offsite", StepKind.Work)]
-internal sealed class ResolveOffsite(ISecretProvider secrets, IWorkflowLog log)
+internal sealed class ResolveOffsite(ISecretProvider secrets, IFileSystem fileSystem, IWorkflowLog log)
 {
     internal const string FileName = "offsite.env";
     private const string SourceVariable = "RESTIC_FROM_REPOSITORY";
 
-    public async Task<StepResult<OffsiteRepository>> Run(Slice slice, CancellationToken ct = default)
+    public async Task<StepResult<OffsiteRepository>> Run(CancellationToken ct = default)
     {
-        if (!(await ResticEnvironment.Load(slice, FileName, secrets, ct)).TryGetValue(out var repository, out var errors))
+        if (!(await ResticEnvironment.Load(fileSystem.ProjectRoot, FileName, secrets, ct)).TryGetValue(out var repository, out var errors))
         {
             return StepResult.Failed(errors);
         }

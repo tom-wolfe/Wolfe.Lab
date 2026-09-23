@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.32.0] - 2026-09-23
+
+### Added
+
+- **`paperless/`** — Paperless-ngx as a slice: the document archive at
+  `paperless.twolfe.dev`, SQLite and a Valkey broker, the database on
+  the internal disk and the documents on Data2, both in restic nightly
+  with the restore drilled after. The secret key and the first admin
+  login come from the vault at deploy.
+
 ## [0.31.0] - 2026-09-23
 
 ### Changed

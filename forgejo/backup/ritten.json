@@ -1,0 +1,11 @@
+{
+  "workflow": "backup",
+  "release": "forgejo",
+  "paths": [
+    "~/Docker/forgejo/data"
+  ],
+  "stop": "forgejo",
+  "verify": [
+    "~/Docker/forgejo/data/gitea/forgejo.db"
+  ]
+}

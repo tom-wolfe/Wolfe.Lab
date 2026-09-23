@@ -1,0 +1,61 @@
+using Wolfe.Lab.Build.Values;
+
+namespace Wolfe.Lab.Build.Workflows.Backup.Models;
+
+/// <summary>
+/// The shape of a backup component's <c>ritten.json</c>: what a snapshot holds, what has to be
+/// quiet while it is taken, and what a restore must bring back.
+/// </summary>
+public sealed record BackupSettings : WorkflowSettings
+{
+    /// <summary>
+    /// The release whose state this is: the name the snapshot is filed under and, when a
+    /// container is stopped, the installed stack that is stopped.
+    /// </summary>
+    public string? Release { get; init; }
+
+    /// <summary>
+    /// External volumes the state lives on.
+    /// </summary>
+    public IReadOnlyList<HostPath> Volumes { get; init; } = [];
+
+    /// <summary>
+    /// The directories to snapshot.
+    /// </summary>
+    public IReadOnlyList<HostPath> Paths { get; init; } = [];
+
+    /// <summary>
+    /// Paths under those directories that restic leaves out: caches, logs, anything the
+    /// service regenerates.
+    /// </summary>
+    public IReadOnlyList<HostPath> Excludes { get; init; } = [];
+
+    /// <summary>
+    /// The container whose stack is stopped for the snapshot, and whose image tags it. Absent
+    /// for a warm snapshot: files nothing is writing, or a service whose database is its own dump.
+    /// </summary>
+    public string? Stop { get; init; }
+
+    /// <summary>
+    /// The container whose image tags the snapshot when it is not the one stopped: a warm
+    /// snapshot of a service still pairs a restore with the version that wrote it. Defaults to
+    /// <see cref="Stop"/>.
+    /// </summary>
+    public string? Image { get; init; }
+
+    /// <summary>
+    /// What a restore must bring back non-empty.
+    /// </summary>
+    public IReadOnlyList<HostPath> Verify { get; init; } = [];
+
+    /// <summary>
+    /// The settings as the steps consume them.
+    /// </summary>
+    public BackupPlan ToPlan() => new(
+        [.. Paths.Select(p => p.Directory)],
+        [.. Excludes.Select(p => p.Value)],
+        Stop,
+        Image ?? Stop,
+        [.. Verify.Select(p => p.Value)]
+    );
+}

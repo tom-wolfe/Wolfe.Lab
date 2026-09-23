@@ -8,9 +8,9 @@ reasons are in `README.md`.
 From `restic/`, with `--dry-run` unless the side effects are wanted:
 
 ```sh
-cd restic
-dotnet run --project ../build/src/Wolfe.Lab.Build -- offsite --dry-run
-dotnet run --project ../build/src/Wolfe.Lab.Build -- verify
+cd restic/repositories
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- offsite --dry-run
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- verify
 ```
 
 A rehearsal copies nothing, lists what retention would forget, checks
@@ -92,9 +92,9 @@ apply` on both machines — render both halves again.
 One command, from the slice's directory, with `--dry-run` first:
 
 ```sh
-cd forgejo
-dotnet run --project ../build/src/Wolfe.Lab.Build -- restore --dry-run
-dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
+cd forgejo/backup
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore --dry-run
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
 ```
 
 It takes the slice's latest snapshot (`--snapshot <id>` for another —

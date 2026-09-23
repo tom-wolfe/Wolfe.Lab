@@ -26,6 +26,17 @@ resource "forgejo_branch_protection" "main" {
     "gatus tofu / check*",
     "restic tofu / check*",
     "tailscale tofu / check*",
+    "beszel compose / check*",
+    "caddy compose / check*",
+    "forgejo compose / check*",
+    "garage compose / check*",
+    "gatus compose / check*",
+    "immich compose / check*",
+    "jellyfin compose / check*",
+    "paperless compose / check*",
+    "qbittorrent compose / check*",
+    "radarr compose / check*",
+    "sonarr compose / check*",
   ]
 
   # A pull request must be current with main before it merges, so the checks

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Clients.Obsidian;
-using Wolfe.Lab.Build.Workflows.Common.Steps;
 using Wolfe.Lab.Build.Workflows.Obsidian.Models;
 using Wolfe.Lab.Build.Workflows.Obsidian.Steps;
 

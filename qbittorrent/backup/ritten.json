@@ -1,0 +1,15 @@
+{
+  "workflow": "backup",
+  "release": "qbittorrent",
+  "volumes": [
+    "/Volumes/Data1",
+    "/Volumes/Data2"
+  ],
+  "paths": [
+    "~/Docker/qbittorrent/config"
+  ],
+  "stop": "qbittorrent",
+  "verify": [
+    "~/Docker/qbittorrent/config/qBittorrent/qBittorrent.conf"
+  ]
+}

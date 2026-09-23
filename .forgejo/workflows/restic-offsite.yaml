@@ -15,5 +15,5 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-      - working-directory: restic
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- offsite
+      - working-directory: restic/repositories
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- offsite

@@ -1,0 +1,36 @@
+name: gatus compose
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [gatus/compose/**, .forgejo/workflows/gatus-compose.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    # Pre-merge code never runs on a node.
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
+      - working-directory: gatus/compose
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: wolfe-pi5
+    timeout-minutes: 20
+    concurrency:
+      group: wolfe-pi5
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: gatus/compose
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve

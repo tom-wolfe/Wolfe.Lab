@@ -32,7 +32,7 @@
 
   <ItemGroup>
     <!-- The units the supervisor writes: read them as the file they become. -->
-    <EmbeddedResource Include="Agents/Templates/*.sbn" />
+    <EmbeddedResource Include="Clients/Agents/Templates/*.sbn" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,6 +42,10 @@
     <Using Include="Ritten.Engine" />
     <Using Include="Ritten.Engine.Workflows" />
     <Using Include="Ritten.Reporting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Workflows\Agents\" />
   </ItemGroup>
 
 </Project>

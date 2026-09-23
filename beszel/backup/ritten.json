@@ -1,0 +1,11 @@
+{
+  "workflow": "backup",
+  "release": "beszel",
+  "paths": [
+    "~/Docker/beszel/data"
+  ],
+  "stop": "beszel",
+  "verify": [
+    "~/Docker/beszel/data/data.db"
+  ]
+}

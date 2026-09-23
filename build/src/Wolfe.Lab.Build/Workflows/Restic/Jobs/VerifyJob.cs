@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
-using Wolfe.Lab.Build.Backup.Steps;
-using Wolfe.Lab.Build.Slices.Steps;
+using Wolfe.Lab.Build.Clients.Restic.Steps;
+using Wolfe.Lab.Build.Clients.Volumes.Steps;
 using Wolfe.Lab.Build.Workflows.Restic.Models;
 using Wolfe.Lab.Build.Workflows.Restic.Steps;
 
@@ -18,7 +18,6 @@ internal sealed partial class VerifyJob : ResticJob
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<ResolveSlice>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveRepository>(),
         Step.FromType<ResolveOffsite>(),

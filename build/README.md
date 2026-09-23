@@ -5,97 +5,105 @@ The lab's jobs as a CLI, `lab`, built on [Ritten](https://github.com/ritten-org/
 trigger and one command; what the command does lives here, in C#, where
 it can be typed, rehearsed and tested.
 
-## How a slice opts in
+## How a component opts in
 
-A slice that the CLI serves carries a `ritten.json` naming its workflow
-— `"workflow": "obsidian"` — plus that workflow's settings. Run from the
-slice's directory, `lab` offers exactly that workflow's jobs as
-commands, each option of which is a job argument the job declared. A
+A directory the CLI serves carries a `ritten.json` naming its workflow
+— `"workflow": "docker"` — plus that workflow's settings. That directory
+is a *component*: a slice is the folder that groups a service's
+components (`sonarr/compose/`, `sonarr/backup/`, `forgejo/tofu/`,
+`forgejo/runners/`), and never carries a declaration of its own. Run
+from a component's directory, `lab` offers exactly that workflow's jobs
+as commands, each option of which is a job argument the job declared. A
 workflow is a class here: its jobs, each job's ordered steps, and the
 settings shape its `ritten.json` must satisfy, judged before anything
-runs. Steps hand each other typed values (a `Vault`, say) rather than
+runs. Steps hand each other typed values (a `Release`, say) rather than
 sharing state, and reach outside the working directory only through a
 client that has a dry-run twin, so `--dry-run` rehearses any job
 without a side effect.
 
-A job's name has to read from inside the slice it runs in, because that
-is all the context there is. `verify` says enough in `restic/`, where
-the repositories are the only thing it could mean; in `forgejo/` it says
-nothing at all, which is why the slice-level check carries its subject
-and is called `restore-drill`. One intent gets one verb, too: making a
-node match its slice is `deploy` whether the stack is containers, a
-supervised agent, or both.
+A workflow is a *shape* of component, not a service. The regular shapes
+carry most of the lab: `docker` (a compose stack — check on the pull
+request, deploy on the merge), `tofu` (a root module — plan on the pull
+request, apply on the merge), `backup` (what a snapshot holds, what has
+to be quiet while it is taken, and what a restore must bring back),
+`image` and `dotnet-service`. Two slices with the same shape share a
+workflow and differ only in what they declare. What only one slice does
+is a component of its own with a workflow of its own — `caddy/certs`,
+`caddy/routes`, `forgejo/runners`, `garage/layout`, `immich/import`,
+`gatus/health` — named for the slice and the thing, so a `ritten.json`
+reads as what it is. Nothing is shared *across* workflows: a step two
+workflows need belongs to a domain module under `Clients/`, and each
+workflow lists it for itself.
 
-A workflow of its own is for what only that slice does. `caddy` is the
-deploy every compose slice runs plus the two steps that belong to the
-front door: gathering every slice's `caddy.caddyfile` and reloading the
-running container. That gather is the one step that reads other slices,
-and it reads the CHECKOUT rather than the install root on purpose — a
-route added in the same push as its slice would otherwise depend on
-which of the two workflows the runner reached first.
+A job's name has to read from inside the component it runs in, because
+that is all the context there is: `renew` in `caddy/certs/`, `register`
+in `forgejo/runners/`, `init` in `garage/layout/`, `verify` in
+`restic/repositories/`. One intent gets one verb, too: making a node
+match its component is `deploy` whether the stack is containers, a
+supervised agent, or a root module.
 
-A slice is a unit of deployment, not necessarily a container. The
-`agents` workflow is for the ones whose stack is a supervised host
-process instead — a model server needing a GPU no container on macOS can
-reach. Such a slice declares what it wants running under `agents` in its
-`ritten.json` (the program, its arguments and environment, where its log
-goes) and carries no compose file at all.
+A compose component is installed, not run from the checkout. A runner
+checks the repository out into a disposable workspace, and a container
+bind-mounts files — config directories, a Caddyfile, route snippets —
+that it goes on reading after the job that started it is gone. So every
+docker component names a `release`, is rsync'd under that name into one
+flat root (`~/.local/share/Wolfe.Lab/<release>`), and is converged from
+there with its `secrets.env` resolved into the environment of that one
+`compose up`. Ritten's own compose steps read the component in the
+checkout, which is right for the check and wrong for the deploy; the
+one step that differs is owned here, the rest are a `using`.
 
-A root module is a component of its slice. `caddy/tofu/` carries a
-`ritten.json` of its own naming the `tofu` workflow, because a slice
-declares one workflow and the slice's is the stack's. `check` plans the
-root on the pull request — formatting first, then a plan whose diff lands
-in the run's report — and `deploy` plans again on the merge and applies
-only what that plan found. Every root runs under the same state backend,
-declared once in `build/tofu-state.env` and found by walking up from the
-root, plus its own `secrets.env`; both name secrets by reference, read
-through Ritten's provider as each command starts.
+`caddy/routes` is the one component that reads other components, and
+deliberately: it gathers every `caddy.caddyfile` in the checkout into a
+release of its own that the door's Caddyfile imports, so adding a
+service never edits the front door, and a route added in the same push
+as its stack does not depend on which workflow the runner reached first.
 
-A job can be shared. `DeployJob<TSettings>` installs a slice and
-converges its compose stack for any slice that has one. Every compose
-slice runs it, on either node: the Pi gets the SDK from its own chezmoi
-profile, so there is no longer a machine where the lab's jobs cannot
-run, and the shell script this replaced is gone.
-`BackupJob<TSettings>`, `RestoreJob<TSettings>` and `DrillJob<TSettings>`
-are the backup, restore and restore-drill pipelines for any slice whose
-`ritten.json` carries a `backup` section
-(paths, excludes, the container to stop — or none for a warm snapshot —
-and the `verify` paths a restore must bring back). A workflow offers
-them by listing them beside its own jobs, and its settings record says
-so by carrying the section (`IBackupSettings`), so the section exists
-only where the jobs that read it are offered. A job reads its own
-slice's declaration and no other's.
+A backup component snapshots a release's state. Its `ritten.json` names
+the release (the snapshot's tag and, when a container is named in
+`stop`, the installed stack that is stopped for the duration), the
+paths, the excludes, and the `verify` paths a restore must bring back.
+The repositories themselves are the restic slice's to define: every
+backup component reads `restic/restic.env` (or `sftp.env` on a Linux
+node) by walking up to the checkout — the one file a component reads
+outside its own directory, because a copy in every component would be a
+copy that drifts.
+
+A tofu root runs under the same state backend, declared once in
+`build/tofu-state.env` and found by walking up from the root, plus its
+own `secrets.env`; both name secrets by reference, read through Ritten's
+provider as each command starts.
 
 ## Layout
 
-A folder under `src/Wolfe.Lab.Build` is one of four things, and the
+A folder under `src/Wolfe.Lab.Build` is one of three things, and the
 tree says which:
 
-- `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name:
-  the workflow class, its settings record, and the jobs and steps only
-  it lists. Where several names are one family (`docker`, `image`,
+- `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name,
+  the folder named for the workflow (`CaddyRoutes/` for
+  `caddy-routes`): the workflow class, its settings record under
+  `Models/`, and the jobs and steps only it lists under `Jobs/` and
+  `Steps/`. Where several names are one family (`docker`, `image`,
   `dotnet-service`) they share a folder.
-- `Deploy/`, `Backup/`, `Agents/`, `Gates/` — pipelines several
-  workflows list: a shared job or step and what it consumes. A client
-  that only one pipeline uses (the rsync installer, the state
-  directories, the launchd supervisor) lives with that pipeline.
-- `Clients/<name>/` — clients more than one place reaches through:
-  the interface, the real one, its dry-run twin and the `AddX()` that
-  registers the pair. `Secrets`, `Restic`, `Heartbeat`, `Alerts`.
-- `Slices/` and `Values/` — what a slice is (its directories, its
-  declared volumes, the steps every job opens with) and the value types
-  the rest is typed in. `LabJob` and `LabRuntime` sit at the root.
+- `Clients/<domain>/` — a domain module: what more than one workflow
+  reaches through. A client, its dry-run twin and the `AddX()` that
+  registers the pair, and under `Steps/` the steps that consume it.
+  `Releases` (the installer and where a component is released to),
+  `Volumes` (the mounted-drive guard), `Gates`, `Restic`, `Secrets`,
+  `Heartbeat`, `Alerts`, `Agents`, `Caddy`, and the rest.
+- `Values/` — the value types the rest is typed in (`HostPath`,
+  `ServiceUrl`). `LabJob`, `LabRuntime` and `Program` sit at the root.
 
-Dependencies point one way: workflows use pipelines, pipelines use
-clients, everything uses slices and values. Nothing under `Clients/`
-knows a workflow exists.
+Dependencies point one way: workflows use domain modules, everything
+uses values. Nothing under `Clients/` knows a workflow exists, and no
+workflow knows another.
 
 The other line is between this project and Ritten. A client for a tool
 with no lab policy in it — Docker, git, the .NET SDK, OpenTofu — is a
-Ritten package, consumed as one. A step copied from Ritten is owned here
-only when it has been changed for the lab (the compose steps, which take
-the slice's release and resolved secrets); a copy that would be
-identical is not a copy, it is a `using`.
+Ritten package, consumed as one, and so are its steps. A step copied
+from Ritten is owned here only when it has been changed for the lab
+(`ConvergeRelease`, which converges from the release with the resolved
+secrets); a copy that would be identical is not a copy, it is a `using`.
 
 ## Clients
 
@@ -116,11 +124,11 @@ command runner for every process. The lab adds what Ritten doesn't have:
 - **Heartbeat** — `IHeartbeat` pings a healthchecks.io check, the dead
   man's switch a scheduled job reports to as its last step. The
   rehearsal never pings: a switch told the job ran is worse than none.
-- **Agents** — `IServiceSupervisor` renders a slice's declared agents to
+- **Agents** — `IServiceSupervisor` renders a component's declared agents to
   the platform's units and converges the supervisor onto them: launchd
   today, systemd user units when the primary node is a Linux box. The
   declaration is platform-neutral, so that day changes one registration
-  and no slice. A converge compares the whole rendered unit and restarts
+  and no component. A converge compares the whole rendered unit and restarts
   only on a difference; the executable's own timestamp is part of that
   text, so upgrading the binary counts as a change to the agent without
   anyone having edited the declaration. An agent whose program is not on
@@ -142,8 +150,8 @@ which CI on the pull request is there to catch first.
 
 ## How workflows run it
 
-Today: `dotnet run --project ../build/src/Wolfe.Lab.Build -- <job>`
-from the slice's directory, on a node with the .NET SDK (the Brewfile's
+Today: `dotnet run --project ../../build/src/Wolfe.Lab.Build -- <job>`
+from the component's directory, on a node with the .NET SDK (the Brewfile's
 `dotnet-sdk` cask; the runner's PATH includes it). Each run compiles
 from the checkout, which is seconds on the mini and needs no install.
 Packing it as a tool and installing that on every node through chezmoi

@@ -1,7 +1,7 @@
 using Wolfe.Lab.Build.Clients.Chezmoi;
+using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.Chezmoi.Models;
 using Wolfe.Lab.Build.Workflows.Chezmoi.Steps;
-using Wolfe.Lab.Build.Workflows.Common.Steps;
 
 namespace Wolfe.Lab.Build.Workflows.Chezmoi.Jobs;
 

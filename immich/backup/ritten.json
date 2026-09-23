@@ -1,0 +1,18 @@
+{
+  "workflow": "backup",
+  "release": "immich",
+  "volumes": [
+    "/Volumes/Data2"
+  ],
+  "paths": [
+    "/Volumes/Data2/immich"
+  ],
+  "excludes": [
+    "/Volumes/Data2/immich/thumbs",
+    "/Volumes/Data2/immich/encoded-video"
+  ],
+  "image": "immich-server",
+  "verify": [
+    "/Volumes/Data2/immich/backups"
+  ]
+}

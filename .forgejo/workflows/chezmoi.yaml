@@ -22,8 +22,8 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: build/global.json
-      - working-directory: chezmoi
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- check
+      - working-directory: chezmoi/profiles
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
 
   deploy:
     if: github.event_name != 'pull_request'
@@ -37,5 +37,5 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - working-directory: chezmoi
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --auto-approve
+      - working-directory: chezmoi/profiles
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve

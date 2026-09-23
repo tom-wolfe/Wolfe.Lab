@@ -11,9 +11,9 @@ its tick job.
 
 | Path                               | Purpose                                                                                                                                                                                                                                                               |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `<name>/`                          | one slice per thing the lab runs: a compose stack + configs and/or jobs (a `ritten.json` declaring the CLI's jobs in it; the schedule is the workflow in `.forgejo/workflows/`), a `tofu/` root where the service has API resources, one README |
+| `<name>/`                          | one slice per thing the lab runs: a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
 | `chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
-| `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: every job a slice declares in its `ritten.json`                                                                                                                        |
+| `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: one workflow per component shape, run from the component's directory                                                                                                    |
 | `setup.sh`                         | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence)                                                                                                                                                                     |
 | `k8s/`                             | *(planned)* Argo CD applications and manifests                                                                                                                                                                                                                        |
 | `RUNBOOK.md`, `<slice>/RUNBOOK.md` | procedures — bootstrap, upgrade, backup, restore — kept apart from the design prose so they can be followed step by step                                                                                                                                              |
@@ -23,17 +23,19 @@ its tick job.
 
 ## How deployment works
 
-Chezmoi declares; Forgejo Actions acts. Every slice has a workflow in
-`.forgejo/workflows/<slice>.yaml` that fires on the push touching it, runs
-on the node the slice lives on (`runs-on` is placement — the mini's host
-runner or the Pi's), checks the repo out into a disposable workspace, and
-runs `lab deploy` from the slice's directory: install the slice into
-`~/.local/share/Wolfe.Lab/<slice>` (containers bind-mount files from it
-after the job is gone) and `docker compose up -d` there. `docker compose up -d` is convergent, so
-a manual run is always safe. OpenTofu roots have `<root>-tofu.yaml`: a
-plan on every pull request, apply on the merge. Nothing ticks.
+Chezmoi declares; Forgejo Actions acts. Every component has a workflow in
+`.forgejo/workflows/<slice>-<component>.yaml` that fires on the push
+touching it, runs on the node the slice lives on (`runs-on` is placement
+— the mini's host runner or the Pi's), checks the repo out into a
+disposable workspace, and runs `lab deploy` from the component's
+directory. For a compose component that means: install it under its
+release name, `~/.local/share/Wolfe.Lab/<release>` (containers
+bind-mount files from it after the job is gone), and `docker compose up
+-d` there. `docker compose up -d` is convergent, so a manual run is
+always safe. The same workflow checks the compose file on every pull
+request, and a tofu root's does the same with a plan. Nothing ticks.
 
-Secrets never sit in a file. A slice that needs one commits a
+Secrets never sit in a file. A component that needs one commits a
 `secrets.env` of vault *references* beside its compose file, and the
 deploy resolves them into the environment of the one `compose up`
 that creates the container — through the CLI's secrets provider, the

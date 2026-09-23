@@ -12,7 +12,7 @@ Three things already written down wait on it:
 - the neat public names (`jellyfin.twolfe.dev`) point at a Tailscale IP —
   the edge/DNS design in `caddy/README.md`;
 - forgejo's portless clone URL waits on a dedicated IP with a free port
-  22 (`forgejo/compose.yaml` records the decision);
+  22 (`forgejo/compose/compose.yaml` records the decision);
 - `100.64.0.0/10` isn't RFC1918, so the router's DNS-rebind filter has
   no objection to the `*.ts` names — they need no workaround at all.
   (The `*.lab` workaround in `caddy/README.md` stays: those names still

@@ -15,7 +15,7 @@
 {{- $uuid := printf "%s-%s-%s-%s-%s" (substr 0 8 $hex) (substr 8 12 $hex) (substr 12 16 $hex) (substr 16 20 $hex) (substr 20 32 $hex) -}}
 {{- /* Instance address = Forgejo's ROOT_URL from the slice's own compose
        file (the filesystem is the stack reference — as forgejo/tofu/webhook.tf). */ -}}
-{{- $compose := include "../../forgejo/compose.yaml" | fromYaml -}}
+{{- $compose := include "../../forgejo/compose/compose.yaml" | fromYaml -}}
 {{- $address := $compose.services.server.environment.FORGEJO__server__ROOT_URL | trimSuffix "/" -}}
 {{- /* …unless the caller overrides it: the mini runs Forgejo, and its own
        runner reaches it over loopback so CD there depends on no name. */ -}}

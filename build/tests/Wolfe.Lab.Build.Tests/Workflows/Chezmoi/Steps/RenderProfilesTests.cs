@@ -12,9 +12,9 @@ public class RenderProfilesTests
     [Fact]
     public async Task Run_RendersEveryProfileFromTheCheckoutIntoItsOwnDirectory()
     {
-        // The checkout, not the slice: its .chezmoiroot is what names chezmoi/home.
+        // The checkout, two levels above the component: its .chezmoiroot is what names chezmoi/home.
         var fileSystem = Substitute.For<IFileSystem>();
-        fileSystem.ProjectRoot.Returns(new PhysicalDirectory("/lab/chezmoi"));
+        fileSystem.ProjectRoot.Returns(new PhysicalDirectory("/lab/chezmoi/profiles"));
         _chezmoi.Render(Arg.Any<IDirectory>(), Arg.Any<string>(), Arg.Any<IDirectory>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<string>>(call => [$".zshrc-{call.Arg<string>()}"]);
 

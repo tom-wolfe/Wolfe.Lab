@@ -1,0 +1,13 @@
+{
+  "workflow": "immich-import",
+  "server": {
+    "url": "http://immich-server:2283",
+    "apiKey": "op://Wolfe.Lab/immich-api-key/credential"
+  },
+  "takeout": {
+    "path": "/Volumes/Data2/photos/google"
+  },
+  "import": {
+    "concurrency": 4
+  }
+}

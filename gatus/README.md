@@ -15,7 +15,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 
 | Concern | Handled by |
 | --- | --- |
-| Container | **on the Pi** — `.forgejo/workflows/gatus.yaml`, on every push that touches this slice; `lab deploy` from the slice on the node itself |
+| Container | **on the Pi** — `.forgejo/workflows/gatus-compose.yaml`, on every push that touches `compose/`; `lab deploy` from `gatus/compose` on the node itself |
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
 | Pushover credentials | `secrets.env` names the existing `pushover` vault item; the deploy resolves both fields into the container's environment |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
@@ -103,8 +103,8 @@ the full table.
 
 ## Who watches the watcher
 
-`.forgejo/workflows/gatus-health.yaml` — `lab health` from the mini's
-runner reads Gatus's `/health` on the Pi (`health.url` in `ritten.json`)
+`.forgejo/workflows/gatus-health.yaml` — `lab probe` from the mini's
+runner reads Gatus's `/health` on the Pi (`url` in `health/ritten.json`)
 at 11/26/41/56 past the hour and pages if it isn't `UP`. Gatus's Pushover alerts cannot report Gatus being down, and the
 deploy workflow is a convergent no-op that stays green regardless, so
 without this a dead status page looks exactly like a page you haven't
@@ -133,7 +133,7 @@ references `${PUSHOVER_APP_TOKEN}`, `${PUSHOVER_USER_KEY}` and
 `${FORGEJO_GATUS_TOKEN}`, which Gatus substitutes at load. Neither the
 repo nor the node's disk carries the values.
 
-Rotation: update the vault item and re-run the gatus workflow — a changed
+Rotation: update the vault item and re-run the `gatus compose` workflow — a changed
 environment is a changed container, so compose recreates it.
 
 ## Nothing to back up
@@ -167,7 +167,7 @@ It lives on the Pi, and everything the move changed is in files:
   the deploy refreshes it from the checkout every time.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).
-- `.forgejo/workflows/gatus.yaml` deploys on push; `gatus-health.yaml`
+- `.forgejo/workflows/gatus-compose.yaml` deploys on push; `gatus-health.yaml`
   probes the Pi by its MagicDNS name.
 
 ## Operational notes

@@ -1,0 +1,36 @@
+name: beszel compose
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [beszel/compose/**, .forgejo/workflows/beszel-compose.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    # Pre-merge code never runs on a node.
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
+      - working-directory: beszel/compose
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: MacMini
+    timeout-minutes: 20
+    concurrency:
+      group: MacMini
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: beszel/compose
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve

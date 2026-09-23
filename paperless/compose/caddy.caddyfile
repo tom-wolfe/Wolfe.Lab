@@ -1,0 +1,4 @@
+@paperless host paperless.twolfe.dev
+handle @paperless {
+	reverse_proxy paperless:8000
+}

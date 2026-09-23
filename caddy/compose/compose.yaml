@@ -1,0 +1,69 @@
+name: caddy
+
+services:
+  caddy:
+    image: caddy:2.10
+    container_name: caddy
+    restart: unless-stopped
+
+    environment:
+      # Host /etc/localtime is a symlink into /var/db/timezone — dangles
+      # inside a Linux container. Set TZ instead (jellyfin pattern).
+      TZ: Europe/London
+
+    command:
+      [
+        "caddy",
+        "run",
+        "--config",
+        "/etc/caddy/lab/caddy/Caddyfile",
+        "--adapter",
+        "caddyfile",
+      ]
+
+    volumes:
+      - ..:/etc/caddy/lab:ro
+
+      # The wildcard certificate, written by the certs component (lego
+      # state lives in ~/Docker/caddy/lego — that's the ACME account and
+      # key material: state, backed up like all state). Caddy cannot
+      # START without these files — setup.sh runs the job first.
+      - /Users/tomwolfe/Docker/caddy/lego/certificates:/certs:ro
+
+      # Caddy runtime state. Modest now that ACME moved out; kept because
+      # state is data and lives outside the repo, like every other stack.
+      - /Users/tomwolfe/Docker/caddy/data:/data
+      - /Users/tomwolfe/Docker/caddy/config:/config
+
+    ports:
+      - "80:80" # HTTP -> HTTPS redirect (Caddy automatic)
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+
+    networks:
+      - lab
+
+    healthcheck:
+      # Caddy's admin API, on by default at 127.0.0.1:2019 inside the
+      # container. The image is Alpine, so busybox wget is present.
+      #
+      # 127.0.0.1, NOT localhost. busybox resolves `localhost` to ::1 first
+      # (the image's /etc/hosts lists both), and caddy's admin API binds
+      # 127.0.0.1 only — so the v6 attempt is refused and the check can
+      # never pass. This was wrong from the day it was written: caddy was
+      # serving fine throughout while its healthcheck sat at a FailingStreak
+      # of 3,933, and nothing anywhere reported it, because Docker
+      # healthchecks are inert in this lab. a request from elsewhere (Gatus) is the shape
+      # that actually alerts.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  # THIS slice owns the shared edge network; every proxied slice joins it
+  # with `external: true`. Consequence: caddy must be deployed once before
+  # any slice that references the network — see README.md deploy order.
+  lab:
+    name: lab

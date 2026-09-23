@@ -12,7 +12,7 @@ Self-hosted git server running on the Mac mini via Docker Compose.
 
 ## Deployment
 
-`.forgejo/workflows/forgejo.yaml` converges this stack on every push that touches it, on
+`.forgejo/workflows/forgejo-compose.yaml` converges this stack on every push that touches `compose/`, on
 the mini's host runner. Manual converge: run the workflow from the Actions
 tab, or on the mini:
 
@@ -305,8 +305,8 @@ two halves:
 **Server half — one command, on the mini, op signed in:**
 
 ```sh
-cd forgejo
-dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node wolfe-pi5
+cd forgejo/runners
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node wolfe-pi5
 ```
 
 Mints a 40-hex secret with `forgejo-cli actions generate-secret`, stores it
@@ -375,7 +375,7 @@ Bring-up is in `RUNBOOK.md` "The mini's runner".
 
 Everything scheduled on the mini is a cron workflow on this runner:
 each slice's `<slice>-backup.yaml`, `restic-offsite.yaml`,
-`restic-verify.yaml`, the two `obsidian-*.yaml`, `caddy-renew-certs.yaml`,
+`restic-verify.yaml`, the two `obsidian-*.yaml`, `caddy-certs.yaml`,
 `heartbeat.yaml` and `gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
 probe never queue behind a long job; stateful jobs serialise through the
 `MacMini` concurrency group.

@@ -16,5 +16,5 @@ jobs:
     timeout-minutes: 720
     steps:
       - uses: actions/checkout@v4
-      - working-directory: immich
-        run: dotnet run --project ../build/src/Wolfe.Lab.Build -- import --auto-approve
+      - working-directory: immich/import
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- import --auto-approve

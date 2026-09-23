@@ -1,0 +1,12 @@
+{
+  "workflow": "backup",
+  "release": "garage",
+  "paths": [
+    "~/Docker/garage/meta",
+    "~/Docker/garage/data"
+  ],
+  "stop": "garage",
+  "verify": [
+    "~/Docker/garage/meta"
+  ]
+}

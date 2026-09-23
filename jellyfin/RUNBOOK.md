@@ -24,9 +24,9 @@ State lives outside the container, so upgrades are a tag bump. **Back up first**
 image afterwards will fail.
 
 ```sh
-cd jellyfin && dotnet run --project ../build/src/Wolfe.Lab.Build -- backup && cd ..   # snapshot first
+cd jellyfin/backup && dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup && cd ../..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
-# either let the jellyfin workflow converge it or, by hand:
+# either let the jellyfin compose workflow converge it or, by hand:
 cd ~/.local/share/Wolfe.Lab/jellyfin
 docker compose pull
 docker compose up -d
@@ -49,8 +49,8 @@ re-downloads, so it is excluded). Manual snapshot — run the backup
 workflow from the Actions tab, or:
 
 ```sh
-cd jellyfin
-dotnet run --project ../build/src/Wolfe.Lab.Build -- backup
+cd jellyfin/backup
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
@@ -70,8 +70,8 @@ the library definitions.
 ## Restore
 
 ```sh
-cd jellyfin
-dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
+cd jellyfin/backup
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
 ```
 
 `restic/RUNBOOK.md` "Restore" for what it does and its options. The

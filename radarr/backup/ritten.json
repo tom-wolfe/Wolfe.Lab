@@ -1,0 +1,22 @@
+{
+  "workflow": "backup",
+  "release": "radarr",
+  "volumes": [
+    "/Volumes/Data1",
+    "/Volumes/Data2"
+  ],
+  "paths": [
+    "~/Docker/radarr/config"
+  ],
+  "excludes": [
+    "~/Docker/radarr/config/Backups",
+    "~/Docker/radarr/config/MediaCover",
+    "~/Docker/radarr/config/logs",
+    "~/Docker/radarr/config/logs.db",
+    "~/Docker/radarr/config/logs.db-*"
+  ],
+  "stop": "radarr",
+  "verify": [
+    "~/Docker/radarr/config/radarr.db"
+  ]
+}

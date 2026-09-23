@@ -1,0 +1,70 @@
+name: paperless
+
+services:
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1
+    container_name: paperless
+    restart: unless-stopped
+
+    environment:
+      USERMAP_UID: "501"
+      USERMAP_GID: "20"
+      PAPERLESS_TIME_ZONE: Europe/London
+      PAPERLESS_OCR_LANGUAGE: eng
+
+      PAPERLESS_DBENGINE: sqlite
+      PAPERLESS_REDIS: redis://paperless-broker:6379
+
+      PAPERLESS_URL: https://paperless.twolfe.dev
+      PAPERLESS_CONSUMER_POLLING_INTERVAL: "30"
+
+      PAPERLESS_SECRET_KEY:
+      PAPERLESS_ADMIN_USER:
+      PAPERLESS_ADMIN_PASSWORD:
+
+    volumes:
+      - /Users/tomwolfe/Docker/paperless/data:/usr/src/paperless/data
+      - /Volumes/Data2/paperless/media:/usr/src/paperless/media
+      # Drop a file here and it is consumed; the exporter writes here.
+      - /Volumes/Data2/paperless/consume:/usr/src/paperless/consume
+      - /Volumes/Data2/paperless/export:/usr/src/paperless/export
+
+    ports:
+      - "8000:8000"
+
+    networks:
+      - lab
+      - default
+
+    depends_on:
+      paperless-broker:
+        condition: service_healthy
+
+    # The image ships its own healthcheck (curl against :8000), so there
+    # is deliberately no healthcheck block here.
+
+  paperless-broker:
+    image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+    container_name: paperless-broker
+    restart: unless-stopped
+    user: "501:20"
+
+    volumes:
+      - /Users/tomwolfe/Docker/paperless/broker:/data
+
+    networks:
+      - default
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  # The shared edge network — owned and created by the caddy slice, which
+  # must be deployed once before this stack. See caddy/README.md.
+  lab:
+    external: true
+  # The stack's own network: the broker is reachable from the web server only.
+  default:

@@ -53,9 +53,9 @@ upgrade runs irreversible database migrations, and rolling back to an older
 image after that will fail.
 
 ```sh
-cd forgejo && dotnet run --project ../build/src/Wolfe.Lab.Build -- backup && cd ..   # snapshot first
+cd forgejo/backup && dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup && cd ../..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the push deploys it), then
-# either let the forgejo workflow converge it or, by hand:
+# either let the forgejo compose workflow converge it or, by hand:
 cd ~/.local/share/Wolfe.Lab/forgejo
 docker compose pull
 docker compose up -d
@@ -80,13 +80,13 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 ## Backup
 
 Runs itself: `.forgejo/workflows/forgejo-backup.yaml` snapshots this
-slice nightly at 02:25 and drills the restore straight after (the `backup` section of
-`ritten.json` declares what). Manual snapshot — run the backup workflow
+slice nightly at 02:25 and drills the restore straight after
+(`backup/ritten.json` declares what). Manual snapshot — run the backup workflow
 from the Actions tab, or:
 
 ```sh
-cd forgejo
-dotnet run --project ../build/src/Wolfe.Lab.Build -- backup
+cd forgejo/backup
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
@@ -106,8 +106,8 @@ the backup script before anything risky.
 ## Restore
 
 ```sh
-cd forgejo
-dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
+cd forgejo/backup
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
 ```
 
 `restic/RUNBOOK.md` "Restore" for what it does and its options. The
@@ -146,8 +146,8 @@ other than the snapshot's.
 The Pi is already a chezmoi machine (profile `pi-node`, source cloned
 from this instance over its deploy key). In order:
 
-1. **Register server-side**: mint the vault item, then `lab register-runner --node wolfe-pi5`
-   from `forgejo/` on the mini (or the `forgejo register-runner` workflow) — "The mini's runner" below has both halves.
+1. **Register server-side**: mint the vault item, then `lab register --node wolfe-pi5`
+   from `forgejo/runners/` on the mini (or the `forgejo runners` workflow) — "The mini's runner" below has both halves.
 2. **Binaries first** (Pi): `chezmoi git pull` (apply does not pull), then
    `chezmoi apply --include externals` — the registration template needs
    `op` to exist before it can render. It prints nothing on success; check
@@ -172,7 +172,7 @@ from this instance over its deploy key). In order:
    runner appears under the repo's Settings → Actions → Runners as
    `wolfe-pi5`, label `wolfe-pi5:host`, idle.
 7. **The containerized runner** on the same node is the same two halves:
-   `lab register-runner --node wolfe-pi5 --kind docker` on the mini
+   `lab register --node wolfe-pi5 --kind docker` from `forgejo/runners/` on the mini
    (vault item `forgejo-runner-wolfe-pi5-docker`, instance scope, label
    `docker:docker://node:22-bookworm`), then on the Pi delete nothing and
    `chezmoi apply` — its config and registration render beside the host
@@ -256,8 +256,8 @@ start, so a config change is not live until the runner is.
 
        secret=$(ssh macmini.local docker exec -u git forgejo forgejo forgejo-cli actions generate-secret)
        op item create --category "API Credential" --vault Wolfe.Lab --title forgejo-runner-MacMini "credential=$secret"
-       cd forgejo
-       dotnet run --project ../build/src/Wolfe.Lab.Build -- register-runner --node MacMini
+       cd forgejo/runners
+       dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node MacMini
 
    A containerised runner is the same with `--kind docker` and the item
    `forgejo-runner-<node>-docker`.
@@ -271,6 +271,6 @@ start, so a config change is not live until the runner is.
    ~/Library/LaunchAgents/dev.twolfe.forgejo-runner.plist`. Logs:
    `~/Library/Logs/forgejo-runner.log`.
 4. The runner shows idle under Settings → Actions → Runners as `MacMini`.
-   Run the beszel workflow by hand: green = the slice was installed under
+   Run the `beszel compose` workflow by hand: green = the component was installed under
    `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from
    Forgejo, through the headless Docker config.

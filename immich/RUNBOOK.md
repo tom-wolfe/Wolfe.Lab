@@ -12,8 +12,8 @@ reasons are in `README.md`.
 2. **The database password**: item `immich-postgres` in the Wolfe.Lab
    vault, a generated password of letters and digits only in
    `credential`, before the merge.
-3. **Merge.** The immich workflow installs the slice and converges the
-   stack; the caddy workflow picks up the route; gatus starts probing.
+3. **Merge.** The `immich compose` workflow installs the stack and converges
+   it; the `caddy routes` workflow picks up the route; gatus starts probing.
    Postgres initialises on first start, which takes a minute, and the
    machine-learning container downloads its models on its first job.
 4. **The admin account.** The first visitor to
@@ -59,8 +59,8 @@ else. Immich takes a restore point first.
 **The library**, from restic, into `/Volumes/Data2/immich`:
 
 ```sh
-cd immich
-dotnet run --project ../build/src/Wolfe.Lab.Build -- restore
+cd immich/backup
+dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
 ```
 
 The library is set aside as `/Volumes/Data2/immich.bak-<timestamp>`

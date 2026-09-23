@@ -67,6 +67,6 @@ Edit `ritten.json` and push. The deploy job rewrites the unit and
 restarts the agent only if the rendered unit actually changed, so a
 re-run that changes nothing is a no-op.
 
-To rehearse the change first, from the slice directory on the node:
+To rehearse the change first, from `ollama/server` on the node:
 
-    dotnet run --project ../build/src/Wolfe.Lab.Build -- deploy --dry-run
+    dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --dry-run

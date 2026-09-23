@@ -8,7 +8,7 @@ native process on each monitored machine).
 
 | Concern | Handled by |
 | --- | --- |
-| Hub container | `.forgejo/workflows/beszel.yaml` on every push that touches this slice (the mini's host runner); first bring-up via `setup.sh` |
+| Hub container | `.forgejo/workflows/beszel-compose.yaml` on every push that touches `compose/` (the mini's host runner); first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
 | Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins"), supervised by `brew services` |
 | Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
@@ -41,7 +41,7 @@ plists are opaque and there is nowhere to watch them. This agent reports
 into a dashboard and shows up in `brew services list`, so it is observable,
 which was the actual requirement.
 
-Consequence worth internalising: **the beszel workflow converges the hub
+Consequence worth internalising: **the `beszel compose` workflow converges the hub
 only.** The agent's lifecycle belongs to chezmoi, because the agent is a
 host package and chezmoi is what converges host packages. One converger per
 thing.

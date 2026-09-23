@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
-using Wolfe.Lab.Build.Agents;
-using Wolfe.Lab.Build.Agents.Steps;
+using Wolfe.Lab.Build.Clients.Agents;
+using Wolfe.Lab.Build.Clients.Agents.Steps;
+using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Clients.Ollama;
-using Wolfe.Lab.Build.Slices;
-using Wolfe.Lab.Build.Slices.Steps;
+using Wolfe.Lab.Build.Clients.Volumes;
+using Wolfe.Lab.Build.Clients.Volumes.Steps;
 using Wolfe.Lab.Build.Values;
-using Wolfe.Lab.Build.Workflows.Common.Steps;
 using Wolfe.Lab.Build.Workflows.Ollama.Models;
 using Wolfe.Lab.Build.Workflows.Ollama.Steps;
 
@@ -51,9 +51,8 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
     protected override void Configure(IWorkflowBuilder builder, OllamaSettings settings)
     {
         base.Configure(builder, settings);
-        builder.AddAgents().AddOllama();
+        builder.AddAgents().AddOllama().AddVolumes(settings.Volumes);
         builder.Services.AddSingleton(new AgentDeclarations(settings.Agents));
-        builder.Services.AddSingleton(new RequiredVolumes([.. settings.Volumes.Select(volume => volume.Directory)]));
         builder.Services.AddSingleton(new ModelPlan([.. settings.Models.Pull]));
 
         if (settings.Models.Store is { } store)

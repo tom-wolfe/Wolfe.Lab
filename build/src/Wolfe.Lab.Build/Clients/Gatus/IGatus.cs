@@ -12,5 +12,5 @@ public interface IGatus
     /// </summary>
     /// <param name="url">The <c>/health</c> URL.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    Task<GatusHealth> Health(ServiceUrl url, CancellationToken ct = default);
+    Task<GatusStatus> Health(ServiceUrl url, CancellationToken ct = default);
 }

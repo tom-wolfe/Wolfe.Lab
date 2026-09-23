@@ -1,7 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
+using Ritten.Docker.Steps;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
-using Wolfe.Lab.Build.Workflows.Docker.Steps;
 
 namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 
@@ -9,11 +8,8 @@ namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 /// Builds the component's images into the node's own image store.
 /// </summary>
 /// <remarks>
-/// Work rather than a deploy, and named for what it does: nothing here publishes. Building an
-/// image changes only the node's own image store, which is why the docker client's rehearsal
-/// builds for real instead of skipping — and it is also the delivery, since the only node that
-/// reads this image is the node that built it. No registry for the same reason the watcher's
-/// image needs none.
+/// For a component that ships an image and no stack — the CI image, which the containerised
+/// runner pulls by tag from the node it was built on.
 /// </remarks>
 internal sealed class BuildJob : LabJob<DockerSettings>
 {
@@ -21,11 +17,7 @@ internal sealed class BuildJob : LabJob<DockerSettings>
 
     public override string Description => "Builds the component's images on this node.";
 
-    public override IReadOnlyList<Step> Steps { get; } =
-    [
-        Step.FromType<ResolveStack>(),
-        Step.FromType<BuildImages>()
-    ];
+    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<BuildImages>()];
 
     public override JobKind Kind => JobKind.Work;
 
@@ -36,8 +28,6 @@ internal sealed class BuildJob : LabJob<DockerSettings>
     protected override void Configure(IWorkflowBuilder builder, DockerSettings settings)
     {
         base.Configure(builder, settings);
-        builder.AddDocker();
-        builder.Services.AddSingleton(settings);
-        builder.Services.AddSingleton(new ImagePlan([.. settings.Images.Select(image => image.ToImage()).OfType<BuildableImage>()]));
+        builder.AddDocker([.. settings.Images.Select(image => image.ToImage()).OfType<DockerImage>()]);
     }
 }

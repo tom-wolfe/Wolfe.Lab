@@ -8,7 +8,7 @@ reasons are in `README.md`.
 At the desk. Do the Jellyfin 12.0 upgrade and its full scan **first**
 (`jellyfin/README.md`, "Sequencing with the *arr rename").
 
-1. Deploy: merge — the sonarr workflow converges it on the push.
+1. Deploy: merge — the `sonarr compose` workflow converges it on the push.
    Docker creates `~/Docker/sonarr/config` on first start.
 2. Create the login **through the API, not the UI.** Because the auth
    method is declared in `compose.yaml`, Sonarr skips its first-run
@@ -57,7 +57,7 @@ updater is inert in the linuxserver image (the container is the
 release), which is the point: the version is the tag in `compose.yaml`.
 
 ```sh
-cd sonarr && dotnet run --project ../build/src/Wolfe.Lab.Build -- backup && cd ..   # snapshot first
+cd sonarr/backup && dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup && cd ../..   # snapshot first
 # bump the tag (normal PR; the tick ships it)
 ```
 
@@ -67,7 +67,7 @@ Current stable tags: https://github.com/linuxserver/docker-sonarr/releases
 ## Backup and restore
 
 The nightly backup workflow snapshots `~/Docker/sonarr/config`
-via the shared pipeline (`lab backup`; the `backup` section of `ritten.json`):
+via the shared pipeline (`lab backup` from `sonarr/backup`, whose `ritten.json` declares what):
 stops the container, `restic backup`, starts it. Excluded: `Backups/`
 (Sonarr's own zips — restic is the backup), `MediaCover/` (artwork
 TVDB re-serves), logs. Restore is the generic recipe in

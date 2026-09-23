@@ -1,0 +1,20 @@
+{
+  "workflow": "backup",
+  "release": "paperless",
+  "volumes": [
+    "/Volumes/Data2"
+  ],
+  "paths": [
+    "~/Docker/paperless/data",
+    "/Volumes/Data2/paperless/media"
+  ],
+  "excludes": [
+    "~/Docker/paperless/data/index",
+    "~/Docker/paperless/data/log",
+    "/Volumes/Data2/paperless/media/documents/thumbnails"
+  ],
+  "stop": "paperless",
+  "verify": [
+    "~/Docker/paperless/data/db.sqlite3"
+  ]
+}

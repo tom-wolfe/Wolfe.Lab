@@ -1,29 +1,26 @@
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Build.Slices;
 
 namespace Wolfe.Lab.Build.Clients.Restic;
 
 /// <summary>
-/// The restic slice's env files, read from any slice in the checkout: slices are siblings, and
-/// <c>restic/</c> is the one holding the repository definitions.
+/// Reads one of the restic slice's env files into a repository, references resolved.
 /// </summary>
+/// <remarks>
+/// The restic slice publishes the repositories as env files at its root, and every component
+/// that snapshots into one reads them from there: the one place a component reads outside its
+/// own directory, and on purpose — the repository is the restic slice's to define, and a copy
+/// in every backup component would be a copy that drifts. The file is found by walking up from
+/// the component to the checkout that holds <c>restic/</c>.
+/// </remarks>
 internal static class ResticEnvironment
 {
     internal const string SliceName = "restic";
 
-    /// <summary>
-    /// Loads one env file into a repository, every reference resolved.
-    /// </summary>
-    /// <param name="slice">The slice the job runs in.</param>
-    /// <param name="fileName">The env file in <c>restic/</c>.</param>
-    /// <param name="secrets">The vault.</param>
-    /// <param name="ct">A token to monitor for cancellation requests.</param>
-    public static async Task<Result<ResticRepository>> Load(Slice slice, string fileName, ISecretProvider secrets, CancellationToken ct = default)
+    public static async Task<Result<ResticRepository>> Load(IDirectory component, string fileName, ISecretProvider secrets, CancellationToken ct = default)
     {
-        var file = new PhysicalDirectory(Path.Combine(slice.Source.AbsolutePath, "..", SliceName)).GetFile(fileName);
-        if (!file.Exists)
+        if (Find(component, fileName) is not { } file)
         {
-            return new Error($"{file.AbsolutePath} does not exist: the checkout has no restic slice beside {slice.Name}.");
+            return new Error($"No {SliceName}/{fileName} above {component.AbsolutePath}: the checkout has no restic slice.");
         }
 
         using var reader = new StreamReader(file.OpenRead());
@@ -47,4 +44,23 @@ internal static class ResticEnvironment
 
         return new ResticRepository(variables);
     }
+
+    private static IFile? Find(IDirectory from, string fileName)
+    {
+        for (var directory = from; directory is not null; directory = Parent(directory))
+        {
+            var candidate = directory.GetDirectory(SliceName).GetFile(fileName);
+            if (candidate.Exists)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private static IDirectory? Parent(IDirectory directory) =>
+        Path.GetDirectoryName(directory.AbsolutePath) is { Length: > 0 } parent && parent != directory.AbsolutePath
+            ? new PhysicalDirectory(parent)
+            : null;
 }

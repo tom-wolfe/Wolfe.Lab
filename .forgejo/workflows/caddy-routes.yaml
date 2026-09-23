@@ -1,0 +1,22 @@
+name: caddy routes
+
+# Every component's route snippet, carried to the front door. Fires on any
+# snippet anywhere in the repo, so adding a service never edits this file.
+on:
+  push:
+    branches: [main]
+    paths: [caddy/routes/**, '*/*/caddy.caddyfile', .forgejo/workflows/caddy-routes.yaml]
+  workflow_dispatch:
+
+concurrency:
+  group: MacMini
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: MacMini
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: caddy/routes
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve
