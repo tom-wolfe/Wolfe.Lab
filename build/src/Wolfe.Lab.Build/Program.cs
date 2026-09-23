@@ -7,6 +7,7 @@ using Wolfe.Lab.Build.Workflows.CaddyCertificates;
 using Wolfe.Lab.Build.Workflows.CaddyRoutes;
 using Wolfe.Lab.Build.Workflows.Chezmoi;
 using Wolfe.Lab.Build.Workflows.Docker;
+using Wolfe.Lab.Build.Workflows.DotNetTool;
 using Wolfe.Lab.Build.Workflows.ForgejoRunners;
 using Wolfe.Lab.Build.Workflows.GarageLayout;
 using Wolfe.Lab.Build.Workflows.GatusHealth;
@@ -25,6 +26,7 @@ builder.Workflows
     .Add<DockerWorkflow>()
     .Add<DotNetServiceWorkflow>()
     .Add<ImageWorkflow>()
+    .Add<DotNetToolWorkflow>()
     .Add<TofuWorkflow>()
     .Add<BackupWorkflow>()
     .Add<ChezmoiWorkflow>()

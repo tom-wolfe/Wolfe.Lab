@@ -5,24 +5,36 @@ on:
   push:
     branches: [main]
     paths: [build/**, .forgejo/workflows/build.yaml]
-
-concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
 
 jobs:
   check:
+    if: github.event_name == 'pull_request'
     runs-on: docker
     timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: build
+    concurrency:
+      group: build-check-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: build/global.json
-      - run: dotnet restore Wolfe.Lab.Build.slnx
-      - run: dotnet format Wolfe.Lab.Build.slnx --no-restore --verify-no-changes
-      - run: dotnet build Wolfe.Lab.Build.slnx --no-restore --configuration Release
-      - run: dotnet test --solution Wolfe.Lab.Build.slnx --no-build --configuration Release
+      - working-directory: build
+        run: dotnet run --project src/Wolfe.Lab.Build -- check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: wolfe-pi5
+    timeout-minutes: 15
+    # Its own group, not the node's: publishing changes nothing on the Pi, and a
+    # node group is for the jobs that do.
+    concurrency:
+      group: build-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: build
+        run: dotnet run --project src/Wolfe.Lab.Build -- deploy --auto-approve

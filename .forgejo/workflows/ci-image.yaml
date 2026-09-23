@@ -1,25 +1,47 @@
-# The image every containerised job runs in.
+# The image every containerised job runs in: checked on the pull request,
+# built and pushed to Forgejo's registry on the merge.
 #
-# Built on the HOST runner, not the containerised one: this job produces the
-# image that the containerised runner needs, so it must not depend on that
-# image existing. Nothing here is required by branch protection — the job is
-# named `build`, not `check`.
+# The deploy runs on a HOST runner, not the containerised one: a
+# containerised job gets no Docker socket, and this job produces the image
+# the containerised runner needs, so it must not depend on that image
+# existing. The Pi's, because the Pi is the node whose containerised runner
+# runs it (ROADMAP.md #6) — which leaves the build beside its only consumer
+# until another node's runner pulls it from the registry.
 name: ci image
 
 on:
+  pull_request:
   push:
     branches: [main]
     paths: [ci/**, .forgejo/workflows/ci-image.yaml]
   workflow_dispatch:
 
 jobs:
-  build:
+  check:
+    # Pre-merge code never runs on a node.
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
+      - working-directory: ci/image
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
+
+  deploy:
+    if: github.event_name != 'pull_request'
     runs-on: wolfe-pi5
     timeout-minutes: 30
+    # Its own group, not the node's: building and pushing changes nothing on the Pi, and a
+    # node group is for the jobs that do.
     concurrency:
-      group: wolfe-pi5
+      group: ci-image-deploy
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - working-directory: ci/image
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- build
+        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve

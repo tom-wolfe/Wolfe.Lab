@@ -16,6 +16,7 @@ resource "forgejo_branch_protection" "main" {
   enable_status_check = true
   status_check_contexts = [
     "build / check*",
+    "ci image / check*",
     "chezmoi / check*",
     "mail bridge / check*",
     "mail watcher / check*",

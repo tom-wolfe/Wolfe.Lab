@@ -6,7 +6,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>lab</ToolCommandName>
     <PackageOutputPath>../../dist</PackageOutputPath>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +23,7 @@
     <PackageReference Include="Ritten.DotNet" />
     <PackageReference Include="Ritten.Forgejo" />
     <PackageReference Include="Ritten.Git" />
+    <PackageReference Include="Ritten.NuGet" />
     <PackageReference Include="Ritten.OnePassword" />
     <PackageReference Include="Ritten.OpenTofu" />
     <PackageReference Include="Scriban" />

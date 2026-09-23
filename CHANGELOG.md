@@ -4,6 +4,27 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.34.0] - 2026-09-23
+
+### Added
+
+- **The CLI ships as a package.** `build/` is a `dotnet-tool` component
+  on Ritten 0.19.0's `Ritten.NuGet`: the merge deploys `Wolfe.Lab.Build`
+  (`lab`) to Forgejo's NuGet feed.
+- **The CI image is pushed** to Forgejo's container registry as
+  `code.twolfe.dev/tom-wolfe/ci`. An image component names a `registry`
+  to push; one without keeps its images on the node.
+
+### Changed
+
+- **`build.yaml` is a `lab` check**, gated on what the pull request
+  touched like every other, rather than a full build and test on every
+  pull request.
+- **The CI image is checked and deployed like every component.** Its
+  `build` job is `deploy` (build, gate, push), and a new required
+  `check` fails a context with no Dockerfile or a pushed tag that names
+  no registry.
+
 ## [0.33.0] - 2026-09-23
 
 ### Added

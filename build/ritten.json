@@ -1,0 +1,8 @@
+{
+  "workflow": "dotnet-tool",
+  "project": "src/Wolfe.Lab.Build/Wolfe.Lab.Build.csproj",
+  "feed": {
+    "source": "https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json",
+    "token": "op://Wolfe.Lab/forgejo-packages/credential"
+  }
+}

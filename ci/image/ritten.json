@@ -2,8 +2,12 @@
   "workflow": "image",
   "images": [
     {
-      "tag": "lab/ci",
+      "tag": "code.twolfe.dev/tom-wolfe/ci",
       "context": "."
     }
-  ]
+  ],
+  "registry": {
+    "username": "tom-wolfe",
+    "token": "op://Wolfe.Lab/forgejo-packages/credential"
+  }
 }

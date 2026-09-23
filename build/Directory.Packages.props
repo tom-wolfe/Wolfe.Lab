@@ -4,15 +4,16 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Ritten.CommandLine" Version="0.18.0" />
+    <PackageVersion Include="Ritten.CommandLine" Version="0.19.0" />
     <PackageVersion Include="Scriban" Version="7.5.0" />
-    <PackageVersion Include="Ritten.Core" Version="0.18.0" />
-    <PackageVersion Include="Ritten.Docker" Version="0.18.0" />
-    <PackageVersion Include="Ritten.DotNet" Version="0.18.0" />
-    <PackageVersion Include="Ritten.Forgejo" Version="0.18.0" />
-    <PackageVersion Include="Ritten.Git" Version="0.18.0" />
-    <PackageVersion Include="Ritten.OnePassword" Version="0.18.0" />
-    <PackageVersion Include="Ritten.OpenTofu" Version="0.18.0" />
+    <PackageVersion Include="Ritten.Core" Version="0.19.0" />
+    <PackageVersion Include="Ritten.Docker" Version="0.19.0" />
+    <PackageVersion Include="Ritten.DotNet" Version="0.19.0" />
+    <PackageVersion Include="Ritten.Forgejo" Version="0.19.0" />
+    <PackageVersion Include="Ritten.Git" Version="0.19.0" />
+    <PackageVersion Include="Ritten.NuGet" Version="0.19.0" />
+    <PackageVersion Include="Ritten.OnePassword" Version="0.19.0" />
+    <PackageVersion Include="Ritten.OpenTofu" Version="0.19.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.12" />

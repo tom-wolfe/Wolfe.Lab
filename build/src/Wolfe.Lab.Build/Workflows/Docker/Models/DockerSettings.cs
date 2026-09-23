@@ -34,4 +34,9 @@ public record DockerSettings : WorkflowSettings
     /// previous one and say nothing.
     /// </remarks>
     public IReadOnlyList<ImageSettings> Images { get; init; } = [];
+
+    /// <summary>
+    /// The registry the images are pushed to after they are built, or null to keep them on the node.
+    /// </summary>
+    public RegistrySettings? Registry { get; init; }
 }

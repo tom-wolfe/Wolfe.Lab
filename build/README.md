@@ -148,15 +148,43 @@ What the sink cannot cover is a run that never reaches the CLI: a
 `dotnet run` that fails to restore or compile exits red without paging,
 which CI on the pull request is there to catch first.
 
+## Shipping
+
+The CLI is itself a component: `build/ritten.json` is a `dotnet-tool`,
+the package `Wolfe.Lab.Build` whose command is `lab`. Its pull request
+is checked here — restore, format, build, test — and one more thing:
+**a change to what ships moves `<Version>`**. That is Ritten's
+continuous release cadence (`Ritten.NuGet`): `ReadShippedChanges` diffs
+the project and the `Directory.*.props` against the base, and
+`CheckVersion` fails a change whose version the feed already has; tests
+and docs do not ship and do not count. The merge's `deploy` publishes
+that version to Forgejo's NuGet feed
+(`https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json`), and
+stops at the releasable gate when the feed already has it, so a version
+is never overwritten and a pin always means what it meant. The one step
+of the lab's own is `AuthenticateFeed`, which reads the feed key from the
+vault where Ritten's would read the environment.
+
+Publishing moves nothing. What runs on a runner is the version its pin
+names, which is the point: **runners execute reviewed, merged code, never
+a pull request's CLI.** A pull request that changes the CLI is built and
+tested here and runs nowhere else. The cost is ordering — a slice change
+that needs a new CLI behaviour lands after the CLI change has shipped and
+its pin has moved, as two pull requests.
+
 ## How workflows run it
 
 Today: `dotnet run --project ../../build/src/Wolfe.Lab.Build -- <job>`
 from the component's directory, on a node with the .NET SDK (the Brewfile's
 `dotnet-sdk` cask; the runner's PATH includes it). Each run compiles
-from the checkout, which is seconds on the mini and needs no install.
-Packing it as a tool and installing that on every node through chezmoi
-is the next step; then the short-cycle workflows need no checkout at all.
+from the checkout. The pinned tool replaces that: chezmoi installs it on
+every node with a runner, the CI image bakes the same version in, and a
+workflow's command becomes `lab <job>`.
 
-CI builds, format-checks and tests this solution in the .NET SDK image
-on the containerised runner (`build.yaml`), so a change that would fail on
-the mini fails on the pull request.
+The CI image (`ci/image/`) is an `image` component with the same two
+jobs as everything else: `check` on the pull request (each context has a
+Dockerfile, each tag names its registry — the containerised runner has no
+Docker socket, so the build itself cannot be checked), and `deploy` on the
+merge, which builds it on the Pi and pushes it to Forgejo's registry as
+`code.twolfe.dev/tom-wolfe/ci`, so a containerised runner on a node that
+did not build it can pull it.

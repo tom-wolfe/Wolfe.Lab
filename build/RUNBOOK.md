@@ -36,3 +36,21 @@ dotnet test --solution build/Wolfe.Lab.Build.slnx --no-build
 
 Nothing merges until the version is published: the mini restores from
 NuGet alone.
+
+## Releasing a CLI change
+
+Bump `<Version>` in `src/Wolfe.Lab.Build/Wolfe.Lab.Build.csproj` in the
+same pull request — the check fails without it. The merge publishes it.
+Then move the pins to it in a second pull request (chezmoi's and the CI
+image's), which is what actually puts it on the runners.
+
+## The feed token
+
+One Forgejo access token publishes both the CLI package and the CI
+image: `forgejo-packages` in the Wolfe.Lab vault, `credential` field. In
+Forgejo, as `tom-wolfe`: Settings → Applications → Generate New Token,
+scope **package: read and write** and nothing else. Reading needs no
+token: packages under a public owner are public.
+
+Rotation: generate a new one, replace the vault field, revoke the old.
+Nothing caches it — every publish reads it from the vault.

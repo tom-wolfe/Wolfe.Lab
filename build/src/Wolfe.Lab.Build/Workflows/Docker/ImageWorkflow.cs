@@ -19,5 +19,5 @@ public sealed class ImageWorkflow : IWorkflow
     public string Label => "image";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new BuildJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new ImageCheckJob(), new ImageDeployJob()];
 }
