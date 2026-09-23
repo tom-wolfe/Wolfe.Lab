@@ -1,10 +1,14 @@
+# The following lines were added by Docker Desktop to add commands to your PATH.
+export PATH="$PATH:/Users/tomwolfe/.docker/bin"
+# End of Docker Desktop section.
+
 {{ if has .profile (list "macbook" "macstudio" "work-macbook") -}}
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # .NET SDK tools
 export PATH="$PATH:$HOME/.dotnet/tools"
 
-# JetBrains Toolbox scripts
+# Added by Toolbox App
 export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 {{ end -}}
 
