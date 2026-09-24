@@ -1,0 +1,31 @@
+{{ if has .profile (list "macmini-node" "macstudio" "pi-node") -}}
+#!/bin/bash
+# The lab's CLI, `lab`, at the version its pin names — on every machine
+# with a host runner, which runs the lab's jobs with it. The pin is the
+# point: a runner executes a reviewed, published CLI, never a checkout's.
+#
+# run_onchange_ means a bump re-runs this, and a bump is a pull request —
+# so moving a node to a new CLI is a merge, like everything else. Bump
+# together with LAB_VERSION in ci/image/Dockerfile, which bakes the same
+# version into the containerised runner's image. The version is the lab's
+# own (build/README.md "Shipping"): read the CHANGELOG entry it names.
+set -euo pipefail
+
+version="0.35.0"
+feed="https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"
+{{- if eq .profile "pi-node" }}
+
+# The Pi's SDK is a tarball in ~/.dotnet, not a system install.
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$HOME/.dotnet:$PATH"
+{{- else }}
+
+# The dotnet-sdk cask links into /usr/local/bin, which non-interactive SSH
+# sessions don't have on PATH.
+export PATH="$PATH:/usr/local/bin"
+{{- end }}
+
+# update installs when missing; --allow-downgrade makes the pin exact in
+# both directions, so rolling back is reverting the bump.
+dotnet tool update --global Wolfe.Lab.Build --version "$version" --allow-downgrade --add-source "$feed"
+{{ end -}}

@@ -54,3 +54,16 @@ RUN set -eux; \
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "v${CHEZMOI_VERSION}"; \
     chezmoi --version; \
     shellcheck --version
+
+# The lab's CLI, `lab`, at the version its pin names, so a job runs the
+# published, reviewed CLI rather than compiling the checkout. LAST, because
+# it moves most often: a bump rebuilds this layer and nothing above it. Bump
+# together with the version in chezmoi's install-lab script, which pins the
+# host runners to the same one.
+ARG LAB_VERSION=0.35.0
+RUN set -eux; \
+    dotnet tool install --tool-path /opt/lab Wolfe.Lab.Build \
+      --version "${LAB_VERSION}" \
+      --add-source https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json; \
+    /opt/lab/lab --help > /dev/null
+ENV PATH="/opt/lab:${PATH}"

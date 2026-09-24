@@ -183,12 +183,18 @@ its pin has moved, as two pull requests.
 
 ## How workflows run it
 
-Today: `dotnet run --project ../../build/src/Wolfe.Lab.Build -- <job>`
-from the component's directory, on a node with the .NET SDK (the Brewfile's
-`dotnet-sdk` cask; the runner's PATH includes it). Each run compiles
-from the checkout. The pinned tool replaces that: chezmoi installs it on
-every node with a runner, the CI image bakes the same version in, and a
-workflow's command becomes `lab <job>`.
+The pinned tool, `lab`, is on every runner. chezmoi installs it on each
+node with a host runner (`.chezmoiscripts/install-lab.sh`, on the Mac
+mini, the Pi and the Studio), and the CI image bakes the same version in
+as its last layer (`LAB_VERSION` in `ci/image/Dockerfile`). The two pins
+move together, in one pull request; the chezmoi and `ci image` workflows
+roll them out on the merge.
+
+Workflows still call `dotnet run --project ../../build/src/Wolfe.Lab.Build
+-- <job>` from the component's directory, compiling the checkout, until
+they switch to `lab <job>`. The switch is its own pull request, after the
+pins have landed: a pull request's checks run its own workflow files, in
+the image, so the image has to carry `lab` first.
 
 The CI image (`ci/image/`) is an `image` component with the same two
 jobs as everything else: `check` on the pull request (each context has a

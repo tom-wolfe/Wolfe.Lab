@@ -20,6 +20,9 @@
         "TF_PLUGIN_CACHE_DIR" (printf "%s/.cache/tofu-plugins" .chezmoi.homeDir))) -}}
 {{- end -}}
 {{- if eq .profile "pi-node" -}}
+{{- /* DOTNET_ROOT: the SDK is a tarball in ~/.dotnet, and a global tool's
+       launcher (`lab`) finds the runtime there or in a system location —
+       never through PATH. */ -}}
 {{- template "forgejo-runner/config.yaml" (dict
       "home" .chezmoi.homeDir
       "dir" "forgejo-runner"
@@ -28,5 +31,7 @@
       "labels" (list (printf "%s:host" $node))
       "cache" false
       "path" (printf "%s/.local/bin:%s/.dotnet:%s/.dotnet/tools:/usr/local/bin:/usr/bin:/bin" .chezmoi.homeDir .chezmoi.homeDir .chezmoi.homeDir)
-      "envs" (dict "LAB_ROOT" $root)) -}}
+      "envs" (dict
+        "LAB_ROOT" $root
+        "DOTNET_ROOT" (printf "%s/.dotnet" .chezmoi.homeDir))) -}}
 {{- end -}}

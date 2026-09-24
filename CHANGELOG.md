@@ -4,6 +4,22 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.36.0] - 2026-09-24
+
+### Added
+
+- **`lab` is on every runner, pinned.** chezmoi installs CLI 0.35.0 from
+  the lab's feed on the mini, the Pi and the Studio, and the CI image
+  bakes the same version in as its last layer. Nothing calls it yet.
+
+### Changed
+
+- **The containerised runner pulls its image from Forgejo's registry**
+  (`code.twolfe.dev/tom-wolfe/ci`) before every job, rather than using the
+  one the node built — so any node's runner runs the same image.
+- **The Pi's host runner sets `DOTNET_ROOT`**, so a global .NET tool
+  finds the runtime in `~/.dotnet`.
+
 ## [0.35.0] - 2026-09-24
 
 ### Changed

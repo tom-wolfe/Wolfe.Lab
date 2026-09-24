@@ -7,14 +7,16 @@
        lab's own (ci/): node for JS actions like actions/checkout, the .NET
        SDK for the CLI, and docker's CLIENT for a compose check — the client
        only, because `compose config` parses the file and never calls a
-       daemon. It is built on the node by the `ci image` workflow and never
-       pulled; see force_pull in the shared template. */ -}}
+       daemon — and the lab's CLI, `lab`, at the pinned version. The `ci
+       image` workflow builds it and pushes it to Forgejo's registry, and
+       every runner pulls it from there (force_pull, in the shared template),
+       so a node that did not build it runs the same image. */ -}}
 {{- template "forgejo-runner/config.yaml" (dict
       "home" .chezmoi.homeDir
       "dir" "forgejo-runner-docker"
       "capacity" 2
       "host" false
-      "labels" (list "docker:docker://lab/ci:latest")
+      "labels" (list "docker:docker://code.twolfe.dev/tom-wolfe/ci:latest")
       "cache" true
       "path" ""
       "envs" (dict)) -}}
