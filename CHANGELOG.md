@@ -4,6 +4,15 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.41.0] - 2026-09-24
+
+### Changed
+
+- **The runners run `lab` 0.40.1**, up from 0.35.0: the systemd
+  supervisor, the registration guards and Ritten 0.20.0's atomic writes
+  reach the nodes and the CI image. 0.40.0 is skipped — its dry runs of an
+  agent deploy failed to assemble.
+
 ## [0.40.1] - 2026-09-24
 
 ### Fixed

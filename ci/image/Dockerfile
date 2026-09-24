@@ -60,7 +60,7 @@ RUN set -eux; \
 # it moves most often: a bump rebuilds this layer and nothing above it. Bump
 # together with the version in chezmoi's install-lab script, which pins the
 # host runners to the same one.
-ARG LAB_VERSION=0.35.0
+ARG LAB_VERSION=0.40.1
 RUN set -eux; \
     dotnet tool install --tool-path /opt/lab Wolfe.Lab.Build \
       --version "${LAB_VERSION}" \
