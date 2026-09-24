@@ -21,7 +21,6 @@ public static class WorkflowBuilderExtensions
             {
                 builder.Services.TryAddSingleton(AgentDirectory.Launchd);
                 builder.Services.TryAddSingleton<IServiceSupervisor, LaunchdSupervisor>();
-
             }
             else if (OperatingSystem.IsLinux())
             {
@@ -33,8 +32,7 @@ public static class WorkflowBuilderExtensions
                 throw new PlatformNotSupportedException("The lab's agents run under launchd or systemd: macOS or Linux.");
             }
 
-            builder.Decorators.Replace<IServiceSupervisor, DryRunSupervisor>();
-            builder.Services.TryAddSingleton<PlatformSupervisor>();
+            builder.Decorators.Decorate<IServiceSupervisor, DryRunSupervisor>();
             return builder;
         }
     }

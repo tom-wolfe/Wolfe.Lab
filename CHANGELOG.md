@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.40.1] - 2026-09-24
+
+### Fixed
+
+- **An agent deploy could not be rehearsed.** Fixed the agent DI registration.
+
 ## [0.40.0] - 2026-09-24
 
 ### Added

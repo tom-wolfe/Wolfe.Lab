@@ -4,9 +4,9 @@ namespace Wolfe.Lab.Build.Clients.Agents;
 /// <summary>
 /// Says what converging would do.
 /// </summary>
-internal sealed class DryRunSupervisor(IWorkflowLog log, PlatformSupervisor platform) : IServiceSupervisor
+internal sealed class DryRunSupervisor(IWorkflowLog log, IServiceSupervisor inner) : IServiceSupervisor
 {
-    private readonly IServiceSupervisor _inner = platform.Supervisor;
+    private readonly IServiceSupervisor _inner = inner;
 
     /// <inheritdoc />
     public AgentUnit Render(AgentDefinition agent) => _inner.Render(agent);
