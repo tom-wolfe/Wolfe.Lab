@@ -302,19 +302,24 @@ Actions itself is on by default in Forgejo and enabled on this repo
 (`has_actions`); there is nothing to switch on server-side. Adding a node is
 two halves:
 
-**Server half — one command, on the mini, op signed in:**
+**Server half — two steps, in `RUNBOOK.md` "The mini's runner":**
 
-```sh
-cd forgejo/runners
-lab register --node wolfe-pi5
-```
+1. **Mint**, at a desk: `forgejo-cli actions generate-secret` makes a 40-hex
+   secret, stored as the vault item `forgejo-runner-<node>` — the origin.
+   The mini's service account is read-only, so this is done from a Mac
+   with the 1Password app.
+2. **Register**, on the mini or through the `forgejo runners` workflow —
+   wherever the forgejo container is:
 
-Mints a 40-hex secret with `forgejo-cli actions generate-secret`, stores it
-as the vault item `forgejo-runner-<hostname>` (the origin), and registers
-the host runner at **repository scope** (`tom-wolfe/Wolfe.Lab`) with the
-label `<hostname>:host`. Re-running with the same secret updates the
-runner in place. The optional second argument overrides the scope; the
-containerized runner's registration will be instance-wide.
+   ```sh
+   cd forgejo/runners
+   lab register --node wolfe-pi5
+   ```
+
+   Reads that secret back and registers the host runner at **repository
+   scope** (`tom-wolfe/Wolfe.Lab`) with the label `<node>:host`.
+   Re-running with the same secret updates the runner in place; `--kind
+   docker` registers the containerised runner, instance-wide.
 
 What the split buys, stated plainly: a host-mode job runs as the node's
 user with the lab's vault token in its environment. Repository scope means

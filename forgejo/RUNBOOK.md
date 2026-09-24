@@ -252,10 +252,10 @@ start, so a config change is not live until the runner is.
 
 At the Studio, in order.
 
-1. Mint the secret and register, as for the mini (below) with the node
-   `MacStudio`: the vault item is `forgejo-runner-MacStudio`, and the
-   registration runs from `forgejo/runners/` on the mini, or through the
-   `forgejo runners` workflow.
+1. Mint the secret and register, as for the mini (below, steps 1 and 2)
+   with the node `MacStudio`: the vault item is `forgejo-runner-MacStudio`.
+   The registration runs on the mini or through the `forgejo runners`
+   workflow, never on the Studio — it talks to the forgejo container.
 2. Seed the bootstrap env: `install -D -m 600 /dev/null
    ~/.config/forgejo-runner/env`, then write
    `OP_SERVICE_ACCOUNT_TOKEN=…` into it — the mini's service account. The
@@ -278,27 +278,37 @@ job is on the wrong node.
 
 ## The mini's runner
 
-1. Mint the secret and register. The mini's service account is read-only,
-   so the item is created from the laptop, once; the registration runs
-   wherever the forgejo container is, and is safe to repeat:
+1. Mint the secret, at a desk. The mini's service account is read-only,
+   so the item is created from a Mac with the 1Password app, once. docker
+   by its full path: a non-interactive SSH session on the mini has only
+   /usr/bin:/bin:/usr/sbin:/sbin on its PATH, and a `docker` it cannot
+   find leaves `$secret` empty — which `op` stores without complaint, and
+   the registration then rejects as "not 0" characters. The length check
+   stops that at the source:
 
-       secret=$(ssh macmini.local docker exec -u git forgejo forgejo forgejo-cli actions generate-secret)
-       op item create --category "API Credential" --vault Wolfe.Lab --title forgejo-runner-MacMini "credential=$secret"
-       cd forgejo/runners
-       lab register --node MacMini
+       secret=$(ssh macmini.local /usr/local/bin/docker exec -u git forgejo forgejo forgejo-cli actions generate-secret)
+       [ ${#secret} -eq 40 ] && op item create --category "API Credential" --vault Wolfe.Lab --title forgejo-runner-MacMini "credential=$secret"
+
+   To replace a bad one, the same with `op item edit forgejo-runner-<node>
+   --vault Wolfe.Lab "credential=$secret"`.
+2. Register, where the forgejo container is — never from the desk:
+   the **forgejo runners** workflow (Actions → Run workflow, node and
+   kind), or on the mini itself, `cd ~/.local/share/chezmoi/forgejo/runners
+   && lab register --node MacMini`. Safe to repeat: the same secret updates
+   the runner in place.
 
    A containerised runner is the same with `--kind docker` and the item
    `forgejo-runner-<node>-docker`.
-2. Seed the bootstrap env: `install -D -m 600 /dev/null
+3. Seed the bootstrap env: `install -D -m 600 /dev/null
    ~/.config/forgejo-runner/env` and write
    `OP_SERVICE_ACCOUNT_TOKEN=$(cat ~/Docker/1password/service-account-token)`.
-3. `chezmoi apply` installs the formula via the Brewfile, renders the
+4. `chezmoi apply` installs the formula via the Brewfile, renders the
    config and registration, and places the launchd agent
    `dev.twolfe.forgejo-runner` (`KeepAlive`, so it retries until Forgejo
    answers). Load it once: `launchctl bootstrap gui/$(id -u)
    ~/Library/LaunchAgents/dev.twolfe.forgejo-runner.plist`. Logs:
    `~/Library/Logs/forgejo-runner.log`.
-4. The runner shows idle under Settings → Actions → Runners as `MacMini`.
+5. The runner shows idle under Settings → Actions → Runners as `MacMini`.
    Run the `beszel compose` workflow by hand: green = the component was installed under
    `~/.local/share/Wolfe.Lab` and a compose deploy ran on the mini from
    Forgejo, through the headless Docker config.

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       node:
-        description: "The node whose runner to register: MacMini, wolfe-pi5"
+        description: "The node whose runner to register: MacMini, MacStudio, wolfe-pi5"
         required: true
         type: string
       kind:
