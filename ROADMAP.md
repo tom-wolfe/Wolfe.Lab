@@ -153,15 +153,10 @@ keeps up), and the host runner.
 
 Whisper-family transcription stays an idea until captured notes want it.
 
-**The mini's runner and Full Disk Access — alongside, not part of it.**
-The mini's runner does need Full Disk Access (the drives), and the grant
-is lost on every upgrade: launchd runs Homebrew's `opt` symlink, TCC
-records the versioned Cellar path it resolves to, and an ad-hoc-signed
-binary's identity is its hash, so even a stable path would not hold it.
-The fix is both halves: a chezmoi script copies the binary to
-`~/.local/bin/forgejo-runner` on a version change and signs it with a
-lab self-signed identity kept in the mini's keychain. The grant then
-attaches to a fixed path and a signing identity that no upgrade moves.
+**The mini's runner and Full Disk Access** — a signed copy at a fixed
+path, so the grant survives Homebrew upgrades: a step of the runner
+component when the runners move out of chezmoi into the CLI. Until then
+the grant is re-given by hand after an upgrade.
 
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
@@ -483,6 +478,297 @@ whose alert thresholds have no file representation at all.
 **The structural cost is paid.** The Pi is a managed node with its own
 runner; what is left here is one compose slice, and the Pi's backup path for
 its state.
+
+**The bigger reason is events, not the devices.** Presence from the
+companion app, time, device state: HA is where "something happened"
+becomes an automation. It is a *participant* on the lab's event bus
+(below), not the bus itself: it speaks MQTT natively, which the broker
+can carry beside AMQP. It ships an Ollama conversation integration, so
+`ai.twolfe.dev` can be its assistant with no new service. The aircon and the TV join the list
+above; whether either has a *local* integration depends on the brand, and
+is worth checking before assuming it.
+
+### The personal data plane — out of the walled gardens
+
+Most of the items below are the same move. The AI half of #7 (asking
+questions of the vault, the inbox, the calendar) only works over data the
+lab can read, and today calendar, contacts, tasks, messages and
+audiobooks each sit in an app that will not talk to anything. Each item
+here stands on its own, but the order is set by how much it unblocks
+for the others. **Everything stays tailnet-only**; none of these is a reason
+to expose the lab to the internet.
+
+### Calendar and contacts — Radicale
+
+The highest-leverage item in this section. A CalDAV/CardDAV server
+(Radicale, or Baïkal) as the **source of truth for contacts**: import
+from Google and iCloud, dedupe once, point every device at it. iOS and
+macOS speak both natively. Radicale's storage is plain `.ics`/`.vcf`
+files with a git hook that commits every change, the same "state is
+files" property this repo prefers everywhere else.
+
+What it buys the mail watcher: events written directly, without Proton
+Calendar's restrictions. What it costs, named up front:
+
+- **Invitations.** Radicale does no server-side scheduling (RFC 6638),
+  so sending an invite to someone else is not its job; Baïkal does it
+  over mail. Worth deciding before choosing between them.
+- **Proton cannot subscribe to it.** Proton fetches subscribed calendars
+  from its own servers, and a tailnet-only URL is not reachable from
+  there. Realistically the calendar front end becomes Apple Calendar
+  over this server, with Proton kept for the invitations it receives.
+- **iOS polls CalDAV**; there is no push. Fine for a calendar, and worth
+  knowing.
+
+It also serves VTODO, which iOS Reminders reads for a CalDAV account.
+
+### An event bus — RabbitMQ, with the mail watcher as its first producer
+
+The mail watcher today does one thing end to end: mail in, appointment
+out. The want is wider: train tickets, hotel stays and, above all,
+gigs, and the right shape for that is producers and consumers on a
+broker, not one process growing a branch per event type. Tom has built
+this shape professionally (Service Bus, RabbitMQ), and AMQP for the
+watcher is already the plan.
+
+**RabbitMQ**, because it speaks AMQP to the lab's own services *and*
+MQTT, through its plugin, to Home Assistant, so one broker covers both
+and HA is a participant rather than a second bus. A compose slice on the
+mini, tailnet-only.
+
+The shape, roughly:
+
+- **Producers** publish facts: the mail watcher (a classified message:
+  appointment, train, hotel, gig ticket, grocery order), the dictaphone,
+  the Monzo feed (a transaction), HA (presence, device state).
+- **Extractors** turn a classified message into a typed event, one per
+  kind, so adding hotels is a new consumer, not a change to the watcher.
+- **Sinks** project events into the places they are read: Radicale, a
+  commit to the vault, KitchenOwl, a Pushover message, HA.
+
+**Replay is the property to design for.** When a new extractor lands, it
+should be able to see the mail that arrived before it. A RabbitMQ
+*stream* for the raw classified messages gives that; a new consumer
+reads from the start. The mailbox stays the real origin, so the broker's
+own state is re-derivable and, like `mail/bridge`'s volume, needs no
+backup section.
+
+On the client side: MassTransit moved to a commercial licence from v9;
+v8, `RabbitMQ.Client` directly, or Wolverine are the options. Worth
+checking where that stands when this starts.
+
+### Gigs — the friend group's tickets, and the history in Obsidian
+
+The problem is organisational, not technical: who is going to which gig,
+who holds whose ticket, who has paid whom. The Google Sheet fails for
+two reasons. **Nobody checks it**, because it is somewhere nobody looks, and **it is
+filled by hand**. Both are fixable once ticket emails are events.
+
+**Capture: ticket emails.** Ticketmaster, DICE, See Tickets, AXS and the
+rest send confirmations with artist, venue, date, ticket count and price.
+A gig extractor on the bus turns them into gig events; nobody types
+anything for the tickets Tom buys, and a quick form (or the dictaphone) covers
+"a friend bought four for Friday".
+
+**The gig store is the lab's; everything else is a projection of it.**
+The same event projects to three places, each where its reader already
+looks:
+
+- **A shared Google Calendar the friends subscribe to.** Nobody checks
+  the Sheet, but everybody checks their calendar. The lab writes the
+  event and who is going lives in the description, or as attendees.
+  It has to be a Google (or iCloud) calendar rather than Radicale,
+  because the friends are not on the tailnet and the lab is not
+  exposed. The Sheet can be retired, or kept as a read-only projection
+  for anyone who liked it.
+- **The vault**, as today but automatic. A gig note (and an artist note
+  if it is the first time) committed on purchase, with frontmatter
+  Obsidian Bases already reads for counts and upcoming gigs. After the
+  date, **setlist.fm's API** (free for non-commercial use) attaches the
+  setlist, and MusicBrainz IDs keep artist notes from splitting on
+  spelling.
+- **A reminder**, pushed shortly before the gig, with who holds which ticket.
+
+**Who has paid whom.** Ticket price per head comes from the email.
+Repayments arrive in Monzo, which is already on the bus through the
+Sheets feed, so a transfer from a friend with a recognisable reference
+can mark their share paid. What is left unpaid becomes a nudge, not a
+Sheet cell. Worth checking before building: whether Splitwise (it has an
+API), or Monzo's own shared tabs, already covers the ledger half well enough to be the
+sink instead.
+
+**Honest boundary:** posting into the friends' WhatsApp group is the
+place they would actually see it, and WhatsApp has no supported way for a
+bot to post into a personal group. The shared calendar is the substitute.
+
+### Ebooks — Calibre-Web Automated
+
+A Humble Bundle library of PDF, EPUB and MOBI, a Kindle and an iPad, with
+nothing between them. CWA on the mini, library on the data drive: files
+dropped into an ingest folder get imported, converted (MOBI → EPUB) and
+their metadata fixed. **Send-to-Kindle by email** is the join: through
+`mail/bridge`'s SMTP (the sender address approved in Amazon's
+settings), a book reaches the Kindle *and* the Kindle app on the iPad,
+with reading position synced across both. Amazon no longer accepts MOBI
+this way, so the conversion is required, not optional. Image-heavy technical
+PDFs stay on the iPad, through any OPDS reader (Readest, for one).
+Booklore is the newer alternative (Kobo and KOReader sync, a better UI)
+and is less proven; worth a look when this starts.
+
+### Audiobooks — Audiobookshelf, and Libation to own the Audible library
+
+Audiobookshelf is the self-hosted answer, with a good iOS app. **Libation**
+is the more interesting half: it downloads purchased Audible titles as
+DRM-free `.m4b`. Audible stays the storefront, and the library becomes files
+that restic covers and Audiobookshelf serves. Its CLI as a scheduled `lab`
+job is the shape.
+
+### WhatsApp and iMessage archive
+
+The only WhatsApp history is inside iCloud's WhatsApp backup, which is
+opaque. A **local encrypted iPhone backup** contains WhatsApp's
+`ChatStorage.sqlite`: `idevicebackup2` (libimobiledevice) on the mini
+can take one over the network, **WhatsApp-Chat-Exporter** turns it into
+searchable HTML/JSON, and **imessage-exporter** does the same for Messages.
+This is an archive *beside* iCloud's device backup, not a replacement.
+iCloud stays the full-device restore path, and this is also the
+answer to "the iPhone is backed up only to iCloud". Caveat: network
+pairing with libimobiledevice is known to be flaky, so a manual
+quarterly backup over the cable may be the realistic version.
+
+### Things — integrate, don't migrate
+
+Nothing self-hosted has an iOS app as good as Things, and it is not a
+subscription. It is less closed than it looks. **Mail to Things** (a private
+address that turns an email into an inbox to-do) is a write path the
+mail watcher and the dictaphone can use through Bridge, and the Mac app
+keeps a **local SQLite database** that can be read from any Mac where it
+is installed. Read one way, write the other; no migration.
+
+### Shopping list and groceries
+
+Things is the shopping list today, and a to-do app is the wrong tool for
+it. **No UK supermarket has a usable API**: Tesco's developer
+programme closed years ago, and Sainsbury's and Waitrose never had one. Every
+"add my list to the basket" tool is scraping or browser automation. That
+is fragile, against the terms, and one site redesign from silently wrong.
+Automating *checkout* is off the table either way.
+
+**Decided: KitchenOwl**: self-hosted, a native iOS app, a shopping list
+that learns items and orders them by aisle, plus recipes and a meal
+plan that feed the list.
+
+**The recipes' origin stays the vault.** They are Markdown in Obsidian
+today and stay there. A `lab` job syncs vault → KitchenOwl one way,
+through its API, keyed on the note path, so editing in KitchenOwl is
+not the workflow and a resync is always safe. That needs one
+convention in the vault: ingredients as a parseable list with quantities
+and units (frontmatter or a fixed heading), which is worth settling
+before the sync is written.
+
+**Order history is the part worth building**, and the same kind of job as
+the event scanner. Online order confirmation emails are itemised and
+already arrive in Proton; parsing them gives what no supermarket exposes:
+
+- **Frequency**: "you buy this every ten days, it's been twelve", as
+  suggested list items.
+- **Price**: actual prices paid per product, over time. With a saved
+  link per preferred product (the supermarket can't be automated, but a
+  list of *which* product to buy can be kept), a list or a week's meal plan
+  gets an estimated cost before the shop.
+- **Backfill**: a Clubcard or Nectar data request (GDPR) for history
+  that predates the parsing.
+
+**Nutrition, two sources.** Per *product*: Open Food Facts (free API,
+barcode-keyed, decent UK coverage), matched to the saved products. Per
+*recipe ingredient*: CoFID, the UK government's composition-of-foods
+dataset, as a local table. Recipe nutrition is then arithmetic over the
+ingredient list, which is one more reason to settle that convention.
+Supermarket product pages carry nutrition tables too, but reading them is
+scraping; the open datasets come first.
+
+**Basket filling by browser automation** stays an experiment at most:
+a list in, a basket filled, a person reviews and checks out.
+
+### Finances — Monzo
+
+All banking is Monzo. Budgets are *set* in Monzo, which does that well;
+what is missing is reporting and analysis, so that is the whole scope.
+No budgeting app (Actual, Firefly III); they would duplicate what Monzo
+already does.
+
+**The feed is the Google Sheets export, not Monzo's API.** The Sheet
+updates live with every transaction, and the Sheets API v4 reads it with a
+**service account** the Sheet is shared with read-only: a static key in
+the vault, no OAuth dance, no rotation. Monzo's own developer API would
+have shaped the design badly: personal use only, full history readable
+only for a few minutes after an in-app approval and 90 days after that,
+and a refresh token that rotates and so needs writable state the vault
+cannot hold. The Sheet sidesteps all of it. The costs: a Google
+dependency, and the export being a paid-plan feature.
+
+- **A scheduled `lab` job polls the Sheet into a local SQLite ledger**,
+  upserting on Monzo's transaction ID. Upserting, not appending: rows
+  change in place when a transaction is recategorised or settles.
+  The ledger is the lab's copy, and the Sheet is only the feed.
+- **Pots and pot transfers** make naive spending sums wrong; handling
+  them is most of the real work.
+- **On the event bus** (below), each new transaction is an event. That
+  is what lets the gig tracker mark a friend's repayment as paid.
+
+Then the analysis half: a read-only query surface (an MCP server over
+the ledger) for the same front end as the vault, and a dashboard for
+the reports Monzo does not have. **Financial data only ever goes to
+local models.** Joined with grocery order history, it also answers
+"what does food actually cost us".
+
+### STL library — Manyfold
+
+A paid-for collection of D&D miniature STLs outlived the SLA printer.
+Manyfold is a self-hosted 3D model library built for exactly this:
+thumbnails, tags, collections, pointed at the existing folders on the
+data drive, so nothing moves. It becomes more useful if an FDM printer
+arrives for rack parts. When choosing one, prefer a real local API (Prusa,
+or anything on Klipper/Moonraker). Bambu's LAN mode works, but its 2025
+firmware authorisation dispute is worth reading first.
+
+### forScore — leave it, back it up
+
+Nothing self-hosted comes close for sheet music on an iPad. The only gap
+is that the library lives in iCloud alone: a periodic forScore backup
+file (or PDF export) landing in a path restic covers closes it.
+
+### The AI layer — dictaphone, and asking questions of everything
+
+The consumers #7 is waiting for.
+
+**The dictaphone.** Action button → Shortcut → *Record Audio* → *Get
+Contents of URL* (multipart POST to the mini over Tailscale) →
+transcription (`whisper.cpp` or `parakeet-mlx`) → an LLM classifies the
+transcript, reusing the mail watcher's event detection. Notes become a
+commit to the vault repo, tasks go to Mail to Things, events to Radicale,
+and shopping items to the list. This is the "captured notes" that
+#7 said Whisper would wait for. Design for the phone being off the tailnet:
+the Shortcut saves to an iCloud Drive folder as a queue rather than failing.
+
+**Asking questions.** Open WebUI in front of `ai.twolfe.dev` is the
+cheapest start. The durable shape is **one small MCP server per source**:
+the vault, CalDAV, IMAP through Bridge, Things' SQLite, Paperless's API,
+the finance ledger. Any front end and any model can then use them, local or
+not (with the finance caveat above). On the Studio, in the interactive role.
+
+**Smaller things that fit:** paperless-gpt (Ollama-generated titles and
+tags for Paperless), Karakeep (read-later with AI tagging), SearXNG (web
+search for local models), Dawarich (location history, a Google Timeline
+replacement and another event source), an Atuin sync server (shell
+history across the Macs).
+
+**A suggested order**, by the ordering principle: Radicale → the event
+bus, with the mail watcher moved onto it → gigs (the first new extractor, and
+the one with a real problem behind it) → Audiobookshelf with Libation,
+and CWA → the dictaphone → Home Assistant → the Monzo feed and the MCP
+servers → KitchenOwl and order history. Manyfold, forScore's backup and the message archive whenever
+you like; nothing waits on them.
 
 ### New services: Plane, OpenGist
 

@@ -73,10 +73,9 @@ expected and stops on its own.
    --dry-run`. An empty `.obsidian/` in the commit means the
    other devices publish no configuration — their "Vault configuration"
    toggles in Obsidian's Sync settings decide that.
-7. **Revoke the runner's Full Disk Access** (System Settings → Privacy
-   & Security → Full Disk Access → `forgejo-runner` off). Nothing the
-   runner runs reads `~/Library/CloudStorage` any more. The stale
-   copies under Google Drive go when the Drive app does.
+7. ~~Revoke the runner's Full Disk Access~~ — **superseded**: nothing the
+   runner runs reads `~/Library/CloudStorage` any more, but it holds Full
+   Disk Access again, for the drives. Do not revoke it. The stale copies under Google Drive go when the Drive app does.
 
 ## Adding a vault
 

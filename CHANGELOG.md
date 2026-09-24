@@ -4,6 +4,15 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.39.0] - 2026-09-24
+
+### Fixed
+
+- **`lab register` refuses the two mistakes it used to pass to Forgejo**:
+  running where there is no forgejo container, and a vault secret that is
+  not 40 characters — an empty one, stored because the command that minted
+  it failed quietly.
+
 ## [0.38.0] - 2026-09-24
 
 ### Added
