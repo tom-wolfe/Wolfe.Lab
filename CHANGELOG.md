@@ -4,6 +4,15 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.45.1] - 2026-09-24
+
+### Fixed
+
+- **The Studio's ollama never started.** `OLLAMA_MODELS` was
+  `~/.ollama/models`, and an environment value reaches the process as
+  written: ollama tried to create a directory called `~` at the root of
+  a read-only volume.
+
 ## [0.45.0] - 2026-09-24
 
 ### Added

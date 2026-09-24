@@ -144,6 +144,10 @@ command runner for every process. The lab adds what Ritten doesn't have:
   units it `supersedes` — Homebrew's `sh.brew.<name>`, a unit chezmoi used
   to write — and the converge stops and removes them before starting it,
   file and all, so the old copy does not come back at the next login.
+  `program` and `log` are paths, and `~` in them is expanded; an
+  environment value is handed to the process exactly as written, so one
+  that starts with `~` is refused — nothing between the declaration and
+  the process would expand it.
 
 ## Alerting
 

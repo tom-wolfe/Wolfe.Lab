@@ -43,6 +43,13 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
                 continue;
             }
 
+            if (UnexpandedHomePaths(settings.Environment).ToList() is { Count: > 0 } unexpanded)
+            {
+                errors.Add(new Error($"Agent '{name}' sets {string.Join(", ", unexpanded)} to a path under ~, which nothing expands: "
+                                     + "the process would receive the ~ as written. Write the absolute path."));
+                continue;
+            }
+
             if (settings.ToDefinition(label, File.GetLastWriteTimeUtc(program.Value)) is not { } definition)
             {
                 errors.Add(new Error($"Agent '{name}' is incomplete."));
@@ -71,4 +78,14 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
 
         return resolved;
     }
+
+    /// <summary>
+    /// The variables whose value starts with <c>~</c>. A path setting — <c>program</c>, <c>log</c> —
+    /// is expanded when it is read; an environment value is handed to the process as written, and
+    /// neither the supervisor nor most programs expand it.
+    /// </summary>
+    internal static IEnumerable<string> UnexpandedHomePaths(IReadOnlyDictionary<string, string> environment) =>
+        environment.Where(variable => variable.Value == "~" || variable.Value.StartsWith("~/", StringComparison.Ordinal))
+            .Select(variable => variable.Key)
+            .Order(StringComparer.Ordinal);
 }

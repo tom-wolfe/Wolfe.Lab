@@ -46,4 +46,12 @@ public class CheckAgentDeclarationsTests
     public void Run_NamesTheNodeOfEveryProblem() =>
         Check(("MacMini", "beszel-agent", new AgentSettings()), ("wolfe-pi5", "beszel-agent", new AgentSettings()))
             .Errors.ShouldNotBeNull().Select(e => e.Message.Split(':')[0]).ShouldBe(["MacMini", "wolfe-pi5"]);
+
+    [Fact]
+    public void Run_RefusesAHomePathInTheEnvironment()
+    {
+        var agent = Beszel() with { Environment = new Dictionary<string, string> { ["DATA"] = "~/.local/share/thing" } };
+
+        Check(("MacStudio", "beszel-agent", agent)).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("DATA");
+    }
 }

@@ -132,4 +132,26 @@ public class ResolveAgentsTests : IDisposable
 
         result.Value.ShouldNotBeNull().Agents.Select(a => a.Label.Name).ShouldBe(["ollama", "watcher"]);
     }
+
+    [Fact]
+    public async Task Run_RefusesAHomePathTheProcessWouldReceiveLiterally()
+    {
+        var result = await Resolve(("ollama", new AgentSettings
+        {
+            Program = HostPath.From(Program()),
+            Environment = new Dictionary<string, string> { ["OLLAMA_MODELS"] = "~/.ollama/models", ["OLLAMA_HOST"] = "0.0.0.0:11434" }
+        }));
+
+        result.Outcome.IsFailure.ShouldBeTrue();
+        result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("OLLAMA_MODELS");
+    }
+
+    [Theory]
+    [InlineData("~/.ollama/models", true)]
+    [InlineData("~", true)]
+    [InlineData("/Users/tomwolfe/.ollama/models", false)]
+    [InlineData("~user", false)]
+    [InlineData("a~b", false)]
+    public void UnexpandedHomePaths_FindsWhatStartsAtHome(string value, bool found) =>
+        ResolveAgents.UnexpandedHomePaths(new Dictionary<string, string> { ["V"] = value }).Any().ShouldBe(found);
 }

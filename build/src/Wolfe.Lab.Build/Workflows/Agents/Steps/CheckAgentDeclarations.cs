@@ -1,4 +1,5 @@
 using Wolfe.Lab.Build.Clients.Agents;
+using Wolfe.Lab.Build.Clients.Agents.Steps;
 using Wolfe.Lab.Build.Clients.Secrets;
 using Wolfe.Lab.Build.Workflows.Agents.Models;
 
@@ -35,6 +36,11 @@ internal sealed class CheckAgentDeclarations(AgentsDeclaredPerNode nodes, IWorkf
                 if (agent.Program is null)
                 {
                     errors.Add(new Error($"{node}: agent '{name}' names no 'program'."));
+                }
+
+                foreach (var variable in ResolveAgents.UnexpandedHomePaths(agent.Environment))
+                {
+                    errors.Add(new Error($"{node}: agent '{name}' sets {variable} to a path under ~, which nothing expands: write the absolute path."));
                 }
 
                 foreach (var (variable, value) in agent.Environment)
