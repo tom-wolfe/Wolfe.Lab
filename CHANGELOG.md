@@ -4,6 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.41.1] - 2026-09-24
+
+### Fixed
+
+- **Moving the `lab` pin failed on every node.** The install script still
+  passed `--add-source` for the lab's feed, which `dotnet tool` refuses
+  once a source mapping is configured.
+
 ## [0.41.0] - 2026-09-24
 
 ### Changed

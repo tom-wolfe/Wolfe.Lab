@@ -41,5 +41,5 @@ fi
 
 # update installs when missing; --allow-downgrade makes the pin exact in
 # both directions, so rolling back is reverting the bump.
-dotnet tool update --global Wolfe.Lab.Build --version "$version" --allow-downgrade --add-source "$feed"
+dotnet tool update --global Wolfe.Lab.Build --version "$version" --allow-downgrade
 {{ end -}}
