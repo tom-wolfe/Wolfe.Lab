@@ -1,0 +1,35 @@
+name: beszel agent
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [beszel/agent/**, .forgejo/workflows/beszel-agent.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - working-directory: beszel/agent
+        run: lab check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    strategy:
+      matrix:
+        node: [MacMini, MacStudio, wolfe-pi5]
+    runs-on: ${{ matrix.node }}
+    concurrency:
+      group: ${{ matrix.node }}
+      cancel-in-progress: false
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - working-directory: beszel/agent
+        run: lab deploy --node "${{ matrix.node }}" --auto-approve

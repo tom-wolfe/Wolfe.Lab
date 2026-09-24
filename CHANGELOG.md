@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.44.0] - 2026-09-24
+
+### Changed
+
+- **The Beszel agent is a lab component**, `beszel/agent/`, the first node
+  service out of chezmoi. Each node's agent is declared in its
+  `ritten.json` and deployed by its own runner.
+
+### Removed
+
+- chezmoi's Beszel env template and the Pi's Beszel units, and
+  `restart_service` on the Homebrew formula.
+
 ## [0.43.0] - 2026-09-24
 
 ### Changed

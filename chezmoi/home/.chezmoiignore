@@ -1,5 +1,4 @@
 {{ if has .profile (list "macbook" "work-macbook") -}}
-.config/beszel
 .config/forgejo-runner
 .config/forgejo-runner-docker
 .config/systemd

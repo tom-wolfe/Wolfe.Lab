@@ -3,8 +3,8 @@
 `home/` is the chezmoi source: everything *declarative* about a machine —
 dotfiles, the Brewfile, the service and runner files the nodes run under,
 and, as `create_` files, the few secrets a node's own daemons read at
-start (the runner registrations, the Beszel agent's token, the Pi's restic
-key). Nothing a container needs is here: those secrets reach compose
+start (the runner registrations, the Pi's restic key). The Beszel agent's
+went with the agent itself, into the CLI (`beszel/agent/`). Nothing a container needs is here: those secrets reach compose
 through the deploy (`README.md` "How deployment works"). `.chezmoiroot`
 points chezmoi at it.
 Laptops apply it by hand; the nodes apply it through

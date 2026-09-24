@@ -10,9 +10,9 @@ native process on each monitored machine).
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel-compose.yaml` on every push that touches `compose/` (the mini's host runner); first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
-| Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins"), supervised by `brew services` |
-| Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin`; user systemd units under `chezmoi/home/dot_config/systemd/user/` (see "The Pi") |
-| Agent config (`~/.config/beszel/beszel-agent.env`) | chezmoi `create_` template (`chezmoi/home/dot_config/beszel/`) — materialized from 1Password (`beszel-agent`) only while the file is missing |
+| Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins") |
+| Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin` |
+| Agent supervision and config | the `agent/` component: `agent/ritten.json` declares each node's agent — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
 | Hub liveness | Gatus, from the Pi (`gatus/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
 | Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
 | Systems, thresholds, notification URLs | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
@@ -32,28 +32,28 @@ because VirtioFS mounts land in the default ignore list. Host metrics have
 to come from a process on the host, and Beszel's agent is cross-platform
 and runs natively on macOS. That's the pick.
 
-The cost is supervision: a native process needs launchd, and `brew
-services` is launchd. That's accepted, and it is consistent with what this
-repo actually retired — the scheduler replaced launchd's *scheduling*,
-not its *supervision*. The objection to
-launchd was that
-plists are opaque and there is nowhere to watch them. This agent reports
-into a dashboard and shows up in `brew services list`, so it is observable,
-which was the actual requirement.
+The cost is supervision: a native process needs launchd on a Mac and
+systemd on Linux. The lab declares it rather than scripting it — the
+`agent/` component is an `agents` component, the same shape as ollama's
+server, and `lab deploy` renders the platform's unit and converges it
+(build/README.md "Agents"). It reports into a dashboard, so it is
+observable, which was the actual requirement.
 
-Consequence worth internalising: **the `beszel compose` workflow converges the hub
-only.** The agent's lifecycle belongs to chezmoi, because the agent is a
-host package and chezmoi is what converges host packages. One converger per
-thing.
+Two workflows, two halves: **`beszel compose` converges the hub, and
+`beszel agent` converges the agent on every node.** The binary is still
+a host package — Homebrew's on the Macs, chezmoi's pinned download on the
+Pi — and only its supervision and config belong to the component.
 
 ## How the two halves find each other
 
 The agent dials **out** to the hub over a WebSocket; nothing ever connects
-in. Two values make that work, both in `~/.config/beszel/beszel-agent.env`:
+in. Two values make that work, both vault references in
+`agent/ritten.json`, resolved into the agent's unit at deploy — which is
+why the unit is written for its owner alone:
 
 - `TOKEN` — a *universal* registration token from the hub's
   `/settings/tokens`. Universal means the same value enrols any number of
-  agents, so adding a server is a template change, not a new
+  agents, so adding a server is a node in `agent/ritten.json`, not a new
   secret per machine.
 - `KEY` — the hub's **public** key, which is how the agent decides the
   thing answering is really our hub.
@@ -160,13 +160,14 @@ revisit if the fleet grows.
 ## Secrets: the hub is the origin (the one exception)
 
 Everywhere else in this lab, 1Password is the *origin*: you create the
-value in the vault, chezmoi caches it onto the machine, and wiping the
-machine brings the same value back.
+value in the vault, the deploy resolves it onto the machine, and wiping
+the machine brings the same value back.
 
 Beszel inverts that. The hub mints both the token and its keypair on first
 boot; the vault holds a **copy**. So deleting `~/Docker/beszel/data` does
 not restore these values, it invalidates them — you re-harvest from the new
-hub and update the vault. The `create_` template says so at the top too.
+hub and update the vault, then run the beszel agent workflow so every node
+picks the new pair up.
 
 One item, Wolfe.Lab vault:
 
@@ -176,13 +177,20 @@ One item, Wolfe.Lab vault:
 
 ## Operational notes
 
-- Agent logs: `~/.cache/beszel/beszel-agent.log` (both stdout and stderr —
-  the formula points them at the same file).
-- Agent lifecycle: `brew services {list,restart,stop} beszel-agent`. It
-  reads its env file **at start only**, so any edit to
-  `~/.config/beszel/beszel-agent.env` needs a restart to take effect.
-- Rotating the token/key: update the `beszel-agent` item, delete
-  `~/.config/beszel/beszel-agent.env`, `chezmoi apply`, restart the agent.
+- Agent logs: on the Macs `~/.cache/beszel/beszel-agent.log` (both
+  streams); on the Pi, the journal — `journalctl --user -u
+  dev.twolfe.beszel-agent`.
+- Agent lifecycle: run the **beszel agent** workflow; it converges every
+  node, restarting an agent only when its unit changed. By hand, on a node:
+  `cd beszel/agent && lab deploy --node <node>`. State: `launchctl print
+  gui/$(id -u)/dev.twolfe.beszel-agent` on a Mac, `systemctl --user status
+  dev.twolfe.beszel-agent` on the Pi.
+- Rotating the token/key: update the `beszel-agent` item and run the
+  workflow — the values are resolved at deploy, so a changed one is a
+  changed unit and a restart.
+- A rehearsal (`--dry-run`) resolves the vault references too: it cannot
+  tell whether the unit changed without them. At a desk that means the
+  1Password app asks to approve it.
 - Hub health by hand: `curl -s http://macmini.local:8090/api/health`.
 - The hub's `:8090` publish is load-bearing, not a convenience — the agent
   uses it. Don't remove it when tidying ports.
@@ -201,41 +209,33 @@ The stop is not optional: PocketBase runs SQLite in WAL mode, and copying
 that live can capture a database file without the `-wal` that completes it.
 A few seconds of downtime costs a gap in one metrics series.
 
-The agent has nothing to back up — its entire configuration is the
-`create_` template's output, and 1Password holds what that's built from.
+The agent has nothing to back up — its configuration is `agent/ritten.json`,
+and 1Password holds the two values it references. Its fingerprint, in
+`~/.config/beszel/fingerprint`, is regenerated and re-enrolled if lost.
 
 ## The Pi
 
-The second host shape. Same env template, same vault
-item, same universal token; the template has a block per node: `HUB_URL`
-is `localhost` on the mini and the mini's MagicDNS name on the Pi,
-`EXTRA_FILESYSTEMS` is the mini's (the drives), and `DOCKER_HOST` is
-each node's socket. The
-agent binary is a pinned release fetched by chezmoi into `~/.local/bin`,
-run by a user systemd unit that reads the env file with `EnvironmentFile=`
-(quoted `KEY="value"` lines and comments both parse). A path unit restarts
-it when the env or unit changes, through the shared `restart@.service`
-template, and the shared `run_after` script enables every user unit after
-each apply. Per daemon that is two files, the service and what it watches;
-the mechanism is systemd's, and chezmoi only writes files (the pattern is
-the Actions runner's — forgejo/README.md "Runners").
-
-Enrolment happens by itself: the `chezmoi` workflow runs `chezmoi update`
-on the Pi on any push that touches `chezmoi/`, with the service-account
-token in the environment, so the `create_` env renders on the merge, the
-binary lands, and the agent dials the hub. Then, in the hub UI: set thresholds and turn **Status
-alerts ON** — this machine is always-on and off is a
-failure. Take the SoC and NVMe temperature baselines while you are there.
+The second host shape, declared beside the mini's in `agent/ritten.json`:
+`HUB_URL` is the mini's MagicDNS name rather than `localhost`, no
+`EXTRA_FILESYSTEMS` (the drives are the mini's), and `DOCKER_HOST` is the
+Pi's own socket. The binary is a pinned release fetched by chezmoi into
+`~/.local/bin`; `lab deploy` runs it as a systemd user unit, which needs
+lingering on (`loginctl enable-linger`, the Pi's bootstrap) to run with
+nobody logged in. Its output goes to the journal.
 
 Container stats: the agent reads `/var/run/docker.sock` as the login
 user, who is in the `docker` group. Same reasoning as on the mini — a
 native process that already owns the socket gains nothing from reading it.
 
+In the hub UI: thresholds, and **Status alerts ON** — this machine is
+always-on and off is a failure. Take the SoC and NVMe temperature
+baselines while you are there.
+
 ## The Studio
 
-The mini's shape — the Homebrew agent under `brew services` — with the
-Pi's `HUB_URL`, since the hub is on another machine. No `DOCKER_HOST`:
-the Studio runs no lab containers (ROADMAP.md #7).
+The mini's shape with the Pi's `HUB_URL`, since the hub is on another
+machine. No `DOCKER_HOST`: the Studio runs no lab containers
+(ROADMAP.md #7). Its deploy waits while it sleeps and runs when it wakes.
 
 **Status alerts OFF.** The Studio is a hybrid node: off is its normal
 state most of the day, and nothing depends on it being on. A down alert
@@ -243,9 +243,16 @@ would fire every evening and teach you to ignore Beszel. What it is
 worth watching for is load while it is on — how much a background model
 costs the desk — so set thresholds, and leave status alone.
 
-First enrolment is at the desk: `chezmoi apply` renders the env through
-the 1Password app, `brew bundle install --file ~/.Brewfile` installs and
-starts the agent, and the Studio appears in the hub.
+## Moving off chezmoi and Homebrew's service
+
+Until 0.44.0 the agent ran under `brew services` on the Macs and a
+chezmoi-written unit on the Pi, reading `~/.config/beszel/beszel-agent.env`.
+The component's agents *supersede* those — `sh.brew.beszel-agent`, and
+`beszel-agent.service` with its `.path` — so the first deploy on each node
+stops and removes the old unit before starting its own, and the hub sees
+the same system (the fingerprint is unchanged). What it leaves behind is
+the old env file, holding the token: `rm ~/.config/beszel/beszel-agent.env`
+on each node once the new agent shows up in the hub.
 
 ## Runbook
 

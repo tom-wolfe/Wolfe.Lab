@@ -1,0 +1,52 @@
+{
+  "workflow": "agents",
+  "nodes": {
+    "MacMini": {
+      "agents": {
+        "beszel-agent": {
+          "program": "/opt/homebrew/opt/beszel-agent/bin/beszel-agent",
+          "environment": {
+            "TOKEN": "op://Wolfe.Lab/beszel-agent/credential",
+            "KEY": "op://Wolfe.Lab/beszel-agent/username",
+            "LISTEN": "127.0.0.1:45876",
+            "HUB_URL": "http://localhost:8090",
+            "EXTRA_FILESYSTEMS": "/Volumes/Data1,/Volumes/Data2",
+            "DOCKER_HOST": "unix:///Users/tomwolfe/.docker/run/docker.sock"
+          },
+          "log": "~/.cache/beszel/beszel-agent.log",
+          "supersedes": ["sh.brew.beszel-agent"]
+        }
+      }
+    },
+    "MacStudio": {
+      "agents": {
+        "beszel-agent": {
+          "program": "/opt/homebrew/opt/beszel-agent/bin/beszel-agent",
+          "environment": {
+            "TOKEN": "op://Wolfe.Lab/beszel-agent/credential",
+            "KEY": "op://Wolfe.Lab/beszel-agent/username",
+            "LISTEN": "127.0.0.1:45876",
+            "HUB_URL": "http://macmini.tailf823b8.ts.net:8090"
+          },
+          "log": "~/.cache/beszel/beszel-agent.log",
+          "supersedes": ["sh.brew.beszel-agent"]
+        }
+      }
+    },
+    "wolfe-pi5": {
+      "agents": {
+        "beszel-agent": {
+          "program": "~/.local/bin/beszel-agent",
+          "environment": {
+            "TOKEN": "op://Wolfe.Lab/beszel-agent/credential",
+            "KEY": "op://Wolfe.Lab/beszel-agent/username",
+            "LISTEN": "127.0.0.1:45876",
+            "HUB_URL": "http://macmini.tailf823b8.ts.net:8090",
+            "DOCKER_HOST": "unix:///var/run/docker.sock"
+          },
+          "supersedes": ["beszel-agent.service", "beszel-agent.path"]
+        }
+      }
+    }
+  }
+}
