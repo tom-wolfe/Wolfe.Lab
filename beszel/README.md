@@ -247,7 +247,9 @@ costs the desk — so set thresholds, and leave status alone.
 
 Until 0.44.0 the agent ran under `brew services` on the Macs and a
 chezmoi-written unit on the Pi, reading `~/.config/beszel/beszel-agent.env`.
-The component's agents *supersede* those — `sh.brew.beszel-agent`, and
+The component's agents *supersede* those — Homebrew's service under
+both of its label schemes, `sh.brew.beszel-agent` and the older
+`homebrew.mxcl.beszel-agent` (the mini's was the older), and
 `beszel-agent.service` with its `.path` — so the first deploy on each node
 stops and removes the old unit before starting its own, and the hub sees
 the same system (the fingerprint is unchanged). What it leaves behind is

@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.44.1] - 2026-09-24
+
+### Fixed
+
+- **The mini ran two Beszel agents.** Homebrew labels a service
+  `sh.brew.<name>` now and `homebrew.mxcl.<name>` before that.
+
 ## [0.44.0] - 2026-09-24
 
 ### Changed

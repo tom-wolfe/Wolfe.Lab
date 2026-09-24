@@ -14,7 +14,7 @@
             "DOCKER_HOST": "unix:///Users/tomwolfe/.docker/run/docker.sock"
           },
           "log": "~/.cache/beszel/beszel-agent.log",
-          "supersedes": ["sh.brew.beszel-agent"]
+          "supersedes": ["sh.brew.beszel-agent", "homebrew.mxcl.beszel-agent"]
         }
       }
     },
@@ -29,7 +29,7 @@
             "HUB_URL": "http://macmini.tailf823b8.ts.net:8090"
           },
           "log": "~/.cache/beszel/beszel-agent.log",
-          "supersedes": ["sh.brew.beszel-agent"]
+          "supersedes": ["sh.brew.beszel-agent", "homebrew.mxcl.beszel-agent"]
         }
       }
     },
