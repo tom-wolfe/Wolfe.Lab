@@ -151,17 +151,26 @@ which CI on the pull request is there to catch first.
 ## Shipping
 
 The CLI is itself a component: `build/ritten.json` is a `dotnet-tool`,
-the package `Wolfe.Lab.Build` whose command is `lab`. Its pull request
-is checked here — restore, format, build, test — and one more thing:
-**a change to what ships moves `<Version>`**. That is Ritten's
-continuous release cadence (`Ritten.NuGet`): `ReadShippedChanges` diffs
-the project and the `Directory.*.props` against the base, and
-`CheckVersion` fails a change whose version the feed already has; tests
-and docs do not ship and do not count. The merge's `deploy` publishes
-that version to Forgejo's NuGet feed
-(`https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json`), and
-stops at the releasable gate when the feed already has it, so a version
-is never overwritten and a pin always means what it meant. The one step
+the package `Wolfe.Lab.Build` whose command is `lab`. **Its version is
+the lab's** — `Directory.Build.props` reads the newest `## [x.y.z]`
+heading of the repository's `CHANGELOG.md` — so there is one number and
+one changelog, and a pin names the lab release whose entry says what that
+CLI contains. The numbers have gaps: a lab release that does not touch the
+CLI publishes nothing.
+
+Its pull request is checked here — restore, format, build, test — and
+one more thing: **a change to what ships must come with a new changelog
+heading.** That is Ritten's continuous release cadence (`Ritten.NuGet`):
+`ReadShippedChanges` diffs the project and the `Directory.*.props`
+against the base, and `CheckVersion` fails a change whose version the
+feed already has; tests and docs do not ship and do not count. The
+merge's `deploy` restores, builds, tests and packs, and publishes that
+version to Forgejo's NuGet feed
+(`https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json`),
+stopping at the releasable gate when the feed already has it, so a
+version is never overwritten and a pin always means what it meant. A
+change under `build/` that ships nothing, after the lab has moved on, is
+published under the new number: a harmless no-op release. The one step
 of the lab's own is `AuthenticateFeed`, which reads the feed key from the
 vault where Ritten's would read the environment.
 

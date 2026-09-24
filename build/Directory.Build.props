@@ -13,4 +13,19 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- The CLI's version is the lab's: the newest `## [x.y.z]` heading in the repository's
+       CHANGELOG.md. One number and one changelog, so a pin names the lab release whose entry
+       says what that CLI contains — and a pull request that changes what ships must add a
+       heading, which the continuous release cadence enforces (README.md "Shipping"). -->
+  <PropertyGroup>
+    <LabChangelog>$(MSBuildThisFileDirectory)../CHANGELOG.md</LabChangelog>
+    <LabVersion>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(LabChangelog)')), '(?m)^## \[(\d+\.\d+\.\d+)\]').Groups[1].Value)</LabVersion>
+    <Version>$(LabVersion)</Version>
+  </PropertyGroup>
+
+  <Target Name="RequireLabVersion" BeforeTargets="Restore;Build;Pack">
+    <!-- LabVersion, not Version: the SDK defaults an empty Version to 1.0.0 before this runs. -->
+    <Error Condition="'$(LabVersion)' == ''" Text="No `## [x.y.z]` heading in $(LabChangelog): the CLI takes its version from the lab's newest release." />
+  </Target>
+
 </Project>

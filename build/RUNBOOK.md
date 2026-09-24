@@ -39,8 +39,10 @@ NuGet alone.
 
 ## Releasing a CLI change
 
-Bump `<Version>` in `src/Wolfe.Lab.Build/Wolfe.Lab.Build.csproj` in the
-same pull request — the check fails without it. The merge publishes it.
+Add the lab's next `## [x.y.z]` heading to `CHANGELOG.md` in the same
+pull request, describing the change — the CLI's version is read from it,
+and the check fails a change to what ships without one. The merge
+publishes it.
 Then move the pins to it in a second pull request (chezmoi's and the CI
 image's), which is what actually puts it on the runners.
 

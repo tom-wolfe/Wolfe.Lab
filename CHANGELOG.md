@@ -4,6 +4,22 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.35.0] - 2026-09-24
+
+### Changed
+
+- **The CLI's version is the lab's.** `build/Directory.Build.props` reads
+  it from the newest heading here, so a pinned `lab` names the release
+  whose entry says what it contains, and a change to what the CLI ships
+  comes with a heading of its own. The first one published is this one.
+
+### Fixed
+
+- **The CLI's deploy never built it.** Ritten's pack step does not build,
+  and the job went straight from the version checks to the pack; it only
+  rehearsed cleanly on a machine that already had a Release build. It now
+  restores, builds and tests first, as Ritten's own deploy does.
+
 ## [0.34.0] - 2026-09-23
 
 ### Added
