@@ -14,4 +14,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: heartbeat/ping
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- ping
+        run: lab ping

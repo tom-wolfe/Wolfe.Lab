@@ -5,14 +5,23 @@ reasons are in `README.md`.
 
 ## Running a job by hand
 
-From the slice's directory, with `--dry-run` unless the side effects
-are wanted; without it the gate asks before the push:
+From the component's directory, with `--dry-run` unless the side effects
+are wanted; without it the gate asks before the push. `lab` is the pinned
+CLI chezmoi installs on the nodes and the Studio — the version the runners
+run:
 
 ```sh
 cd obsidian/vaults
+lab sync --vault main --dry-run
+lab sync --vault main
+lab --help
+```
+
+To run an unreleased CLI — a change being written — compile the checkout
+instead, from the same directory:
+
+```sh
 dotnet run --project ../../build/src/Wolfe.Lab.Build -- sync --vault main --dry-run
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- sync --vault main
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- --help
 ```
 
 ## Building against an unreleased Ritten

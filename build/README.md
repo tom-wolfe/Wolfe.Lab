@@ -144,9 +144,11 @@ environment (Ritten's `ForgejoActionsRuntime`, which the lab's
 `LabRuntime` extends) and that runtime contributes a result sink which posts to
 Pushover when the run did not succeed — job, failed step, first error,
 and the run's page. At a terminal there is no runtime and no page.
-What the sink cannot cover is a run that never reaches the CLI: a
-`dotnet run` that fails to restore or compile exits red without paging,
-which CI on the pull request is there to catch first.
+What the sink cannot cover is a run that never reaches the CLI: a `lab`
+that is missing or cannot start (the pin not installed, the runtime not
+found) exits red without paging — and so does the CLI's own deploy if the
+merged source fails to compile, which CI on the pull request is there to
+catch first.
 
 ## Shipping
 
@@ -174,6 +176,12 @@ published under the new number: a harmless no-op release. The one step
 of the lab's own is `AuthenticateFeed`, which reads the feed key from the
 vault where Ritten's would read the environment.
 
+Every machine on the tailnet has the feed as a NuGet source
+(`chezmoi/home/dot_nuget/NuGet/NuGet.Config.tmpl`), mapped to
+`Wolfe.Lab.*` alone so a laptop off the tailnet still restores everything
+else from nuget.org: `dotnet tool install -g Wolfe.Lab.Build` works
+anywhere, and `--version` matches what the runners are pinned to.
+
 Publishing moves nothing. What runs on a runner is the version its pin
 names, which is the point: **runners execute reviewed, merged code, never
 a pull request's CLI.** A pull request that changes the CLI is built and
@@ -190,11 +198,14 @@ as its last layer (`LAB_VERSION` in `ci/image/Dockerfile`). The two pins
 move together, in one pull request; the chezmoi and `ci image` workflows
 roll them out on the merge.
 
-Workflows still call `dotnet run --project ../../build/src/Wolfe.Lab.Build
--- <job>` from the component's directory, compiling the checkout, until
-they switch to `lab <job>`. The switch is its own pull request, after the
-pins have landed: a pull request's checks run its own workflow files, in
-the image, so the image has to carry `lab` first.
+Every workflow calls `lab <job>` from the component's directory, with
+one exception: the CLI's own `deploy` compiles the checkout (`dotnet run`),
+because its input is the CLI's source and, on a cold start, it is what
+puts the first package on the feed. `setup.sh` compiles for the same
+reason. On a cold start, then: Forgejo up (setup.sh), the `build` deploy
+publishes, and the next chezmoi apply installs `lab` — the install script
+runs on every apply and warns, rather than fails, while the feed is
+unreachable.
 
 The CI image (`ci/image/`) is an `image` component with the same two
 jobs as everything else: `check` on the pull request (each context has a

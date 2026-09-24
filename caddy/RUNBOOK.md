@@ -9,7 +9,7 @@ reasons are in `README.md`.
    `tofu-state-passphrase` — create as a Password item, e.g.
    `op item create --vault Wolfe.Lab --category password --title tofu-state-passphrase --generate-password=64,letters,digits`.
 2. **DNS records**: `lab deploy` from `caddy/tofu` (the `tofu caddy` workflow,
-   or by hand: `cd caddy/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy`).
+   or by hand: `cd caddy/tofu && lab deploy`).
    Check `lab_tailscale_ipv4` still matches the mini first — the record
    is only as stable as the address, and a re-enrolment that mints a new
    one means updating the variable and re-applying.
@@ -76,9 +76,9 @@ workflow:
    the mini. One root at a time; `deploy` plans first and stops at the
    gate with the plan on screen, so read it there before approving:
 
-       cd caddy/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
-       cd ../../forgejo/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
-       cd ../../gatus/tofu && dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
+       cd caddy/tofu && lab deploy
+       cd ../../forgejo/tofu && lab deploy
+       cd ../../gatus/tofu && lab deploy
 
    What the plans should say. For `caddy`: two destroys and two creates.
    Those old wildcards carry `prevent_destroy`, which only protects a

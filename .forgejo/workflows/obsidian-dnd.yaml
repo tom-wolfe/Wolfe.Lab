@@ -18,4 +18,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: obsidian/vaults
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- sync --vault dnd --auto-approve
+        run: lab sync --vault dnd --auto-approve

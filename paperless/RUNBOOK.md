@@ -29,7 +29,7 @@ read them before a bump, and never skip a major. Snapshot first:
 
 ```sh
 cd paperless/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup
+lab backup
 ```
 
 Then a normal PR; the push deploys it. Paperless migrates its database
@@ -49,7 +49,7 @@ snapshot — run the backup workflow from the Actions tab, or:
 
 ```sh
 cd paperless/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup
+lab backup
 ```
 
 The stack is stopped for the duration — SQLite copied mid-write can be
@@ -61,7 +61,7 @@ waits; the consumer picks it up on restart.
 
 ```sh
 cd paperless/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
+lab restore
 ```
 
 `restic/RUNBOOK.md` "Restore" for what it does and its options. The

@@ -11,6 +11,9 @@ set -euo pipefail
 repo="$(cd "$(dirname "$0")" && pwd)"
 extra=("$@")
 
+# Compiles the checkout rather than running the pinned `lab`: on a fresh
+# server the feed `lab` installs from is on the Forgejo this script is
+# bringing up (build/README.md "How workflows run it").
 lab() {
   local component=$1
   shift

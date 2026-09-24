@@ -57,7 +57,7 @@ updater is inert in the linuxserver image (the container is the
 release), which is the point: the version is the tag in `compose.yaml`.
 
 ```sh
-cd sonarr/backup && dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup && cd ../..   # snapshot first
+cd sonarr/backup && lab backup && cd ../..   # snapshot first
 # bump the tag (normal PR; the tick ships it)
 ```
 

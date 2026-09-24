@@ -12,4 +12,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: gatus/health
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- probe
+        run: lab probe

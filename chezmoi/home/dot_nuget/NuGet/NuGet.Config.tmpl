@@ -1,0 +1,32 @@
+{{ if has .profile (list "macbook" "macstudio" "macmini-node" "pi-node") -}}
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+The user-level NuGet config on every machine that can reach the lab: the
+SDK's default (nuget.org) plus the lab's own feed on Forgejo, so
+`dotnet tool install -g Wolfe.Lab.Build` works anywhere without naming it.
+
+The feed is tailnet-only, which is what the source mapping is for: NuGet
+asks a source only for the packages mapped to it, so everything but the
+lab's own packages goes to nuget.org alone. Without it, every restore on
+a laptop off the tailnet — any project, lab or not — would fail on the
+source it cannot reach.
+
+A repository with a nuget.config of its own that <clear/>s the sources
+opts out of this, as it should. Managed whole by chezmoi: `dotnet nuget
+add source` edits here are overwritten on the next apply.
+-->
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+    <add key="wolfe-lab" value="https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json" protocolVersion="3" />
+  </packageSources>
+  <packageSourceMapping>
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+    <packageSource key="wolfe-lab">
+      <package pattern="Wolfe.Lab.*" />
+    </packageSource>
+  </packageSourceMapping>
+</configuration>
+{{ end -}}

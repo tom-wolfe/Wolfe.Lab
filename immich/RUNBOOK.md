@@ -60,7 +60,7 @@ else. Immich takes a restore point first.
 
 ```sh
 cd immich/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
+lab restore
 ```
 
 The library is set aside as `/Volumes/Data2/immich.bak-<timestamp>`

@@ -9,8 +9,8 @@ From `restic/`, with `--dry-run` unless the side effects are wanted:
 
 ```sh
 cd restic/repositories
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- offsite --dry-run
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- verify
+lab offsite --dry-run
+lab verify
 ```
 
 A rehearsal copies nothing, lists what retention would forget, checks
@@ -93,8 +93,8 @@ One command, from the slice's directory, with `--dry-run` first:
 
 ```sh
 cd forgejo/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore --dry-run
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
+lab restore --dry-run
+lab restore
 ```
 
 It takes the slice's latest snapshot (`--snapshot <id>` for another —

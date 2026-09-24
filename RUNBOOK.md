@@ -106,9 +106,9 @@ are done once per fresh server, in order.
      node's runner.json still holds its vault secret and will poll with it
      until the server knows it again (forgejo/README.md "Runners"):
        cd forgejo/runners
-       dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node MacMini
-       dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node wolfe-pi5
-       dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node wolfe-pi5 --kind docker
+       lab register --node MacMini
+       lab register --node wolfe-pi5
+       lab register --node wolfe-pi5 --kind docker
      Same secret, same UUID: the node side needs no change.
 
   4. Repoint the chezmoi checkout at the primary: the bootstrap cloned the

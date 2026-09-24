@@ -69,4 +69,4 @@ re-run that changes nothing is a no-op.
 
 To rehearse the change first, from `ollama/server` on the node:
 
-    dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --dry-run
+    lab deploy --dry-run

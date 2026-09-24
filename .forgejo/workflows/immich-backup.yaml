@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: immich/backup
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup
+        run: lab backup
 
   # The snapshot just taken, restored to scratch and asserted.
   restore-drill:
@@ -26,4 +26,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: immich/backup
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore-drill
+        run: lab restore-drill

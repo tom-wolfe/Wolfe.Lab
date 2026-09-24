@@ -14,4 +14,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: garage/layout
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- init --auto-approve
+        run: lab init --auto-approve

@@ -16,4 +16,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: caddy/certs
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- renew --auto-approve
+        run: lab renew --auto-approve

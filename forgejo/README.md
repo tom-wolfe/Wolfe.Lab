@@ -204,8 +204,8 @@ Forgejo cannot convert between mirror and regular in place, so a mode flip
 
 ```sh
 cd forgejo/tofu
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy
+lab check
+lab deploy
 ```
 
 Anything else against the root, with its secrets resolved:
@@ -306,7 +306,7 @@ two halves:
 
 ```sh
 cd forgejo/runners
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node wolfe-pi5
+lab register --node wolfe-pi5
 ```
 
 Mints a 40-hex secret with `forgejo-cli actions generate-secret`, stores it

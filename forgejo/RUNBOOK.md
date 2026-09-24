@@ -53,7 +53,7 @@ upgrade runs irreversible database migrations, and rolling back to an older
 image after that will fail.
 
 ```sh
-cd forgejo/backup && dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup && cd ../..   # snapshot first
+cd forgejo/backup && lab backup && cd ../..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the push deploys it), then
 # either let the forgejo compose workflow converge it or, by hand:
 cd ~/.local/share/Wolfe.Lab/forgejo
@@ -86,7 +86,7 @@ from the Actions tab, or:
 
 ```sh
 cd forgejo/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- backup
+lab backup
 ```
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
@@ -107,7 +107,7 @@ the backup script before anything risky.
 
 ```sh
 cd forgejo/backup
-dotnet run --project ../../build/src/Wolfe.Lab.Build -- restore
+lab restore
 ```
 
 `restic/RUNBOOK.md` "Restore" for what it does and its options. The
@@ -257,7 +257,7 @@ start, so a config change is not live until the runner is.
        secret=$(ssh macmini.local docker exec -u git forgejo forgejo forgejo-cli actions generate-secret)
        op item create --category "API Credential" --vault Wolfe.Lab --title forgejo-runner-MacMini "credential=$secret"
        cd forgejo/runners
-       dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node MacMini
+       lab register --node MacMini
 
    A containerised runner is the same with `--kind docker` and the item
    `forgejo-runner-<node>-docker`.

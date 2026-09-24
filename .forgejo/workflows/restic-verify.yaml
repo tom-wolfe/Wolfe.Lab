@@ -17,4 +17,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: restic/repositories
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- verify
+        run: lab verify

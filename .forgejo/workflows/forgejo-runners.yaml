@@ -25,4 +25,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: forgejo/runners
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- register --node "${{ inputs.node }}" --kind "${{ inputs.kind }}" --auto-approve
+        run: lab register --node "${{ inputs.node }}" --kind "${{ inputs.kind }}" --auto-approve

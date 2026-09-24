@@ -69,8 +69,8 @@ expected and stops on its own.
    with `.obsidian/` in it, and `nvm-run ob sync-status --path
    ~/Obsidian/main` reports the new location, `mirror-remote`, and
    the config categories. A pass can be rehearsed by hand from a
-   checkout on the mini: `cd obsidian/vaults && dotnet run --project
-   ../build/src/Wolfe.Lab.Build -- sync --vault main --dry-run`. An empty `.obsidian/` in the commit means the
+   checkout on the mini: `cd obsidian/vaults && lab sync --vault main
+   --dry-run`. An empty `.obsidian/` in the commit means the
    other devices publish no configuration — their "Vault configuration"
    toggles in Obsidian's Sync settings decide that.
 7. **Revoke the runner's Full Disk Access** (System Settings → Privacy

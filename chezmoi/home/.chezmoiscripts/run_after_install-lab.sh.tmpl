@@ -1,0 +1,45 @@
+{{ if has .profile (list "macmini-node" "macstudio" "pi-node") -}}
+#!/bin/bash
+# The lab's CLI, `lab`, at the version its pin names — on every machine
+# with a host runner, which runs the lab's jobs with it. The pin is the
+# point: a runner executes a reviewed, published CLI, never a checkout's.
+#
+# Bump together with LAB_VERSION in ci/image/Dockerfile, which bakes the
+# same version into the containerised runner's image. The version is the
+# lab's own (build/README.md "Shipping"): read the CHANGELOG entry it names.
+#
+# run_after_, not run_onchange_: the feed is on Forgejo, so on a cold start
+# it does not exist until setup.sh has brought Forgejo up and the CLI's
+# own deploy has published to it. A run_onchange_ script that failed would
+# stop the apply; one that stepped aside would be recorded as done and
+# never tried again. This runs every apply instead — a satisfied run is one
+# `dotnet tool list` — and an unreachable feed is a warning that the next
+# apply retries.
+set -euo pipefail
+
+version="0.35.0"
+feed="https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"
+{{- if eq .profile "pi-node" }}
+
+# The Pi's SDK is a tarball in ~/.dotnet, not a system install.
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$HOME/.dotnet:$PATH"
+{{- else }}
+
+# The dotnet-sdk cask links into /usr/local/bin, which non-interactive SSH
+# sessions don't have on PATH.
+export PATH="$PATH:/usr/local/bin"
+{{- end }}
+
+installed="$(dotnet tool list --global | awk 'tolower($1) == "wolfe.lab.build" { print $2 }')"
+[ "$installed" = "$version" ] && exit 0
+
+if ! curl -fsS --max-time 10 -o /dev/null "$feed"; then
+  echo "install-lab: $feed is unreachable; lab stays at ${installed:-nothing} until an apply can reach it" >&2
+  exit 0
+fi
+
+# update installs when missing; --allow-downgrade makes the pin exact in
+# both directions, so rolling back is reverting the bump.
+dotnet tool update --global Wolfe.Lab.Build --version "$version" --allow-downgrade --add-source "$feed"
+{{ end -}}

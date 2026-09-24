@@ -4,6 +4,33 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.37.0] - 2026-09-24
+
+### Changed
+
+- **Every workflow runs the pinned `lab`.** A runner executes the
+  published, reviewed CLI rather than compiling the checkout, and the
+  checks no longer set up .NET to build it — only the CLI's own check and
+  the mail watcher's, which compile source, still do. The one exception is
+  the CLI's own deploy, which compiles the merged source: its input is the
+  source, and on a cold start it is what first fills the feed.
+- **The runbooks call `lab`** too; building the checkout is for a CLI
+  change in progress (`build/RUNBOOK.md`).
+- **The lab's NuGet feed is a source on every lab machine.** chezmoi
+  writes the user-level `NuGet.Config` on the MacBook, the Studio, the mini
+  and the Pi, so `dotnet tool install -g Wolfe.Lab.Build` needs no
+  `--add-source`. Only `Wolfe.Lab.*` is mapped to it: the feed is
+  tailnet-only, and every other package still comes from nuget.org alone,
+  so a restore off the tailnet does not fail on it.
+
+### Fixed
+
+- **A cold start would have stopped at `lab`.** Its install script was
+  `run_onchange_` and failed without a feed — and the feed is on the
+  Forgejo a fresh server has not brought up yet. It now runs on every
+  apply, does nothing when the pin is installed, and warns rather than
+  fails while the feed is unreachable, so the next apply picks it up.
+
 ## [0.36.0] - 2026-09-24
 
 ### Added

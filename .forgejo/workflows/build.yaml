@@ -23,7 +23,7 @@ jobs:
         with:
           global-json-file: build/global.json
       - working-directory: build
-        run: dotnet run --project src/Wolfe.Lab.Build -- check
+        run: lab check
 
   deploy:
     if: github.event_name != 'pull_request'

@@ -21,7 +21,7 @@ jobs:
         with:
           global-json-file: build/global.json
       - working-directory: mail/watcher
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- check
+        run: lab check
 
   deploy:
     if: github.event_name != 'pull_request'
@@ -33,4 +33,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - working-directory: mail/watcher
-        run: dotnet run --project ../../build/src/Wolfe.Lab.Build -- deploy --auto-approve
+        run: lab deploy --auto-approve
