@@ -1,13 +1,25 @@
+using Wolfe.Lab.Build.Clients.Secrets;
+
 namespace Wolfe.Lab.Build.Clients.Agents.Steps;
 
 /// <summary>
 /// Turns what the slice declared into what this node can run.
 /// </summary>
+/// <remarks>
+/// An environment value that is a vault reference — <c>op://vault/item/field</c> — is resolved
+/// here, so a secret reaches the agent the way it reaches a container: through the deploy, never
+/// through a file in the repository. It lands in the unit, which is written for the owner alone.
+/// </remarks>
 [Step("resolve agents", StepKind.Work)]
-internal sealed class ResolveAgents(AgentDeclarations declarations, IWorkflowLog log)
+internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvider secrets, IWorkflowLog log)
 {
-    public StepResult<AgentPlan> Run()
+    public async Task<StepResult<AgentPlan>> Run(CancellationToken ct = default)
     {
+        if (declarations.Agents.Count == 0)
+        {
+            return new Error("No agents are declared here: a deploy that converges nothing is a mistake, not a success.");
+        }
+
         var resolved = new List<AgentDefinition>();
         var errors = new List<Error>();
 
@@ -37,7 +49,7 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, IWorkflowLog
                 continue;
             }
 
-            resolved.Add(definition);
+            resolved.Add(definition with { Environment = await Resolve(definition.Environment, ct) });
         }
 
         if (errors.Count > 0)
@@ -47,5 +59,16 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, IWorkflowLog
 
         log.Detail($"Resolved {resolved.Count} agent{(resolved.Count == 1 ? "" : "s")}.");
         return new AgentPlan(resolved);
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> Resolve(IReadOnlyDictionary<string, string> environment, CancellationToken ct)
+    {
+        var resolved = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (name, value) in environment)
+        {
+            resolved[name] = SecretReference.TryFrom(value, out var reference) ? await secrets.Resolve(reference.Value, ct) : value;
+        }
+
+        return resolved;
     }
 }

@@ -26,7 +26,9 @@ carry most of the lab: `docker` (a compose stack — check on the pull
 request, deploy on the merge), `tofu` (a root module — plan on the pull
 request, apply on the merge), `backup` (what a snapshot holds, what has
 to be quiet while it is taken, and what a restore must bring back),
-`image` and `dotnet-service`. Two slices with the same shape share a
+`image`, `dotnet-service` and `agents` (host processes declared per node —
+the node services that used to live in chezmoi — deployed to each node by
+its own runner with `lab deploy --node <name>`). Two slices with the same shape share a
 workflow and differ only in what they declare. What only one slice does
 is a component of its own with a workflow of its own — `caddy/certs`,
 `caddy/routes`, `forgejo/runners`, `garage/layout`, `immich/import`,
@@ -136,7 +138,12 @@ command runner for every process. The lab adds what Ritten doesn't have:
   anyone having edited the declaration. An agent whose program is not on
   the node is refused rather than installed to fail. The rehearsal reads
   the node — which units are installed, what the supervisor is running —
-  and writes nothing.
+  and writes nothing. An environment value that is a vault reference is
+  resolved at deploy, and every unit is written for its owner alone
+  (`600`), since that is where the secret lands. An agent can name the
+  units it `supersedes` — Homebrew's `sh.brew.<name>`, a unit chezmoi used
+  to write — and the converge stops and removes them before starting it,
+  file and all, so the old copy does not come back at the next login.
 
 ## Alerting
 

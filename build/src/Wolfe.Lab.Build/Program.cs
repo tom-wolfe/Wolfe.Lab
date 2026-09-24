@@ -2,6 +2,7 @@ using System.CommandLine;
 using Ritten.CommandLine;
 using Ritten.OnePassword;
 using Wolfe.Lab.Build;
+using Wolfe.Lab.Build.Workflows.Agents;
 using Wolfe.Lab.Build.Workflows.Backup;
 using Wolfe.Lab.Build.Workflows.CaddyCertificates;
 using Wolfe.Lab.Build.Workflows.CaddyRoutes;
@@ -32,6 +33,7 @@ builder.Workflows
     .Add<ChezmoiWorkflow>()
     .Add<ObsidianWorkflow>()
     .Add<OllamaWorkflow>()
+    .Add<AgentsWorkflow>()
     .Add<ResticWorkflow>()
     .Add<HeartbeatWorkflow>()
     .Add<CaddyCertificatesWorkflow>()

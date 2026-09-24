@@ -221,4 +221,45 @@ public class SystemdSupervisorTests : IDisposable
 
     private async Task NeverRan(string verb) =>
         await _commands.DidNotReceive().Run(Arg.Is<Command>(c => c.Arguments.Contains(verb)), Arg.Any<CancellationToken>());
+
+    [Fact]
+    public async Task Converge_WritesTheUnitForTheOwnerAlone()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Unix permissions.");
+        Running(false);
+
+        await Supervisor().Converge(Agent(), TestContext.Current.CancellationToken);
+
+        new PhysicalFile(Path.Combine(_units.FullName, UnitName)).GetUnixFileMode().ShouldBe(UnixFileMode.UserRead | UnixFileMode.UserWrite);
+    }
+
+    [Fact]
+    public async Task Retire_DisablesStopsAndRemovesTheUnit()
+    {
+        File.WriteAllText(Path.Combine(_units.FullName, "beszel-agent.service"), "[Service]\n");
+        Running(true);
+
+        await Supervisor().Retire("beszel-agent", TestContext.Current.CancellationToken);
+
+        await _commands.Received().Run(
+            Arg.Is<Command>(c => c.Arguments.SequenceEqual(new[] { "--user", "disable", "--now", "beszel-agent.service" })),
+            Arg.Any<CancellationToken>());
+        File.Exists(Path.Combine(_units.FullName, "beszel-agent.service")).ShouldBeFalse();
+        await Ran("daemon-reload");
+    }
+
+    [Theory]
+    [InlineData("beszel-agent", "beszel-agent.service")]
+    [InlineData("beszel-agent.service", "beszel-agent.service")]
+    [InlineData("beszel-agent.path", "beszel-agent.path")]
+    public void UnitFileName_IsAServiceUnlessItNamesItsType(string unit, string expected) =>
+        SystemdSupervisor.UnitFileName(unit).ShouldBe(expected);
+
+    [Fact]
+    public async Task IsInstalled_AsksSystemdWhenThereIsNoFile()
+    {
+        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "not-found\n", ""));
+
+        (await Supervisor().IsInstalled("beszel-agent", TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
 }

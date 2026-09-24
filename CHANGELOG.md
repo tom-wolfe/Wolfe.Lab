@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.42.0] - 2026-09-24
+
+### Added
+
+- **The `agents` workflow.** Host processes declared per node, checked on
+  the pull request and deployed to each node by its own runner with
+  `lab deploy --node <name>` — the shape the node services leaving chezmoi
+  move into.
+
+### Changed
+
+- **An agent deploy with nothing declared fails** rather than succeeding
+  at nothing, so a mistyped node is noticed.
 ## [0.41.1] - 2026-09-24
 
 ### Fixed

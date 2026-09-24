@@ -68,7 +68,7 @@ internal sealed class SystemdSupervisor(AgentDirectory agents, ICommandRunner co
         if (installed != unit.Content)
         {
             // Atomic: the manager may read the unit at any moment, and must never see half of it.
-            await file.WriteAllText(unit.Content, cancellationToken: ct);
+            await file.WriteAllText(unit.Content, mode: UnitPermissions.Owner, cancellationToken: ct);
             await commands.Run(Systemctl("daemon-reload").ThrowOnError(), ct);
         }
 
@@ -102,6 +102,40 @@ internal sealed class SystemdSupervisor(AgentDirectory agents, ICommandRunner co
         return properties.GetValueOrDefault("ActiveState") is "active" or "activating" or "reloading"
             && properties.GetValueOrDefault("UnitFileState") == "enabled";
     }
+
+    /// <inheritdoc />
+    public async Task<bool> IsInstalled(string unit, CancellationToken ct = default)
+    {
+        var name = UnitFileName(unit);
+        if (agents.Directory.GetFile(name).Exists)
+        {
+            return true;
+        }
+
+        var result = await commands.Run(Systemctl("show", name, "--property=LoadState", "--value").QuietOutput(), ct);
+        return result.ExitCode == 0 && result.StandardOutput.Trim() is { Length: > 0 } state && state != "not-found";
+    }
+
+    /// <inheritdoc />
+    public async Task Retire(string unit, CancellationToken ct = default)
+    {
+        var name = UnitFileName(unit);
+        // Not ThrowOnError: a unit that is only a file on disk, never loaded, cannot be disabled,
+        // and that is not a reason to stop.
+        await commands.Run(Systemctl("disable", "--now", name), ct);
+        agents.Directory.GetFile(name).Delete();
+        await commands.Run(Systemctl("daemon-reload").ThrowOnError(), ct);
+        log.Status($"Retired {name}.");
+    }
+
+    /// <summary>
+    /// A unit's file name: as given when it names its type, a service when it does not.
+    /// </summary>
+    internal static string UnitFileName(string unit) =>
+        unit.EndsWith(".service", StringComparison.Ordinal) || unit.EndsWith(".path", StringComparison.Ordinal)
+        || unit.EndsWith(".timer", StringComparison.Ordinal) || unit.EndsWith(".socket", StringComparison.Ordinal)
+            ? unit
+            : $"{unit}.service";
 
     private async Task Restart(AgentDefinition agent, AgentUnit unit, CancellationToken ct)
     {

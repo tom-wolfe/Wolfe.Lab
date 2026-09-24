@@ -43,8 +43,4 @@
     <Using Include="Ritten.Reporting" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Workflows\Agents\" />
-  </ItemGroup>
-
 </Project>

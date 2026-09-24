@@ -7,6 +7,10 @@ namespace Wolfe.Lab.Build.Tests.Clients.Agents.Steps;
 public class ResolveAgentsTests : IDisposable
 {
     private readonly DirectoryInfo _node = Directory.CreateTempSubdirectory("lab-node-");
+    private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
+
+    public ResolveAgentsTests() =>
+        _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(call => $"secret-of-{call.Arg<string>()}");
 
     public void Dispose() => _node.Delete(recursive: true);
 
@@ -17,13 +21,14 @@ public class ResolveAgentsTests : IDisposable
         return path;
     }
 
-    private static ResolveAgents Step(params (string Name, AgentSettings Settings)[] agents) =>
-        new(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Settings)), Substitute.For<IWorkflowLog>());
+    private Task<StepResult<AgentPlan>> Resolve(params (string Name, AgentSettings Settings)[] agents) =>
+        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Settings)), _secrets, Substitute.For<IWorkflowLog>())
+            .Run(TestContext.Current.CancellationToken);
 
     [Fact]
-    public void Run_ResolvesWhatTheNodeCanActuallyRun()
+    public async Task Run_ResolvesWhatTheNodeCanActuallyRun()
     {
-        var result = Step(("ollama", new AgentSettings { Program = HostPath.From(Program()), Arguments = ["serve"] })).Run();
+        var result = await Resolve(("ollama", new AgentSettings { Program = HostPath.From(Program()), Arguments = ["serve"] }));
 
         var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
         agent.Label.Value.ShouldBe("dev.twolfe.ollama");
@@ -31,59 +36,99 @@ public class ResolveAgentsTests : IDisposable
     }
 
     [Fact]
-    public void Run_StampsTheAgentWithTheProgramItFound()
+    public async Task Run_StampsTheAgentWithTheProgramItFound()
     {
         var program = Program();
 
-        var result = Step(("ollama", new AgentSettings { Program = HostPath.From(program) })).Run();
+        var result = await Resolve(("ollama", new AgentSettings { Program = HostPath.From(program) }));
 
         result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem()
             .ProgramStamp.ShouldBe(File.GetLastWriteTimeUtc(program));
     }
 
     [Fact]
-    public void Run_RefusesAnAgentWhoseProgramIsNotOnThisNode()
+    public async Task Run_ResolvesVaultReferencesAndLeavesEverythingElse()
     {
-        var result = Step(("ollama", new AgentSettings { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) })).Run();
+        var result = await Resolve(("beszel-agent", new AgentSettings
+        {
+            Program = HostPath.From(Program("beszel-agent")),
+            Environment = new Dictionary<string, string>
+            {
+                ["TOKEN"] = "op://Wolfe.Lab/beszel-agent/credential",
+                ["HUB_URL"] = "http://localhost:8090"
+            }
+        }));
+
+        var environment = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem().Environment;
+        environment["TOKEN"].ShouldBe("secret-of-op://Wolfe.Lab/beszel-agent/credential");
+        environment["HUB_URL"].ShouldBe("http://localhost:8090");
+        await _secrets.Received(1).Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Run_CarriesWhatTheAgentSupersedes()
+    {
+        var result = await Resolve(("beszel-agent", new AgentSettings
+        {
+            Program = HostPath.From(Program("beszel-agent")),
+            Supersedes = ["sh.brew.beszel-agent"]
+        }));
+
+        result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem().Supersedes.ShouldBe(["sh.brew.beszel-agent"]);
+    }
+
+    [Fact]
+    public async Task Run_RefusesADeclarationWithNoAgents()
+    {
+        var result = await Resolve();
+
+        result.Outcome.IsFailure.ShouldBeTrue();
+        result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("No agents are declared");
+    }
+
+    [Fact]
+    public async Task Run_RefusesAnAgentWhoseProgramIsNotOnThisNode()
+    {
+        var result = await Resolve(("ollama", new AgentSettings { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) }));
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("not on this node");
     }
 
     [Fact]
-    public void Run_RefusesAnAgentThatNamesNoProgram()
+    public async Task Run_RefusesAnAgentThatNamesNoProgram()
     {
-        var result = Step(("ollama", new AgentSettings())).Run();
+        var result = await Resolve(("ollama", new AgentSettings()));
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("'program'");
     }
 
     [Fact]
-    public void Run_RefusesAKeyThatCannotBeALabel()
+    public async Task Run_RefusesAKeyThatCannotBeALabel()
     {
-        var result = Step(("not a name", new AgentSettings { Program = HostPath.From(Program()) })).Run();
+        var result = await Resolve(("not a name", new AgentSettings { Program = HostPath.From(Program()) }));
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("cannot name an agent");
     }
 
     [Fact]
-    public void Run_ReportsEverySlicesProblemAtOnce()
+    public async Task Run_ReportsEverySlicesProblemAtOnce()
     {
-        var result = Step(
+        var result = await Resolve(
             ("ollama", new AgentSettings()),
-            ("watcher", new AgentSettings { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) })).Run();
+            ("watcher", new AgentSettings { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) }));
 
         result.Outcome.Errors.ShouldNotBeNull().Count.ShouldBe(2);
     }
 
     [Fact]
-    public void Run_OrdersTheAgentsSoAConvergeIsRepeatable()
+    public async Task Run_OrdersTheAgentsSoAConvergeIsRepeatable()
     {
-        var result = Step(
+        var result = await Resolve(
             ("watcher", new AgentSettings { Program = HostPath.From(Program("watcher")) }),
-            ("ollama", new AgentSettings { Program = HostPath.From(Program()) })).Run();
+            ("ollama", new AgentSettings { Program = HostPath.From(Program()) }));
 
         result.Value.ShouldNotBeNull().Agents.Select(a => a.Label.Name).ShouldBe(["ollama", "watcher"]);
     }

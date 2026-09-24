@@ -45,4 +45,18 @@ public class ConvergeAgentsTests
 
         _log.DidNotReceiveWithAnyArgs().Status(default!);
     }
+
+    [Fact]
+    public async Task Run_RetiresWhatAnAgentSupersedesBeforeConvergingIt()
+    {
+        var plan = new AgentPlan([Plan().Agents[0] with { Supersedes = ["sh.brew.ollama"] }]);
+
+        await Step().Run(plan, TestContext.Current.CancellationToken);
+
+        Received.InOrder(() =>
+        {
+            _supervisor.Retire("sh.brew.ollama", Arg.Any<CancellationToken>());
+            _supervisor.Converge(Arg.Any<AgentDefinition>(), Arg.Any<CancellationToken>());
+        });
+    }
 }

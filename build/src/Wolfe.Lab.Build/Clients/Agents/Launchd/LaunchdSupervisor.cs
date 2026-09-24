@@ -62,7 +62,7 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
         if (installed != unit.Content)
         {
             // Atomic: the supervisor may read the unit at any moment, and must never see half of it.
-            await file.WriteAllText(unit.Content, cancellationToken: ct);
+            await file.WriteAllText(unit.Content, mode: UnitPermissions.Owner, cancellationToken: ct);
         }
 
         if (!loaded)
@@ -75,15 +75,35 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
         return AgentOutcome.Restarted;
     }
 
+    /// <inheritdoc />
+    public async Task<bool> IsInstalled(string unit, CancellationToken ct = default) =>
+        agents.Directory.GetFile($"{unit}.plist").Exists || await IsLoaded(unit, ct);
+
+    /// <inheritdoc />
+    public async Task Retire(string unit, CancellationToken ct = default)
+    {
+        if (await IsLoaded(unit, ct))
+        {
+            await commands.Run(Launchctl("bootout", $"{(await Domain(ct)).Value}/{unit}").ThrowOnError(), ct);
+        }
+
+        // The file too: launchd loads every plist in the directory at the next login, so a unit
+        // that was only unloaded would be back after a reboot.
+        agents.Directory.GetFile($"{unit}.plist").Delete();
+        log.Status($"Retired {unit}.");
+    }
+
     /// <summary>
     /// Whether launchd is running this label.
     /// </summary>
-    private async Task<bool> IsLoaded(AgentLabel label, CancellationToken ct)
+    private Task<bool> IsLoaded(AgentLabel label, CancellationToken ct) => IsLoaded(label.Value, ct);
+
+    private async Task<bool> IsLoaded(string label, CancellationToken ct)
     {
         var result = await commands.Run(Launchctl("list").QuietOutput().ThrowOnError(), ct);
         return result.StandardOutput
             .Split('\n')
-            .Any(line => line.Split('\t').LastOrDefault()?.Trim() == label.Value);
+            .Any(line => line.Split('\t').LastOrDefault()?.Trim() == label);
     }
 
     /// <summary>

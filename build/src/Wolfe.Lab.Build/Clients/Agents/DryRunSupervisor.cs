@@ -15,6 +15,18 @@ internal sealed class DryRunSupervisor(IWorkflowLog log, IServiceSupervisor inne
     public Task<AgentOutcome> Plan(AgentDefinition agent, CancellationToken ct = default) => _inner.Plan(agent, ct);
 
     /// <inheritdoc />
+    public Task<bool> IsInstalled(string unit, CancellationToken ct = default) => _inner.IsInstalled(unit, ct);
+
+    /// <inheritdoc />
+    public async Task Retire(string unit, CancellationToken ct = default)
+    {
+        if (await _inner.IsInstalled(unit, ct))
+        {
+            log.Skipped($"Would stop and remove {unit}, which this agent supersedes.");
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<AgentOutcome> Converge(AgentDefinition agent, CancellationToken ct = default)
     {
         var outcome = await _inner.Plan(agent, ct);

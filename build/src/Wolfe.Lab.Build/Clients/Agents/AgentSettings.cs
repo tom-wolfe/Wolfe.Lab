@@ -50,6 +50,13 @@ public sealed record AgentSettings
     public AgentRestart Restart { get; init; } = AgentRestart.Reload;
 
     /// <summary>
+    /// Units an earlier supervisor ran this agent under — Homebrew's <c>sh.brew.beszel-agent</c>,
+    /// a hand-written systemd unit — which the converge stops and removes before it starts this
+    /// one, so two copies of one agent never run side by side.
+    /// </summary>
+    public IReadOnlyList<string> Supersedes { get; init; } = [];
+
+    /// <summary>
     /// The agent as the steps consume it, or null while the program is missing — the one
     /// question validation asks and registration answers.
     /// </summary>
@@ -58,5 +65,8 @@ public sealed record AgentSettings
     public AgentDefinition? ToDefinition(AgentLabel label, DateTimeOffset stamp) =>
         Program is { } program
             ? new AgentDefinition(label, program, [.. Arguments], Environment, WorkingDirectory, Log, KeepAlive, ExitTimeout, Restart, stamp)
+            {
+                Supersedes = [.. Supersedes]
+            }
             : null;
 }

@@ -186,4 +186,53 @@ public class LaunchdSupervisorTests : IDisposable
 
     private async Task NeverRan(string verb) =>
         await _commands.DidNotReceive().Run(Arg.Is<Command>(c => c.Arguments.Contains(verb)), Arg.Any<CancellationToken>());
+
+    [Fact]
+    public async Task Converge_WritesTheUnitForTheOwnerAlone()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Unix permissions.");
+        Loaded(false);
+
+        await Supervisor().Converge(Agent(), TestContext.Current.CancellationToken);
+
+        new PhysicalFile(Path.Combine(_agents.FullName, "dev.twolfe.ollama.plist")).GetUnixFileMode()
+            .ShouldBe(UnixFileMode.UserRead | UnixFileMode.UserWrite);
+    }
+
+    [Fact]
+    public async Task Retire_UnloadsAndRemovesAUnitSoItDoesNotComeBackAtLogin()
+    {
+        File.WriteAllText(Path.Combine(_agents.FullName, "sh.brew.beszel-agent.plist"), "<plist/>");
+        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(call =>
+            call.Arg<Command>().Arguments.Contains("list")
+                ? new CommandResult(0, "PID\tStatus\tLabel\n-\t0\tsh.brew.beszel-agent\n", "")
+                : new CommandResult(0, "501", ""));
+
+        await Supervisor().Retire("sh.brew.beszel-agent", TestContext.Current.CancellationToken);
+
+        await _commands.Received().Run(
+            Arg.Is<Command>(c => c.Arguments.SequenceEqual(new[] { "bootout", "gui/501/sh.brew.beszel-agent" })),
+            Arg.Any<CancellationToken>());
+        File.Exists(Path.Combine(_agents.FullName, "sh.brew.beszel-agent.plist")).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Retire_DoesNothingToAUnitThatIsNotThere()
+    {
+        Loaded(false);
+
+        await Supervisor().Retire("sh.brew.beszel-agent", TestContext.Current.CancellationToken);
+
+        await NeverRan("bootout");
+    }
+
+    [Fact]
+    public async Task IsInstalled_CountsAUnitOnDiskThatIsNotLoaded()
+    {
+        File.WriteAllText(Path.Combine(_agents.FullName, "sh.brew.beszel-agent.plist"), "<plist/>");
+        Loaded(false);
+
+        (await Supervisor().IsInstalled("sh.brew.beszel-agent", TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await Supervisor().IsInstalled("sh.brew.other", TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
 }

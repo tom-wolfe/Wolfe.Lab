@@ -10,6 +10,13 @@ internal sealed class ConvergeAgents(IServiceSupervisor supervisor, WorkflowJob 
     {
         foreach (var agent in plan.Agents)
         {
+            // Before the converge, so the old copy has stopped by the time the new one starts:
+            // two agents with one identity would each think they were the node.
+            foreach (var unit in agent.Supersedes)
+            {
+                await supervisor.Retire(unit, ct);
+            }
+
             var outcome = await supervisor.Converge(agent, ct);
             if (job.DryRun)
             {

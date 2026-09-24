@@ -30,4 +30,10 @@ public sealed record AgentDefinition(
     int? ExitTimeout,
     AgentRestart Restart,
     DateTimeOffset ProgramStamp
-);
+)
+{
+    /// <summary>
+    /// Units an earlier supervisor ran this agent under, retired before it is converged.
+    /// </summary>
+    public IReadOnlyList<string> Supersedes { get; init; } = [];
+}
