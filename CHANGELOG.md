@@ -4,7 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## [0.39.0] - 2026-09-24
+## [0.40.0] - 2026-09-24
+
+### Added
+
+- **Agents deploy to Linux.** `lab deploy` renders a component's agents
+  to systemd user units on Linux, as it does to launchd agents on a Mac,
+  choosing by the operating system.
+
+### Changed
+
+- **Ritten 0.20.0.** Files are written through its `WriteAllText`.
 
 ### Fixed
 
@@ -12,6 +22,11 @@ rather than versioned — the lab is continuous, not released.
   running where there is no forgejo container, and a vault secret that is
   not 40 characters — an empty one, stored because the command that minted
   it failed quietly.
+
+## [0.39.0] - 2026-09-24
+
+Nothing shipped: the registration guards this entry listed were left out
+of the merge, and landed in 0.40.0.
 
 ## [0.38.0] - 2026-09-24
 

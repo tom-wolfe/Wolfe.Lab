@@ -30,8 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The units the supervisor writes: read them as the file they become. -->
-    <EmbeddedResource Include="Clients/Agents/Templates/*.sbn" />
+    <EmbeddedResource Include="Clients\Agents\Launchd\launchd.plist.sbn" />
+    <EmbeddedResource Include="Clients\Agents\Systemd\systemd.service.sbn" />
   </ItemGroup>
 
   <ItemGroup>

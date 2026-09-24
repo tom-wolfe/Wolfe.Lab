@@ -1,9 +1,8 @@
 using System.Globalization;
 using System.Security;
 using Scriban;
-using Scriban.Runtime;
 
-namespace Wolfe.Lab.Build.Clients.Agents;
+namespace Wolfe.Lab.Build.Clients.Agents.Launchd;
 
 /// <summary>
 /// launchd, through launchctl. Units are written to the user's LaunchAgents directory and
@@ -31,14 +30,14 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
             agent.ExitTimeout,
             agent.Log is { } log ? Escape(log.Value) : null);
 
-        return new AgentUnit($"{agent.Label.Value}.plist", Fill(Plist.Value, unit));
+        return new AgentUnit($"{agent.Label.Value}.plist", UnitTemplate.Fill(Plist.Value, unit));
     }
 
     /// <inheritdoc />
     public async Task<AgentOutcome> Plan(AgentDefinition agent, CancellationToken ct = default)
     {
         var unit = Render(agent);
-        var installed = Read(agents.Directory.GetFile(unit.FileName));
+        var installed = await agents.Directory.GetFile(unit.FileName).ReadAllTextIfExists(ct);
         if (!await IsLoaded(agent.Label, ct))
         {
             return AgentOutcome.Installed;
@@ -52,7 +51,7 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
     {
         var unit = Render(agent);
         var file = agents.Directory.GetFile(unit.FileName);
-        var installed = Read(file);
+        var installed = await file.ReadAllTextIfExists(ct);
         var loaded = await IsLoaded(agent.Label, ct);
 
         if (installed == unit.Content && loaded)
@@ -62,8 +61,8 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
 
         if (installed != unit.Content)
         {
-            agents.Directory.Create();
-            Write(file, unit.Content);
+            // Atomic: the supervisor may read the unit at any moment, and must never see half of it.
+            await file.WriteAllText(unit.Content, cancellationToken: ct);
         }
 
         if (!loaded)
@@ -125,63 +124,10 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
 
     private static Command Launchctl(params string[] arguments) => Command.Create("launchctl").WithArguments(arguments);
 
-    private static string? Read(IFile file)
-    {
-        if (!file.Exists)
-        {
-            return null;
-        }
-
-        using var reader = new StreamReader(file.OpenRead());
-        return reader.ReadToEnd();
-    }
-
-    private static void Write(IFile file, string content)
-    {
-        // Deleted first: a shorter unit written over a longer one would otherwise keep the
-        // tail of the old.
-        if (file.Exists)
-        {
-            file.Delete();
-        }
-
-        using var writer = new StreamWriter(file.OpenWrite());
-        writer.Write(content);
-    }
-
     /// <summary>
-    /// The unit template, parsed once. A template that does not parse is a packaging fault
-    /// rather than anything a node did, so it is thrown rather than reported.
+    /// The unit template, parsed once.
     /// </summary>
-    private static readonly Lazy<Template> Plist = new(() => Load("launchd.plist.sbn"));
-
-    private static Template Load(string name)
-    {
-        var resource = $"{typeof(LaunchdSupervisor).Namespace}.Templates.{name}";
-        using var stream = typeof(LaunchdSupervisor).Assembly.GetManifestResourceStream(resource)
-            ?? throw new InvalidOperationException($"{resource} is not in the assembly: the template was not embedded.");
-
-        using var reader = new StreamReader(stream);
-        var template = Template.Parse(reader.ReadToEnd());
-        return template.HasErrors
-            ? throw new InvalidOperationException($"{name} does not parse: {string.Join("; ", template.Messages)}")
-            : template;
-    }
-
-    /// <summary>
-    /// Renders a model through a template under its own member names, so the template reads as
-    /// the record beside it rather than in a second naming convention.
-    /// </summary>
-    private static string Fill(Template template, object model)
-    {
-        var globals = new ScriptObject();
-        globals.Import(model, renamer: member => member.Name);
-
-        var context = new TemplateContext { MemberRenamer = member => member.Name };
-        context.PushGlobal(globals);
-
-        return template.Render(context).TrimEnd('\n') + '\n';
-    }
+    private static readonly Lazy<Template> Plist = new(() => UnitTemplate.Load($"{typeof(LaunchdSupervisor).Namespace}.launchd.plist.sbn"));
 
     /// <summary>
     /// Escaped here rather than in the template, so the template cannot forget: everything it

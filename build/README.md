@@ -126,9 +126,11 @@ command runner for every process. The lab adds what Ritten doesn't have:
   rehearsal never pings: a switch told the job ran is worse than none.
 - **Agents** — `IServiceSupervisor` renders a component's declared agents to
   the platform's units and converges the supervisor onto them: launchd
-  today, systemd user units when the primary node is a Linux box. The
-  declaration is platform-neutral, so that day changes one registration
-  and no component. A converge compares the whole rendered unit and restarts
+  on a Mac, systemd's user manager on Linux, chosen by the operating
+  system at registration. The declaration is platform-neutral, so the same
+  component deploys to either. On Linux the node needs lingering on
+  (`loginctl enable-linger`) for its units to run with nobody logged in.
+  A converge compares the whole rendered unit and restarts
   only on a difference; the executable's own timestamp is part of that
   text, so upgrading the binary counts as a change to the agent without
   anyone having edited the declaration. An agent whose program is not on

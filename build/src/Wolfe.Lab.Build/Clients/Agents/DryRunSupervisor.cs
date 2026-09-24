@@ -4,18 +4,20 @@ namespace Wolfe.Lab.Build.Clients.Agents;
 /// <summary>
 /// Says what converging would do.
 /// </summary>
-internal sealed class DryRunSupervisor(IWorkflowLog log, LaunchdSupervisor inner) : IServiceSupervisor
+internal sealed class DryRunSupervisor(IWorkflowLog log, PlatformSupervisor platform) : IServiceSupervisor
 {
-    /// <inheritdoc />
-    public AgentUnit Render(AgentDefinition agent) => inner.Render(agent);
+    private readonly IServiceSupervisor _inner = platform.Supervisor;
 
     /// <inheritdoc />
-    public Task<AgentOutcome> Plan(AgentDefinition agent, CancellationToken ct = default) => inner.Plan(agent, ct);
+    public AgentUnit Render(AgentDefinition agent) => _inner.Render(agent);
+
+    /// <inheritdoc />
+    public Task<AgentOutcome> Plan(AgentDefinition agent, CancellationToken ct = default) => _inner.Plan(agent, ct);
 
     /// <inheritdoc />
     public async Task<AgentOutcome> Converge(AgentDefinition agent, CancellationToken ct = default)
     {
-        var outcome = await inner.Plan(agent, ct);
+        var outcome = await _inner.Plan(agent, ct);
         var what = outcome switch
         {
             AgentOutcome.Unchanged => $"{agent.Label.Value} is already what the slice declares.",

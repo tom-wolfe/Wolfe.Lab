@@ -1,5 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Wolfe.Lab.Build.Clients.Agents.Launchd;
+using Wolfe.Lab.Build.Clients.Agents.Systemd;
 
 namespace Wolfe.Lab.Build.Clients.Agents;
 
@@ -11,16 +12,29 @@ public static class WorkflowBuilderExtensions
     extension(IWorkflowBuilder builder)
     {
         /// <summary>
-        /// Adds <see cref="IServiceSupervisor"/> over launchd, and its rehearsal. When the
-        /// primary node becomes a Linux box this is the one registration that changes.
+        /// Adds <see cref="IServiceSupervisor"/> for this node's operating system.
         /// </summary>
         public IWorkflowBuilder AddAgents()
         {
             builder.AddCommandRunner();
-            builder.Services.TryAddSingleton(AgentDirectory.Default);
-            builder.Services.TryAddSingleton<LaunchdSupervisor>();
-            builder.Services.TryAddSingleton<IServiceSupervisor>(services => services.GetRequiredService<LaunchdSupervisor>());
+            if (OperatingSystem.IsMacOS())
+            {
+                builder.Services.TryAddSingleton(AgentDirectory.Launchd);
+                builder.Services.TryAddSingleton<IServiceSupervisor, LaunchdSupervisor>();
+
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                builder.Services.TryAddSingleton(AgentDirectory.Systemd);
+                builder.Services.TryAddSingleton<IServiceSupervisor, SystemdSupervisor>();
+            }
+            else
+            {
+                throw new PlatformNotSupportedException("The lab's agents run under launchd or systemd: macOS or Linux.");
+            }
+
             builder.Decorators.Replace<IServiceSupervisor, DryRunSupervisor>();
+            builder.Services.TryAddSingleton<PlatformSupervisor>();
             return builder;
         }
     }

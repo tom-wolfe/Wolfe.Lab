@@ -34,14 +34,30 @@ build never shadows the published one:
 
 ```sh
 feed=/tmp/ritten-feed; cache=/tmp/ritten-cache
-for p in Ritten.Core Ritten.CommandLine Ritten.Git Ritten.Docker Ritten.DotNet Ritten.Forgejo Ritten.OnePassword Ritten.OpenTofu; do
+for p in Ritten.Core Ritten.CommandLine Ritten.Git Ritten.Docker Ritten.DotNet Ritten.Forgejo Ritten.NuGet Ritten.OnePassword Ritten.OpenTofu; do
   dotnet pack ~/Development/Ritten/Ritten/src/$p/$p.csproj -c Release -p:Version=<version> -o "$feed"
 done
+cat > /tmp/nuget.unreleased.config <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="local" value="$feed" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+EOF
 export NUGET_PACKAGES="$cache"
-dotnet restore build/Wolfe.Lab.Build.slnx --source "$feed" --source https://api.nuget.org/v3/index.json
+dotnet restore build/Wolfe.Lab.Build.slnx --configfile /tmp/nuget.unreleased.config
 dotnet build build/Wolfe.Lab.Build.slnx --no-restore
 dotnet test --solution build/Wolfe.Lab.Build.slnx --no-build
 ```
+
+A config file of its own rather than `--source`: the user-level
+`NuGet.Config` every lab machine has maps `Ritten.*` to nuget.org alone
+(package source mapping, for the lab's feed), and a mapped package is
+never looked for anywhere else — the local feed would be ignored. The
+throwaway config clears the sources, and with them the mapping.
 
 Nothing merges until the version is published: the mini restores from
 NuGet alone.

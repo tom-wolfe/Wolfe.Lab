@@ -1,8 +1,7 @@
-namespace Wolfe.Lab.Build.Clients.Agents;
+namespace Wolfe.Lab.Build.Clients.Agents.Launchd;
 
 /// <summary>
-/// An agent as its unit template reads it: every value already escaped for the format, so a
-/// template interpolates and never has to remember to.
+/// An agent as its unit template reads it.
 /// </summary>
 /// <param name="Label">What the supervisor knows it as.</param>
 /// <param name="Program">The executable, for the provenance comment.</param>

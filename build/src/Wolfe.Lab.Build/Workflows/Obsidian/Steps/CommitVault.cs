@@ -20,7 +20,7 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
         }
 
         // Written before anything is counted, so an excluded path never shows up as a change.
-        WriteExcludes(vault.Directory.GetDirectory(".git"));
+        await WriteExcludes(vault.Directory.GetDirectory(".git"), cancellationToken);
 
         switch (await repository.GetRemoteUrl("origin", cancellationToken))
         {
@@ -52,17 +52,9 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
     /// <c>.git/info/exclude</c> rather than a <c>.gitignore</c>: the list is the lab's, and a
     /// file inside the vault would sync to every device.
     /// </summary>
-    private void WriteExcludes(IDirectory dotGit)
+    private Task WriteExcludes(IDirectory dotGit, CancellationToken cancellationToken)
     {
-        var info = dotGit.GetDirectory("info");
-        info.Create();
-        using var stream = info.GetFile("exclude").OpenWrite();
-        stream.SetLength(0);
-        using var writer = new StreamWriter(stream);
-        writer.WriteLine("# Written by `lab sync` from obsidian/ritten.json; edits here are overwritten.");
-        foreach (var pattern in excludes.Patterns)
-        {
-            writer.WriteLine(pattern);
-        }
+        var lines = excludes.Patterns.Prepend("# Written by `lab sync` from obsidian/ritten.json; edits here are overwritten.");
+        return dotGit.GetDirectory("info").GetFile("exclude").WriteAllText(string.Join('\n', lines) + '\n', cancellationToken: cancellationToken);
     }
 }

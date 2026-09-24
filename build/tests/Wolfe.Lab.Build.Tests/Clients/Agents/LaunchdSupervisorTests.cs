@@ -1,6 +1,7 @@
 using System.Xml.Linq;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Clients.Agents;
+using Wolfe.Lab.Build.Clients.Agents.Launchd;
 using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Agents;
