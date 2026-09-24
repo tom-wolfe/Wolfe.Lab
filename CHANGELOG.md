@@ -4,6 +4,27 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.45.0] - 2026-09-24
+
+### Added
+
+- **ollama on the Studio**, above the mini behind `ai.twolfe.dev`:
+  `ollama/studio/` deploys it on the Studio's runner, holding every model
+  the mini does plus `qwen3:30b-a3b`, the background model. The route asks
+  the Studio first and falls through to the mini while it sleeps; servers
+  may reach the Studio on 11434 and nothing else; Gatus watches it without
+  alerting.
+
+### Fixed
+
+- **An ollama deploy could fail right after converging.** The supervisor
+  returns once the server is launched, not once it answers, and the next
+  step asked it for its models. A deploy now waits for it, up to 30s.
+- **An ollama rehearsal changed the node.** It created the model store,
+  before the approval gate at that; it only says so now. A rehearsal on a
+  node with no server yet reports every model as one it would pull,
+  rather than failing to ask.
+
 ## [0.44.1] - 2026-09-24
 
 ### Fixed

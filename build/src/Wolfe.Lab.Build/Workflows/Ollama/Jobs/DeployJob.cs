@@ -27,9 +27,10 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
     [
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
-        Step.FromType<EnsureModelStore>(),
         Step.FromType<GateApproval>(),
+        Step.FromType<EnsureModelStore>(),
         Step.FromType<ConvergeAgents>(),
+        Step.FromType<AwaitServer>(),
         Step.FromType<ResolveModels>(),
         Step.FromType<PullModels>()
     ];
@@ -54,6 +55,7 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
         builder.AddAgents().AddOllama().AddVolumes(settings.Volumes);
         builder.Services.AddSingleton(new AgentDeclarations(settings.Agents));
         builder.Services.AddSingleton(new ModelPlan([.. settings.Models.Pull]));
+        builder.Services.AddSingleton(ServerWait.Default);
 
         if (settings.Models.Store is { } store)
         {

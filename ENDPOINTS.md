@@ -28,7 +28,7 @@ fallback when the front door is down.
 | `https://immich.twolfe.dev`      | Immich (photos; the phone app's server) | `immich-server:2283`                          |
 | `https://paperless.twolfe.dev`   | Paperless-ngx (documents)               | `paperless:8000`                              |
 | `https://status.twolfe.dev`      | Gatus status page                       | `wolfe-pi5.tailf823b8.ts.net:8280` (the Pi)   |
-| `https://ai.twolfe.dev`          | Model endpoint (ollama)                 | `host.docker.internal:11434` (a host process) |
+| `https://ai.twolfe.dev`          | Model endpoint (ollama)                 | `macstudio.tailf823b8.ts.net:11434` while the Studio is awake, else `host.docker.internal:11434` (host processes) |
 
 ## macmini.local
 

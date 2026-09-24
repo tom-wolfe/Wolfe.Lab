@@ -18,4 +18,10 @@ public interface IOllama
     /// <param name="model">The model to pull.</param>
     /// <param name="ct">The cancellation token.</param>
     Task Pull(OllamaModel model, CancellationToken ct = default);
+
+    /// <summary>
+    /// Whether the server is answering yet.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
+    Task<bool> IsServing(CancellationToken ct = default);
 }

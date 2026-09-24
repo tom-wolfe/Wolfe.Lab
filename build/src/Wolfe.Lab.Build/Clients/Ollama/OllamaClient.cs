@@ -18,6 +18,10 @@ internal sealed class OllamaClient(ICommandRunner commands) : IOllama
     }
 
     /// <inheritdoc />
+    public async Task<bool> IsServing(CancellationToken ct = default) =>
+        (await commands.Run(Command.Create("ollama").WithArguments("list").QuietOutput(), ct)).ExitCode == 0;
+
+    /// <inheritdoc />
     public async Task Pull(OllamaModel model, CancellationToken ct = default) =>
         await commands.Run(Command.Create("ollama").WithArguments("pull", model.Value).ThrowOnError(), ct);
 

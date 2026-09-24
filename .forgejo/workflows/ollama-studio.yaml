@@ -1,20 +1,20 @@
-name: ollama
+name: ollama studio
 
 on:
   push:
     branches: [main]
-    paths: [ollama/server/**, .forgejo/workflows/ollama.yaml]
+    paths: [ollama/studio/**, .forgejo/workflows/ollama-studio.yaml]
   workflow_dispatch:
 
 concurrency:
-  group: MacMini
+  group: MacStudio
   cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: MacMini
-    timeout-minutes: 45
+    runs-on: MacStudio
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - working-directory: ollama/server
+      - working-directory: ollama/studio
         run: lab deploy --auto-approve

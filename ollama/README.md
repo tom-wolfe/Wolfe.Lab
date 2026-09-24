@@ -48,10 +48,39 @@ scanner: an email with an attached invitation or structured data is
 handled without a model at all, and only prose needs one. If this slice
 is down, those messages are left for the next pass rather than lost.
 
-The Studio (ROADMAP #7) joins as a second upstream above the mini, which
-is why the route is a load-balanced `reverse_proxy` with one upstream
-today rather than a plain one. Same rule one level up: the Studio may
-serve, but nothing may depend on it.
+The Studio (ROADMAP #7) is a second upstream above the mini — the same
+rule one level up: the Studio may serve, but nothing may depend on it.
+
+## The Studio
+
+A second component, `studio/`, the same `ollama` shape on the Studio's
+runner (`ollama-studio.yaml`): the agent, `dev.twolfe.ollama`, and the
+models it holds. The route asks it first — `lb_policy first`, health
+checked every ten seconds — and falls through to the mini the moment it
+does not answer, which is every evening the Studio sleeps. A request
+that lands in the gap before the check notices is retried on the mini
+(`lb_try_duration`). Callers see one endpoint whichever machine served.
+
+**The Studio holds every model the mini does, and more.** A caller names
+its model, and while the Studio is awake every request goes to it; a model
+only the mini held would be "not found" exactly when the Studio is on. So
+`studio/ritten.json` pulls the mini's list, plus what only the Studio can
+run — today `qwen3:30b-a3b`, the background model: a mixture of experts,
+about 18 GB resident but only ~3B parameters active per token, so much
+better than the mini's 8B at a fraction of a dense model's compute. That is
+the budget a background job has on somebody's workstation, as is
+`OLLAMA_NUM_PARALLEL=1`: one request at a time. Models unload after
+ollama's five idle minutes. A caller that wants the Studio's model asks for
+it and falls back to the mini's on "model not found" — which is exactly
+what the mini answers when the Studio is asleep (ROADMAP #7, step 5).
+
+What it does not need: the mini's drive, and so the mini's file-access
+grant. Its store is the default `~/.ollama/models` on the internal disk.
+It binds `0.0.0.0` like the mini's, for the same reason and with the same
+cost (above), and servers reach it on 11434 alone
+(`tailscale/tofu/policy.hujson`). Gatus asks it directly, without alerting:
+off is its normal state, and the check that pages is the front door's,
+which the mini keeps up.
 
 ## Models
 

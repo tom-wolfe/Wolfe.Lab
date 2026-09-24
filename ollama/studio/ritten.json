@@ -1,0 +1,22 @@
+{
+  "workflow": "ollama",
+  "models": {
+    "store": "~/.ollama/models",
+    "pull": [
+      "qwen3:8b",
+      "qwen3:30b-a3b"
+    ]
+  },
+  "agents": {
+    "ollama": {
+      "program": "/opt/homebrew/bin/ollama",
+      "arguments": ["serve"],
+      "environment": {
+        "OLLAMA_HOST": "0.0.0.0:11434",
+        "OLLAMA_MODELS": "~/.ollama/models",
+        "OLLAMA_NUM_PARALLEL": "1"
+      },
+      "log": "~/Library/Logs/ollama.log"
+    }
+  }
+}

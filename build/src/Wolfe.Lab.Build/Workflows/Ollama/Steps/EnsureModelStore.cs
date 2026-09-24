@@ -12,13 +12,19 @@ namespace Wolfe.Lab.Build.Workflows.Ollama.Steps;
 /// volume it binds.
 /// </remarks>
 [Step("ensure model store", StepKind.Work)]
-internal sealed class EnsureModelStore(ModelStore store, IWorkflowLog log)
+internal sealed class EnsureModelStore(ModelStore store, WorkflowJob job, IWorkflowLog log)
 {
     public StepResult Run()
     {
         if (store.Directory.Exists)
         {
             log.Detail($"{store.Directory.AbsolutePath} is there.");
+            return StepResult.Successful;
+        }
+
+        if (job.DryRun)
+        {
+            log.Skipped($"Would create {store.Directory.AbsolutePath}.");
             return StepResult.Successful;
         }
 

@@ -140,10 +140,10 @@ keeps up), and the host runner.
 
 **In order.**
 
-1. The profile checked like every other, the working-copy source gone.
-2. `tag:hybrid` and the Beszel agent.
-3. The host runner; chezmoi CD reaches the Studio.
-4. ollama on the Studio above the mini; the Gatus check.
+1. The profile checked like every other, the working-copy source gone. *(done)*
+2. `tag:hybrid` and the Beszel agent. *(done)*
+3. The host runner; chezmoi CD reaches the Studio. *(done)*
+4. ollama on the Studio above the mini; the Gatus check. *(0.45.0)*
 5. The scanner's background model, with the mini's as fallback.
 6. The vault-querying front end — ollama plus a RAG layer over a clone
    of the vault repositories on Forgejo (`obsidian/`), not a mount. The

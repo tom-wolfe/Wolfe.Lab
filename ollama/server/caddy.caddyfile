@@ -16,21 +16,25 @@ handle @ai {
 	# the model server is the one thing in the lab that cannot sit on the
 	# `lab` network. This is the only route in the lab that leaves it.
 	#
-	# lb_policy first is the Studio's seat, kept warm. Adding the Studio
-	# as an upstream ABOVE this one is the whole change: it serves while
-	# it is awake, the mini takes over when it sleeps, and nothing that
-	# calls this notices either way. ROADMAP #7's rule — the Studio may
-	# serve, but nothing may depend on it.
+	# The Studio first, the mini behind it: lb_policy first sends every
+	# request to the Studio while its health check passes, and to the mini
+	# the moment it doesn't — the Studio asleep is a failed check within ten
+	# seconds, and a request that lands in that window is retried on the mini
+	# (lb_try_duration). Nothing that calls this notices either way:
+	# ROADMAP #7's rule, the Studio may serve but nothing may depend on it.
+	# That only holds while the Studio holds every model the mini does — see
+	# ollama/README.md "The Studio".
 	#
-	# The health check is /api/tags rather than /, because ollama answers
-	# / with "Ollama is running" before it can serve a single model: a
-	# root check would route to a server with nothing loaded.
-	# ollama refuses a request whose Host or Origin it does not recognise.
-	reverse_proxy host.docker.internal:11434 {
+	# The Studio by its MagicDNS name, over the tailnet: tag:server may reach
+	# tag:hybrid on 11434 and nothing else (tailscale/tofu/policy.hujson).
+	#
+	reverse_proxy macstudio.tailf823b8.ts.net:11434 host.docker.internal:11434 {
 		header_up Host {upstream_hostport}
 		header_up -Origin
 
 		lb_policy first
+		lb_try_duration 5s
+		lb_try_interval 250ms
 		health_uri /api/tags
 		health_interval 10s
 	}

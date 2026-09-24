@@ -136,6 +136,14 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: ollama (studio)
+    group: lab
+    url: http://macstudio.tailf823b8.ts.net:11434/api/tags
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "len([BODY].models) > 0"
+      
   - name: paperless
     group: lab
     url: https://paperless.twolfe.dev/accounts/login/

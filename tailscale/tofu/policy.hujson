@@ -26,7 +26,11 @@
     // and, as a node, its runner reaches Forgejo and its Beszel agent the hub.
     {"action": "accept", "src": ["tag:hybrid"], "dst": ["tag:server:*"]},
 
-    // Nothing reaches a workstation — not a server, not another workstation.
     // Servers reach the Studio only on the ports it serves, one rule each.
+    // 11434, ollama: caddy on the mini proxies ai.twolfe.dev to it, and Gatus
+    // on the Pi watches it (ollama/README.md "The Studio").
+    {"action": "accept", "src": ["tag:server"], "dst": ["tag:hybrid:11434"]},
+
+    // Nothing reaches a workstation — not a server, not another workstation.
   ],
 }
