@@ -17,7 +17,7 @@ internal sealed class RegisterJob : LabJob<ForgejoRunnersSettings>
 {
     internal static readonly JobArgument<string> Node = JobArgument.Value<string>(
         "node",
-        "The node whose runner to register, by its name: MacMini, wolfe-pi5.",
+        "The node whose runner to register, by its name: MacMini, MacStudio, wolfe-pi5.",
         required: true);
 
     internal static readonly JobArgument<RunnerKind> RunnerKindArgument = JobArgument.Value<RunnerKind>(

@@ -1,4 +1,4 @@
-{{ if eq .profile "macmini-node" -}}
+{{ if has .profile (list "macmini-node" "macstudio") -}}
 #!/bin/bash
 # Converge launchd's view to the agent chezmoi just wrote — the macOS
 # counterpart of run_after_user-units.sh plus the Pi's .path unit, in one

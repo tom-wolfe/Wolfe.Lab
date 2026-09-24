@@ -7,6 +7,12 @@
       "labels" (list (printf "%s:host" $node))
       "address" "http://localhost:3000") -}}
 {{- end -}}
+{{- if eq .profile "macstudio" -}}
+{{- template "forgejo-runner/runner.json" (dict
+      "name" $node
+      "labels" (list (printf "%s:host" $node))
+      "address" "") -}}
+{{- end -}}
 {{- if eq .profile "pi-node" -}}
 {{- template "forgejo-runner/runner.json" (dict
       "name" $node

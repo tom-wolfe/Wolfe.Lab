@@ -8,11 +8,9 @@
 {{ end -}}
 
 {{ if eq .profile "macstudio" -}}
-.config/forgejo-runner
 .config/forgejo-runner-docker
 .config/systemd
 .docker-headless
-.local/share/forgejo-runner
 {{ end -}}
 
 {{ if eq .profile "macmini-node" -}}

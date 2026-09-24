@@ -380,6 +380,28 @@ each slice's `<slice>-backup.yaml`, `restic-offsite.yaml`,
 probe never queue behind a long job; stateful jobs serialise through the
 `MacMini` concurrency group.
 
+### The Studio's runner
+
+The mini's shape — Homebrew's binary, the same launchd agent and the same
+converge script — as a hybrid node's (ROADMAP.md #7): `MacStudio:host`,
+reaching Forgejo by its tailnet name. Capacity 3, like the mini's, with
+the mini's rule: a job that changes the node joins the `MacStudio`
+concurrency group, so only jobs that change nothing run side by side. Two things make it
+safe on somebody's workstation:
+
+- **It holds no privacy grants.** Every job it runs keeps out of Docker,
+  the drives and anything else macOS gates behind a prompt, so it needs no
+  Full Disk Access — and the mini's upgrade problem, the grant lost when
+  Homebrew moves the binary, cannot happen here. A job that would need a
+  grant does not belong on the Studio.
+- **It is allowed to be asleep.** Its jobs queue while it is and run when
+  it wakes: `ABANDONED_JOB_TIMEOUT` in `compose/compose.yaml` is a week,
+  where Forgejo's default of a day would cancel a push made on a Friday.
+  The chezmoi workflow includes it, so that workflow is green only once
+  every node, the Studio included, has the change.
+
+Bring-up is in `RUNBOOK.md` "The Studio's runner".
+
 ## Notes
 
 - Config is set through `FORGEJO__section__KEY` environment variables rather

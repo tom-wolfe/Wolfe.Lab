@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.38.0] - 2026-09-24
+
+### Added
+
+- **The Studio has a host runner**, `MacStudio:host`: the mini's launchd
+  agent and converge script, capacity 3, and no privacy grants.
+
+### Changed
+
+- **A job Forgejo cannot place waits a week, not a day**
+  (`ABANDONED_JOB_TIMEOUT`), so a push made while the Studio sleeps runs
+  when it wakes.
+
 ## [0.37.0] - 2026-09-24
 
 ### Changed

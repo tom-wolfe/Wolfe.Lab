@@ -26,7 +26,7 @@ jobs:
     if: github.event_name != 'pull_request'
     strategy:
       matrix:
-        node: [MacMini, wolfe-pi5]
+        node: [MacMini, MacStudio, wolfe-pi5]
     runs-on: ${{ matrix.node }}
     concurrency:
       group: ${{ matrix.node }}

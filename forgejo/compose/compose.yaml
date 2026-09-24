@@ -8,6 +8,8 @@ services:
     environment:
       FORGEJO____APP_NAME: "Wolfe.Lab"
       FORGEJO____APP_SLOGAN: I write code and stuff.
+      # Keep jobs idle so that workstations have plenty of time to update.
+      FORGEJO__actions__ABANDONED_JOB_TIMEOUT: 168h
       FORGEJO__cron__ENABLED: "true"
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__database__PATH: /data/gitea/forgejo.db

@@ -248,6 +248,34 @@ start, so a config change is not live until the runner is.
   the wait. Confirm with `launchctl print gui/$(id -u)/dev.twolfe.forgejo-runner | grep state`
   and the runner going idle again under Settings → Actions → Runners.
 
+## The Studio's runner
+
+At the Studio, in order.
+
+1. Mint the secret and register, as for the mini (below) with the node
+   `MacStudio`: the vault item is `forgejo-runner-MacStudio`, and the
+   registration runs from `forgejo/runners/` on the mini, or through the
+   `forgejo runners` workflow.
+2. Seed the bootstrap env: `install -D -m 600 /dev/null
+   ~/.config/forgejo-runner/env`, then write
+   `OP_SERVICE_ACCOUNT_TOKEN=…` into it — the mini's service account. The
+   Studio's jobs read nothing from the vault themselves; the token is for
+   the failure alert, which reads Pushover's keys.
+3. `chezmoi apply` at the desk, so the registration renders through the
+   1Password app. It installs the formula, renders the config and the
+   registration, places the launchd agent `dev.twolfe.forgejo-runner` and
+   loads it. Logs: `~/Library/Logs/forgejo-runner.log`.
+4. The runner shows idle under Settings → Actions → Runners as
+   `MacStudio`, label `MacStudio:host`. Re-run the latest `chezmoi`
+   workflow: its `MacStudio` job should go green here.
+5. Energy settings: turn on **Wake for network access**, and sleep the
+   Studio rather than shutting it down. From sleep it keeps its login
+   session, so the agent resumes with it; from a cold boot behind FileVault
+   nothing runs until you log in.
+
+Do not grant the runner Full Disk Access. If a job ever asks for it, the
+job is on the wrong node.
+
 ## The mini's runner
 
 1. Mint the secret and register. The mini's service account is read-only,
