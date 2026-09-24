@@ -12,6 +12,11 @@ rather than versioned — the lab is continuous, not released.
   it from the newest heading here, so a pinned `lab` names the release
   whose entry says what it contains, and a change to what the CLI ships
   comes with a heading of its own. The first one published is this one.
+- **Forgejo's package store is out of the backup.** The CI image's
+  layers and the CLI's packages are build outputs of a repository that is
+  backed up, and one image is over 400 MB that changes on every rebuild.
+  A restore deletes the stale package rows and republishes
+  (`forgejo/RUNBOOK.md` "Restore").
 
 ### Fixed
 
