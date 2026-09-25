@@ -4,6 +4,15 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.48.1] - 2026-09-25
+
+### Fixed
+
+- **A role only one server declared passed the check.** The published
+  0.48.0 predates the rule, fixed on main without a version of its own:
+  that role would be "not found" every evening the Studio sleeps. Every
+  server must now declare every role.
+
 ## [0.48.0] - 2026-09-25
 
 ### Added
