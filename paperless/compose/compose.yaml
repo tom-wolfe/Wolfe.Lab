@@ -18,6 +18,13 @@ services:
       PAPERLESS_URL: https://paperless.twolfe.dev
       PAPERLESS_CONSUMER_POLLING_INTERVAL: "30"
 
+      PAPERLESS_AI_ENABLED: "true"
+      PAPERLESS_AI_LLM_BACKEND: ollama
+      PAPERLESS_AI_LLM_ENDPOINT: https://ai.twolfe.dev
+      PAPERLESS_AI_LLM_MODEL: lab/interactive
+      PAPERLESS_AI_LLM_EMBEDDING_BACKEND: ollama
+      PAPERLESS_AI_LLM_EMBEDDING_MODEL: lab/embedding
+
       PAPERLESS_SECRET_KEY:
       PAPERLESS_ADMIN_USER:
       PAPERLESS_ADMIN_PASSWORD:

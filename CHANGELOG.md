@@ -4,6 +4,21 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.50.0] - 2026-09-25
+
+### Added
+
+- **Paperless's AI features**, against the lab's own models: suggested
+  titles, tags, correspondents, types and dates, document chat, and a
+  nightly embedding index behind both. It asks for `lab/interactive`
+  and `lab/embedding`, so it gets the Studio's model by day and the
+  mini's overnight.
+- **Model roles on both ollama servers**: `background`, `interactive`
+  and `embedding`, the last `embeddinggemma:300m` on both and marked
+  identical. Both servers pull it.
+- **ollama components are checked on a pull request**, like every
+  compose slice.
+
 ## [0.49.0] - 2026-09-25
 
 ### Changed

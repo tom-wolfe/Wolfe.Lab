@@ -1,19 +1,31 @@
 name: ollama
 
 on:
+  pull_request:
   push:
     branches: [main]
     paths: [ollama/server/**, .forgejo/workflows/ollama.yaml]
   workflow_dispatch:
 
-concurrency:
-  group: MacMini
-  cancel-in-progress: false
-
 jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - working-directory: ollama/server
+        run: lab check
+
   deploy:
+    if: github.event_name != 'pull_request'
     runs-on: MacMini
     timeout-minutes: 45
+    concurrency:
+      group: MacMini
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - working-directory: ollama/server

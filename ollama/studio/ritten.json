@@ -4,8 +4,14 @@
     "store": "~/.ollama/models",
     "pull": [
       "qwen3:8b",
-      "qwen3:30b-a3b"
-    ]
+      "qwen3:30b-a3b",
+      "embeddinggemma:300m"
+    ],
+    "roles": {
+      "background": { "model": "qwen3:30b-a3b" },
+      "interactive": { "model": "qwen3:30b-a3b" },
+      "embedding": { "model": "embeddinggemma:300m", "identical": true }
+    }
   },
   "agents": {
     "ollama": {

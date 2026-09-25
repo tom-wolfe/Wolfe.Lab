@@ -69,6 +69,38 @@ Mail is a fourth door Paperless has and this slice does not open:
 `mail/` runs Proton Bridge, so a mail rule polling an IMAP folder is a
 configuration in the UI rather than anything here. Not configured.
 
+## AI
+
+Paperless's optional AI features, against the lab's own model endpoint
+(`ollama/`): nothing leaves the house.
+
+- **Suggestions** — title, tags, correspondent, document type, storage
+  path and dates, from the "Suggest" control on a document, and
+  requested automatically when an inbox document is opened. Beside the
+  classifier's suggestions, not instead of them.
+- **Document chat** — the toolbar's chat, over the open document or the
+  whole archive.
+- **The index** — every document's text as embeddings, rebuilt nightly
+  at 02:10 (`PAPERLESS_LLM_INDEX_TASK_CRON`'s default), which grounds
+  both of the above in similar documents already filed. It lives in
+  `data/`, so the backup holds it.
+
+It asks for roles, not models (`ollama/README.md`, "Roles"):
+`lab/interactive`, because everything here is a person waiting, and
+`lab/embedding`. By day that is the Studio's model, overnight the
+mini's; with neither, suggestions and chat fail and nothing else does.
+
+**All of it is configured in `compose.yaml`.** The UI's Application
+Configuration has the same settings, and a value saved there silently
+wins over the environment — leave those fields empty.
+
+**The "Apply AI Suggestions" workflow action is not in use.** It asks
+the model for every matching document unattended, which is
+`lab/background`'s job, and Paperless takes one model for everything:
+turning it on means switching `PAPERLESS_AI_LLM_MODEL` to
+`lab/background`, and narrowing its trigger, since each document holds
+the task queue while the model answers.
+
 ## Secrets
 
 Two vault items, resolved at deploy into the one `compose up` that

@@ -50,6 +50,10 @@ is down, the watcher stops at the first email that needs a model and
 reads on from it when the model is back; nothing is skipped, and a stall
 past 15 minutes pages through the watcher's health check.
 
+Paperless's AI features are the other consumer, and degrade the same
+way: with no model, its suggestions and chat fail and its own
+classifier-based suggestions carry on (`paperless/README.md`, "AI").
+
 The Studio (ROADMAP #7) is a second upstream above the mini — the same
 rule one level up: the Studio may serve, but nothing may depend on it.
 
@@ -63,18 +67,15 @@ does not answer, which is every evening the Studio sleeps. A request
 that lands in the gap before the check notices is retried on the mini
 (`lb_try_duration`). Callers see one endpoint whichever machine served.
 
-**The Studio holds every model the mini does, and more.** A caller names
-its model, and while the Studio is awake every request goes to it; a model
-only the mini held would be "not found" exactly when the Studio is on. So
-`studio/ritten.json` pulls the mini's list, plus what only the Studio can
-run — today `qwen3:30b-a3b`, the background model: a mixture of experts,
-about 18 GB resident but only ~3B parameters active per token, so much
-better than the mini's 8B at a fraction of a dense model's compute. That is
-the budget a background job has on somebody's workstation, as is
-`OLLAMA_NUM_PARALLEL=1`: one request at a time. Models unload after
-ollama's five idle minutes. A caller that wants the Studio's model asks for
-it and falls back to the mini's on "model not found" — which is exactly
-what the mini answers when the Studio is asleep (ROADMAP #7, step 5).
+**The Studio holds every model the mini does, and more.** While the Studio
+is awake every request goes to it, so a model only the mini held would be
+"not found" exactly when the Studio is on. So `studio/ritten.json` pulls
+the mini's list, plus what only the Studio can run — today `qwen3:30b-a3b`:
+a mixture of experts, about 18 GB resident but only ~3B parameters active
+per token, so much better than the mini's 8B at a fraction of a dense
+model's compute. That is the budget a job has on somebody's workstation, as
+is `OLLAMA_NUM_PARALLEL=1`: one request at a time. Models unload after
+ollama's five idle minutes.
 
 What it does not need: the mini's drive, and so the mini's file-access
 grant. Its store is the default `~/.ollama/models` on the internal disk.
@@ -83,6 +84,42 @@ cost (above), and servers reach it on 11434 alone
 (`tailscale/tofu/policy.hujson`). Gatus asks it directly, without alerting:
 off is its normal state, and the check that pages is the front door's,
 which the mini keeps up.
+
+## Roles
+
+Callers ask for a **role**, not a model: `lab/background`, `lab/interactive`,
+`lab/embedding`. Each server's `ritten.json` declares which of its pulled
+models fills each role, and a deploy points the `lab/<role>` alias at it
+(`ollama cp`: a manifest, no extra disk). A caller then gets the best model
+of whichever machine answered — the Studio's by day, the mini's while it
+sleeps — without knowing which, and without a fallback of its own.
+
+| Role | For | Studio | Mini |
+|---|---|---|---|
+| `background` | Unattended jobs: the mail scanner, once it moves off naming models | `qwen3:30b-a3b` | `qwen3:8b` |
+| `interactive` | A person waiting: Paperless's suggestions and chat | `qwen3:30b-a3b` | `qwen3:8b` |
+| `embedding` | Vectors for search: Paperless's index | `embeddinggemma:300m` | `embeddinggemma:300m` |
+
+`background` and `interactive` are the same model on the Studio for now.
+They part when the Obsidian front end (ROADMAP #7, step 6) picks a bigger
+interactive model; that is the moment to weigh its memory against the
+desk.
+
+The `check` job holds two rules, reading both components' files so a pull
+request that changes either is caught:
+
+- **Every server declares every role.** A role only the Studio declared
+  would be "not found" every evening, where the point is that it degrades
+  to the mini's best. There is no strict, Studio-only role.
+- **A role marked `identical` names the same model everywhere.** That is
+  `embedding`: vectors from two models are not comparable, and an index
+  built at night on the mini and searched by day on the Studio would
+  return nonsense without failing. Changing the embedding model means
+  every consumer rebuilds its index.
+
+A deploy also removes the alias of a role no longer declared, so a caller
+asking for it hears "not found" rather than whatever it used to mean.
+Pulled models are never removed.
 
 ## Models
 
@@ -111,8 +148,8 @@ tens of seconds — which is the thing to change first if the scanner feels
 slow. `OLLAMA_KEEP_ALIVE=-1` in the `environment` block pins it resident
 at the cost of holding the RAM.
 
-Which model to pull is the scanner's decision, not this slice's: this
-serves whatever is there.
+Which model fills a role is this slice's decision; which role to ask
+for is the caller's.
 
 ## Order of operations
 
