@@ -8,10 +8,14 @@ namespace Wolfe.Lab.Mail.Models;
 /// <param name="End">When it ends, when that is known.</param>
 /// <param name="Location">Where, when that is known.</param>
 /// <param name="Source">The evidence it came from.</param>
+/// <param name="AllDay">Whether only the dates are known.</param>
+/// <param name="Reference">The booking reference, confirmation number or PNR, when there is one.</param>
 internal sealed record DetectedEvent(
     string Summary,
     DateTimeOffset Start,
     DateTimeOffset? End,
     string? Location,
-    EventSource Source
+    EventSource Source,
+    bool AllDay = false,
+    string? Reference = null
 );

@@ -46,7 +46,9 @@ with the tailnet.
 Nothing may depend on it. It is the optional tier of the mail event
 scanner: an email with an attached invitation or structured data is
 handled without a model at all, and only prose needs one. If this slice
-is down, those messages are left for the next pass rather than lost.
+is down, the watcher stops at the first email that needs a model and
+reads on from it when the model is back; nothing is skipped, and a stall
+past 15 minutes pages through the watcher's health check.
 
 The Studio (ROADMAP #7) is a second upstream above the mini — the same
 rule one level up: the Studio may serve, but nothing may depend on it.

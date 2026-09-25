@@ -123,4 +123,54 @@ public class InvitationTests
             .First(part => part.ContentType.IsMimeType("text", "plain"))
             .Text.ShouldContain("check it before accepting");
     }
+
+    [Fact]
+    public void Build_WritesAStayAsDaysIncludingCheckOutDay()
+    {
+        var stay = new DetectedEvent("Stay: Premier Inn Leeds", DateTimeOffset.Parse("2026-10-02T00:00:00+01:00"),
+            DateTimeOffset.Parse("2026-10-04T00:00:00+01:00"), "Leeds", EventSource.StructuredData, AllDay: true);
+
+        var ics = InvitationBuilder.Build(stay, "tom@twolfe.dev", "uid-3", Stamp);
+
+        // DTEND is exclusive: the day after check-out, so check-out day is on the calendar too.
+        ics.ShouldContain("DTSTART;VALUE=DATE:20261002");
+        ics.ShouldContain("DTEND;VALUE=DATE:20261005");
+    }
+
+    [Fact]
+    public void Build_MakesASingleDateADay()
+    {
+        var day = new DetectedEvent("Stay: somewhere", DateTimeOffset.Parse("2026-10-02T00:00:00+01:00"), null, null,
+            EventSource.Model, AllDay: true);
+
+        var ics = InvitationBuilder.Build(day, "tom@twolfe.dev", "uid-4", Stamp);
+
+        ics.ShouldContain("DTSTART;VALUE=DATE:20261002");
+        ics.ShouldContain("DTEND;VALUE=DATE:20261003");
+    }
+
+    [Fact]
+    public void Build_CarriesTheBookingReference() =>
+        InvitationBuilder.Build(Event() with { Reference = "RXJ34P" }, "tom@twolfe.dev", "uid-5", Stamp)
+            .ShouldContain("DESCRIPTION:Booking reference: RXJ34P");
+
+    [Fact]
+    public void UidFor_GivesEachEventInAMessageItsOwn()
+    {
+        // The first keeps the UID a message's only event always had, so nothing already sent
+        // is duplicated; the rest are distinct, so a return leg does not overwrite the outbound.
+        InvitationBuilder.UidFor("<abc@x>", 0).ShouldBe(InvitationBuilder.UidFor("<abc@x>"));
+        InvitationBuilder.UidFor("<abc@x>", 1).ShouldNotBe(InvitationBuilder.UidFor("<abc@x>", 0));
+        InvitationBuilder.UidFor("<abc@x>", 1).ShouldBe(InvitationBuilder.UidFor("abc@x", 1));
+    }
+
+    [Fact]
+    public void Compose_SaysTheReferenceInThePlainText()
+    {
+        var reply = InvitationSender.Compose(Event() with { Reference = "RXJ34P" }, Source(), "tom@twolfe.dev", Stamp);
+
+        reply.BodyParts.OfType<TextPart>()
+            .First(part => part.ContentType.IsMimeType("text", "plain"))
+            .Text.ShouldContain("Reference: RXJ34P");
+    }
 }

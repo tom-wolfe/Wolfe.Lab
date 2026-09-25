@@ -13,9 +13,9 @@ namespace Wolfe.Lab.Mail.Invitations;
 /// </summary>
 internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, ILogger<InvitationSender> log)
 {
-    public async Task Send(DetectedEvent detected, MimeMessage source, CancellationToken ct = default)
+    public async Task Send(DetectedEvent detected, MimeMessage source, int index, CancellationToken ct = default)
     {
-        var message = Compose(detected, source, options.Value.Recipient, DateTimeOffset.UtcNow);
+        var message = Compose(detected, source, options.Value.Recipient, DateTimeOffset.UtcNow, index);
 
         using var client = new SmtpClient();
         // Bridge presents its own self-signed certificate on a port only reachable from this
@@ -35,7 +35,7 @@ internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, 
     /// The message itself, kept pure so the threading and the calendar part can be asserted
     /// without a server.
     /// </summary>
-    internal static MimeMessage Compose(DetectedEvent detected, MimeMessage source, string recipient, DateTimeOffset stamp)
+    internal static MimeMessage Compose(DetectedEvent detected, MimeMessage source, string recipient, DateTimeOffset stamp, int index = 0)
     {
         var message = new MimeMessage();
         var self = MailboxAddress.Parse(recipient);
@@ -65,7 +65,7 @@ internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, 
         var calendar = InvitationBuilder.Build(
             detected,
             self.Address,
-            InvitationBuilder.UidFor(source.MessageId ?? Guid.NewGuid().ToString()),
+            InvitationBuilder.UidFor(source.MessageId ?? Guid.NewGuid().ToString(), index),
             stamp);
 
         var invitation = new TextPart("calendar") { Text = calendar };
@@ -96,12 +96,17 @@ internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, 
         var lines = new List<string>
         {
             detected.Summary,
-            $"Starts: {detected.Start:f}"
+            detected.AllDay ? $"From: {detected.Start:D}" : $"Starts: {detected.Start:f}"
         };
 
         if (detected.End is { } end)
         {
-            lines.Add($"Ends: {end:f}");
+            lines.Add(detected.AllDay ? $"Until: {end:D}" : $"Ends: {end:f}");
+        }
+
+        if (detected.Reference is { Length: > 0 } reference)
+        {
+            lines.Add($"Reference: {reference}");
         }
 
         if (detected.Location is { Length: > 0 } location)

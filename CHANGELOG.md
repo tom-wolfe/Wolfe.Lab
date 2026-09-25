@@ -4,6 +4,26 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.47.0] - 2026-09-25
+
+### Added
+
+- **The mail watcher reads travel and stays.** Flights, trains, coaches,
+  ferries, hotels, restaurant tables and hire cars, from schema.org markup
+  by type and from prose by the model, each with its booking reference. A
+  stay given only as dates is an all-day event; an itinerary is one
+  invitation per entry, each with its own UID.
+
+### Changed
+
+- **The mail watcher uses the Studio's model when available.**
+
+### Fixed
+
+- **An email the model could not be asked about was never scanned.** The
+  detector turned a model failure into "no event", and the watcher moved
+  its watermark past the email.
+
 ## [0.46.0] - 2026-09-25
 
 ### Changed

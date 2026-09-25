@@ -84,11 +84,17 @@ Reading them would send a great many invitations for events long past.
 2. **schema.org JSON-LD** in the message's HTML. Deterministic, no
    inference, and the way bookings, tickets and reservations actually
    describe themselves. A reservation nests the event under
-   `reservationFor`, so the search recurses.
-3. **Prose**, to the model at `ai.twolfe.dev`. Only what the first two
-   could not answer reaches here. The endpoint is OpenAI-compatible, so
-   the Studio can take it over without the watcher changing; with no
-   model configured this tier does nothing and the other two still work.
+   `reservationFor`, so the search recurses. Travel is read by type:
+   flights ("Flight BA117 LHR → JFK"), trains, coaches and ferries from
+   departure to arrival, a stay from check-in to check-out ("Stay: …"), a
+   table and a hire car — each with its booking reference. A stay given
+   only as dates becomes an all-day event covering check-out day.
+3. **Prose**, to the model at `ai.twolfe.dev`, for the same kinds of
+   entry: appointments, journeys and stays. Only what the first two could
+   not answer reaches here. Every such email is read by a model:
+   with none available the watcher stops short of it, and resumes from it
+   when one answers — the health check goes red after 15 minutes stuck,
+   which Gatus pages.
 
 A model's reading is treated as weaker evidence than a sender's own
 structured data: an answer it cannot parse whole is discarded, an event
@@ -101,11 +107,21 @@ A **reply**, in the same conversation — `In-Reply-To` and `References`
 carried from the source — so the "Add to calendar" click happens next to
 the booking that caused it rather than in a message about nothing.
 
-The calendar part declares `METHOD:REQUEST`, which is what makes a client
-offer to add it rather than treating it as a file, and the same method is
-on the MIME part. An `.ics` attachment rides along too: that is the shape
-proven to work by hand, kept even though the invitation semantics should
-make it redundant.
+**One invitation per entry.** An itinerary is several — out and back,
+each leg of a connection, the hotel between — and each gets its own
+reply with its own UID: the message's ID and the entry's place in it, so
+reading the same mail twice updates rather than duplicates, and a return
+leg never overwrites the outbound. The first entry keeps the UID a
+message's only event always had.
+
+The calendar part declares `METHOD:PUBLISH`, with the same method on the
+MIME part, which is what makes a client offer to add it rather than
+treat it as a file. PUBLISH, not REQUEST, and no attendee: there is
+nobody to reply to, and a recipient listed as attending an event they
+also organise is what stops a client offering it. It is the one calendar
+part — an `.ics` attachment of the same bytes used to ride along, and a
+client that understood invitations then saw two and interpreted
+neither.
 
 **The recipient is configuration, never the message.** Nothing is read
 off the source's `From`, `To` or `Reply-To`. A reply-shaped mail is one

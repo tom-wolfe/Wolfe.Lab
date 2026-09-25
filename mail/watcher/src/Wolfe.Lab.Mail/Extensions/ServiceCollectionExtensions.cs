@@ -1,6 +1,7 @@
 using System.ClientModel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using Wolfe.Lab.Mail.Invitations;
@@ -63,8 +64,12 @@ internal static class ServiceCollectionExtensions
 
             services.AddSingleton<IChatClient>(provider =>
             {
-                var d = provider.GetRequiredService<IOptions<ModelOptions>>().Value;
-                return provider.GetRequiredService<OpenAIClient>().GetChatClient(d.Name).AsIChatClient();
+                var options = provider.GetRequiredService<IOptions<ModelOptions>>().Value;
+                var openAi = provider.GetRequiredService<OpenAIClient>();
+                string[] names = options.Fallback is not null ? [options.Name, options.Fallback] : [options.Name];
+                return new FallbackChatClient(
+                    [.. names.Select(name => new ChatModel(name, openAi.GetChatClient(name).AsIChatClient()))],
+                    provider.GetRequiredService<ILogger<FallbackChatClient>>());
             });
 
             return services;
@@ -73,7 +78,6 @@ internal static class ServiceCollectionExtensions
         /// <summary>
         /// Adds the event detector.
         /// </summary>
-        public IServiceCollection AddEventDetector() => services
-            .AddSingleton<IEventDetector, ModelEventDetector>();
+        public IServiceCollection AddEventDetector() => services.AddSingleton<IEventDetector, ModelEventDetector>();
     }
 }

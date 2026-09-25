@@ -50,7 +50,7 @@ internal sealed class MailboxWatcher(
             catch (Exception failure)
             {
                 state.Lost($"{failure.GetType().Name}: {failure.Message}");
-                log.LogWarning(failure, "Lost {Host}:{Port}; reconnecting in {Backoff}.",
+                log.LogWarning(failure, "The session with {Host}:{Port} ended; resuming from the watermark in {Backoff}.",
                     options.Value.BridgeHost, options.Value.ImapPort, backoff);
                 await Task.Delay(backoff, ct);
                 backoff = TimeSpan.FromSeconds(Math.Min(backoff.TotalSeconds * 2, 300));
@@ -77,10 +77,11 @@ internal sealed class MailboxWatcher(
 
         while (!ct.IsCancellationRequested)
         {
-            // Every pass round the loop, which IDLE caps at IdleLimit — so a stale one means
-            // the session has stopped turning over, whatever the process is doing.
-            state.Cycled();
+            // After the drain, not before.
+            // IDLE caps each pass at IdleLimit, so a stale one means the session has stopped
+            // turning over, whatever the process is doing.
             watermark = await Drain(inbox, watermark, ct);
+            state.Cycled();
             await WaitForMail(client, inbox, ct);
         }
     }
@@ -142,20 +143,23 @@ internal sealed class MailboxWatcher(
             return;
         }
 
-        var detected = StructuredEvents.Read(message.HtmlBody).FirstOrDefault();
+        var detected = StructuredEvents.Read(message.HtmlBody);
 
-        if (detected is null && MessageText.Prose(message) is { Length: > 0 } text)
+        if (detected.Count == 0 && MessageText.Prose(message) is { Length: > 0 } text)
         {
             detected = await events.Detect(text, message.Date, ct);
         }
 
-        if (detected is null)
+        if (detected.Count == 0)
         {
             log.LogDebug("No event in {Subject}.", message.Subject);
             return;
         }
 
-        await sender.Send(detected, message, ct);
+        for (var i = 0; i < detected.Count; i++)
+        {
+            await sender.Send(detected[i], message, i, ct);
+        }
     }
 
     /// <summary>
