@@ -121,8 +121,8 @@ lab's pins.
 6. Ritten's traces — before the agent, so it is observable from its
    first reconcile.
 
-**Still to decide:** how much of #9's dashboard half Grafana answers by
-itself.
+Grafana is the metrics and alerting half of the lab's UI; the portal
+(#9) is the rest, and links into it rather than rebuilding it.
 
 ### 6. CI/CD — a kernel, and an agent that deploys the repo
 
@@ -180,6 +180,45 @@ already has:
 - **It reaches Forgejo directly** — loopback or the tailnet, never
   through caddy — so it never depends on anything it deploys: a broken
   route cannot cut it off from the fix.
+
+**The agent decides; the operating system runs.** The agent is a
+controller, not a supervisor or a scheduler of its own:
+
+- **Daemons stay launchd's and systemd's.** The kernel installs one
+  unit, the agent's; the agent reconciles every other daemon into units
+  — what the `agents` workflow does today — and checks they are alive.
+  Supervising them itself would not remove launchd or systemd (something
+  still keeps the agent up), would tie every daemon's lifecycle to the
+  agent's upgrades, and on macOS would make the agent the *responsible
+  process* for its children's privacy grants: ollama reading a drive
+  would need Full Disk Access on the agent, the most privileged process
+  in the lab. Starting before login, restart with backoff, limits, logs
+  and sleep and wake come with the OS.
+- **Schedules become the agent's to declare and the OS's to run.**
+  Backups, the offsite copy, verification and drills move off Actions
+  cron: a component declares its schedule, and the agent installs it as
+  a launchd calendar entry or a systemd timer that runs the `lab` job —
+  so 02:30 does not depend on the agent being healthy at 02:30, and
+  launchd runs what a sleeping Mac missed. Jobs that must not overlap
+  take a per-node lock, which replaces the `MacMini` concurrency group.
+  Backups also stop depending on Forgejo being up — Forgejo's own
+  included.
+- **Every scheduled job gets its own healthchecks.io check**, pinged on
+  success. Leaving Actions loses its run history (traces replace it,
+  #11) and its visible schedule; a check per job is what catches a
+  schedule that silently stops, from outside the building. Today only
+  the heartbeat has one.
+
+**It serves an API, not a UI.** A small one — read-mostly, tailnet-only,
+authenticated: the commit each node converged, each component's last
+result, each schedule's last and next run, and a few narrow actions
+("reconcile now", "run this schedule now"). History is not kept here;
+every reconcile and run is a trace in Tempo. The UI is the portal (#9),
+which the agent deploys like anything else — so the kernel stays small,
+the most privileged process carries no web front end, a UI change never
+restarts the deployer, and one page covers every node. A status endpoint
+of the same shape could be part of Ritten's agent mode. For development,
+`lab agent --once` runs a single reconcile in the foreground.
 
 Two things make it safe to hand deployment over: **it is observable
 from its first reconcile** (#11: each reconcile a trace, each step a
@@ -249,9 +288,12 @@ one. A learning item, not the plan.
    component, while the workflows still deploy.
 5. Ritten's agent mode, then the lab's agent: one low-stakes service
    first, then the rest, then caddy's assembled routes.
-6. Tofu through the agent — plans on pull requests, applies on merge —
+6. Schedules: a healthchecks.io check per scheduled job first, then the
+   schedules move from Actions cron into installed timers — backups
+   last, once the rest have run quietly for a while.
+7. Tofu through the agent — plans on pull requests, applies on merge —
    and CI as one workflow.
-7. The trust boundary.
+8. The trust boundary.
 
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
@@ -371,7 +413,7 @@ One honest boundary stays regardless of vendor: a runner reads its env_file
 at boot and has no deploy flow, so *its* secret rotation keeps a manual
 restart.
 
-### 9. A lab portal — the docs half, then the dashboard half
+### 9. A lab portal — the docs half, then a UI into the lab
 
 Two halves with different costs, in that order.
 
@@ -388,18 +430,29 @@ meant to be followed live in a `runbooks/` tree (or a "Runbook" section
 per slice README) so the site can put them on a page of their own, apart
 from the design prose nobody reads at 2 a.m.
 
-**The dashboard half: a custom build.** One page listing every
-service, whether it is up, what it is running, when it was last backed
-up and when that backup was last proven. Plug-and-play options exist
-(Homepage, Glance, Dashy) and were considered; Tom's preference is to
-build it, and the data is already there to build against: Gatus's
-read-only API for status, Beszel's for host and container stats, the
-Forgejo Actions API for last-run per workflow, restic's snapshot list for backups,
-Forgejo's for the repo. A static front end that reads those over the
-`lab` network, in a container behind caddy, is a slice like any other.
-It does not replace Gatus, Beszel or the Actions tab; it is the page
-that saves opening four of them. Grafana (#11) may answer much of this
-half by itself; decide after it lands.
+**The UI half: a window into the lab and its agent.** A custom build,
+Tom's preference over Homepage, Glance or Dashy, and more than a status
+page now: once the agent (#6) takes deployments and schedules off
+Actions, this is where the Actions tab's job goes.
+
+- **The lab at a glance**: every service, whether it is up (Gatus),
+  what it is running, when it was last backed up and when that backup
+  was last proven (restic's snapshots).
+- **The agent, per node**: the commit it converged and when, each
+  component's last result, each schedule's last and next run — read
+  from the agents' APIs — and the narrow actions they offer, "reconcile
+  now" and "run this schedule now".
+- **History from telemetry**: a reconcile or a backup run opens as its
+  trace (Tempo, #11) — steps as spans, with their logs — which is the
+  run page Actions gives today.
+- **Grafana stays Grafana.** Metrics dashboards and alert rules live
+  there (#11); the portal links into it rather than rebuilding it.
+
+A small .NET web app with a front end, not a static page: it calls the
+agents across the tailnet and holds nothing of its own, so the agent
+deploys it like any other component and a rebuild loses nothing.
+Useful without the agent — Gatus, restic and Forgejo's Actions API are
+there today — but the agent is what makes it necessary.
 
 ### 10. Asking the vaults questions
 
