@@ -17,7 +17,7 @@ terraform {
   required_providers {
     b2 = {
       source  = "registry.terraform.io/Backblaze/b2"
-      version = "~> 0.10"
+      version = "~> 0.14"
     }
     healthchecksio = {
       source  = "registry.terraform.io/kristofferahl/healthchecksio"
