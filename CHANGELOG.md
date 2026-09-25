@@ -4,6 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.51.0] - 2026-09-25
+
+### Changed
+
+- **The mail watcher asks for `lab/background`** rather than naming two
+  models and falling back between them: the role degrades to the mini's
+  model by itself, so the watcher's fallback client is gone.
+
 ## [0.50.0] - 2026-09-25
 
 ### Added

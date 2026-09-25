@@ -13,8 +13,7 @@ services:
       Watcher__Password: ${BRIDGE_PASSWORD}
       Watcher__StatePath: /state/watermark.json
       Model__Endpoint: https://ai.twolfe.dev
-      Model__Name: qwen3:30b-a3b
-      Model__Fallback: qwen3:8b
+      Model__Name: lab/background
       TZ: Europe/London
     healthcheck:
       test: ["CMD", "curl", "-sS", "--fail-with-body", "http://127.0.0.1:8080/health"]

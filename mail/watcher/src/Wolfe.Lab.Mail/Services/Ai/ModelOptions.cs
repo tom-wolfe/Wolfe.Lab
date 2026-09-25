@@ -18,12 +18,7 @@ internal sealed class ModelOptions
     public string Endpoint { get; set; } = "";
 
     /// <summary>
-    /// The model to ask for first.
+    /// The model to ask for — a role such as <c>lab/background</c>.
     /// </summary>
     public string Name { get; set; } = "";
-
-    /// <summary>
-    /// The model to ask when the endpoint does not have <see cref="Name"/>.
-    /// </summary>
-    public string? Fallback { get; set; }
 }

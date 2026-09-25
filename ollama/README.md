@@ -96,7 +96,7 @@ sleeps — without knowing which, and without a fallback of its own.
 
 | Role | For | Studio | Mini |
 |---|---|---|---|
-| `background` | Unattended jobs: the mail scanner, once it moves off naming models | `qwen3:30b-a3b` | `qwen3:8b` |
+| `background` | Unattended jobs: the mail scanner | `qwen3:30b-a3b` | `qwen3:8b` |
 | `interactive` | A person waiting: Paperless's suggestions and chat | `qwen3:30b-a3b` | `qwen3:8b` |
 | `embedding` | Vectors for search: Paperless's index | `embeddinggemma:300m` | `embeddinggemma:300m` |
 
