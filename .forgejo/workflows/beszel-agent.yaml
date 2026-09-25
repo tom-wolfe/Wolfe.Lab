@@ -13,7 +13,7 @@ jobs:
     runs-on: docker
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - working-directory: beszel/agent
@@ -30,6 +30,6 @@ jobs:
       cancel-in-progress: false
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: beszel/agent
         run: lab deploy --node "${{ matrix.node }}" --auto-approve

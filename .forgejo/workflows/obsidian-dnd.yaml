@@ -16,6 +16,6 @@ jobs:
     runs-on: MacMini
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: obsidian/vaults
         run: lab sync --vault dnd --auto-approve

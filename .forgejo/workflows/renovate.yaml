@@ -17,7 +17,7 @@ jobs:
       image: ghcr.io/renovatebot/renovate:44.115.6
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: renovate-config-validator --strict renovate/config.json5
 
   run:
@@ -30,7 +30,7 @@ jobs:
       group: renovate
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: renovate
         env:
           RENOVATE_CONFIG_FILE: renovate/config.json5

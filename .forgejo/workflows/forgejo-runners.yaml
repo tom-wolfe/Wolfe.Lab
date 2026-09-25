@@ -23,6 +23,6 @@ jobs:
     runs-on: MacMini
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: forgejo/runners
         run: lab register --node "${{ inputs.node }}" --kind "${{ inputs.kind }}" --auto-approve

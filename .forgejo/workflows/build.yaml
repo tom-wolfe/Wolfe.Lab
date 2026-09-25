@@ -16,7 +16,7 @@ jobs:
       group: build-check-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v6
@@ -35,6 +35,6 @@ jobs:
       group: build-deploy
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: build
         run: dotnet run --project src/Wolfe.Lab.Build -- deploy --auto-approve

@@ -15,6 +15,6 @@ jobs:
     runs-on: MacMini
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: restic/repositories
         run: lab verify

@@ -16,7 +16,7 @@ jobs:
       group: chezmoi-check-${{ github.ref }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - working-directory: chezmoi/profiles
@@ -33,6 +33,6 @@ jobs:
       cancel-in-progress: false
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: chezmoi/profiles
         run: lab deploy --auto-approve

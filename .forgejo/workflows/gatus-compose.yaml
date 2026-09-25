@@ -14,7 +14,7 @@ jobs:
     runs-on: docker
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - working-directory: gatus/compose
@@ -28,6 +28,6 @@ jobs:
       group: wolfe-pi5
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: gatus/compose
         run: lab deploy --auto-approve

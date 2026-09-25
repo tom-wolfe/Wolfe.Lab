@@ -13,7 +13,7 @@ jobs:
     runs-on: MacMini
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - working-directory: tailscale/tofu
@@ -27,6 +27,6 @@ jobs:
       group: MacMini
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: tailscale/tofu
         run: lab deploy --auto-approve

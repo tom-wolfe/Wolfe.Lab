@@ -23,7 +23,7 @@ jobs:
     runs-on: docker
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - working-directory: ci/image
@@ -39,6 +39,6 @@ jobs:
       group: ci-image-deploy
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - working-directory: ci/image
         run: lab deploy --auto-approve
