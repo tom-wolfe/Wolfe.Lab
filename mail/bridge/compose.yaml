@@ -9,7 +9,7 @@ services:
     # and it disables the bridge's own auto-updater, which on arm64 fetched
     # an amd64 build and crashed. The version is the tag, like every other
     # pin in the lab — see README.md "The image is community work".
-    image: dancwilliams/protonmail-bridge:v3.26.0-4
+    image: dancwilliams/protonmail-bridge:v3.26.0-6
     container_name: proton-bridge
     restart: unless-stopped
 
