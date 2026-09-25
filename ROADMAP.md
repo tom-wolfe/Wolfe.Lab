@@ -124,50 +124,90 @@ lab's pins.
 **Still to decide:** how much of #9's dashboard half Grafana answers by
 itself.
 
-### 6. CI/CD — the platform deploys, services publish
+### 6. CI/CD — a kernel, and an agent that deploys the repo
 
 Where it stands: every node runs a **host** runner for the lab's own CD —
 repo-scoped, holding the node's full vault token — and every component
 deploys as a job on it. The Pi also runs a **containerised** runner (the
 `docker` label: no host, no vault, no socket in a job) where CI runs.
-It works, and it has three costs:
+It works, and it has four costs:
 
-- **Every deploy is a host job with the whole vault.** A service's
-  deploy and the platform's own look the same, and a branch can send a
-  job to any host runner — so write access to Wolfe.Lab is, in effect,
-  the platform.
+- **Every deploy is a host job with the whole vault**, and a branch can
+  send a job to any host runner — so write access to Wolfe.Lab is, in
+  effect, the whole platform. The tofu checks are the sharp end of it:
+  pull request code, planned on the mini, with every secret.
 - **Pushing is the only way anything converges.** Nothing notices drift;
   a node that missed a deploy stays behind until the next push.
-- **A node is onboarded by hand**: chezmoi, a hand-seeded runner
-  environment, `lab register`, and a runbook to follow.
+- **Slices deploy one at a time, but some config belongs to the whole
+  repo.** Every slice carries a `caddy.caddyfile`, and the front door's
+  hook has to gather them; Gatus checks, the collectors' scrape targets
+  (#11) and backup schedules are the same shape.
+- **A slice does not own its own deployment.** Where a component runs is
+  a `runs-on` in a workflow file under `.forgejo/`, not a fact of the
+  component, and a node is onboarded by hand.
 
-**Decided: the platform deploys, services publish.** The platform is
-what the lab needs before it can run anything — the machine as chezmoi
-declares it, the runners, caddy, Forgejo, Garage, the collectors (#11)
-and the tofu roots — and it keeps deploying through host runners.
-Services are what run on it — Immich, Jellyfin, the *arr stack,
-Paperless, mail — and the platform deploys them: a service's pipeline
-builds, checks and publishes in a container, and never touches a host.
-The pattern from AWS and Azure: pipelines publish, the platform pulls.
+**Decided: a small kernel deploys an agent, and the agent deploys the
+repo.**
+
+- **The kernel** is what the agent needs in order to run: the machine as
+  chezmoi declares it, the runners, Forgejo, the vault, and the agent
+  itself. It deploys the way everything does today — host runners, and
+  `lab init` for a new node. It is small on purpose.
+- **Everything else is the agent's**: services (Immich, Jellyfin, the
+  *arr stack, Paperless, mail) and platform services alike (caddy,
+  Gatus, Garage, the collectors, Grafana). Pipelines build, check and
+  publish in containers and never touch a host; the agent pulls. The
+  pattern from AWS and Azure — and Kubernetes' too, where an ingress
+  controller is an ordinary workload configured from every app's
+  Ingress.
 
 **`lab` as an agent.** A daemon on every node — the mail watcher's
-.NET hosting pattern, deployed as a platform component — that watches
-the repo and reconciles the node's services from `main` with the deploy
-code the CLI already has. A merge is the desired state; a revert is the
-rollback; drift is noticed because the agent keeps looking, not because
-someone pushed. It resolves each service's secrets itself, which makes
-it the natural place to narrow what each node can read (#8). Two things make
-it safe to hand deployment over:
+.NET hosting pattern, installed by the kernel — that deploys *the repo
+at a commit*, not a slice at a time, with the deploy code the CLI
+already has:
 
-- **It is observable from its first reconcile** (#11): each reconcile a
-  trace, each step a span.
-- **It reports where the Actions tab does**: a commit status per node on
-  the commit it converged, so a deploy still goes green or red on the
-  commit in Forgejo.
+- **A component declares where it runs**, in its own `ritten.json`, so
+  "what runs on this node" is a question the repo answers; the per-slice
+  deploy workflows go, and each slice owns everything about itself.
+- **Cross-slice config is assembled, not gathered**: the agent reads
+  every slice's routes at the commit, renders caddy's config once, and
+  reloads only when it changed. Checks, scrape targets and schedules the
+  same way.
+- **A merge is the desired state, a revert the rollback**, and drift is
+  noticed because the agent keeps looking.
+- **It resolves each component's secrets itself**, which makes it the
+  place to narrow what each node can read (#8).
+- **It reaches Forgejo directly** — loopback or the tailnet, never
+  through caddy — so it never depends on anything it deploys: a broken
+  route cannot cut it off from the fix.
 
-Kubernetes and Argo CD were the other shape for this. Argo is exactly
-this reconcile loop, but it only targets a cluster, and the Macs are
-not going to host one; that stays a learning item, not the plan.
+Two things make it safe to hand deployment over: **it is observable
+from its first reconcile** (#11: each reconcile a trace, each step a
+span), and **it reports where the Actions tab does** — a commit status
+per node on the commit it converged, so a deploy still goes green or red
+in Forgejo.
+
+**Tofu: planned on the pull request, applied after merge, both by the
+agent.** Atlantis's shape. The agent watches pull requests rather than
+exposing an API — nothing to call it, so nothing to authenticate — and
+for one that changes a tofu root it plans the head commit and posts the
+plan as a comment and a status; on merge it applies. Be exact about what
+this buys: a plan runs the pull request's code with that root's
+credentials — providers are binaries it can change, `external` and
+`http` data sources can run and send anything, and state (which holds
+secrets) is decrypted to read it — so no one can plan untrusted code
+safely. What changes is the reach: today a bad pull request gets a host
+shell and the whole vault; with the agent planning, it gets at most the
+one root it changed, and the CI job holds nothing at all. The agent can
+narrow it further by refusing to plan what it cannot trust — an author
+other than Tom, a changed provider or lock file, a new `external` or
+`http` data source — posting "needs review" instead.
+
+**CI is one workflow.** With deployment gone from workflow files, what
+is left is checking: one workflow in the containerised pool that finds
+the components a pull request changed and runs each one's `lab check`
+(the path filter gate already does half of this). The next best thing
+to pipeline files living in their slices.
 
 **Agent mode is a Ritten feature.** Today the engine runs a job once;
 an agent runs the same job again whenever the desired state moves. The
@@ -183,35 +223,35 @@ anything. This is also where the runners move out of chezmoi, which
 retires the Full Disk Access debt below. `setup.sh` stays the cold
 start: `lab` comes from Forgejo's feed, so Forgejo exists first.
 
-**CI touches no host.** Every check runs in the containerised pool with
-no vault. The exception today is the tofu roots, whose checks plan on
-the mini with the vault — pull request code on a host with every
-secret. Either they plan with narrow, read-only credentials, or they
-plan only after merge and the pull request loses its preview; decide
-when the rest is in place.
-
 **The mini joins the build pool.** The containerised runner as a
 component, identical on every node — the runner image, socket-mounted so
-it can start sibling job containers — deployed by each node's host
-runner. On the Pi it replaces the systemd-supervised second runner. One
-mechanical detail: a runner in a container hands job containers bind
-mounts by host path, so its work directory must be the same path inside
-and out; Forgejo's own compose example does exactly that.
+it can start sibling job containers. On the Pi it replaces the
+systemd-supervised second runner. One mechanical detail: a runner in a
+container hands job containers bind mounts by host path, so its work
+directory must be the same path inside and out; Forgejo's own compose
+example does exactly that.
 
-**The trust boundary.** Once services deploy through the agent, the
-host runners run only the platform, and the platform's workflows could
+**The trust boundary.** Once the agent carries everything but the
+kernel, the host runners deploy only the kernel, and its workflows could
 live in a repository of their own that only Tom can push to — so write
 access to Wolfe.Lab (a friend's, Renovate's) stops meaning the platform.
-Decide once the agent carries the services.
+
+Kubernetes and Argo CD were considered: Argo is exactly this reconcile
+loop, but it only targets a cluster, and the Macs are not going to host
+one. A learning item, not the plan.
 
 **In order.**
 
 1. Observability (#11) — the agent is not built blind.
-2. CI touches no host, and the mini joins the build pool.
+2. The mini joins the build pool.
 3. `lab init`, and the runners out of chezmoi.
-4. Ritten's agent mode, then the lab's agent — one low-stakes service
-   first, then the rest.
-5. The trust boundary.
+4. Placement in the components' declarations — `runs-on` read from the
+   component, while the workflows still deploy.
+5. Ritten's agent mode, then the lab's agent: one low-stakes service
+   first, then the rest, then caddy's assembled routes.
+6. Tofu through the agent — plans on pull requests, applies on merge —
+   and CI as one workflow.
+7. The trust boundary.
 
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
