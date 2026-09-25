@@ -15,5 +15,5 @@ public sealed class OllamaWorkflow : IWorkflow
     public string Label => "ollama";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new DeployJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob()];
 }

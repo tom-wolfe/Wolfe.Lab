@@ -16,7 +16,8 @@ internal sealed class ResolveModels(ModelPlan plan, IOllama ollama, IWorkflowLog
 
         // Present but undeclared: reported, never removed. A model is several gigabytes that
         // somebody pulled on purpose, and a config file is a poor reason to delete one.
-        var extra = installed.Where(model => !plan.Models.Contains(model)).ToList();
+        // A role's alias is a name, not a model, and is the next step's business.
+        var extra = installed.Where(model => !plan.Models.Contains(model) && !RolePlan.IsAlias(model)).ToList();
         if (extra.Count > 0)
         {
             log.Detail($"Also on the node, undeclared: {string.Join(", ", extra.Select(m => m.Value))}.");

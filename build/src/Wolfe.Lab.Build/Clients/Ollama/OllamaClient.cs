@@ -18,6 +18,23 @@ internal sealed class OllamaClient(ICommandRunner commands) : IOllama
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<OllamaModel, string>> Identities(CancellationToken ct = default)
+    {
+        var result = await commands.Run(
+            Command.Create("ollama").WithArguments("list").QuietOutput().ThrowOnError(), ct);
+
+        return ParseIdentities(result.StandardOutput);
+    }
+
+    /// <inheritdoc />
+    public async Task Copy(OllamaModel source, OllamaModel destination, CancellationToken ct = default) =>
+        await commands.Run(Command.Create("ollama").WithArguments("cp", source.Value, destination.Value).QuietOutput().ThrowOnError(), ct);
+
+    /// <inheritdoc />
+    public async Task Remove(OllamaModel model, CancellationToken ct = default) =>
+        await commands.Run(Command.Create("ollama").WithArguments("rm", model.Value).QuietOutput().ThrowOnError(), ct);
+
+    /// <inheritdoc />
     public async Task<bool> IsServing(CancellationToken ct = default) =>
         (await commands.Run(Command.Create("ollama").WithArguments("list").QuietOutput(), ct)).ExitCode == 0;
 
@@ -33,4 +50,15 @@ internal sealed class OllamaClient(ICommandRunner commands) : IOllama
         output.Split('\n')
             .Select(line => OllamaModel.TryParse(line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()))
             .OfType<OllamaModel>();
+
+    /// <summary>
+    /// The same table, keeping the ID column beside each name.
+    /// </summary>
+    internal static IReadOnlyDictionary<OllamaModel, string> ParseIdentities(string output) =>
+        output.Split('\n')
+            .Select(line => line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
+            .Where(columns => columns.Length >= 2)
+            .Select(columns => (Model: OllamaModel.TryParse(columns[0]), Id: columns[1]))
+            .Where(row => row.Model is not null)
+            .ToDictionary(row => row.Model!.Value, row => row.Id);
 }

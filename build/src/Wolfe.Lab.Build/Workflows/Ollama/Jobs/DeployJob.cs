@@ -21,10 +21,11 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
 
     public override string Name => "deploy";
 
-    public override string Description => "Converges the model server's agent and pulls the models the slice declares.";
+    public override string Description => "Converges the model server's agent, pulls the models the slice declares and points its roles at them.";
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<CheckRoles>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<GateApproval>(),
@@ -32,7 +33,8 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
         Step.FromType<ConvergeAgents>(),
         Step.FromType<AwaitServer>(),
         Step.FromType<ResolveModels>(),
-        Step.FromType<PullModels>()
+        Step.FromType<PullModels>(),
+        Step.FromType<PointRoles>()
     ];
 
     public override JobKind Kind => JobKind.Deploy;
@@ -55,6 +57,8 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
         builder.AddAgents().AddOllama().AddVolumes(settings.Volumes);
         builder.Services.AddSingleton(new AgentDeclarations(settings.Agents));
         builder.Services.AddSingleton(new ModelPlan([.. settings.Models.Pull]));
+        builder.Services.AddSingleton(RolePlan.From(settings.Models.Roles));
+        builder.Services.AddSingleton(new DeclaredRoles(settings.Models));
         builder.Services.AddSingleton(ServerWait.Default);
 
         if (settings.Models.Store is { } store)

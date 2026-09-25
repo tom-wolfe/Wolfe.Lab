@@ -18,4 +18,12 @@ public class OllamaClientTests
     [Fact]
     public void Parse_IsEmptyWhenTheNodeHoldsNothing() =>
         OllamaClient.Parse("NAME    ID    SIZE    MODIFIED\n").ShouldBeEmpty();
+
+    [Fact]
+    public void ParseIdentities_KeepsEachNamesId() =>
+        OllamaClient.ParseIdentities(Listing).ShouldBe(new Dictionary<OllamaModel, string>
+        {
+            [OllamaModel.From("qwen3:8b")] = "500a1f067a9f",
+            [OllamaModel.From("llama3.2:3b")] = "a80c4f17acd5"
+        });
 }

@@ -20,6 +20,24 @@ internal sealed class DryRunOllama(IWorkflowLog log, OllamaClient inner) : IOlla
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<OllamaModel, string>> Identities(CancellationToken ct = default) =>
+        await inner.IsServing(ct) ? await inner.Identities(ct) : new Dictionary<OllamaModel, string>();
+
+    /// <inheritdoc />
+    public Task Copy(OllamaModel source, OllamaModel destination, CancellationToken ct = default)
+    {
+        log.Skipped($"Would point {destination.Value} at {source.Value}.");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task Remove(OllamaModel model, CancellationToken ct = default)
+    {
+        log.Skipped($"Would remove {model.Value}.");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public Task<bool> IsServing(CancellationToken ct = default) => inner.IsServing(ct);
 
     /// <inheritdoc />

@@ -47,4 +47,14 @@ public class ResolveModelsTests
         result.Value.ShouldNotBeNull().Models.ShouldBeEmpty();
         _log.Received().Detail(Arg.Is<string>(m => m.Contains("someone-elses:70b")));
     }
+
+    [Fact]
+    public async Task Run_DoesNotReportARolesAliasAsUndeclared()
+    {
+        Installed("qwen3:8b", "lab/background:latest");
+
+        await Step("qwen3:8b").Run(TestContext.Current.CancellationToken);
+
+        _log.DidNotReceive().Detail(Arg.Is<string>(m => m.Contains("lab/background")));
+    }
 }
