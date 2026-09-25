@@ -70,10 +70,10 @@ that lands in the gap before the check notices is retried on the mini
 **The Studio holds every model the mini does, and more.** While the Studio
 is awake every request goes to it, so a model only the mini held would be
 "not found" exactly when the Studio is on. So `studio/ritten.json` pulls
-the mini's list, plus what only the Studio can run — today `qwen3:30b-a3b`:
-a mixture of experts, about 18 GB resident but only ~3B parameters active
-per token, so much better than the mini's 8B at a fraction of a dense
-model's compute. That is the budget a job has on somebody's workstation, as
+the mini's list, plus what only the Studio can run — today `qwen3:30b-a3b`
+and its non-thinking twin: mixtures of experts, about 18 GB resident each
+but only ~3B parameters active per token, so much better than the mini's 8B
+at a fraction of a dense model's compute. That is the budget a job has on somebody's workstation, as
 is `OLLAMA_NUM_PARALLEL=1`: one request at a time. Models unload after
 ollama's five idle minutes.
 
@@ -97,13 +97,16 @@ sleeps — without knowing which, and without a fallback of its own.
 | Role | For | Studio | Mini |
 |---|---|---|---|
 | `background` | Unattended jobs: the mail scanner | `qwen3:30b-a3b` | `qwen3:8b` |
-| `interactive` | A person waiting: Paperless's suggestions and chat | `qwen3:30b-a3b` | `qwen3:8b` |
+| `interactive` | A person waiting: Paperless's suggestions and chat | `qwen3:30b-a3b-instruct-2507-q4_K_M` | `qwen3:8b` |
 | `embedding` | Vectors for search: Paperless's index | `embeddinggemma:300m` | `embeddinggemma:300m` |
 
-`background` and `interactive` are the same model on the Studio for now.
-They part when the Obsidian front end (ROADMAP #7, step 6) picks a bigger
-interactive model; that is the moment to weigh its memory against the
-desk.
+On the Studio, `interactive` is the instruct release of `background`'s
+model: the same weights without the thinking, which spent 30–60 seconds
+of every Paperless suggestion before the first useful token. Unattended
+jobs keep the thinking; nobody waits for them. Both are resident only
+while in use, but a morning that runs both holds about 37 GB. The
+Obsidian front end (ROADMAP #7, step 6) may pick a bigger interactive
+model; that is the moment to weigh its memory against the desk.
 
 The `check` job holds two rules, reading both components' files so a pull
 request that changes either is caught:

@@ -5,11 +5,12 @@
     "pull": [
       "qwen3:8b",
       "qwen3:30b-a3b",
+      "qwen3:30b-a3b-instruct-2507-q4_K_M",
       "embeddinggemma:300m"
     ],
     "roles": {
       "background": { "model": "qwen3:30b-a3b" },
-      "interactive": { "model": "qwen3:30b-a3b" },
+      "interactive": { "model": "qwen3:30b-a3b-instruct-2507-q4_K_M" },
       "embedding": { "model": "embeddinggemma:300m", "identical": true }
     }
   },

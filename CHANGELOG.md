@@ -4,6 +4,15 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.52.0] - 2026-09-25
+
+### Changed
+
+- **The Studio's `interactive` role is `qwen3:30b-a3b-instruct-2507`**,
+  the non-thinking release of the background model, so Paperless's
+  suggestions and chat no longer wait 30–60 seconds on thinking.
+  `background` keeps `qwen3:30b-a3b`; the mini is unchanged.
+
 ## [0.51.0] - 2026-09-25
 
 ### Changed
