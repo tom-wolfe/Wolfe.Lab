@@ -16,6 +16,11 @@
   // does not tell Renovate so: rebase whenever main moves.
   rebaseWhen: "behind-base-branch",
 
+  // It runs once a day, so config:recommended's two pull requests an hour
+  // meant two a day. Open pull requests are still capped (ten, the default),
+  // which is the limit that matters to the person merging them.
+  prHourlyLimit: 0,
+
   // The lab's own feed resolves to a tailnet address, which Renovate is
   // about to start refusing unless told the host is meant to be internal.
   hostRules: [
