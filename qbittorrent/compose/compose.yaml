@@ -67,7 +67,7 @@ services:
     # libtorrent 2.0.14, image build ls474). A libtorrentv1 variant
     # exists if seeding behaviour ever demands it. Bump deliberately —
     # see "Upgrading" in RUNBOOK.md.
-    image: linuxserver/qbittorrent:5.2.3_v2.0.14-ls474
+    image: linuxserver/qbittorrent:5.2.3_v2.0.15-ls478
     container_name: qbittorrent
     restart: unless-stopped
 
