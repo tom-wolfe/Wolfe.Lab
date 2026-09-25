@@ -61,103 +61,6 @@ publish once their repos flip from mirror to active. One thing remains:
   so its work directory must be the same path inside and out; Forgejo's
   own compose example does exactly that.
 
-### 7. The Mac Studio as a hybrid node
-
-**Decided: a second node, not the mini's replacement, and a new node
-type — the hybrid.** The Studio (M5 Ultra, 96 GB) is the primary
-workstation, on when it is being used and off otherwise, and it serves
-while it is on. One rule keeps that safe: **the Studio may serve, but
-nothing may depend on it.** A daily driver sleeps, reboots for updates
-and gets fiddled with; this repo already refuses to let a watcher share
-the fate of the thing it watches, and this is that principle one level
-up. Anything the Studio provides must degrade rather than break.
-
-**What it takes on: models, through ollama.** A host process, not a
-container — a container on macOS gets no GPU — as the mini's already is
-(`ollama/`). The Studio sits above the mini as a second upstream behind
-`ai.twolfe.dev` (`lb_policy first`, already in the route), so a caller
-never knows which machine answered. **Where a model runs is not which
-model runs**, though: the caller names the model, so the Studio holding
-the mini's `qwen3:8b` would buy speed and nothing else. The Studio earns
-its place by holding models the mini cannot, in two roles sized against
-it being somebody's workstation at the time:
-
-- **Background** — the mail event scanner, any future batch job.
-  Cheap enough never to be noticed at the desk: a small resident
-  footprint, one request at a time, unloaded quickly when idle. The
-  caller asks for the Studio's background model and falls back to the
-  mini's on "model not found" — which is exactly what the mini answers
-  when the Studio is off and the route falls through to it. Nothing
-  waits for the Studio; it only raises the quality while it is on.
-- **Interactive** — asking the Obsidian vaults a question, from the desk.
-  A person is there and waiting, so this may use most of what the
-  machine has for as long as the question takes, and has no fallback:
-  the Studio is on because the person asking is sitting at it.
-
-Which models fill the roles is decided when each consumer lands, and
-declared in the Studio's component like the mini's `models.pull`.
-
-**What it does not take on: Immich's machine learning.** Search quality
-is the CLIP model Immich is configured with, not the machine it runs on
-— and every search query needs the text half of that model, so whatever
-is chosen must run on the mini anyway, as the thing that answers when
-the Studio is off. The Studio could only make the job faster, and speed
-does not matter when the box is switched off. (Should the model ever be
-upgraded, the Studio can go at the head of Immich's machine-learning URL
-list for the one-off re-index and come off again after.) Nor: anything
-in the platform layer, the drives, or any job whose failure is an outage.
-
-**Its own tag, `tag:hybrid`.** Not `tag:server`, which would let every
-server reach every port on the desk, and not a user-owned workstation,
-which nothing may reach at all. Tagged, it is a node: its key does not
-expire, and the policy says exactly what reaches it — the ports it
-serves, nothing else. The cost is the user identity: Taildrop to and
-from my own devices stops working.
-
-**A host runner, holding no privacy grants.** Chezmoi updates and the
-Studio's own deploys arrive through Forgejo like every node's. Every
-job it runs keeps out of TCC-protected places — models on the internal
-disk, no Docker, no `/Volumes` — so the runner needs no Full Disk
-Access, and a Homebrew upgrade that moves its binary costs nothing. A
-job that would need a grant does not belong on the Studio. The chezmoi
-matrix includes it: a deploy goes green only when every target has it,
-and a job queued while the Studio is off runs when it next wakes
-(Forgejo's abandoned-job timeout raised so that "next" can be a week).
-Chezmoi applies its own clone, never the working copy (0.33.0).
-
-**Waking it remotely.** A Mac cannot be woken from *off* over the
-network, and a cold boot behind FileVault stops at the login window
-anyway, before any LaunchAgent — the runner, ollama — can start. From
-*sleep*, with "Wake for network access" on, a Wake-on-LAN packet from
-the Pi brings it back with the session intact. So "switched off" wants
-to mean asleep, and a wake step is worth adding to workflows that
-target it once the rest is working.
-
-**What it needs structurally:** a chezmoi profile (in), `tag:hybrid`,
-a Beszel agent with its down-alert off, a Gatus check that never
-alerts (the alerting check stays on `ai.twolfe.dev`, which the mini
-keeps up), and the host runner.
-
-**In order.**
-
-1. The profile checked like every other, the working-copy source gone. *(done)*
-2. `tag:hybrid` and the Beszel agent. *(done)*
-3. The host runner; chezmoi CD reaches the Studio. *(done)*
-4. ollama on the Studio above the mini; the Gatus check. *(0.45.0)*
-5. The scanner's background model, with the mini's as fallback. *(0.47.0)*
-6. The vault-querying front end — ollama plus a RAG layer over a clone
-   of the vault repositories on Forgejo (`obsidian/`), not a mount. The
-   corpus is already versioned and already synced by workflows, so the
-   index job is an ordinary `lab` job with a clean input. The first
-   interactive-role consumer.
-
-Whisper-family transcription stays an idea until captured notes want it.
-
-**The mini's runner and Full Disk Access** — a signed copy at a fixed
-path, so the grant survives Homebrew upgrades: a step of the runner
-component when the runners move out of chezmoi into the CLI. Until then
-the grant is re-given by hand after an upgrade.
-
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
 Two halves because they are the same move —
@@ -305,6 +208,30 @@ Forgejo's for the repo. A static front end that reads those over the
 It does not replace Gatus, Beszel or the Actions tab; it is the page
 that saves opening four of them.
 
+### 10. Asking the vaults questions
+
+The Obsidian vaults as something a model answers from, at the desk:
+ollama plus a RAG layer over a clone of the vault repositories on
+Forgejo (`obsidian/`), not a mount. The corpus is already versioned and
+already synced by workflows, so the index job is an ordinary `lab` job
+with a clean input.
+
+What it stands on is in place. `lab/embedding` is the same model on
+both servers, so an index built on either is searchable from either,
+and the index can be a nightly job on the mini like everything else
+scheduled. `lab/interactive` is the Studio's model while it is on — a
+person is waiting, so a question may use most of the machine for as
+long as it takes — and the mini's while it sleeps: worse answers, not
+none (`ollama/README.md`, "Roles"). Paperless already runs the same
+shape over its documents, a nightly embedding index behind a chat
+(`paperless/README.md`, "AI"); worth learning from before building.
+
+Still to decide: the front end — Open WebUI in front of `ai.twolfe.dev`
+is the cheapest start, an MCP server for the vault the durable shape
+("The AI layer", below) — where the index lives and how it is backed
+up (or whether it is simply rebuilt), and whether a bigger interactive
+model earns its memory on somebody's workstation.
+
 ## Debt no item above retires
 
 ### Jellyfin's state directory is where the native app left it
@@ -326,6 +253,26 @@ change the four variables. Only worth doing after the restore drills
 #2 removes the choice. `~/Library/Application Support` does not exist on
 Linux, so the path moves when the slice migrates and the rewrite becomes
 part of that step rather than optional cleanup.
+
+### The mini's runner loses Full Disk Access on every Homebrew upgrade
+
+The fix is a signed copy of the runner at a fixed path, so the grant
+survives an upgrade that moves Homebrew's binary: a step of the runner
+component once the runners' install moves out of chezmoi into the CLI
+(registration already has, `forgejo/runners/`). Until then the grant is
+re-given by hand after an upgrade. The Studio's runner holds no grants,
+so it has no such problem.
+
+### The Studio wakes only by hand
+
+A job for the Studio queues while it sleeps and runs when it next wakes
+(`forgejo/README.md`, "The Studio's runner"), which is enough while
+nothing is urgent. A Mac cannot be woken from *off* over the network,
+and a cold boot behind FileVault stops at the login window before any
+LaunchAgent starts; from *sleep*, with "Wake for network access" on, a
+Wake-on-LAN packet from the Pi brings it back with the session intact.
+So "switched off" means asleep, and a wake step in the workflows that
+target it is there to add if a queued deploy ever needs to land sooner.
 
 ## Undecided
 
@@ -490,8 +437,8 @@ is worth checking before assuming it.
 
 ### The personal data plane — out of the walled gardens
 
-Most of the items below are the same move. The AI half of #7 (asking
-questions of the vault, the inbox, the calendar) only works over data the
+Most of the items below are the same move. Asking questions — of
+the vault (#10), the inbox, the calendar — only works over data the
 lab can read, and today calendar, contacts, tasks, messages and
 audiobooks each sit in an app that will not talk to anything. Each item
 here stands on its own, but the order is set by how much it unblocks
@@ -740,15 +687,15 @@ file (or PDF export) landing in a path restic covers closes it.
 
 ### The AI layer — dictaphone, and asking questions of everything
 
-The consumers #7 is waiting for.
+What the models are for, beyond the mail scanner and Paperless.
 
 **The dictaphone.** Action button → Shortcut → *Record Audio* → *Get
 Contents of URL* (multipart POST to the mini over Tailscale) →
 transcription (`whisper.cpp` or `parakeet-mlx`) → an LLM classifies the
 transcript, reusing the mail watcher's event detection. Notes become a
 commit to the vault repo, tasks go to Mail to Things, events to Radicale,
-and shopping items to the list. This is the "captured notes" that
-#7 said Whisper would wait for. Design for the phone being off the tailnet:
+and shopping items to the list. Whisper-family transcription waits
+for this. Design for the phone being off the tailnet:
 the Shortcut saves to an iCloud Drive folder as a queue rather than failing.
 
 **Asking questions.** Open WebUI in front of `ai.twolfe.dev` is the
@@ -802,35 +749,3 @@ Assistant grows past the Hue bridge into Matter devices. And the mini's
 mDNS flapping between its two interfaces is a config problem (a DHCP
 reservation, or disabling the unused interface — see "Router as code"),
 not a hardware one.
-
-## Deliberately deferred
-
-### Self-hosted secrets (OpenBao)
-
-Moot twice over: the vault exit (#8) fixes the vendor
-question while keeping a cloud origin *by decision* — the server side is
-only ever a replica, exactly to avoid the circularity that parked
-OpenBao here. The section stays as the record of why.
-
-The original goal was cutting the cloud dependency. The operative part is
-already had: the vault is read by deploys and jobs, never by anything
-that runs, so a running stack rides out a vault outage and only the next
-deploy waits. 1Password Connect left this section
-for the config plane (#8), pulled by a different goal —
-rotation ergonomics, not cloud-cutting; as a sync cache it dodges the
-circularity below. OpenBao stays deferred: it would *own* the secrets,
-adding an unseal ritual and a genuine bootstrap circularity — lab down,
-can't reach secrets, can't bring lab up. Small remaining gain, real
-added fragility. Revisit if the calculus changes.
-
-### Kubernetes + Argo CD (`k8s/`)
-
-Kept as a learning goal, not as a solution to a current problem. The lab
-has a working push-based CD loop and a deliberate trust model — a host
-runner per node for the lab, a containerised runner for everything else
-— and Kubernetes on a single mini via Docker Desktop is a lot of machinery
-for one node that would dissolve the vertical-slice model into manifests.
-Worth doing if the point is to learn it; worth being honest that it isn't
-fixing anything. The trigger: two Linux service nodes whose workloads no
-longer want host networking (Pi-hole and Home Assistant do). Flux over
-Argo if that day comes — git-native, no UI-owned state.

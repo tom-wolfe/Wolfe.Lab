@@ -388,7 +388,7 @@ probe never queue behind a long job; stateful jobs serialise through the
 ### The Studio's runner
 
 The mini's shape — Homebrew's binary, the same launchd agent and the same
-converge script — as a hybrid node's (ROADMAP.md #7): `MacStudio:host`,
+converge script — as a hybrid node's (`README.md`, "Nodes"): `MacStudio:host`,
 reaching Forgejo by its tailnet name. Capacity 3, like the mini's, with
 the mini's rule: a job that changes the node joins the `MacStudio`
 concurrency group, so only jobs that change nothing run side by side. Two things make it

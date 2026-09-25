@@ -54,7 +54,7 @@ Paperless's AI features are the other consumer, and degrade the same
 way: with no model, its suggestions and chat fail and its own
 classifier-based suggestions carry on (`paperless/README.md`, "AI").
 
-The Studio (ROADMAP #7) is a second upstream above the mini — the same
+The Studio (`README.md`, "Nodes") is a second upstream above the mini — the same
 rule one level up: the Studio may serve, but nothing may depend on it.
 
 ## The Studio
@@ -105,7 +105,7 @@ model: the same weights without the thinking, which spent 30–60 seconds
 of every Paperless suggestion before the first useful token. Unattended
 jobs keep the thinking; nobody waits for them. Both are resident only
 while in use, but a morning that runs both holds about 37 GB. The
-Obsidian front end (ROADMAP #7, step 6) may pick a bigger interactive
+Obsidian front end (ROADMAP #10) may pick a bigger interactive
 model; that is the moment to weigh its memory against the desk.
 
 The `check` job holds two rules, reading both components' files so a pull

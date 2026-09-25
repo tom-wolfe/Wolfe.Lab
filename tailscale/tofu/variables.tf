@@ -35,7 +35,7 @@ variable "servers" {
 variable "hybrids" {
   description = <<-EOT
     Machine names of the hybrid nodes — workstations that also serve while
-    they are on (ROADMAP.md #7): tagged tag:hybrid and their key expiry
+    they are on (README.md, "Nodes"): tagged tag:hybrid and their key expiry
     disabled, exactly as a server is, but reachable only where the policy
     says.
   EOT

@@ -235,7 +235,7 @@ baselines while you are there.
 
 The mini's shape with the Pi's `HUB_URL`, since the hub is on another
 machine. No `DOCKER_HOST`: the Studio runs no lab containers
-(ROADMAP.md #7). Its deploy waits while it sleeps and runs when it wakes.
+(`README.md`, "Nodes"). Its deploy waits while it sleeps and runs when it wakes.
 
 **Status alerts OFF.** The Studio is a hybrid node: off is its normal
 state most of the day, and nothing depends on it being on. A down alert

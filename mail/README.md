@@ -34,7 +34,7 @@ an amd64 build and crashed, so the mini is exactly the machine that bug
 was about. Version management is the image tag, which is how the rest of
 the lab pins anything.
 
-Renovate (ROADMAP #5) is not running yet, so nothing watches this tag.
+Renovate (ROADMAP #3) is not running yet, so nothing watches this tag.
 Until it does, the honest position is that this is an unwatched
 dependency on a third party's spare time, and the failure mode is a login
 that stops working rather than a container that stops running.

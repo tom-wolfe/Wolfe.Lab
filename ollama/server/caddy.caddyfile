@@ -21,7 +21,7 @@ handle @ai {
 	# the moment it doesn't — the Studio asleep is a failed check within ten
 	# seconds, and a request that lands in that window is retried on the mini
 	# (lb_try_duration). Nothing that calls this notices either way:
-	# ROADMAP #7's rule, the Studio may serve but nothing may depend on it.
+	# the hybrid rule (README.md, "Nodes"): the Studio may serve but nothing may depend on it.
 	# That only holds while the Studio holds every model the mini does — see
 	# ollama/README.md "The Studio".
 	#

@@ -64,7 +64,7 @@ verbatim, comments included. It says four things:
   with nothing to notice, and `caddy/tofu` and `forgejo/tofu` carry
   tailnet addresses as record targets.
 - **`tag:hybrid`** on the Studio (`hybrids`): a workstation that also
-  serves while it is on (ROADMAP.md #7). Tagged for the same reasons as a
+  serves while it is on (`README.md`, "Nodes"). Tagged for the same reasons as a
   server — it is a node, and its runner cannot re-auth interactively —
   but not `tag:server`, because servers reach each other on every port
   and the desk should be reachable only on the ports it serves. The cost

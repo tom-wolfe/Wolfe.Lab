@@ -21,6 +21,25 @@ its tick job.
 | `CHANGELOG.md`                     | what changed, when — Keep a Changelog format                                                                                                                                                                                                                          |
 | `ROADMAP.md`                       | what's next and why — including what's deliberately deferred                                                                                                                                                                                                          |
 
+## Nodes
+
+- **Servers** — the mini (the primary: the drives, and every scheduled
+  job) and the Pi. `tag:server`; their failure is an outage, and they
+  are watched as such.
+- **The hybrid** — the Studio: the primary workstation, on when it is
+  being used and off otherwise, serving while it is on. One rule keeps
+  that safe: **the Studio may serve, but nothing may depend on it.**
+  Anything it provides degrades rather than breaks when it sleeps —
+  today the upper tier of models behind `ai.twolfe.dev`
+  (`ollama/README.md`, "The Studio"). Its own tag, `tag:hybrid`, so the
+  policy lets in the ports it serves and nothing else
+  (`tailscale/README.md`); a host runner holding no privacy grants, whose
+  jobs queue while it sleeps (`forgejo/README.md`, "The Studio's
+  runner"); a Beszel agent and a Gatus check that never alert. Nothing in
+  the platform layer, nothing on the drives, and no job whose failure is
+  an outage runs there — which is why Immich's machine learning stays on
+  the mini (`immich/README.md`).
+
 ## How deployment works
 
 Chezmoi declares; Forgejo Actions acts. Every component has a workflow in
