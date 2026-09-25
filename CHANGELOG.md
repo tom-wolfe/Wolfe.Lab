@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.54.0] - 2026-09-25
+
+### Fixed
+
+- **Garage's health check failed after any redeploy that did not recreate
+  the container.** Its config was a single-file bind mount, which keeps
+  the file a deploy replaced; every `garage` command in the container
+  then found no config. The config is now a mounted directory, with
+  `GARAGE_CONFIG_FILE` pointing into it.
+
 ## [0.53.0] - 2026-09-25
 
 ### Added

@@ -39,23 +39,179 @@ runbook: today both jobs read the local one.
 
 Add Prowlarr and Jellyseerr to the existing Radarr/Sonarr/Jellyfin stack.
 
-### 6. CI, the build pool, and pipelines as a CLI
+### 11. Observability — OpenTelemetry into Grafana
 
-Every node runs a **host** runner for the lab's own CD: repo-scoped, host
-mode, holding the node's vault token. The Pi also runs a **containerised**
-runner: instance-scoped, the role label `docker`, no host environment and
-no socket in a job, where CI runs today (`build.yaml`, and each slice's
-`check` on every pull request) and where Ritten and NSchema will build and
-publish once their repos flip from mirror to active. One thing remains:
+The lab can say whether things are up (Gatus), how hard the machines are
+working (Beszel) and whether the schedules are alive (the heartbeat). It
+cannot say *why*: no logs outside `docker logs` and scattered files, no
+traces, no application metrics. The mail watcher is the standing
+example — slow, and nothing to say where the time goes. And #6 is
+heading towards handing deployment to an agent — `lab` reconciling each
+node from the repo — which is not a responsibility to hand over blind.
+By the ordering principle this goes first: it makes failures visible,
+where the agent is a new thing to fail.
 
-- **The mini joins the build pool.** The containerised runner as a compose
-  slice, identical on every node — the runner image, socket-mounted so it
-  can start sibling job containers, config and registration rendered by
-  chezmoi as now — deployed by each node's host runner. On the Pi that
-  replaces the systemd-supervised second runner. One mechanical detail:
-  a runner in a container hands job containers bind mounts by host path,
-  so its work directory must be the same path inside and out; Forgejo's
-  own compose example does exactly that.
+**Decided: OpenTelemetry for every signal, Grafana's stack to read
+them, Alloy to collect, seven days kept.** OpenTelemetry is the part that lasts — the instrumentation
+outlives whichever backend receives it. Grafana over a single-binary
+store such as OpenObserve: more to run (Loki for logs, Tempo for traces,
+Prometheus for metrics, Grafana in front), but it is the standard shape,
+the one that carries over to work, and its dashboards are the best on
+offer.
+
+**The shape.**
+
+- **A collector on every node** — Grafana Alloy, a platform component
+  deployed like any other. It receives OTLP from applications, reads container logs through the
+  Docker API and host-process logs from their files (ollama, the
+  runners, the Beszel agent), and scrapes the Prometheus endpoints
+  services already expose — caddy, Forgejo, Garage, Gatus, Immich.
+  On the Studio it follows the hybrid rule: nothing waits on it.
+- **The backend on the mini**, behind caddy, tailnet-only. Loki and
+  Tempo keep their data in Garage; Prometheus in its own store. Every
+  signal is kept **seven days** to start, extended when a question needs
+  more. Telemetry is disposable and is not backed up; datasources,
+  dashboards and alert rules are provisioned from the repo, so a rebuild
+  loses history and nothing else.
+- **Grafana alerts; Gatus watches Grafana.** Alert rules over the
+  metrics and logs — a filling drive, a container restarting, a job
+  slowing down — go to Pushover like everything else. Grafana shares the
+  mini's fate, and a watcher must not share the fate of the thing it
+  watches, so the layers outside it stay: Gatus on the Pi pages when the
+  mini, or Grafana itself, stops answering — a dead alerting engine
+  looks exactly like a quiet night — and healthchecks.io stays the one
+  observer outside the building.
+- **Beszel retires.** Its host and container stats are what the
+  collectors report, and its threshold alerts become Grafana rules; once
+  both are in place, the hub, the agents and Gatus's check of the hub
+  go.
+
+**Why Alloy rather than the upstream Collector.** Both speak OTLP, so
+the applications do not care, and a later switch is the collectors'
+configuration alone. What decides it is container logs on the Macs:
+Docker Desktop keeps them inside its VM, out of reach of a collector
+reading files on the host, and upstream has no receiver that reads them
+through the Docker API, where Alloy does. Alloy also ships the Loki and
+Prometheus pipelines natively, has a UI for debugging a pipeline, and is
+what Grafana's own documentation assumes.
+
+**The .NET side is cheap.** The mail watcher already runs on
+`Microsoft.Extensions.Hosting` and `Microsoft.Extensions.AI`: its logs
+go out through the OpenTelemetry logging provider, HttpClient emits
+spans by itself, and the AI client's `UseOpenTelemetry()` gives a span
+per model call with its duration and token counts — the likeliest
+bottleneck, measured.
+
+**Ritten emits traces.** Its model is already a trace: a run is the
+trace, a job its root span, each step a child span carrying its kind
+and result. Instrumented in the engine, every CI run and every one of
+the agent's reconciles becomes something to inspect, filter and
+compare over time — the view the Actions tab gives today, for the thing
+that will replace it. A Ritten feature, so a Ritten release, then the
+lab's pins.
+
+**In order.**
+
+1. The backend on the mini and a collector beside it.
+2. The mail watcher instrumented — the bottleneck question answered.
+3. Container and host-process logs from every node.
+4. The services' own metrics, scraped.
+5. Host metrics and the alert rules that replace Beszel's; Gatus
+   watching Grafana; then Beszel removed.
+6. Ritten's traces — before the agent, so it is observable from its
+   first reconcile.
+
+**Still to decide:** how much of #9's dashboard half Grafana answers by
+itself.
+
+### 6. CI/CD — the platform deploys, services publish
+
+Where it stands: every node runs a **host** runner for the lab's own CD —
+repo-scoped, holding the node's full vault token — and every component
+deploys as a job on it. The Pi also runs a **containerised** runner (the
+`docker` label: no host, no vault, no socket in a job) where CI runs.
+It works, and it has three costs:
+
+- **Every deploy is a host job with the whole vault.** A service's
+  deploy and the platform's own look the same, and a branch can send a
+  job to any host runner — so write access to Wolfe.Lab is, in effect,
+  the platform.
+- **Pushing is the only way anything converges.** Nothing notices drift;
+  a node that missed a deploy stays behind until the next push.
+- **A node is onboarded by hand**: chezmoi, a hand-seeded runner
+  environment, `lab register`, and a runbook to follow.
+
+**Decided: the platform deploys, services publish.** The platform is
+what the lab needs before it can run anything — the machine as chezmoi
+declares it, the runners, caddy, Forgejo, Garage, the collectors (#11)
+and the tofu roots — and it keeps deploying through host runners.
+Services are what run on it — Immich, Jellyfin, the *arr stack,
+Paperless, mail — and the platform deploys them: a service's pipeline
+builds, checks and publishes in a container, and never touches a host.
+The pattern from AWS and Azure: pipelines publish, the platform pulls.
+
+**`lab` as an agent.** A daemon on every node — the mail watcher's
+.NET hosting pattern, deployed as a platform component — that watches
+the repo and reconciles the node's services from `main` with the deploy
+code the CLI already has. A merge is the desired state; a revert is the
+rollback; drift is noticed because the agent keeps looking, not because
+someone pushed. It resolves each service's secrets itself, which makes
+it the natural place to narrow what each node can read (#8). Two things make
+it safe to hand deployment over:
+
+- **It is observable from its first reconcile** (#11): each reconcile a
+  trace, each step a span.
+- **It reports where the Actions tab does**: a commit status per node on
+  the commit it converged, so a deploy still goes green or red on the
+  commit in Forgejo.
+
+Kubernetes and Argo CD were the other shape for this. Argo is exactly
+this reconcile loop, but it only targets a cluster, and the Macs are
+not going to host one; that stays a learning item, not the plan.
+
+**Agent mode is a Ritten feature.** Today the engine runs a job once;
+an agent runs the same job again whenever the desired state moves. The
+step model, rules and reporting carry over — a Ritten release before the
+lab's agent can exist.
+
+**`lab init` onboards a node.** `dotnet tool install -g
+Wolfe.Lab.Build`, then `lab init`: apply chezmoi for the machine's
+profile, register its runners, install the agent. The reverse tears a
+node down — deregister, stop, remove — so a node is one command either
+way. On a laptop, `lab init` is only the chezmoi apply, uncommitted to
+anything. This is also where the runners move out of chezmoi, which
+retires the Full Disk Access debt below. `setup.sh` stays the cold
+start: `lab` comes from Forgejo's feed, so Forgejo exists first.
+
+**CI touches no host.** Every check runs in the containerised pool with
+no vault. The exception today is the tofu roots, whose checks plan on
+the mini with the vault — pull request code on a host with every
+secret. Either they plan with narrow, read-only credentials, or they
+plan only after merge and the pull request loses its preview; decide
+when the rest is in place.
+
+**The mini joins the build pool.** The containerised runner as a
+component, identical on every node — the runner image, socket-mounted so
+it can start sibling job containers — deployed by each node's host
+runner. On the Pi it replaces the systemd-supervised second runner. One
+mechanical detail: a runner in a container hands job containers bind
+mounts by host path, so its work directory must be the same path inside
+and out; Forgejo's own compose example does exactly that.
+
+**The trust boundary.** Once services deploy through the agent, the
+host runners run only the platform, and the platform's workflows could
+live in a repository of their own that only Tom can push to — so write
+access to Wolfe.Lab (a friend's, Renovate's) stops meaning the platform.
+Decide once the agent carries the services.
+
+**In order.**
+
+1. Observability (#11) — the agent is not built blind.
+2. CI touches no host, and the mini joins the build pool.
+3. `lab init`, and the runners out of chezmoi.
+4. Ritten's agent mode, then the lab's agent — one low-stakes service
+   first, then the rest.
+5. The trust boundary.
 
 ### 8. A config plane — Garage for configuration, the Bitwarden exit for secrets
 
@@ -202,7 +358,8 @@ Forgejo Actions API for last-run per workflow, restic's snapshot list for backup
 Forgejo's for the repo. A static front end that reads those over the
 `lab` network, in a container behind caddy, is a slice like any other.
 It does not replace Gatus, Beszel or the Actions tab; it is the page
-that saves opening four of them.
+that saves opening four of them. Grafana (#11) may answer much of this
+half by itself; decide after it lands.
 
 ### 10. Asking the vaults questions
 
@@ -255,7 +412,7 @@ part of that step rather than optional cleanup.
 The fix is a signed copy of the runner at a fixed path, so the grant
 survives an upgrade that moves Homebrew's binary: a step of the runner
 component once the runners' install moves out of chezmoi into the CLI
-(registration already has, `forgejo/runners/`). Until then the grant is
+(#6, `lab init`; registration already has, `forgejo/runners/`). Until then the grant is
 re-given by hand after an upgrade. The Studio's runner holds no grants,
 so it has no such problem.
 

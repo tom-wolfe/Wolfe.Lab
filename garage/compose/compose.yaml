@@ -11,11 +11,10 @@ services:
     environment:
       GARAGE_RPC_SECRET:
       GARAGE_ADMIN_TOKEN:
+      GARAGE_CONFIG_FILE: /etc/garage/garage.toml
 
     volumes:
-      # Config is code — lives in this repo, mounted read-only.
-      - ./garage.toml:/etc/garage.toml:ro
-      # State is data — lives outside it, like every other stack.
+      - ./config:/etc/garage:ro
       - /Users/tomwolfe/Docker/garage/meta:/var/lib/garage/meta
       - /Users/tomwolfe/Docker/garage/data:/var/lib/garage/data
 
@@ -39,7 +38,5 @@ services:
       retries: 5
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
-  # must be deployed once before this stack. See caddy/README.md.
   lab:
     external: true

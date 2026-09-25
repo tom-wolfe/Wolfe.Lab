@@ -4,7 +4,8 @@ S3-compatible object storage on the Mac mini. First customer: OpenTofu state.
 Future customers: backups, artifacts, anything S3-shaped.
 
 State lives at `~/Docker/garage/{meta,data}` on the mini; config is
-`garage.toml` here (mounted read-only, secret-free).
+`compose/config/garage.toml` (the directory mounted read-only,
+secret-free).
 
 | Concern | Handled by |
 | --- | --- |
@@ -19,9 +20,16 @@ bootstrap only creates what must exist before the admin API answers.
 
 ## Operational notes
 
-- `garage.toml` changes are NOT picked up by `docker compose up -d` (it's a
-  bind mount) — after editing, restart:
+- `garage.toml` changes are NOT picked up by `docker compose up -d` (the
+  daemon reads it once, at start) — after editing, restart:
   `ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/garage restart"`
+- **The config is mounted as a directory, never as the file.** A deploy
+  replaces the release's files, and a single-file bind mount keeps the
+  deleted original until the container is recreated: the daemon carries
+  on, and every `garage` command in the container — the health check's
+  included — fails with "Unable to read configuration file". Seen after
+  the v2.4.1 bump; `GARAGE_CONFIG_FILE` points the daemon and the CLI
+  into the directory.
 - Health/audit: `docker exec garage /garage stats` / `bucket list` / `key list`.
 - Backup = `meta/` (small, critical) + `data/` (the objects): the
   nightly `garage-backup.yaml` (`lab backup` from `backup/`) does a cold copy at 02:30
