@@ -1,6 +1,6 @@
 # immich-go for the Takeout import, from the pinned release: it ships no
 # image, and the lab installs nothing on the node. Built by `lab import`.
-FROM alpine:3.22
+FROM alpine:3.24
 
 ARG VERSION=0.32.0
 ARG SHA256=2c35d9284baae407ef9540bdac5f488971b0bdc7be758a4d7c05ab270af09fdb
