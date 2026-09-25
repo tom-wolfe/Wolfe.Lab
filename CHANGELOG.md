@@ -4,6 +4,14 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.49.0] - 2026-09-25
+
+### Changed
+
+- **The runners run `lab` 0.48.1**: an ollama component can declare
+  model roles, every server must declare every role, and the ollama
+  workflow has a `check` job.
+
 ## [0.48.1] - 2026-09-25
 
 ### Fixed
