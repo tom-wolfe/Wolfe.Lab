@@ -39,6 +39,8 @@ resource "forgejo_branch_protection" "main" {
     "qbittorrent compose / check*",
     "radarr compose / check*",
     "sonarr compose / check*",
+    "renovate / check*",
+    "renovate tofu / check*",
   ]
 
   # A pull request must be current with main before it merges, so the checks

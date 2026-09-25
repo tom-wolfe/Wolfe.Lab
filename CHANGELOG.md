@@ -4,6 +4,21 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.53.0] - 2026-09-25
+
+### Added
+
+- **Renovate** (`renovate/`), every morning on the containerised runner:
+  a pull request for every pin that is behind — images, the lab CLI's
+  two pins as one, NuGet packages and the .NET SDK, Actions and tofu
+  providers — and a dependency dashboard issue for the rest. It runs as
+  its own Forgejo user, which `forgejo/tofu` creates with write access to
+  Wolfe.Lab; `renovate/tofu` mints the user's token, logged in as it, and
+  writes that and a read-only GitHub token as the lab's first Actions
+  secrets. `renovate / check`, which validates the config, and
+  `renovate tofu / check` are required statuses.
+- **Icons.** Added technology icons for the homelab to a new assets/ directory.
+
 ## [0.52.0] - 2026-09-25
 
 ### Changed

@@ -1,0 +1,39 @@
+name: renovate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [renovate/**, .forgejo/workflows/renovate.yaml]
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    container:
+      image: ghcr.io/renovatebot/renovate:44.115.6
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: renovate-config-validator --strict renovate/config.json5
+
+  run:
+    if: github.event_name != 'pull_request'
+    runs-on: docker
+    container:
+      image: ghcr.io/renovatebot/renovate:44.115.6
+    timeout-minutes: 30
+    concurrency:
+      group: renovate
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - run: renovate
+        env:
+          RENOVATE_CONFIG_FILE: renovate/config.json5
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          RENOVATE_GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
+          LOG_LEVEL: info

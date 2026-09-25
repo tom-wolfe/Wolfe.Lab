@@ -1,0 +1,136 @@
+// Renovate's whole configuration: the bot's (where it runs, as whom) and the
+// repository's (what it watches, how it groups) in one file, so the repo
+// needs no renovate.json at its root and nothing here is onboarded.
+// Read by `.forgejo/workflows/renovate.yaml`; see renovate/README.md.
+{
+  platform: "forgejo",
+  endpoint: "https://code.twolfe.dev/api/v1/",
+  repositories: ["tom-wolfe/Wolfe.Lab"],
+  gitAuthor: "Renovate <renovate@twolfe.dev>",
+  onboarding: false,
+  requireConfig: "ignored",
+
+  extends: ["config:recommended"],
+
+  // Branch protection blocks a pull request that is behind main, and Forgejo
+  // does not tell Renovate so: rebase whenever main moves.
+  rebaseWhen: "behind-base-branch",
+
+  // The lab's own feed resolves to a tailnet address, which Renovate is
+  // about to start refusing unless told the host is meant to be internal.
+  hostRules: [
+    {
+      matchHost: "code.twolfe.dev",
+      allowInternal: true,
+    },
+  ],
+
+  customManagers: [
+    {
+      // The lab's own CLI, pinned twice: the containerised runners' image and
+      // the host runners' install script. One pull request moves both.
+      customType: "regex",
+      managerFilePatterns: [
+        "/^ci/image/Dockerfile$/",
+        "/^chezmoi/home/\\.chezmoiscripts/run_after_install-lab\\.sh\\.tmpl$/",
+      ],
+      matchStrings: [
+        "ARG LAB_VERSION=(?<currentValue>\\S+)",
+        "\\nversion=\"(?<currentValue>[^\"]+)\"",
+      ],
+      depNameTemplate: "Wolfe.Lab.Build",
+      datasourceTemplate: "nuget",
+      registryUrlTemplate: "https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json",
+    },
+  ],
+
+  packageRules: [
+    {
+      matchPackageNames: ["Wolfe.Lab.Build"],
+      groupName: "lab CLI pin",
+      prBodyNotes: [
+        "Before merging: install the published package into a scratch path and dry-run a real component against it (`build/README.md`, \"Shipping\"). A version that only installs has not been tested.",
+      ],
+    },
+
+    // Built on the node from source, not pulled: nothing to look up.
+    {
+      matchPackageNames: ["lab/mail-watcher"],
+      enabled: false,
+    },
+
+    // Immich's own compose file pins its database and cache, by digest, per
+    // release. They move when Immich's release notes say so, not before.
+    {
+      matchPackageNames: ["docker.io/valkey/valkey", "valkey/valkey", "ghcr.io/immich-app/postgres"],
+      enabled: false,
+    },
+    {
+      matchPackageNames: ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
+      groupName: "immich",
+    },
+
+    // The hub's pin has a twin Renovate cannot move: the Pi's agent, pinned by
+    // version and checksum in chezmoi (beszel/RUNBOOK.md, "Two pins").
+    {
+      matchPackageNames: ["henrygd/beszel"],
+      prBodyNotes: [
+        "Move the Pi's agent in the same pull request: version and checksum in `chezmoi/home/.chezmoiexternal.toml.tmpl`.",
+      ],
+    },
+
+    // Tags Renovate cannot order without being told their shape.
+    {
+      matchPackageNames: ["linuxserver/radarr", "linuxserver/sonarr"],
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$",
+    },
+    {
+      matchPackageNames: ["linuxserver/qbittorrent"],
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)_v\\d+\\.\\d+\\.\\d+-ls(?<build>\\d+)$",
+    },
+    {
+      matchPackageNames: ["dancwilliams/protonmail-bridge"],
+      versioning: "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$",
+    },
+
+    // `required_version` in each tofu root is OpenTofu's, which Renovate
+    // would look up as Terraform's.
+    {
+      matchDepNames: ["hashicorp/terraform"],
+      enabled: false,
+    },
+
+    // .NET: the SDK pins and the images move together, and a new major is a
+    // migration, not a bump — it waits on the dependency dashboard until
+    // asked for.
+    {
+      matchPackageNames: ["dotnet-sdk", "mcr.microsoft.com/dotnet/*"],
+      groupName: ".NET",
+    },
+    {
+      matchPackageNames: ["dotnet-sdk", "mcr.microsoft.com/dotnet/*"],
+      matchUpdateTypes: ["major"],
+      dependencyDashboardApproval: true,
+    },
+
+    // The CLI's dependencies, in the families that release together.
+    {
+      matchPackageNames: ["Ritten.*"],
+      groupName: "Ritten",
+    },
+    {
+      matchPackageNames: ["Microsoft.Extensions.*"],
+      groupName: "Microsoft.Extensions",
+    },
+    {
+      matchPackageNames: ["Microsoft.Testing.*", "NSubstitute", "Shouldly", "xunit.v3"],
+      groupName: "test packages",
+    },
+
+    // Renovate itself releases several times a day; once a week is plenty.
+    {
+      matchPackageNames: ["ghcr.io/renovatebot/renovate"],
+      extends: ["schedule:weekly"],
+    },
+  ],
+}

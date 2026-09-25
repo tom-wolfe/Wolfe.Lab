@@ -179,6 +179,14 @@ docker restart forgejo-tailscale
 Declaratively manages every repository on the Forgejo instance. State lives
 in Garage (`s3://tofu-state/forgejo/terraform.tfstate`).
 
+### Renovate's user (`renovate.tf`)
+
+Not a repository: the `renovate` user and its write access to Wolfe.Lab.
+Its token and the Actions secrets Renovate runs with are minted
+downstream, in `renovate/tofu`, logged in as the user — so that root
+applies after this one, and this one never depends on it
+(`renovate/README.md`).
+
 ### The three repo shapes
 
 | Shape | How | Meaning |
@@ -365,7 +373,10 @@ brew node would fight it — the `nvm-run` pattern), on the Pi a pinned
 external. chezmoi's own
 source is a separate clone and no part of a deploy.
 
-Secrets in jobs: **Forgejo holds none.** The runner's `env_file`
+Secrets in jobs: **Forgejo holds none**, with one exception — Renovate's
+two tokens, Actions secrets that `renovate/tofu` writes, because
+Renovate runs in the containerised runner, where no job reaches the vault
+(`renovate/README.md`). The runner's `env_file`
 (`~/.config/forgejo-runner/env`, hand-seeded, mode 600) carries the node's
 `OP_SERVICE_ACCOUNT_TOKEN`; jobs read the vault through the CLI's
 secrets provider. One bootstrap secret per node, same as the mini.

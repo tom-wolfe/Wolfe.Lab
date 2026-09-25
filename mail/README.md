@@ -34,10 +34,11 @@ an amd64 build and crashed, so the mini is exactly the machine that bug
 was about. Version management is the image tag, which is how the rest of
 the lab pins anything.
 
-Renovate (ROADMAP #3) is not running yet, so nothing watches this tag.
-Until it does, the honest position is that this is an unwatched
-dependency on a third party's spare time, and the failure mode is a login
-that stops working rather than a container that stops running.
+Renovate watches this tag (`renovate/README.md`) and opens a pull request
+when the fork publishes a new build. What it cannot watch is the fork
+itself: this is still a dependency on a third party's spare time, and the
+failure mode if they stop is a login that stops working rather than a
+container that stops running.
 
 ## What the volume holds, and why it is not backed up
 

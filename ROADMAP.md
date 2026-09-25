@@ -39,10 +39,6 @@ runbook: today both jobs read the local one.
 
 Add Prowlarr and Jellyseerr to the existing Radarr/Sonarr/Jellyfin stack.
 
-### 3. Renovate support
-
-Add Renovate for things like outdated Docker images, and nuget packages.
-
 ### 6. CI, the build pool, and pipelines as a CLI
 
 Every node runs a **host** runner for the lab's own CD: repo-scoped, host

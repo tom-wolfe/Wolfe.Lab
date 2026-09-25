@@ -45,3 +45,9 @@ variable "forgejo_tailscale_ipv4" {
   type        = string
   default     = "100.115.148.4"
 }
+
+variable "renovate_password" {
+  description = "Password of the renovate user (1P `forgejo-renovate`); renovate/tofu logs in with it"
+  type        = string
+  sensitive   = true
+}
