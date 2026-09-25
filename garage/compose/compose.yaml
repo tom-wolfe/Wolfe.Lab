@@ -4,7 +4,7 @@ services:
   garage:
     # Pinned. Bump deliberately — check the changelog for metadata format
     # migrations before jumping versions.
-    image: dxflrs/garage:v2.3.0
+    image: dxflrs/garage:v2.4.1
     container_name: garage
     restart: unless-stopped
 
