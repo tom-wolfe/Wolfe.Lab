@@ -5,7 +5,7 @@ services:
     # Pinned. Bump deliberately — the hub is a PocketBase app and its
     # SQLite schema migrates forward on boot, so a downgrade after a
     # migration means restoring a backup, not re-pulling the old tag.
-    image: henrygd/beszel:0.19.0
+    image: henrygd/beszel:0.20.0
     container_name: beszel
     restart: unless-stopped
 
