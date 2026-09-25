@@ -67,6 +67,15 @@ public class RoleRulesTests
         }).ShouldHaveSingleItem().ShouldContain("studio does not declare it");
 
     [Fact]
+    public void Across_RefusesABestFitRoleOnlyOneServerDeclares() =>
+        // The Studio alone declaring a role is "not found" every evening it sleeps.
+        RoleRules.Across(new Dictionary<string, ModelSettings>
+        {
+            ["server"] = Models(["qwen3:8b"]),
+            ["studio"] = Models(["qwen3:30b-a3b"], ("interactive", "qwen3:30b-a3b", false))
+        }).ShouldHaveSingleItem().ShouldContain("server does not declare it");
+
+    [Fact]
     public void Across_RefusesAnIdenticalRoleOnlyOneSideMarks() =>
         // Otherwise the rule would be enforced only from the side that remembered to say so.
         RoleRules.Across(new Dictionary<string, ModelSettings>

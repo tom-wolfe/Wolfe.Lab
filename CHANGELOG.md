@@ -12,10 +12,11 @@ rather than versioned — the lab is continuous, not released.
   name such as `background` or `embedding`, and the pulled model that
   fills it on that node. A deploy points `lab/<role>` at it and removes
   the alias of a role no longer declared, so a caller asks for the role
-  and gets the best model of whichever server answered. A role marked
-  `identical` must name the same model on every server of the slice,
-  which is what an embedding needs: vectors from two models are not
-  comparable.
+  and gets the best model of whichever server answered. Every server
+  must declare every role, so a role degrades to the mini's best while
+  the Studio sleeps rather than disappearing. A role marked `identical`
+  must also name the same model everywhere, which is what an embedding
+  needs: vectors from two models are not comparable.
 - **An ollama `check` job**, which judges a component's roles on its own
   file and against the slice's other servers.
 
