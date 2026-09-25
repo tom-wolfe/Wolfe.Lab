@@ -42,7 +42,7 @@ services:
       start_period: 60s
 
   tailscale:
-    image: tailscale/tailscale:v1.102.3
+    image: tailscale/tailscale:v1.102.5
     container_name: forgejo-tailscale
     restart: unless-stopped
     network_mode: service:server
