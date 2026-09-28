@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [gatus/tofu/**, .forgejo/workflows/gatus-tofu.yaml]
+    paths: [monitoring/gatus/tofu/**, .forgejo/workflows/gatus-tofu.yaml]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: gatus/tofu
+      - working-directory: monitoring/gatus/tofu
         run: lab check
 
   deploy:
@@ -28,5 +28,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: gatus/tofu
+      - working-directory: monitoring/gatus/tofu
         run: lab deploy --auto-approve

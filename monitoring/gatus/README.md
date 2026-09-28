@@ -15,7 +15,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 
 | Concern | Handled by |
 | --- | --- |
-| Container | **on the Pi** — `.forgejo/workflows/gatus-compose.yaml`, on every push that touches `compose/`; `lab deploy` from `gatus/compose` on the node itself |
+| Container | **on the Pi** — `.forgejo/workflows/gatus-compose.yaml`, on every push that touches `compose/`; `lab deploy` from `monitoring/gatus/compose` on the node itself |
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
 | Pushover credentials | `secrets.env` names the existing `pushover` vault item; the deploy resolves both fields into the container's environment |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
@@ -88,7 +88,7 @@ Two consequences of that convenience, both loud rather than silent:
   healthy). Docker restarts it, it exits again, and `gatus-health.yaml`
   goes red within fifteen minutes with `alert: high`. So a bad merge to
   `config/` is a paged incident, not a quiet one. Check YAML before
-  merging; `yq . gatus/config/*.yaml` from the repo root is the cheap
+  merging; `yq . monitoring/gatus/compose/config/*.yaml` from the repo root is the cheap
   syntax pass, and `docker compose --project-directory gatus config`
   validates the compose side.
 - **Environment changes do NOT reload** — only files do. Rotating the
@@ -118,7 +118,7 @@ down turns the whole `lab` group red in two minutes; the Pi down turns
 a runner `offline` a minute after its last poll, and a dead runner is
 otherwise silence — its scheduled workflows simply stop being run, and
 nothing inside the lab noticed until the dead man's switch fired. Neither is the dead man's switch —
-healthchecks.io is, and it stays outside the building (`heartbeat/`).
+healthchecks.io is, and it stays outside the building (`monitoring/heartbeat/`).
 
 ## Secrets
 

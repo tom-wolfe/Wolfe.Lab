@@ -11,5 +11,5 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v7
-      - working-directory: gatus/health
+      - working-directory: monitoring/gatus/health
         run: lab probe

@@ -31,7 +31,7 @@ lab jellyfin/compose deploy
 lab sonarr/compose deploy
 lab radarr/compose deploy
 lab paperless/compose deploy
-lab beszel/compose deploy
+lab monitoring/beszel/compose deploy
 
 echo
 echo "Stacks are up. What remains is by hand: RUNBOOK.md \"After setup.sh\"."

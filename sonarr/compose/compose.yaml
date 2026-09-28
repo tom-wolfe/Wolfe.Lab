@@ -48,7 +48,7 @@ services:
       - lab
 
     # The image ships no healthcheck, so this declares one. Nothing alerts
-    # on it — Gatus polling /ping (gatus/config/lab.yaml) is what pages —
+    # on it — Gatus polling /ping (monitoring/gatus/compose/config/lab.yaml) is what pages —
     # but Beszel shows container health, and `docker ps` at the terminal
     # should say the same thing Beszel does.
     healthcheck:

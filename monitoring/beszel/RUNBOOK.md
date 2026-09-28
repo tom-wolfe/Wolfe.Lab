@@ -33,7 +33,7 @@ as `garage/tofu` — run once, harvest the outputs, store them.
    (the Macs) or the pinned download (the Pi); by hand, `brew bundle
    install --file ~/.Brewfile`.
 5. **Start the agent**: run the **beszel agent** workflow, or on the node
-   `cd beszel/agent && lab deploy --node <node>`. It resolves the token
+   `cd monitoring/beszel/agent && lab deploy --node <node>`. It resolves the token
    and key from the vault into the agent's unit and starts it.
 6. **Confirm enrolment.** The mini should appear in the hub within a few
    seconds. If it doesn't, `tail ~/.cache/beszel/beszel-agent.log`.

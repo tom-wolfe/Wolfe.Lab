@@ -32,7 +32,7 @@ its own runner with `lab deploy --node <name>`). Two slices with the same shape 
 workflow and differ only in what they declare. What only one slice does
 is a component of its own with a workflow of its own — `caddy/certs`,
 `caddy/routes`, `forgejo/runners`, `garage/layout`, `immich/import`,
-`gatus/health` — named for the slice and the thing, so a `ritten.json`
+`monitoring/gatus/health` — named for the slice and the thing, so a `ritten.json`
 reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each
 workflow lists it for itself.

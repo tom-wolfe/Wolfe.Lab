@@ -35,7 +35,7 @@ resource "healthchecksio_check" "chezmoi_tick" {
     Dead man's switch for the lab's scheduler: .forgejo/workflows/
     heartbeat.yaml pings every 15 minutes from the mini's runner. Silence
     means Forgejo, the runner or the mini stopped, or the network is gone.
-    The slug is historical; renaming would recreate the check. Managed by heartbeat/tofu — edits
+    The slug is historical; renaming would recreate the check. Managed by monitoring/heartbeat/tofu — edits
     here are reverted.
   EOT
 

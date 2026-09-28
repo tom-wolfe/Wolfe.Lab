@@ -13,7 +13,7 @@ native process on each monitored machine).
 | Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins") |
 | Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin` |
 | Agent supervision and config | the `agent/` component: `agent/ritten.json` declares each node's agent — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
-| Hub liveness | Gatus, from the Pi (`gatus/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
+| Hub liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
 | Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
 | Systems, thresholds, notification URLs | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
 
@@ -123,7 +123,7 @@ pushover://shoutrrr:<credential>@<username>/
 `system/alert-failed` uses.) Configured in **Settings → Notifications**, then
 per-system thresholds in the systems table.
 
-**Who watches the hub:** Gatus, from the Pi (`gatus/config/lab.yaml`
+**Who watches the hub:** Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`
 asks `/api/health` every two minutes, three failures page). This is the
 failure Beszel structurally cannot report: a hub that isn't running sends
 no alerts, and it looks exactly like a healthy lab, because the deploy is
@@ -139,7 +139,7 @@ a row in total silence. The check that alerts is the one that asks.
 ## The configuration that isn't code
 
 Every other slice declares its API resources in tofu — buckets in
-`garage/tofu`, repositories in `forgejo/tofu`, checks in `gatus/tofu`. This
+`garage/tofu`, repositories in `forgejo/tofu`, checks in `monitoring/gatus/tofu`. This
 one can't: Beszel has no Terraform/OpenTofu provider. Registered systems,
 alert thresholds and notification URLs are clicked into the UI and live only
 in `~/Docker/beszel/data`.
@@ -182,7 +182,7 @@ One item, Wolfe.Lab vault:
   dev.twolfe.beszel-agent`.
 - Agent lifecycle: run the **beszel agent** workflow; it converges every
   node, restarting an agent only when its unit changed. By hand, on a node:
-  `cd beszel/agent && lab deploy --node <node>`. State: `launchctl print
+  `cd monitoring/beszel/agent && lab deploy --node <node>`. State: `launchctl print
   gui/$(id -u)/dev.twolfe.beszel-agent` on a Mac, `systemctl --user status
   dev.twolfe.beszel-agent` on the Pi.
 - Rotating the token/key: update the `beszel-agent` item and run the

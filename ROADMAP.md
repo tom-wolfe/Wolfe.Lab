@@ -90,10 +90,10 @@ the next thing built (#11) should be built where it will stay.
 
 **In order.**
 
-1. The CLI: root found by walking up, routes gathered recursively.
-   Published, then pinned.
-2. `monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
-   into it from here.
+1. ~~The CLI: root found by walking up, routes gathered recursively.
+   Published, then pinned.~~ Done (0.55.0).
+2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
+   into it from here.~~ Done (0.57.0).
 3. `media/`, `personal/`, `ai/`, `network/`, one pull request each.
 4. `platform/` last — Forgejo and chezmoi.
 

@@ -60,7 +60,7 @@ and no GUI, so it is the same idea with different mechanics. In order:
    profile gets no Homebrew and no macOS scripts; binaries arrive as
    pinned externals under `~/.local/bin`.
 7. Then, per slice: the runners (`forgejo/RUNBOOK.md` "Bringing up the
-   Pi"), the Beszel agent's hub-side setup (`beszel/RUNBOOK.md`), the
+   Pi"), the Beszel agent's hub-side setup (`monitoring/beszel/RUNBOOK.md`), the
    backup path (`restic/RUNBOOK.md` "A Linux node").
 
 ## Manual sign-ins (not automatable)
@@ -99,7 +99,7 @@ are done once per fresh server, in order.
          a 1Password item `beszel-agent` (credential / username)
        chezmoi apply && brew services list
      Then set thresholds and the Pushover URL in the hub — it ships none,
-     so nothing alerts until you do. Full runbook: beszel/README.md.
+     so nothing alerts until you do. Full runbook: monitoring/beszel/README.md.
 
   3. Register every node's Actions runner, this machine's included — registrations live in
      Forgejo's database, so a fresh Forgejo knows none of them, while each

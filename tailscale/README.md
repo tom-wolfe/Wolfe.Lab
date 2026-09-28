@@ -114,8 +114,8 @@ the LAN and the API over the internet, none of them through the tailnet.
    (ROADMAP.md).
 2. **The Pi is a native Linux client** — `tag:server`, like the mini —
    and its lab traffic rides the tailnet: the Beszel agent reaches the hub
-   over it (beszel/README.md "The Pi"), Gatus probes the mini by its
-   MagicDNS name (gatus/README.md "Placement"), and its restic snapshots
+   over it (monitoring/beszel/README.md "The Pi"), Gatus probes the mini by its
+   MagicDNS name (monitoring/gatus/README.md "Placement"), and its restic snapshots
    go to the mini over SFTP (restic/README.md "From a Linux node").
 3. **Per-service sidecar IPs.** forgejo is the first customer: a userspace `tailscale/tailscale` sidecar in the
    forgejo container's network namespace gives it its own tailnet seat

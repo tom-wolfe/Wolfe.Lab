@@ -4,6 +4,18 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.57.0] - 2026-09-29
+
+### Changed
+
+- **`monitoring/` is the first area** (ROADMAP #12): Gatus, the
+  heartbeat and Beszel moved under it, as `monitoring/gatus`,
+  `monitoring/heartbeat` and `monitoring/beszel`. Release names, tofu
+  state keys and workflow names are unchanged, so nothing on a node moves
+  and no required status changes; their routes are now
+  `monitoring-gatus-compose` and `monitoring-beszel-compose`, and caddy's
+  routes deploy fires on a snippet at any depth.
+
 ## [0.56.0] - 2026-09-28
 
 ### Changed

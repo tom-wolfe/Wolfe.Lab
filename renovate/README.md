@@ -61,7 +61,7 @@ Because Renovate cannot move them safely:
 - **The Pi's chezmoi externals** — forgejo-runner, `op`, beszel-agent,
   node, restic — are pinned by version *and* checksum, and Renovate would
   bump one without the other. The Beszel hub's pull request carries a
-  note to move the Pi's agent with it (`beszel/RUNBOOK.md`, "Two pins").
+  note to move the Pi's agent with it (`monitoring/beszel/RUNBOOK.md`, "Two pins").
 - **Build arguments with a twin elsewhere**: `NODE_VERSION` and
   `CHEZMOI_VERSION` in `ci/image/Dockerfile` track the nodes, and
   immich-go's `VERSION` carries its checksum.

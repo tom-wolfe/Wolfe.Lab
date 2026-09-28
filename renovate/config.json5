@@ -58,7 +58,7 @@
     },
 
     // The hub's pin has a twin Renovate cannot move: the Pi's agent, pinned by
-    // version and checksum in chezmoi (beszel/RUNBOOK.md, "Two pins").
+    // version and checksum in chezmoi (monitoring/beszel/RUNBOOK.md, "Two pins").
     {
       matchPackageNames: ["henrygd/beszel"],
       prBodyNotes: [

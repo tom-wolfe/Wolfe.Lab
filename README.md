@@ -4,14 +4,16 @@ Monorepo for my machine and homelab configuration!
 
 ## Layout
 
-Vertically sliced: everything the lab runs is one directory at the repo
-root, whatever mix of compose, tofu and jobs it needs — even
-chezmoi is a slice, holding the declarative machine plane (`home/`) beside
-its tick job.
+Vertically sliced: everything the lab runs is one directory, whatever mix
+of compose, tofu and jobs it needs — even chezmoi is a slice, holding the
+declarative machine plane (`home/`) beside its tick job. Slices are
+grouped into *areas* — `<area>/<service>/<component>`, `monitoring/gatus/compose`
+— moving over one area at a time (ROADMAP.md #12); until an area moves,
+its slices sit at the root.
 
 | Path                               | Purpose                                                                                                                                                                                                                                                               |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `<name>/`                          | one slice per thing the lab runs: a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
+| `[<area>/]<name>/`                 | one slice per thing the lab runs, under its area once that area has moved (`monitoring/` so far): a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
 | `chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
 | `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: one workflow per component shape, run from the component's directory                                                                                                    |
 | `setup.sh`                         | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence)                                                                                                                                                                     |
@@ -84,10 +86,10 @@ watches.**
 |-------------------------------|------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------|
 | every job                     | its own failure → Pushover, from the CLI's runtime                                                                                                  | Forgejo or the node's runner does |
 | Beszel agent                  | each node's CPU, memory, disks (incl. `/Volumes/Data1`), containers                                                                | that node does                    |
-| Gatus (`gatus/`, on the Pi)   | every service by REQUEST, once each through the front door, plus the third parties the lab stands on; the Beszel hub among them | the Pi does                       |
+| Gatus (`monitoring/gatus/`, on the Pi)   | every service by REQUEST, once each through the front door, plus the third parties the lab stands on; the Beszel hub among them | the Pi does                       |
 | `gatus-health.yaml`           | Gatus itself, from the mini — a dead status page looks like one you haven't opened                                                 | the mini does                     |
 | healthchecks.io               | the heartbeat still pings → **the only observer outside the building**                                                             | never (it's SaaS)                 |
-| `heartbeat/` (`heartbeat.yaml`) | sends that ping every 15 minutes from the mini's runner — proof Forgejo, the runner and its schedules are alive                    | the mini does                     |
+| `monitoring/heartbeat/` (`heartbeat.yaml`) | sends that ping every 15 minutes from the mini's runner — proof Forgejo, the runner and its schedules are alive                    | the mini does                     |
 
 Everything except healthchecks.io runs inside the lab, so a dead mini is
 silence from all of them — and silence is indistinguishable from health.

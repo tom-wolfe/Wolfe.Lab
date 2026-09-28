@@ -63,7 +63,7 @@ Consequences worth knowing:
 - `docker ps` showing gluetun unhealthy IS the tunnel being down (the
   image ships a connectivity probe). Nothing alerts on it — the lab rule
   about Docker healthchecks. Gatus checks the web UI answers
-  (`gatus/config/lab.yaml`), which is not the same thing as the tunnel
+  (`monitoring/gatus/compose/config/lab.yaml`), which is not the same thing as the tunnel
   being up.
 - **No inbound peers.** NordVPN offers no port forwarding, so nothing can
   dial in; qbittorrent only uploads on connections it opened itself.

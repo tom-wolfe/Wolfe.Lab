@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [beszel/agent/**, .forgejo/workflows/beszel-agent.yaml]
+    paths: [monitoring/beszel/agent/**, .forgejo/workflows/beszel-agent.yaml]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: beszel/agent
+      - working-directory: monitoring/beszel/agent
         run: lab check
 
   deploy:
@@ -31,5 +31,5 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - working-directory: beszel/agent
+      - working-directory: monitoring/beszel/agent
         run: lab deploy --node "${{ matrix.node }}" --auto-approve

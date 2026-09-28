@@ -5,7 +5,7 @@ name: caddy routes
 on:
   push:
     branches: [main]
-    paths: [caddy/routes/**, '*/*/caddy.caddyfile', .forgejo/workflows/caddy-routes.yaml]
+    paths: [caddy/routes/**, '**/caddy.caddyfile', .forgejo/workflows/caddy-routes.yaml]
   workflow_dispatch:
 
 concurrency:
