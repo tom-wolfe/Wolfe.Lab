@@ -3,7 +3,8 @@
   "images": [
     {
       "tag": "code.twolfe.dev/tom-wolfe/ci",
-      "context": "."
+      "context": "../..",
+      "dockerfile": "ci/image/Dockerfile"
     }
   ]
 }
