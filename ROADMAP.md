@@ -39,6 +39,64 @@ runbook: today both jobs read the local one.
 
 Add Prowlarr and Jellyseerr to the existing Radarr/Sonarr/Jellyfin stack.
 
+### 12. Areas — group the slices before the lab outgrows a flat root
+
+Twenty-two directories at the root, and more on the way (Prowlarr,
+Jellyseerr, Pi-hole, a collector, Grafana). **Decided: three levels —
+area, service, component.** The area groups; the service keeps its own
+directory, README and runbook; the component keeps its shape name,
+which reads well once its parent names the service —
+`monitoring/gatus/compose`, not `gatus-compose` beside `gatus-health`.
+
+```
+monitoring/  grafana/ alloy/ gatus/ heartbeat/ beszel/ (until #11 retires it)
+network/     caddy/ dns/ tailscale/ (pihole/)
+platform/    forgejo/ garage/ restic/ chezmoi/ ci/ renovate/
+media/       jellyfin/ radarr/ sonarr/ qbittorrent/ (prowlarr/ jellyseerr/)
+personal/    immich/ paperless/ files/ obsidian/ mail/
+ai/          ollama/
+build/       the CLI, where it is
+```
+
+Immich is `personal/`: it is the photo library, not part of the *arr
+pipeline. chezmoi moves into `platform/` with everything else the
+lab stands on.
+
+**What a move does not touch.** Install directories come from each
+component's `release`, not its path, so nothing on a node moves and no
+container is recreated for it; tofu state keys are literals in each
+root's `providers.tf`, so no state migrates.
+
+**What it does.**
+
+- **Two CLI steps assume a slice sits one level under the root.**
+  `GatherRoutes` climbs two directories to the checkout and names a
+  snippet `<slice>-<component>`; chezmoi's `RenderProfiles` climbs two
+  as well. Both find the root by walking up, as the tofu workflow's
+  `ResolveEnvironment` already does, and routes are gathered
+  recursively. A CLI change, so it ships and is pinned before anything
+  moves. The ollama siblings check reads its parent and is unaffected.
+- **`.chezmoiroot` moves in the same commit as `chezmoi/`**, or every
+  node's `chezmoi update` loses its source — the riskiest single move,
+  which is why `platform/` goes last.
+- **Every workflow's `paths:` and `working-directory`**, and the
+  cross-references in the docs. Mechanical, but a merge redeploys
+  everything it moved (backups run on schedule only; the per-node
+  concurrency groups serialise the rest), so one area per pull request.
+
+#6 retires most of those workflows, and its agent will find components
+by their `ritten.json` at any depth — but it is several steps away, and
+the next thing built (#11) should be built where it will stay.
+
+**In order.**
+
+1. The CLI: root found by walking up, routes gathered recursively.
+   Published, then pinned.
+2. `monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
+   into it from here.
+3. `media/`, `personal/`, `ai/`, `network/`, one pull request each.
+4. `platform/` last — Forgejo and chezmoi.
+
 ### 11. Observability — OpenTelemetry into Grafana
 
 The lab can say whether things are up (Gatus), how hard the machines are
@@ -59,32 +117,85 @@ Prometheus for metrics, Grafana in front), but it is the standard shape,
 the one that carries over to work, and its dashboards are the best on
 offer.
 
-**The shape.**
+**The shape.** All of it in the `monitoring/` area (#12): the backend
+is `monitoring/grafana`, the collectors `monitoring/alloy`.
 
-- **A collector on every node** — Grafana Alloy, a platform component
-  deployed like any other. It receives OTLP from applications, reads container logs through the
-  Docker API and host-process logs from their files (ollama, the
-  runners, the Beszel agent), and scrapes the Prometheus endpoints
-  services already expose — caddy, Forgejo, Garage, Gatus, Immich.
-  On the Studio it follows the hybrid rule: nothing waits on it.
-- **The backend on the mini**, behind caddy, tailnet-only. Loki and
-  Tempo keep their data in Garage; Prometheus in its own store. Every
-  signal is kept **seven days** to start, extended when a question needs
-  more. Telemetry is disposable and is not backed up; datasources,
-  dashboards and alert rules are provisioned from the repo, so a rebuild
-  loses history and nothing else.
-- **Grafana alerts; Gatus watches Grafana.** Alert rules over the
-  metrics and logs — a filling drive, a container restarting, a job
-  slowing down — go to Pushover like everything else. Grafana shares the
-  mini's fate, and a watcher must not share the fate of the thing it
-  watches, so the layers outside it stay: Gatus on the Pi pages when the
-  mini, or Grafana itself, stops answering — a dead alerting engine
-  looks exactly like a quiet night — and healthchecks.io stays the one
-  observer outside the building.
+- **A collector on every node, as a host daemon** — Grafana Alloy,
+  installed by the `agents` workflow like the Beszel agent: launchd on
+  the Macs, systemd on the Pi and whatever Linux node comes next. Not a
+  container: on a Mac a container sees Docker Desktop's VM, not the
+  Mac — its CPU, memory and disks rather than `/Volumes/Data1` — and
+  none of the host-process logs (ollama, the runners). It receives OTLP
+  from applications (containers reach it at `host.docker.internal`),
+  reads container logs through the Docker socket and host-process logs
+  from their files, and scrapes metrics. On the Studio it follows the
+  hybrid rule: nothing waits on it, and what it buffers catches up when
+  the Studio wakes.
+- **Every node forwards to the mini's collector**, which is the one
+  that writes to the backend: one ingest port, one place to relabel or
+  drop. It is reached over the tailnet directly, never through caddy —
+  a broken front door must not hide the evidence of its own failure
+  (the same reason the Beszel agents dial the hub on `:8090`). The
+  Tailscale policy lets every node reach that port.
+- **A slice declares its own collection, in Docker labels.** Alloy
+  discovers containers through the socket; a compose file that wants
+  its metrics scraped says so on the service (`lab.metrics.port`,
+  `lab.metrics.path`), so no central list of targets exists to drift —
+  the "a slice owns everything about itself" shape from #6, before the
+  agent. Logs need no label: every container's are collected.
+- **The backend on the mini, on its own disk.** Loki and Tempo as single
+  binaries on the filesystem, Prometheus in its own TSDB, all on the
+  internal disk; Grafana in front, behind caddy, tailnet-only, with its
+  own login (the admin from the vault, like every other service's) —
+  SSO is its own question (Undecided). Every signal is kept **seven
+  days**, with a size cap beside it as the guard; extended when a
+  question needs more. Telemetry is disposable and is not backed up;
+  datasources, dashboards and alert rules are provisioned from the repo,
+  so a rebuild loses history and nothing else. Every container gets a
+  memory limit: the mini's 16 GB is already short of free pages when
+  ollama's model is loaded, so memory pressure is watched after step 1 —
+  and if it caps out, that raises the priority of the Linux node, not
+  of trimming the stack.
+- **Grafana alerts; Gatus watches Grafana; a watchdog watches the
+  alerting.** Alert rules over the metrics and logs — a filling drive, a
+  container restarting, a job slowing down — go to Pushover like
+  everything else. Grafana shares the mini's fate, and a watcher must
+  not share the fate of the thing it watches, so the layers outside it
+  stay: Gatus on the Pi pages when the mini, or Grafana itself, stops
+  answering, and healthchecks.io stays the one observer outside the
+  building. But Grafana can answer HTTP with its rule engine stalled — a
+  dead alerting engine looks exactly like a quiet night — so one rule
+  always fires and pings a healthchecks.io check, which pages when the
+  pings stop.
 - **Beszel retires.** Its host and container stats are what the
   collectors report, and its threshold alerts become Grafana rules; once
   both are in place, the hub, the agents and Gatus's check of the hub
-  go.
+  go. Per-container stats on the Macs are the one gap: Alloy's cAdvisor
+  exporter is Linux-only and a host process cannot see the VM's cgroups,
+  so they come from a cAdvisor container inside Docker Desktop's VM,
+  scraped like any other.
+
+**Why not Garage for Loki and Tempo.** Object storage is the standard
+shape, but on one backend node it buys nothing, and here it costs: the
+nightly `garage-backup` snapshots all of Garage's blocks — no bucket can
+be left out — so a week of churning telemetry would ride into restic and
+B2 every night, and its 02:30 cold copy stops Garage, and the stack
+with it. A second, unbacked Garage would fix both at the price of a
+second Garage to run. Not yet: telemetry is disposable, so moving Loki
+and Tempo to S3 is configuration and at most seven days of history. The
+time for it is when the backend moves to the Linux node, where a
+telemetry Garage — or a replicated one — has a job to do.
+
+**One label schema, from the first signal.** Dashboards and alert rules
+are written against labels, so they are decided before anything is
+emitted:
+
+- `service.name` — what emitted it (`mail-watcher`, `caddy`, `ollama`).
+- `host.name` — the node (`mini`, `studio`, `pi`).
+- `lab.area`, `lab.service`, `lab.component` — where it lives in the
+  repo (#12): `monitoring`, `gatus`, `compose`.
+- `lab.role` — `server` or `hybrid`, so every rule can leave the Studio
+  out in one matcher, as its Beszel agent and Gatus check never alert.
 
 **Why Alloy rather than the upstream Collector.** Both speak OTLP, so
 the applications do not care, and a later switch is the collectors'
@@ -110,14 +221,18 @@ compare over time — the view the Actions tab gives today, for the thing
 that will replace it. A Ritten feature, so a Ritten release, then the
 lab's pins.
 
-**In order.**
+**In order.** After #12's `monitoring/` move:
 
-1. The backend on the mini and a collector beside it.
+1. The backend on the mini and the mini's collector; the watchdog
+   check; Gatus watching Grafana. Then a look at the mini's memory.
 2. The mail watcher instrumented — the bottleneck question answered.
-3. Container and host-process logs from every node.
-4. The services' own metrics, scraped.
-5. Host metrics and the alert rules that replace Beszel's; Gatus
-   watching Grafana; then Beszel removed.
+3. Collectors on the Pi and the Studio, forwarding; container and
+   host-process logs from every node.
+4. The services' own metrics — turned on first, since none is today:
+   Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
+   each need theirs enabled — then labelled for scraping.
+5. Host metrics, cAdvisor on the Macs, and the alert rules that replace
+   Beszel's; then Beszel removed.
 6. Ritten's traces — before the agent, so it is observable from its
    first reconcile.
 
@@ -531,6 +646,18 @@ Tailscale node-sharing if "a few known people" covers it; a public
 Nextcloud/Seafile if it doesn't, which deserves its own design pass; or
 keep a SaaS for the small subset actually shared and self-host the rest.
 Explicitly not blocking the backup work — they're independent.
+
+### Single sign-on
+
+Every service with a login has its own — around nine, Grafana
+included (#11) — each an admin in the vault. One identity provider
+behind caddy (Authentik or Pocket ID the likely candidates), or
+Tailscale identity passed through caddy as a header, would make that
+one login. Undecided because it is a new thing every login depends on:
+the provider down is every UI locked, so it wants a break-glass local
+admin kept in each service, and it belongs on a node that is not the
+Studio. Not blocking anything; Grafana uses its own login until this is
+decided.
 
 ### Pi-hole again — and local DNS for `*.lab`
 

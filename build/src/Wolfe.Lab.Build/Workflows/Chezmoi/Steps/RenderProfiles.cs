@@ -1,4 +1,5 @@
 using Ritten.Engine.FileSystem;
+using Ritten.Git;
 using Wolfe.Lab.Build.Clients.Chezmoi;
 using Wolfe.Lab.Build.Workflows.Chezmoi.Models;
 
@@ -14,13 +15,15 @@ namespace Wolfe.Lab.Build.Workflows.Chezmoi.Steps;
 /// node. The listing is the review aid — what each machine gets — and goes to the detailed log.
 /// </remarks>
 [Step("render profiles", StepKind.Check)]
-internal sealed class RenderProfiles(IChezmoi chezmoi, Profiles profiles, IFileSystem fileSystem, IWorkflowLog log)
+internal sealed class RenderProfiles(IChezmoi chezmoi, Profiles profiles, IFileSystem fileSystem, IGit git, IWorkflowLog log)
 {
     public async Task<StepResult<RenderedProfiles>> Run(CancellationToken ct = default)
     {
-        // The checkout, two levels up from the component: chezmoi's own .chezmoiroot lives there
-        // and names the source tree, so the renderer reads the repository exactly as a node does.
-        var source = new PhysicalDirectory(Path.GetFullPath(Path.Combine(fileSystem.ProjectRoot.AbsolutePath, "..", "..")));
+        if (await git.RepositoryRoot(ct) is not { } source)
+        {
+            return new Error($"{fileSystem.ProjectRoot.AbsolutePath} is not in a git checkout, and the profiles are rendered from one.");
+        }
+
         var scratch = new PhysicalDirectory(Directory.CreateTempSubdirectory("lab-render-").FullName);
         var rendered = new List<RenderedProfile>();
         foreach (var profile in profiles.Names)

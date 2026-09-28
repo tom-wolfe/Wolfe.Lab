@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.55.0] - 2026-09-28
+
+### Changed
+
+- **The CLI finds the checkout at any depth.** Caddy's route gathering
+  and chezmoi's profile rendering counted two directories up from the
+  component to reach the repository; both now ask git for the
+  repository's root, and routes are gathered from the whole checkout
+  rather than two levels of it. A snippet is named by its component's path, joined
+  with dashes (`network/caddy/compose` → `network-caddy-compose`), so
+  today's names are unchanged. The groundwork for grouping slices into
+  areas (ROADMAP #12).
+
 ## [0.54.0] - 2026-09-25
 
 ### Fixed

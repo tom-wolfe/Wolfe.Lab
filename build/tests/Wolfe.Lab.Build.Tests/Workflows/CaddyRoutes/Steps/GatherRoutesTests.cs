@@ -1,4 +1,5 @@
 using Ritten.Engine.FileSystem;
+using Ritten.Git;
 using Wolfe.Lab.Build.Workflows.CaddyRoutes.Steps;
 
 namespace Wolfe.Lab.Build.Tests.Workflows.CaddyRoutes.Steps;
@@ -7,71 +8,102 @@ public class GatherRoutesTests : IDisposable
 {
     private readonly DirectoryInfo _checkout = Directory.CreateTempSubdirectory("lab-gather-");
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly IGit _git = Substitute.For<IGit>();
 
     public GatherRoutesTests()
     {
-        // The routes component sits two levels below the checkout, like every component.
-        var component = _checkout.CreateSubdirectory("caddy").CreateSubdirectory("routes");
+        // The routes component sits three levels below the checkout — area, service, component.
+        var component = _checkout.CreateSubdirectory("network").CreateSubdirectory("caddy").CreateSubdirectory("routes");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
         _fileSystem.Temp.Returns(new PhysicalDirectory(Path.Combine(component.FullName, "temp")));
+        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(new PhysicalDirectory(_checkout.FullName));
     }
 
     public void Dispose() => _checkout.Delete(recursive: true);
 
-    private void Route(string slice, string component, string content = "@x host x\n")
+    private void Route(string component, string content = "@x host x\n")
     {
-        var directory = Directory.CreateDirectory(Path.Combine(_checkout.FullName, slice, component));
+        var directory = Directory.CreateDirectory(Path.Combine(_checkout.FullName, component));
         File.WriteAllText(Path.Combine(directory.FullName, GatherRoutes.Snippet), content);
     }
 
-    private GatherRoutes Step() => new(_fileSystem, Substitute.For<IWorkflowLog>());
+    private GatherRoutes Step() => new(_fileSystem, _git, Substitute.For<IWorkflowLog>());
 
     private static string Staged(IDirectory staging, string name) => Path.Combine(staging.AbsolutePath, name + GatherRoutes.Extension);
 
     [Fact]
-    public void Run_StagesEveryComponentsRouteUnderItsSliceAndComponentName()
+    public async Task Run_StagesEveryComponentsRouteUnderItsPathFromTheCheckout()
     {
-        Route("jellyfin", "compose");
-        Route("mail", "watcher");
+        Route("media/jellyfin/compose");
+        Route("personal/mail/watcher");
 
-        var staged = Step().Run().Value.ShouldNotBeNull();
+        var staged = (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
 
-        staged.Names.ShouldBe(["jellyfin-compose", "mail-watcher"]);
-        File.Exists(Staged(staged.Directory, "jellyfin-compose")).ShouldBeTrue();
-        File.Exists(Staged(staged.Directory, "mail-watcher")).ShouldBeTrue();
+        staged.Names.ShouldBe(["media-jellyfin-compose", "personal-mail-watcher"]);
+        File.Exists(Staged(staged.Directory, "media-jellyfin-compose")).ShouldBeTrue();
+        File.Exists(Staged(staged.Directory, "personal-mail-watcher")).ShouldBeTrue();
     }
 
     [Fact]
-    public void Run_GathersFromTheCheckoutSoOneComponentDoesNotWaitOnAnother()
+    public async Task Run_GathersAtAnyDepthSoSlicesCanMoveOneAreaAtATime()
     {
-        Route("ollama", "server", "@ai host ai.twolfe.dev\n");
+        Route("jellyfin/compose");
+        Route("monitoring/gatus/compose");
 
-        var staged = Step().Run().Value.ShouldNotBeNull();
+        (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull().Names.ShouldBe(["jellyfin-compose", "monitoring-gatus-compose"]);
+    }
+
+    [Fact]
+    public async Task Run_IgnoresHiddenDirectories()
+    {
+        Route(".git/stray");
+        Route("media/jellyfin/compose");
+
+        (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull().Names.ShouldBe(["media-jellyfin-compose"]);
+    }
+
+    [Fact]
+    public async Task Run_RefusesAComponentOutsideACheckout()
+    {
+        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.Outcome.IsFailure.ShouldBeTrue();
+        result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("not in a git checkout");
+    }
+
+    [Fact]
+    public async Task Run_GathersFromTheCheckoutSoOneComponentDoesNotWaitOnAnother()
+    {
+        Route("ai/ollama/mini", "@ai host ai.twolfe.dev\n");
+
+        var staged = (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
 
         // ollama installs no stack of its own — its route arrives only because this step
         // reads the checkout rather than the install root.
-        File.ReadAllText(Staged(staged.Directory, "ollama-server")).ShouldContain("ai.twolfe.dev");
+        File.ReadAllText(Staged(staged.Directory, "ai-ollama-mini")).ShouldContain("ai.twolfe.dev");
     }
 
     [Fact]
-    public void Run_StartsFromAnEmptyStagingDirectoryEachTime()
+    public async Task Run_StartsFromAnEmptyStagingDirectoryEachTime()
     {
-        Route("jellyfin", "compose");
-        var first = Step().Run().Value.ShouldNotBeNull();
-        File.Delete(Path.Combine(_checkout.FullName, "jellyfin", "compose", GatherRoutes.Snippet));
+        Route("media/jellyfin/compose");
+        var first = (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        File.Delete(Path.Combine(_checkout.FullName, "media", "jellyfin", "compose", GatherRoutes.Snippet));
 
-        var second = Step().Run().Value.ShouldNotBeNull();
+        var second = (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
 
         second.Names.ShouldBeEmpty();
-        File.Exists(Staged(first.Directory, "jellyfin-compose")).ShouldBeFalse();
+        File.Exists(Staged(first.Directory, "media-jellyfin-compose")).ShouldBeFalse();
     }
 
     [Fact]
-    public void Run_IgnoresAComponentThatPublishesNoRoute()
+    public async Task Run_IgnoresAComponentThatPublishesNoRoute()
     {
-        Directory.CreateDirectory(Path.Combine(_checkout.FullName, "restic", "repositories"));
-        Route("jellyfin", "compose");
+        Directory.CreateDirectory(Path.Combine(_checkout.FullName, "platform", "restic", "repositories"));
+        Route("media/jellyfin/compose");
 
-        Step().Run().Value.ShouldNotBeNull().Names.ShouldBe(["jellyfin-compose"]);
+        (await Step().Run(TestContext.Current.CancellationToken)).Value.ShouldNotBeNull().Names.ShouldBe(["media-jellyfin-compose"]);
     }
 }
