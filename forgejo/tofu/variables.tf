@@ -51,3 +51,9 @@ variable "renovate_password" {
   type        = string
   sensitive   = true
 }
+
+variable "packages_token" {
+  description = "tom-wolfe's package-only Forgejo token (1P `forgejo-packages`; scope package: read and write), written as the PACKAGES_TOKEN Actions secret"
+  type        = string
+  sensitive   = true
+}

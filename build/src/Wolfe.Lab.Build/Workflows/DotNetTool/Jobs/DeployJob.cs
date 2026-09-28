@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.NuGet;
@@ -7,7 +6,6 @@ using Ritten.Releases;
 using Ritten.Releases.Steps;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.DotNetTool.Models;
-using Wolfe.Lab.Build.Workflows.DotNetTool.Steps;
 
 namespace Wolfe.Lab.Build.Workflows.DotNetTool.Jobs;
 
@@ -33,7 +31,7 @@ internal sealed class DeployJob : LabJob<DotNetToolSettings>
         Step.FromType<DotnetTest>(),
         Step.FromType<DotnetPack>(),
         Step.FromType<GateApproval>(),
-        Step.FromType<AuthenticateFeed>(),
+        Step.FromType<NugetAuthenticate>(),
         Step.FromType<NugetPush>()
     ];
 
@@ -41,8 +39,7 @@ internal sealed class DeployJob : LabJob<DotNetToolSettings>
 
     protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
         .Require(s => s.Project is { Length: > 0 }, "'project' not set in ritten.json.")
-        .Require(s => s.Feed.Source is not null, "'feed.source' not set in ritten.json.")
-        .Require(s => s.Feed.Token is not null, "'feed.token' not set in ritten.json.");
+        .Require(s => s.Feed.Source is not null, "'feed.source' not set in ritten.json.");
 
     protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings)
     {
@@ -50,6 +47,5 @@ internal sealed class DeployJob : LabJob<DotNetToolSettings>
         builder.AddBuildReporting()
             .AddDotNet([settings.Project!], settings.Configuration)
             .AddNuGet(settings.Feed.Source!.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
-        builder.Services.AddSingleton(new FeedToken(settings.Feed.Token!.Value));
     }
 }

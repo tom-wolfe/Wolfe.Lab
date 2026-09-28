@@ -27,14 +27,17 @@ jobs:
 
   deploy:
     if: github.event_name != 'pull_request'
-    runs-on: wolfe-pi5
+    runs-on: docker
     timeout-minutes: 15
-    # Its own group, not the node's: publishing changes nothing on the Pi, and a
-    # node group is for the jobs that do.
     concurrency:
       group: build-deploy
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: build/global.json
       - working-directory: build
+        env:
+          RITTEN_NUGET_API_KEY: ${{ secrets.PACKAGES_TOKEN }}
         run: dotnet run --project src/Wolfe.Lab.Build -- deploy --auto-approve

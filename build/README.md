@@ -212,9 +212,10 @@ move together, in one pull request; the chezmoi and `ci image` workflows
 roll them out on the merge.
 
 Every workflow calls `lab <job>` from the component's directory, with
-one exception: the CLI's own `deploy` compiles the checkout (`dotnet run`),
+two exceptions. The CLI's own `deploy` compiles the checkout (`dotnet run`),
 because its input is the CLI's source and, on a cold start, it is what
-puts the first package on the feed. `setup.sh` compiles for the same
+puts the first package on the feed. The CI image's `deploy` runs kaniko
+directly (below), because the image `lab` ships in is the one it builds. `setup.sh` compiles for the same
 reason. On a cold start, then: Forgejo up (setup.sh), the `build` deploy
 publishes, and the next chezmoi apply installs `lab` — the install script
 runs on every apply and warns, rather than fails, while the feed is
@@ -224,6 +225,13 @@ The CI image (`ci/image/`) is an `image` component with the same two
 jobs as everything else: `check` on the pull request (each context has a
 Dockerfile, each tag names its registry — the containerised runner has no
 Docker socket, so the build itself cannot be checked), and `deploy` on the
-merge, which builds it on the Pi and pushes it to Forgejo's registry as
-`code.twolfe.dev/tom-wolfe/ci`, so a containerised runner on a node that
-did not build it can pull it.
+merge, which builds it and pushes it to Forgejo's registry as
+`code.twolfe.dev/tom-wolfe/ci`, where every containerised runner pulls it.
+
+Both publishes run in the containerised pool and touch no node. The CLI's
+runs in the CI image, with the SDK `global.json` names. The CI image's
+runs in kaniko's own image, not the one it builds — so a broken CI image
+never blocks its fix — and kaniko builds a Dockerfile unprivileged with
+no daemon, where the pool hands no job a socket. Both push with one
+package-only token, the `PACKAGES_TOKEN` Actions secret (`RUNBOOK.md`,
+"The package token").

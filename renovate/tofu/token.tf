@@ -1,6 +1,7 @@
 # Renovate's tokens, as the Actions secrets its workflow reads
-# (renovate/README.md). A containerised job never reaches the vault, so these
-# are the lab's only Actions secrets. Rotating Renovate's own token is
+# (renovate/README.md). A containerised job never reaches the vault, so its
+# credentials are Actions secrets: these, and the package token the
+# publishes push with (build/RUNBOOK.md). Rotating Renovate's own token is
 # `tofu apply -replace=forgejo_personal_access_token.renovate`.
 
 data "forgejo_repository" "wolfe_lab" {

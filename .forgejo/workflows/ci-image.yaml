@@ -1,12 +1,5 @@
 # The image every containerised job runs in: checked on the pull request,
 # built and pushed to Forgejo's registry on the merge.
-#
-# The deploy runs on a HOST runner, not the containerised one: a
-# containerised job gets no Docker socket, and this job produces the image
-# the containerised runner needs, so it must not depend on that image
-# existing. The Pi's, because the Pi is the node whose containerised runner
-# runs it (ROADMAP.md #6) — which leaves the build beside its only consumer
-# until another node's runner pulls it from the registry.
 name: ci image
 
 on:
@@ -18,7 +11,6 @@ on:
 
 jobs:
   check:
-    # Pre-merge code never runs on a node.
     if: github.event_name == 'pull_request'
     runs-on: docker
     timeout-minutes: 15
@@ -31,14 +23,25 @@ jobs:
 
   deploy:
     if: github.event_name != 'pull_request'
-    runs-on: wolfe-pi5
+    runs-on: docker
+    container:
+      # The maintained fork of Google's archived kaniko; -debug for busybox's sh.
+      image: ghcr.io/osscontainertools/kaniko:v1.28.5-debug
     timeout-minutes: 30
-    # Its own group, not the node's: building and pushing changes nothing on the Pi, and a
-    # node group is for the jobs that do.
     concurrency:
       group: ci-image-deploy
       cancel-in-progress: false
+    defaults:
+      run:
+        shell: sh
     steps:
-      - uses: actions/checkout@v7
-      - working-directory: ci/image
-        run: lab deploy --auto-approve
+      - env:
+          REGISTRY_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+        run: |
+          set -eu
+          auth="$(printf 'tom-wolfe:%s' "$REGISTRY_TOKEN" | base64 | tr -d '\n')"
+          printf '{"auths":{"code.twolfe.dev":{"auth":"%s"}}}' "$auth" > /kaniko/.docker/config.json
+          /kaniko/executor \
+            --context "git://code.twolfe.dev/${{ github.repository }}.git#${{ github.ref }}#${{ github.sha }}" \
+            --context-sub-path ci/image \
+            --destination code.twolfe.dev/tom-wolfe/ci:latest

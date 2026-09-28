@@ -71,13 +71,21 @@ publishes it.
 Then move the pins to it in a second pull request (chezmoi's and the CI
 image's), which is what actually puts it on the runners.
 
-## The feed token
+## The package token
 
-One Forgejo access token publishes both the CLI package and the CI
-image: `forgejo-packages` in the Wolfe.Lab vault, `credential` field. In
-Forgejo, as `tom-wolfe`: Settings → Applications → Generate New Token,
-scope **package: read and write** and nothing else. Reading needs no
-token: packages under a public owner are public.
+One Forgejo access token publishes both the CLI package and the CI image:
+the `PACKAGES_TOKEN` Actions secret on Wolfe.Lab, scope **package: read
+and write** and nothing else, belonging to `tom-wolfe` (packages under a
+user are writable only by that user). Both publishes run in the
+containerised pool, which never reaches the vault, so `forgejo/tofu`
+(`packages.tf`) writes it from the vault into the secret. Made by hand,
+not minted: minting a user's token means logging in as that user, and
+no root should hold the owner's password. Reading needs no token:
+packages under a public owner are public. Forgejo's automatic Actions
+token cannot stand in for it — it has no package access at all.
 
-Rotation: generate a new one, replace the vault field, revoke the old.
-Nothing caches it — every publish reads it from the vault.
+Making or rotating it: in Forgejo, as `tom-wolfe`, Settings →
+Applications → Generate New Token, scope **package: read and write** and
+nothing else; replace `forgejo-packages` → `credential` in the Wolfe.Lab
+vault; re-run the `forgejo tofu` workflow, which writes the secret; then
+revoke the old token.

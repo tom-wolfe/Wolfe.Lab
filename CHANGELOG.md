@@ -8,14 +8,17 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
-- **The CLI finds the checkout at any depth.** Caddy's route gathering
-  and chezmoi's profile rendering counted two directories up from the
-  component to reach the repository; both now ask git for the
-  repository's root, and routes are gathered from the whole checkout
-  rather than two levels of it. A snippet is named by its component's path, joined
-  with dashes (`network/caddy/compose` → `network-caddy-compose`), so
-  today's names are unchanged. The groundwork for grouping slices into
-  areas (ROADMAP #12).
+- **Both publishes run in the containerised pool, not on the Pi.** The
+  CLI's `build` deploy installs the SDK `global.json` names, as its check
+  already did, so a Renovate bump moves everything that builds at once.
+- **The Pi's SDK is the one `build/global.json` names**, read when
+  chezmoi renders its install script, so the version lives in one place.
+
+### Fixed
+
+- **The CLI had not published since 0.48.1.** Renovate moved
+  `build/global.json` to SDK 10.0.401, and `latestFeature` never rolls
+  back a feature band, so the Pi found no SDK it could use.
 
 ## [0.54.0] - 2026-09-25
 
