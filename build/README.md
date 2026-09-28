@@ -204,12 +204,14 @@ its pin has moved, as two pull requests.
 
 ## How workflows run it
 
-The pinned tool, `lab`, is on every runner. chezmoi installs it on each
-node with a host runner (`.chezmoiscripts/install-lab.sh`, on the Mac
-mini, the Pi and the Studio), and the CI image bakes the same version in
-as its last layer (`LAB_VERSION` in `ci/image/Dockerfile`). The two pins
-move together, in one pull request; the chezmoi and `ci image` workflows
-roll them out on the merge.
+The pinned tool, `lab`, is on every runner. The pin is one line: the
+repository's tool manifest, `.config/dotnet-tools.json`. chezmoi installs
+that version on each node with a host runner (`.chezmoiscripts/install-lab.sh`,
+on the Mac mini, the Pi and the Studio), and the CI image bakes it in as
+its last layer (`ci/image/Dockerfile`, which reads the manifest with jq);
+the chezmoi and `ci image` workflows both roll it out on the merge. On a
+laptop, `dotnet tool restore` then `dotnet lab` runs the same version
+from anywhere in the repository.
 
 Every workflow calls `lab <job>` from the component's directory, with
 two exceptions. The CLI's own `deploy` compiles the checkout (`dotnet run`),
@@ -221,11 +223,10 @@ publishes, and the next chezmoi apply installs `lab` — the install script
 runs on every apply and warns, rather than fails, while the feed is
 unreachable.
 
-The CI image (`ci/image/`) is an `image` component with the same two
-jobs as everything else: `check` on the pull request (each context has a
-Dockerfile, each tag names its registry — the containerised runner has no
-Docker socket, so the build itself cannot be checked), and `deploy` on the
-merge, which builds it and pushes it to Forgejo's registry as
+The CI image (`ci/image/`) is an `image` component, and the one with a
+`check` and no `deploy`: the check runs on the pull request (each image's
+Dockerfile exists, each tag names its registry), and the merge's build
+and push are kaniko's, in `ci-image.yaml`, to Forgejo's registry as
 `code.twolfe.dev/tom-wolfe/ci`, where every containerised runner pulls it.
 
 Both publishes run in the containerised pool and touch no node. The CLI's

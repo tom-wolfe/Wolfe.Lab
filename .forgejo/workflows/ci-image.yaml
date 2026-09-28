@@ -6,7 +6,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [ci/**, .forgejo/workflows/ci-image.yaml]
+    paths: [ci/**, .config/dotnet-tools.json, .forgejo/workflows/ci-image.yaml]
   workflow_dispatch:
 
 jobs:
@@ -43,5 +43,5 @@ jobs:
           printf '{"auths":{"code.twolfe.dev":{"auth":"%s"}}}' "$auth" > /kaniko/.docker/config.json
           /kaniko/executor \
             --context "git://code.twolfe.dev/${{ github.repository }}.git#${{ github.ref }}#${{ github.sha }}" \
-            --context-sub-path ci/image \
+            --dockerfile ci/image/Dockerfile \
             --destination code.twolfe.dev/tom-wolfe/ci:latest

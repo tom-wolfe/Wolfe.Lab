@@ -68,8 +68,9 @@ Add the lab's next `## [x.y.z]` heading to `CHANGELOG.md` in the same
 pull request, describing the change — the CLI's version is read from it,
 and the check fails a change to what ships without one. The merge
 publishes it.
-Then move the pins to it in a second pull request (chezmoi's and the CI
-image's), which is what actually puts it on the runners.
+Then move the pin to it in a second pull request — the version in
+`.config/dotnet-tools.json`, which chezmoi and the CI image both read —
+which is what actually puts it on the runners.
 
 ## The package token
 

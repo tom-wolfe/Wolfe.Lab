@@ -43,27 +43,25 @@ RUN set -eux; \
     docker --version; \
     docker compose version
 
-# shellcheck and chezmoi, for the chezmoi slice's check: every profile renders,
-# and what it renders is valid shell. chezmoi pinned to what the Brewfile
-# installs on the nodes; bump both together.
+# shellcheck and chezmoi, for the chezmoi slice's check.
 ARG CHEZMOI_VERSION=2.72.2
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends shellcheck; \
+    apt-get install -y --no-install-recommends shellcheck jq; \
     rm -rf /var/lib/apt/lists/*; \
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "v${CHEZMOI_VERSION}"; \
     chezmoi --version; \
-    shellcheck --version
+    shellcheck --version; \
+    jq --version
 
-# The lab's CLI, `lab`, at the version its pin names, so a job runs the
-# published, reviewed CLI rather than compiling the checkout. LAST, because
-# it moves most often: a bump rebuilds this layer and nothing above it. Bump
-# together with the version in chezmoi's install-lab script, which pins the
-# host runners to the same one.
-ARG LAB_VERSION=0.48.1
+# The lab's CLI, `lab`, at the version its pin names, so a job runs the LAST, 
+# because it moves most often: a bump rebuilds from the COPY down, nothing above it.
+COPY .config/dotnet-tools.json /tmp/dotnet-tools.json
 RUN set -eux; \
+    version="$(jq -er '.tools["wolfe.lab.build"].version' /tmp/dotnet-tools.json)"; \
     dotnet tool install --tool-path /opt/lab Wolfe.Lab.Build \
-      --version "${LAB_VERSION}" \
+      --version "${version}" \
       --add-source https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json; \
-    /opt/lab/lab --help > /dev/null
+    /opt/lab/lab --help > /dev/null; \
+    rm /tmp/dotnet-tools.json
 ENV PATH="/opt/lab:${PATH}"

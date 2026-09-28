@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [chezmoi/**, .forgejo/workflows/chezmoi.yaml]
+    paths: [chezmoi/**, .config/dotnet-tools.json, build/global.json, .forgejo/workflows/chezmoi.yaml]
   workflow_dispatch:
 
 jobs:

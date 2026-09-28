@@ -7,8 +7,7 @@ namespace Wolfe.Lab.Build.Workflows.Docker;
 /// Workflows for docker images.
 /// </summary>
 /// <remarks>
-/// The docker workflow's smaller sibling, for a component that ships an image and no stack —
-/// the CI image being the one that matters, since every containerised job runs in it.
+/// The docker workflow's smaller sibling, for a component that ships an image and no stack.
 /// </remarks>
 public sealed class ImageWorkflow : IWorkflow
 {
@@ -19,5 +18,5 @@ public sealed class ImageWorkflow : IWorkflow
     public string Label => "image";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new ImageCheckJob(), new ImageDeployJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new ImageCheckJob()];
 }

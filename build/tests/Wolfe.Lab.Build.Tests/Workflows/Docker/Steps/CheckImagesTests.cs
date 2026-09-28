@@ -1,4 +1,3 @@
-using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
 using Wolfe.Lab.Build.Workflows.Docker.Steps;
@@ -18,21 +17,17 @@ public class CheckImagesTests : IDisposable
 
     public void Dispose() => _component.Delete(recursive: true);
 
-    private CheckImages Step(bool pushed, params DockerImage[] images) =>
-        new(new ComponentImages(images, pushed), _fileSystem, Substitute.For<IWorkflowLog>());
+    private CheckImages Step(params ComponentImage[] images) =>
+        new(new ComponentImages(images), _fileSystem, Substitute.For<IWorkflowLog>());
 
     [Fact]
-    public void Run_PassesAPushedImageWhoseTagNamesItsRegistry() =>
-        Step(pushed: true, new DockerImage("code.twolfe.dev/tom-wolfe/ci", ".")).Run().IsFailure.ShouldBeFalse();
+    public void Run_PassesAnImageWhoseTagNamesItsRegistry() =>
+        Step(new ComponentImage("code.twolfe.dev/tom-wolfe/ci", ".", CheckImages.Dockerfile)).Run().IsFailure.ShouldBeFalse();
 
     [Fact]
-    public void Run_PassesABareTagThatStaysOnTheNode() =>
-        Step(pushed: false, new DockerImage("lab/mail-watcher", ".")).Run().IsFailure.ShouldBeFalse();
-
-    [Fact]
-    public void Run_FailsAPushedTagThatWouldMeanDockerHub()
+    public void Run_FailsATagThatWouldMeanDockerHub()
     {
-        var result = Step(pushed: true, new DockerImage("lab/ci", ".")).Run();
+        var result = Step(new ComponentImage("lab/ci", ".", CheckImages.Dockerfile)).Run();
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("Docker Hub");
@@ -43,9 +38,30 @@ public class CheckImagesTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_component.FullName, "empty"));
 
-        var result = Step(pushed: false, new DockerImage("lab/thing", "empty")).Run();
+        var result = Step(new ComponentImage("code.twolfe.dev/tom-wolfe/thing", "empty", CheckImages.Dockerfile)).Run();
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("no Dockerfile in 'empty'");
     }
+
+    [Fact]
+    public void Run_FindsADockerfileBelowAWiderContext()
+    {
+        // The CI image: the repository root as its context, for the tool manifest, and its
+        // Dockerfile down in the component.
+        var root = _component.CreateSubdirectory("root");
+        var dockerfile = Path.Combine(root.CreateSubdirectory("ci").CreateSubdirectory("image").FullName, CheckImages.Dockerfile);
+        File.WriteAllText(dockerfile, "FROM scratch");
+
+        Step(new ComponentImage("code.twolfe.dev/tom-wolfe/ci", "root", "ci/image/Dockerfile")).Run().IsFailure.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData("code.twolfe.dev/tom-wolfe/ci", "code.twolfe.dev")]
+    [InlineData("code.twolfe.dev/tom-wolfe/ci:1.2", "code.twolfe.dev")]
+    [InlineData("localhost:5000/ci", "localhost:5000")]
+    [InlineData("lab/ci", null)]
+    [InlineData("ci", null)]
+    public void Registry_IsTheHostTheTagNames(string tag, string? expected) =>
+        CheckImages.Registry(tag).ShouldBe(expected);
 }

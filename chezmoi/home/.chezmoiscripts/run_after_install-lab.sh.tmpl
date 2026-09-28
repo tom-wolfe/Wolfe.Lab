@@ -3,11 +3,7 @@
 # The lab's CLI, `lab`, at the version its pin names — on every machine
 # with a host runner, which runs the lab's jobs with it. The pin is the
 # point: a runner executes a reviewed, published CLI, never a checkout's.
-#
-# Bump together with LAB_VERSION in ci/image/Dockerfile, which bakes the
-# same version into the containerised runner's image. The version is the
-# lab's own (build/README.md "Shipping"): read the CHANGELOG entry it names.
-#
+
 # run_after_, not run_onchange_: the feed is on Forgejo, so on a cold start
 # it does not exist until setup.sh has brought Forgejo up and the CLI's
 # own deploy has published to it. A run_onchange_ script that failed would
@@ -17,7 +13,7 @@
 # apply retries.
 set -euo pipefail
 
-version="0.48.1"
+version="{{ index (include (joinPath .chezmoi.workingTree ".config/dotnet-tools.json") | fromJson).tools "wolfe.lab.build" "version" }}"
 feed="https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"
 {{- if eq .profile "pi-node" }}
 

@@ -4,6 +4,21 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.56.0] - 2026-09-28
+
+### Changed
+
+- **The lab CLI is pinned once**, in the repository's tool manifest,
+  `.config/dotnet-tools.json`. The CI image and chezmoi's install-lab
+  script read it, Renovate moves it natively, and `dotnet lab` runs the
+  pinned CLI from anywhere in the repository.
+
+### Removed
+
+- **The `image` workflow's `deploy`**, and its `registry` settings: the
+  CI image is built and pushed by kaniko in its workflow. The check stays,
+  and an image may now name a `dockerfile` outside its context's root.
+
 ## [0.55.0] - 2026-09-28
 
 ### Changed

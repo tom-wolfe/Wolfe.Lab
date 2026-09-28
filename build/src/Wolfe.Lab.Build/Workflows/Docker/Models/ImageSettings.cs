@@ -14,8 +14,13 @@ public sealed record ImageSettings
     public string? Context { get; init; }
 
     /// <summary>
+    /// The Dockerfile, relative to the context, when it is not the context's own <c>Dockerfile</c>.
+    /// </summary>
+    public string? Dockerfile { get; init; }
+
+    /// <summary>
     /// The image as the docker steps build it, or null while a field is missing.
     /// </summary>
     public DockerImage? ToImage() =>
-        Tag is { Length: > 0 } tag && Context is { Length: > 0 } context ? new DockerImage(tag, context) : null;
+        Tag is { Length: > 0 } && Context is { Length: > 0 } ? new DockerImage(Tag, Context) : null;
 }

@@ -3,7 +3,7 @@ using Wolfe.Lab.Build.Workflows.Docker.Models;
 namespace Wolfe.Lab.Build.Workflows.Docker.Steps;
 
 /// <summary>
-/// Fails an image whose context has no Dockerfile, or whose tag would push to Docker Hub.
+/// Fails an image whose Dockerfile is missing, or whose tag would push to Docker Hub.
 /// </summary>
 [Step("check images", StepKind.Check)]
 internal sealed class CheckImages(ComponentImages component, IFileSystem fileSystem, IWorkflowLog log)
@@ -15,12 +15,12 @@ internal sealed class CheckImages(ComponentImages component, IFileSystem fileSys
         List<string> problems = [];
         foreach (var image in component.Images)
         {
-            if (!fileSystem.ProjectRoot.GetDirectory(image.Context).GetFile(Dockerfile).Exists)
+            if (!fileSystem.ProjectRoot.GetDirectory(image.Context).GetFile(image.Dockerfile).Exists)
             {
-                problems.Add($"{image.Tag}: no {Dockerfile} in '{image.Context}'.");
+                problems.Add($"{image.Tag}: no {image.Dockerfile} in '{image.Context}'.");
             }
 
-            if (component.Pushed && PushImages.Registry(image.Tag) is null)
+            if (Registry(image.Tag) is null)
             {
                 problems.Add($"{image.Tag}: the tag names no registry host, so the push would go to Docker Hub.");
             }
@@ -31,7 +31,13 @@ internal sealed class CheckImages(ComponentImages component, IFileSystem fileSys
             return StepResult.Failed(string.Join(" ", problems));
         }
 
-        log.Detail($"{component.Images.Count} image(s) ready to build{(component.Pushed ? " and push" : "")}.");
+        log.Detail($"{component.Images.Count} image(s) ready to build and push.");
         return StepResult.Successful;
     }
+
+    /// <summary>
+    /// The registry host a tag names, or null for a bare name that would mean Docker Hub.
+    /// </summary>
+    internal static string? Registry(string tag) =>
+        tag.Split('/') is [var host, _, ..] && (host.Contains('.') || host.Contains(':')) ? host : null;
 }
