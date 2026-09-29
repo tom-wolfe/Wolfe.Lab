@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.73.0] - 2026-09-30
+
+### Changed
+
+- **A backup finds the restic slice inside an area.** Every backup
+  component reads its repository from the restic slice's env files, found
+  by walking up for `restic/`; it now also looks one level down, in each
+  area, so `platform/restic` is found from `media/jellyfin/backup` as
+  `restic/` is today. The walk stops at the checkout's root rather than
+  looking through the node's home directory. Shipped and pinned before
+  `platform/` moves (ROADMAP #12), since the move would otherwise leave
+  every backup outside `platform/` without a repository.
+
 ## [0.72.0] - 2026-09-30
 
 ### Changed

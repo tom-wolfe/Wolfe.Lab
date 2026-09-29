@@ -13,7 +13,8 @@ public class ResolveRepositoryTests : IDisposable
 
     public ResolveRepositoryTests()
     {
-        // A backup component two levels below the checkout, where every component sits.
+        // A backup component two levels below the checkout, as components sat before areas.
+        _checkout.CreateSubdirectory(".git");
         var component = _checkout.CreateSubdirectory("files").CreateSubdirectory("backup");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
         _envFile = Path.Combine(_checkout.CreateSubdirectory(ResticEnvironment.SliceName).FullName, ResolveRepository.FileName);
@@ -89,5 +90,48 @@ public class ResolveRepositoryTests : IDisposable
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Run_FindsTheSliceInsideAnArea()
+    {
+        // The layout areas give it: the slice under platform/, the component under another area.
+        File.Delete(_envFile);
+        var component = _checkout.CreateSubdirectory("media").CreateSubdirectory("jellyfin").CreateSubdirectory("backup");
+        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
+        var slice = _checkout.CreateSubdirectory("platform").CreateSubdirectory(ResticEnvironment.SliceName);
+        await File.WriteAllTextAsync(Path.Combine(slice.FullName, ResolveRepository.FileName),
+            "RESTIC_REPOSITORY=sftp:macmini:/Volumes/Data2/restic\nRESTIC_PASSWORD=\"op://Wolfe.Lab/restic-repo/password\"\n",
+            TestContext.Current.CancellationToken);
+
+        var result = await Step().Run(TestContext.Current.CancellationToken);
+
+        result.Value.ShouldNotBeNull().Location.ShouldBe("sftp:macmini:/Volumes/Data2/restic");
+    }
+
+    [Fact]
+    public async Task Run_LooksNoFurtherThanTheCheckout()
+    {
+        // A slice beside the checkout, not in it: finding it would mean the walk had gone on
+        // through whatever holds the checkout — on a node, its home directory.
+        var outside = Directory.CreateTempSubdirectory("lab-outside-");
+        try
+        {
+            var checkout = outside.CreateSubdirectory("checkout");
+            checkout.CreateSubdirectory(".git");
+            var component = checkout.CreateSubdirectory("files").CreateSubdirectory("backup");
+            _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
+            var stray = outside.CreateSubdirectory("elsewhere").CreateSubdirectory(ResticEnvironment.SliceName);
+            await File.WriteAllTextAsync(Path.Combine(stray.FullName, ResolveRepository.FileName),
+                "RESTIC_REPOSITORY=sftp:macmini:/Volumes/Data2/restic\n", TestContext.Current.CancellationToken);
+
+            var result = await Step().Run(TestContext.Current.CancellationToken);
+
+            result.Outcome.IsFailure.ShouldBeTrue();
+        }
+        finally
+        {
+            outside.Delete(recursive: true);
+        }
     }
 }
