@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.66.0] - 2026-09-29
+
+### Fixed
+
+- **Alloy sent usage statistics to Grafana Labs**, which the rest of the
+  stack already doesn't: it runs with `--disable-reporting` now.
+
 ## [0.65.0] - 2026-09-29
 
 ### Changed

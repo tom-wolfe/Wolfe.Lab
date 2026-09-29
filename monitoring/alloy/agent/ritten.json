@@ -18,7 +18,8 @@
             "run",
             "${LAB_ROOT}/alloy/config.alloy",
             "--storage.path=${LAB_DATA}/alloy",
-            "--server.http.listen-addr=127.0.0.1:12345"
+            "--server.http.listen-addr=127.0.0.1:12345",
+            "--disable-reporting"
           ],
           "environment": {
             "LAB_HOST": "mini",
