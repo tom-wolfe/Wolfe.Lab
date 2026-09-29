@@ -20,12 +20,16 @@ internal sealed class RsyncInstaller(ICommandRunner commands) : IReleaseInstalle
     /// </summary>
     internal static Command Rsync(IDirectory source, IDirectory release, bool dryRun = false)
     {
+        // Itemised on a real run too: the changes are what the run's report lists. Ritten's own
+        // output — the run's report in artifacts/, its scratch in temp/ — is the CLI's, not the
+        // component's; published, it would read as a change on every run after a local one.
         var command = Command.Create("rsync")
-            .WithArguments("-rlp", "--checksum", "--delete", "--exclude", "ritten.json");
+            .WithArguments("-rlp", "--checksum", "--delete", "--itemize-changes",
+                "--exclude", "ritten.json", "--exclude", "/artifacts/", "--exclude", "/temp/");
 
         if (dryRun)
         {
-            command = command.AndArguments("--dry-run", "--itemize-changes");
+            command = command.AndArguments("--dry-run");
         }
 
         return command.AndArguments($"{source.AbsolutePath}/", $"{release.AbsolutePath}/");

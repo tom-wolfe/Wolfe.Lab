@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.60.0] - 2026-09-29
+
+### Fixed
+
+- **A deploy's report said every artifact "already matched".** rsync
+  itemised its changes only on a rehearsal, so a real publish reported
+  none; it itemises every run now. Restarts were unaffected — they read
+  the node — but the report was wrong.
+- **A deploy run by hand published the CLI's own output.** Ritten's
+  `artifacts/` (the run's report) and `temp/` in a component were copied
+  into its release, so the next run saw a change and restarted the stack.
+  Both are left behind now, like `ritten.json`.
+
 ## [0.59.0] - 2026-09-29
 
 ### Added

@@ -1,3 +1,4 @@
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Clients.Releases;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Releases;
@@ -27,4 +28,20 @@ public class RsyncInstallerTests
     [Fact]
     public void Changes_IsEmptyWhenNothingChanged() =>
         RsyncInstaller.Changes("").ShouldBeEmpty();
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Rsync_ItemisesEveryRunSoTheReportCanListTheChanges(bool dryRun) =>
+        RsyncInstaller.Rsync(new PhysicalDirectory("/src"), new PhysicalDirectory("/out"), dryRun).Arguments.ShouldContain("--itemize-changes");
+
+    [Fact]
+    public void Rsync_LeavesTheCLIsOwnOutputBehind()
+    {
+        var arguments = RsyncInstaller.Rsync(new PhysicalDirectory("/src"), new PhysicalDirectory("/out")).Arguments;
+
+        arguments.ShouldContain("/artifacts/");
+        arguments.ShouldContain("/temp/");
+        arguments.ShouldContain("ritten.json");
+    }
 }
