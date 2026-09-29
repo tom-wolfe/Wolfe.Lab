@@ -49,5 +49,10 @@ public sealed record LabRoots(string Root, string Data)
     /// Where a compose release records the artifact stamp its stack was last restarted for:
     /// beside the releases, never inside one, so writing it changes no release.
     /// </summary>
-    public string AppliedStamp(string release) => Path.Combine(Root, ".applied", release);
+    public string AppliedStamp(string release) => Path.Combine(Applied, release);
+
+    /// <summary>
+    /// Where every compose release's restart stamp is kept.
+    /// </summary>
+    public string Applied => Path.Combine(Root, ".applied");
 }

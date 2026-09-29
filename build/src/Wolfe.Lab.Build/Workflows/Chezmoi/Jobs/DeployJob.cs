@@ -9,7 +9,7 @@ namespace Wolfe.Lab.Build.Workflows.Chezmoi.Jobs;
 /// <summary>
 /// Makes this node match the merged source. Run on each node by the workflow's matrix.
 /// </summary>
-internal sealed class DeployJob : LabJob<ChezmoiSettings>
+internal sealed class DeployJob : LabJob<ChezmoiOptions>
 {
     public override string Name => "deploy";
 
@@ -24,9 +24,9 @@ internal sealed class DeployJob : LabJob<ChezmoiSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void Configure(IWorkflowBuilder builder, ChezmoiSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, ChezmoiOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddChezmoi();
     }
 }

@@ -1,3 +1,6 @@
+using Microsoft.Extensions.Options;
+using Wolfe.Lab.Build.Clients.Resilience;
+using Polly.Registry;
 using System.Globalization;
 using System.Security;
 using Scriban;
@@ -8,7 +11,7 @@ namespace Wolfe.Lab.Build.Clients.Agents.Launchd;
 /// launchd, through launchctl. Units are written to the user's LaunchAgents directory and
 /// bootstrapped into the GUI domain.
 /// </summary>
-internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner commands, IWorkflowLog log) : IServiceSupervisor
+internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner commands, IWorkflowLog log, ResiliencePipelineProvider<string> pipelines, IOptions<LaunchdOptions> options) : IServiceSupervisor
 {
     private UserDomain? _domain;
 
@@ -87,7 +90,7 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
     {
         if (await IsLoaded(unit, ct))
         {
-            await commands.Run(Launchctl("bootout", $"{(await Domain(ct)).Value}/{unit}").ThrowOnError(), ct);
+            await Bootout(unit, null, ct);
         }
 
         // The file too: launchd loads every plist in the directory at the next login, so a unit
@@ -141,8 +144,34 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
 
         // A supervisor reads a unit when it loads it, so a changed unit only takes effect
         // across an unload.
-        await commands.Run(Launchctl("bootout", target).ThrowOnError(), ct);
+        await Bootout(agent.Label.Value, agent.ExitTimeout is { } seconds ? TimeSpan.FromSeconds(seconds) + options.Value.Margin : null, ct);
         await Bootstrap(file, ct);
+    }
+
+    /// <summary>
+    /// The wait for launchd to let go of a unit, configured under <c>Launchd:Unloading</c>.
+    /// </summary>
+    internal const string Unloading = "launchd.unloading";
+
+    /// <summary>
+    /// Unloads a unit and waits until launchd has let go of it.
+    /// </summary>
+    /// <remarks>
+    /// <c>bootout</c> returns once it has asked the process to stop, not once it has: an agent
+    /// that shuts down gracefully — Alloy flushing its queues — is still loaded for a few
+    /// seconds, and loading it again meanwhile fails with launchd's bare "Input/output error".
+    /// </remarks>
+    /// <param name="label">The unit.</param>
+    /// <param name="patience">How long this unit may take, when it says; the configured limit otherwise.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private async Task Bootout(string label, TimeSpan? patience, CancellationToken ct)
+    {
+        await commands.Run(Launchctl("bootout", $"{(await Domain(ct)).Value}/{label}").ThrowOnError(), ct);
+        if (!await pipelines.GetPipeline<bool>(Unloading).Until(async inner => !await IsLoaded(label, inner), patience, ct))
+        {
+            throw new InvalidOperationException(
+                $"{label} was still loaded after it was told to stop; launchd would refuse to load it again.");
+        }
     }
 
     private static Command Launchctl(params string[] arguments) => Command.Create("launchctl").WithArguments(arguments);

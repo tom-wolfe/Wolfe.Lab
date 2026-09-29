@@ -23,7 +23,7 @@ public sealed record ToolsManifest
     /// <summary>
     /// The tools, by the command a job runs.
     /// </summary>
-    public IReadOnlyDictionary<string, PackageSettings> Tools { get; init; } = new Dictionary<string, PackageSettings>();
+    public IReadOnlyDictionary<string, PackageOptions> Tools { get; init; } = new Dictionary<string, PackageOptions>();
 
     /// <summary>
     /// The manifest in the checkout, or an empty one when it has none.

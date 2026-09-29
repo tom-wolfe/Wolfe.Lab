@@ -5,13 +5,14 @@ namespace Wolfe.Lab.Build;
 /// <summary>
 /// The base for every lab job: the clients any step may reach for, registered once.
 /// </summary>
-/// <typeparam name="TSettings">The shape of the slice's <c>ritten.json</c>.</typeparam>
-public abstract class LabJob<TSettings> : Job<TSettings> where TSettings : WorkflowSettings
+/// <typeparam name="TOptions">The shape of the slice's <c>ritten.json</c>.</typeparam>
+public abstract class LabJob<TOptions> : Job<TOptions> where TOptions : WorkflowSettings
 {
     /// <inheritdoc />
-    protected override void Configure(IWorkflowBuilder builder, TSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, TOptions options)
     {
         builder.AddCommandRunner();
         builder.AddGit();
+        builder.AddLabConfiguration();
     }
 }

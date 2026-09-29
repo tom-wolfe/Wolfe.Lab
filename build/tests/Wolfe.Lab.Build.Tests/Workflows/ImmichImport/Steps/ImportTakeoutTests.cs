@@ -21,7 +21,7 @@ public class ImportTakeoutTests
             _docker,
             _secrets,
             new ImmichServer(ServiceUrl.From("http://immich-server:2283"), Key),
-            new ImportOptions(4),
+            new ImportOptions { Concurrency = 4 },
             Substitute.For<IWorkflowLog>());
         var takeout = new Takeout(new PhysicalDirectory("/Volumes/Data2/photos/google"), ["takeout-001.zip", "takeout-002.zip"]);
 

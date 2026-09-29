@@ -30,7 +30,7 @@ public class CheckRolesTests : IDisposable
         """;
 
     private CheckRoles Step(string embedding) => new(
-        new DeclaredRoles(new ModelSettings
+        new DeclaredRoles(new ModelOptions
         {
             Pull = [OllamaModel.From(embedding)],
             Roles = new Dictionary<string, ModelRole> { ["embedding"] = new() { Model = OllamaModel.From(embedding), Identical = true } }

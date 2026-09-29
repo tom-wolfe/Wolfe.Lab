@@ -13,7 +13,7 @@ namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 /// Secrets are absent there and that is fine — they reach compose through its environment, and
 /// an interpolation with nothing behind it resolves empty rather than failing.
 /// </remarks>
-internal sealed class CheckJob<TSettings> : LabJob<TSettings> where TSettings : DockerSettings
+internal sealed class CheckJob<TOptions> : LabJob<TOptions> where TOptions : DockerComponentOptions
 {
     public override string Name => "check";
 
@@ -27,9 +27,9 @@ internal sealed class CheckJob<TSettings> : LabJob<TSettings> where TSettings : 
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, TSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, TOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddDocker();
     }
 }

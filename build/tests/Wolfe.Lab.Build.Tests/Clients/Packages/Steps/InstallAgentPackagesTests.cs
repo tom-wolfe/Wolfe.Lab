@@ -13,7 +13,7 @@ public class InstallAgentPackagesTests : IDisposable
     private readonly DirectoryInfo _package = Directory.CreateTempSubdirectory("lab-alloy-");
     private readonly IPackageInstaller _installer = Substitute.For<IPackageInstaller>();
 
-    private static readonly PackageSettings Alloy = new()
+    private static readonly PackageOptions Alloy = new()
     {
         Github = "grafana/alloy",
         Version = "1.20.1",
@@ -38,13 +38,13 @@ public class InstallAgentPackagesTests : IDisposable
 
     private string Program => Path.Combine(_package.FullName, "alloy-darwin-arm64");
 
-    private Task<StepResult<AgentPackages>> Install(PackageOutcome outcome, bool dryRun = false, AgentSettings? agent = null)
+    private Task<StepResult<AgentPackages>> Install(PackageOutcome outcome, bool dryRun = false, AgentOptions? agent = null)
     {
         _installer.Install(Arg.Any<Package>(), Arg.Any<CancellationToken>())
             .Returns(call => new InstalledPackage(call.Arg<Package>(), new PhysicalDirectory(_package.FullName), outcome));
-        var declarations = new AgentDeclarations(new Dictionary<string, AgentSettings>
+        var declarations = new AgentDeclarations(new Dictionary<string, AgentOptions>
         {
-            ["alloy"] = agent ?? new AgentSettings { Package = Alloy, Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }
+            ["alloy"] = agent ?? new AgentOptions { Package = Alloy, Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }
         });
         return new InstallAgentPackages(declarations, _installer, new WorkflowEnvironment(_ => null),
                 new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), Report(), Substitute.For<IWorkflowLog>())
@@ -87,7 +87,7 @@ public class InstallAgentPackagesTests : IDisposable
     [Fact]
     public async Task Run_LeavesAnAgentWithoutAPackageToTheNode()
     {
-        var packages = (await Install(PackageOutcome.Installed, agent: new AgentSettings { Program = HostPath.From("/bin/sleep") }))
+        var packages = (await Install(PackageOutcome.Installed, agent: new AgentOptions { Program = HostPath.From("/bin/sleep") }))
             .Value.ShouldNotBeNull().Packages;
 
         packages.ShouldBeEmpty();

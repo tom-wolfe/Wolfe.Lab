@@ -44,5 +44,5 @@ internal sealed class GatherRoutes(IFileSystem fileSystem, IGit git, IWorkflowLo
     }
 
     private static string Name(IDirectory checkout, string snippet) =>
-        Path.GetRelativePath(checkout.AbsolutePath, Path.GetDirectoryName(snippet)!).Replace(Path.DirectorySeparatorChar, '-');
+        Path.GetRelativePath(checkout.AbsolutePath, Path.GetDirectoryName(snippet) ?? checkout.AbsolutePath).Replace(Path.DirectorySeparatorChar, '-');
 }

@@ -5,7 +5,7 @@ namespace Wolfe.Lab.Build.Tests.Workflows.Ollama;
 
 public class RoleRulesTests
 {
-    private static ModelSettings Models(string[] pull, params (string Name, string Model, bool Identical)[] roles) => new()
+    private static ModelOptions Models(string[] pull, params (string Name, string Model, bool Identical)[] roles) => new()
     {
         Pull = [.. pull.Select(OllamaModel.From)],
         Roles = roles.ToDictionary(r => r.Name, r => new ModelRole { Model = OllamaModel.From(r.Model), Identical = r.Identical })
@@ -31,12 +31,12 @@ public class RoleRulesTests
 
     [Fact]
     public void Local_RefusesARoleWithNoModel() =>
-        RoleRules.Local(new ModelSettings { Roles = new Dictionary<string, ModelRole> { ["background"] = new() } })
+        RoleRules.Local(new ModelOptions { Roles = new Dictionary<string, ModelRole> { ["background"] = new() } })
             .ShouldHaveSingleItem().ShouldContain("names no 'model'");
 
     [Fact]
     public void Across_LetsABestFitRoleDifferBetweenServers() =>
-        RoleRules.Across(new Dictionary<string, ModelSettings>
+        RoleRules.Across(new Dictionary<string, ModelOptions>
         {
             ["server"] = Models(["qwen3:8b"], ("background", "qwen3:8b", false)),
             ["studio"] = Models(["qwen3:30b-a3b"], ("background", "qwen3:30b-a3b", false))
@@ -44,7 +44,7 @@ public class RoleRulesTests
 
     [Fact]
     public void Across_AcceptsAnIdenticalRoleThatIsIdentical() =>
-        RoleRules.Across(new Dictionary<string, ModelSettings>
+        RoleRules.Across(new Dictionary<string, ModelOptions>
         {
             ["server"] = Models(["embeddinggemma:300m"], ("embedding", "embeddinggemma:300m", true)),
             ["studio"] = Models(["embeddinggemma:300m"], ("embedding", "embeddinggemma:300m", true))
@@ -52,7 +52,7 @@ public class RoleRulesTests
 
     [Fact]
     public void Across_RefusesAnIdenticalRoleOnDifferentModels() =>
-        RoleRules.Across(new Dictionary<string, ModelSettings>
+        RoleRules.Across(new Dictionary<string, ModelOptions>
         {
             ["server"] = Models(["embeddinggemma:300m"], ("embedding", "embeddinggemma:300m", true)),
             ["studio"] = Models(["nomic-embed-text:v1.5"], ("embedding", "nomic-embed-text:v1.5", true))
@@ -60,7 +60,7 @@ public class RoleRulesTests
 
     [Fact]
     public void Across_RefusesAnIdenticalRoleAServerDoesNotDeclare() =>
-        RoleRules.Across(new Dictionary<string, ModelSettings>
+        RoleRules.Across(new Dictionary<string, ModelOptions>
         {
             ["server"] = Models(["embeddinggemma:300m"], ("embedding", "embeddinggemma:300m", true)),
             ["studio"] = Models(["qwen3:8b"])
@@ -69,7 +69,7 @@ public class RoleRulesTests
     [Fact]
     public void Across_RefusesABestFitRoleOnlyOneServerDeclares() =>
         // The Studio alone declaring a role is "not found" every evening it sleeps.
-        RoleRules.Across(new Dictionary<string, ModelSettings>
+        RoleRules.Across(new Dictionary<string, ModelOptions>
         {
             ["server"] = Models(["qwen3:8b"]),
             ["studio"] = Models(["qwen3:30b-a3b"], ("interactive", "qwen3:30b-a3b", false))
@@ -78,7 +78,7 @@ public class RoleRulesTests
     [Fact]
     public void Across_RefusesAnIdenticalRoleOnlyOneSideMarks() =>
         // Otherwise the rule would be enforced only from the side that remembered to say so.
-        RoleRules.Across(new Dictionary<string, ModelSettings>
+        RoleRules.Across(new Dictionary<string, ModelOptions>
         {
             ["server"] = Models(["embeddinggemma:300m"], ("embedding", "embeddinggemma:300m", true)),
             ["studio"] = Models(["embeddinggemma:300m"], ("embedding", "embeddinggemma:300m", false))

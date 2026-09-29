@@ -22,5 +22,5 @@ public sealed class DockerWorkflow : IWorkflow
     public string Label => "docker";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DockerSettings>(), new DeployJob<DockerSettings>()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DockerComponentOptions>(), new DeployJob<DockerComponentOptions>()];
 }

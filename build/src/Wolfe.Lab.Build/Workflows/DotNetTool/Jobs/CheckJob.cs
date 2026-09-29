@@ -16,7 +16,7 @@ namespace Wolfe.Lab.Build.Workflows.DotNetTool.Jobs;
 /// <c>&lt;Version&gt;</c> — otherwise the merge would publish nothing and the pins would sit on a package that no
 /// longer matches its source.
 /// </remarks>
-internal sealed class CheckJob : LabJob<DotNetToolSettings>
+internal sealed class CheckJob : LabJob<DotNetToolOptions>
 {
     public override string Name => "check";
 
@@ -38,15 +38,18 @@ internal sealed class CheckJob : LabJob<DotNetToolSettings>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<DotNetToolOptions> options) => options
         .Require(s => s.Project is { Length: > 0 }, "'project' not set in ritten.json.")
         .Require(s => s.Feed.Source is not null, "'feed.source' not set in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, DotNetToolOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddBuildReporting()
-            .AddDotNet([settings.Project!], settings.Configuration)
-            .AddNuGet(settings.Feed.Source!.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
+        base.Configure(builder, options);
+        builder.AddBuildReporting();
+        if (options.Project is { Length: > 0 } project && options.Feed.Source is { } source)
+        {
+            builder.AddDotNet([project], options.Configuration)
+                .AddNuGet(source.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
+        }
     }
 }

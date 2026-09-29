@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Net;
 using Wolfe.Lab.Build.Clients.Heartbeat;
 using Wolfe.Lab.Build.Clients.Secrets;
@@ -27,11 +28,11 @@ public class HealthchecksHeartbeatTests
     {
         var handler = new CapturingHandler(HttpStatusCode.OK);
 
-        await new HealthchecksHeartbeat(new HttpClient(handler), _secrets).Ping(Check, TestContext.Current.CancellationToken);
+        await new HealthchecksHeartbeat(new HttpClient(handler), _secrets, Options.Create(new HealthchecksOptions { Endpoint = new Uri("https://hc.example/") })).Ping(Check, TestContext.Current.CancellationToken);
 
         var request = handler.Request.ShouldNotBeNull();
         request.Method.ShouldBe(HttpMethod.Get);
-        request.RequestUri.ShouldBe(new Uri("https://hc-ping.com/ping-key/lab-restic-offsite"));
+        request.RequestUri.ShouldBe(new Uri("https://hc.example/ping-key/lab-restic-offsite"));
     }
 
     [Fact]
@@ -40,6 +41,6 @@ public class HealthchecksHeartbeatTests
         var handler = new CapturingHandler(HttpStatusCode.NotFound);
 
         await Should.ThrowAsync<HttpRequestException>(
-            () => new HealthchecksHeartbeat(new HttpClient(handler), _secrets).Ping(Check, TestContext.Current.CancellationToken));
+            () => new HealthchecksHeartbeat(new HttpClient(handler), _secrets, Options.Create(new HealthchecksOptions { Endpoint = new Uri("https://hc.example/") })).Ping(Check, TestContext.Current.CancellationToken));
     }
 }

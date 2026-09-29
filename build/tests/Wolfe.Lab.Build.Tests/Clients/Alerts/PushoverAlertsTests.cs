@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Net;
 using Wolfe.Lab.Build.Clients.Alerts;
 
@@ -27,14 +28,16 @@ public class PushoverAlertsTests
         _secrets.Resolve(PushoverAlerts.User.Value, Arg.Any<CancellationToken>()).Returns("user-key");
     }
 
+    private static readonly Uri Endpoint = new("https://pushover.example/1/messages.json");
+
     [Fact]
     public async Task Send_PostsTheFormAlertShSends()
     {
         var handler = new CapturingHandler(HttpStatusCode.OK);
 
-        await new PushoverAlerts(new HttpClient(handler), _secrets).Send(new Alert("obsidian sync failed", "http://run"), TestContext.Current.CancellationToken);
+        await new PushoverAlerts(new HttpClient(handler), _secrets, Options.Create(new AlertsOptions { Endpoint = Endpoint })).Send(new Alert("obsidian sync failed", "http://run"), TestContext.Current.CancellationToken);
 
-        handler.Request.ShouldNotBeNull().RequestUri.ShouldBe(PushoverAlerts.Endpoint);
+        handler.Request.ShouldNotBeNull().RequestUri.ShouldBe(Endpoint);
         // Form encoding spells a space as '+', which UnescapeDataString leaves alone.
         var fields = handler.Body.ShouldNotBeNull().Split('&').Select(f => Uri.UnescapeDataString(f.Replace('+', ' '))).ToList();
         fields.ShouldContain("token=app-token");
@@ -50,6 +53,6 @@ public class PushoverAlertsTests
         var handler = new CapturingHandler(HttpStatusCode.BadRequest);
 
         await Should.ThrowAsync<HttpRequestException>(
-            () => new PushoverAlerts(new HttpClient(handler), _secrets).Send(new Alert("t", "m"), TestContext.Current.CancellationToken));
+            () => new PushoverAlerts(new HttpClient(handler), _secrets, Options.Create(new AlertsOptions { Endpoint = Endpoint })).Send(new Alert("t", "m"), TestContext.Current.CancellationToken));
     }
 }

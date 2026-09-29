@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Build.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Clients.Gatus;
 
@@ -14,9 +15,9 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddGatus()
         {
-            // The same patience the probe had as a curl: a status page that takes longer than
-            // this to answer is down for every purpose that matters.
-            builder.Services.AddHttpClient<IGatus, GatusClient>(client => client.Timeout = TimeSpan.FromSeconds(20));
+            builder.Services
+                .AddHttpClient<IGatus, GatusClient>()
+                .AddConfiguredResilience("Gatus:Http");
             return builder;
         }
     }

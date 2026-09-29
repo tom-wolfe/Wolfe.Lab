@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Build.Workflows.Tofu.Jobs;
 /// <summary>
 /// Applies the root: plans, and applies only when the plan found something to do.
 /// </summary>
-internal sealed class DeployJob : LabJob<TofuSettings>
+internal sealed class DeployJob : LabJob<TofuOptions>
 {
     public override string Name => "deploy";
 
@@ -29,9 +29,9 @@ internal sealed class DeployJob : LabJob<TofuSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void Configure(IWorkflowBuilder builder, TofuSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, TofuOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddBuildReporting().AddOpenTofu().AddTools("tofu");
     }
 }

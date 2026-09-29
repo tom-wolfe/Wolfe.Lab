@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Agents.Launchd;
 using Wolfe.Lab.Build.Clients.Agents.Systemd;
+using Wolfe.Lab.Build.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Clients.Agents;
 
@@ -21,6 +23,8 @@ public static class WorkflowBuilderExtensions
             {
                 builder.Services.TryAddSingleton(AgentDirectory.Launchd);
                 builder.Services.TryAddSingleton<IServiceSupervisor, LaunchdSupervisor>();
+                builder.AddPolling(LaunchdSupervisor.Unloading, "Launchd:Unloading");
+                builder.Services.AddOptions<LaunchdOptions>().BindConfiguration("Launchd:Unloading");
             }
             else if (OperatingSystem.IsLinux())
             {

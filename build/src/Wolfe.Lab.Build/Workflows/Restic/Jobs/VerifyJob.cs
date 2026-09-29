@@ -28,13 +28,13 @@ internal sealed partial class VerifyJob : ResticJob
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<ResticSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<ResticOptions> options) => options
         .Require(s => Subset().IsMatch(s.Verify.ReadDataSubset), "'verify.readDataSubset' must be a percentage the way restic spells it, such as 5%.");
 
-    protected override void Configure(IWorkflowBuilder builder, ResticSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, ResticOptions options)
     {
-        base.Configure(builder, settings);
-        builder.Services.AddSingleton(new VerifyOptions(settings.Verify.ReadDataSubset));
+        base.Configure(builder, options);
+        builder.Services.AddSingleton(options.Verify);
     }
 
     [GeneratedRegex(@"^(100|[1-9]?\d)%$")]

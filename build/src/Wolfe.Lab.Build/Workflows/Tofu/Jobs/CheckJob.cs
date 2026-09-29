@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Build.Workflows.Tofu.Jobs;
 /// <summary>
 /// Plans the root on the pull request, so what a merge would apply is read before it is applied.
 /// </summary>
-internal sealed class CheckJob : LabJob<TofuSettings>
+internal sealed class CheckJob : LabJob<TofuOptions>
 {
     public override string Name => "check";
 
@@ -29,9 +29,9 @@ internal sealed class CheckJob : LabJob<TofuSettings>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, TofuSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, TofuOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddBuildReporting().AddOpenTofu().AddTools("tofu");
     }
 }

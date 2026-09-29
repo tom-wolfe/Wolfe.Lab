@@ -21,5 +21,5 @@ public sealed class DotNetServiceWorkflow : IWorkflow
     public string Label => "dotnet-service";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new DotNetCheckJob(), new DeployJob<DotNetServiceSettings>()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new DotNetCheckJob(), new DeployJob<DotNetServiceOptions>()];
 }

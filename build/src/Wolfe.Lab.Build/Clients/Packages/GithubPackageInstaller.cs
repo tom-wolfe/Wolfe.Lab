@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Clients.Releases;
@@ -14,8 +15,16 @@ namespace Wolfe.Lab.Build.Clients.Packages;
 /// nothing the next one would trust. Versions sit side by side: an upgrade adds a directory, and
 /// rolling back is naming the old version again.
 /// </remarks>
-internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner commands, WorkflowEnvironment environment, IWorkflowLog log) : IPackageInstaller
+internal sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<GithubOptions> options, ICommandRunner commands, WorkflowEnvironment environment, IWorkflowLog log) : IPackageInstaller
 {
+    /// <summary>
+    /// The HTTP client every package request goes through, with its resilience.
+    /// </summary>
+    internal const string Client = "packages";
+
+    private readonly HttpClient _http = clients.CreateClient(Client);
+    private readonly GithubOptions _sources = options.Value;
+
     internal const string Complete = ".complete";
 
     /// <inheritdoc />
@@ -27,13 +36,13 @@ internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner com
             return new InstalledPackage(package, new PhysicalDirectory(directory), PackageOutcome.Present);
         }
 
-        var parent = Path.GetDirectoryName(directory)!;
+        var parent = Versions(package, LabRoots.From(environment));
         Directory.CreateDirectory(parent);
         var staging = Path.Combine(parent, $".{package.Version}.{Guid.NewGuid():N}");
         var download = staging + ".download";
         try
         {
-            log.Detail($"Downloading {package.Download(package.Asset)}.");
+            log.Detail($"Downloading {package.Download(_sources.RequiredReleases, package.Asset)}.");
             using (var response = await Get(package, package.Asset, ct))
             await using (var file = File.Create(download))
             await using (var body = await response.Content.ReadAsStreamAsync(ct))
@@ -84,21 +93,21 @@ internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner com
                    ?? throw new InvalidOperationException($"{checksums} in {package.Repository} {package.Tag} lists no {package.Asset}.");
         }
 
-        return await Digest(http, package, ct);
+        return await Digest(_http, _sources.RequiredApi, package, ct);
     }
 
     /// <summary>
     /// The asset's digest from GitHub's releases API, without the <c>sha256:</c> prefix.
     /// </summary>
-    internal static async Task<string> Digest(HttpClient http, Package package, CancellationToken ct)
+    internal static async Task<string> Digest(HttpClient http, Uri api, Package package, CancellationToken ct)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, package.Release);
+        using var request = new HttpRequestMessage(HttpMethod.Get, package.Release(api));
         request.Headers.UserAgent.ParseAdd("Wolfe.Lab.Build");
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
         using var response = await http.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException($"{package.Repository} has no release {package.Tag} ({(int)response.StatusCode}): {package.Release}");
+            throw new InvalidOperationException($"{package.Repository} has no release {package.Tag} ({(int)response.StatusCode}): {package.Release(api)}");
         }
 
         using var release = await System.Text.Json.JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
@@ -116,12 +125,12 @@ internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner com
     /// </summary>
     private async Task<HttpResponseMessage> Get(Package package, string asset, CancellationToken ct)
     {
-        var response = await http.GetAsync(package.Download(asset), HttpCompletionOption.ResponseHeadersRead, ct);
+        var response = await _http.GetAsync(package.Download(_sources.RequiredReleases, asset), HttpCompletionOption.ResponseHeadersRead, ct);
         if (!response.IsSuccessStatusCode)
         {
             response.Dispose();
             throw new InvalidOperationException(
-                $"{package.Repository} {package.Tag} has no {asset} ({(int)response.StatusCode}): {package.Download(asset)}");
+                $"{package.Repository} {package.Tag} has no {asset} ({(int)response.StatusCode}): {package.Download(_sources.RequiredReleases, asset)}");
         }
 
         return response;
@@ -131,7 +140,13 @@ internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner com
     /// Where a version of a package lives: <c>${LAB_ROOT}/packages/&lt;name&gt;/&lt;version&gt;</c>.
     /// </summary>
     internal static string Location(Package package, LabRoots roots) =>
-        Path.Combine(roots.Root, "packages", package.Name, package.Version);
+        Path.Combine(Versions(package, roots), package.Version);
+
+    /// <summary>
+    /// Where every version of a package sits: <c>${LAB_ROOT}/packages/&lt;name&gt;</c>.
+    /// </summary>
+    private static string Versions(Package package, LabRoots roots) =>
+        Path.Combine(roots.Root, "packages", package.Name);
 
     /// <summary>
     /// The checksum a <c>sha256sum</c>-style file lists for the asset: <c>&lt;hex&gt;  &lt;name&gt;</c>,

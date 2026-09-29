@@ -37,7 +37,7 @@ public class OffsiteStepsTests
     [Fact]
     public async Task CheckRepositories_ReadsDataBackFromTheOffsiteCopyOnly()
     {
-        var result = await new CheckRepositories(_restic, new VerifyOptions("5%"), Substitute.For<IWorkflowLog>()).Run(Local, Offsite, TestContext.Current.CancellationToken);
+        var result = await new CheckRepositories(_restic, new VerifyOptions { ReadDataSubset = "5%" }, Substitute.For<IWorkflowLog>()).Run(Local, Offsite, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         await _restic.Received().Check(Local, null, Arg.Any<CancellationToken>());

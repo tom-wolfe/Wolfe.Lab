@@ -19,9 +19,10 @@ public sealed record RolePlan(IReadOnlyDictionary<OllamaModel, OllamaModel> Role
     /// <param name="roles">The <c>models.roles</c> section.</param>
     public static RolePlan From(IReadOnlyDictionary<string, ModelRole> roles) =>
         new(roles
-            .Where(role => role.Value.Model is not null)
             .OrderBy(role => role.Key, StringComparer.Ordinal)
-            .ToDictionary(role => Alias(role.Key), role => role.Value.Model!.Value));
+            .SelectMany(IEnumerable<KeyValuePair<OllamaModel, OllamaModel>> (role) =>
+                role.Value.Model is { } model ? [KeyValuePair.Create(Alias(role.Key), model)] : [])
+            .ToDictionary());
 
     /// <summary>
     /// The name a caller asks for: <c>lab/background</c>, which ollama stores as

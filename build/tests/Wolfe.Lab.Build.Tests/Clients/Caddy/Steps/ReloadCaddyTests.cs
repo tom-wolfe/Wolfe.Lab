@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Caddy;
 using Ritten.Docker;
 using Wolfe.Lab.Build.Clients.Caddy.Steps;
 
@@ -9,7 +10,7 @@ public class ReloadCaddyTests
     private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
 
     private ReloadCaddy Step(bool dryRun = false) =>
-        new(_docker, _commands, new WorkflowJob("caddy", "renew-certs", dryRun, AutoApprove: false), Substitute.For<IWorkflowLog>());
+        new(new CaddyInstance("caddy", "/etc/caddy/lab/caddy/Caddyfile"), _docker, _commands, new WorkflowJob("caddy", "renew-certs", dryRun, AutoApprove: false), Substitute.For<IWorkflowLog>());
 
     [Fact]
     public async Task Run_ForcesTheReloadWhenCaddyIsRunning()

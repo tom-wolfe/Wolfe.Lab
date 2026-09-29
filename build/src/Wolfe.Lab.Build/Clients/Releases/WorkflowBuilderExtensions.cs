@@ -28,7 +28,7 @@ public static class WorkflowBuilderExtensions
         /// Adds the artifacts a job publishes, and the installer that mirrors them onto the node.
         /// </summary>
         /// <param name="artifacts">The component's declarations, and any the workflow adds.</param>
-        public IWorkflowBuilder AddArtifacts(IReadOnlyList<ArtifactSettings> artifacts)
+        public IWorkflowBuilder AddArtifacts(IReadOnlyList<ArtifactOptions> artifacts)
         {
             builder.AddCommandRunner().AddBuildReporting();
             builder.Services.AddSingleton(new ArtifactDeclarations(artifacts));

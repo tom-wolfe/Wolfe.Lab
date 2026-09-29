@@ -22,12 +22,12 @@ internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPack
         var errors = new List<Error>();
         foreach (var (name, agent) in declarations.Agents.OrderBy(agent => agent.Key, StringComparer.Ordinal))
         {
-            if (agent.Package is not { } settings)
+            if (agent.Package is not { } options)
             {
                 continue;
             }
 
-            if (!Package.From(name, settings, Package.Platform).TryGetValue(out var package, out var invalid))
+            if (!Package.From(name, options, Package.Platform).TryGetValue(out var package, out var invalid))
             {
                 errors.AddRange(invalid);
                 continue;

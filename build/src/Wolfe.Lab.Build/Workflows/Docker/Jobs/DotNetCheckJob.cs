@@ -10,7 +10,7 @@ namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 /// <summary>
 /// Proves the component is sound before anything is built or deployed from it.
 /// </summary>
-internal sealed class DotNetCheckJob : LabJob<DotNetServiceSettings>
+internal sealed class DotNetCheckJob : LabJob<DotNetServiceOptions>
 {
     public override string Name => "check";
 
@@ -28,9 +28,9 @@ internal sealed class DotNetCheckJob : LabJob<DotNetServiceSettings>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, DotNetServiceSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, DotNetServiceOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddDocker().AddBuildReporting().AddDotNet([], settings.Configuration);
+        base.Configure(builder, options);
+        builder.AddDocker().AddBuildReporting().AddDotNet([], options.Configuration);
     }
 }

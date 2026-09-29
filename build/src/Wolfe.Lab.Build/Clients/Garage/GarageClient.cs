@@ -1,3 +1,5 @@
+using Wolfe.Lab.Build.Clients.Resilience;
+using Polly.Registry;
 using System.Text.RegularExpressions;
 
 namespace Wolfe.Lab.Build.Clients.Garage;
@@ -5,13 +7,18 @@ namespace Wolfe.Lab.Build.Clients.Garage;
 /// <summary>
 /// <c>docker exec garage /garage …</c>.
 /// </summary>
-internal sealed partial class GarageClient(ICommandRunner commands) : IGarage
+internal sealed partial class GarageClient(ICommandRunner commands, ResiliencePipelineProvider<string> pipelines) : IGarage
 {
     internal const string Container = "garage";
 
+    /// <summary>
+    /// The wait for the daemon to answer, configured under <c>Garage:Answering</c>.
+    /// </summary>
+    internal const string Answering = "garage.answering";
+
     /// <inheritdoc />
-    public async Task<bool> IsReady(CancellationToken ct = default) =>
-        (await commands.Run(Garage("status").QuietOutput(), ct)).IsSuccess;
+    public async Task<bool> AwaitReady(CancellationToken ct = default) =>
+        await pipelines.GetPipeline<bool>(Answering).Until(async inner => (await commands.Run(Garage("status").QuietOutput(), inner)).IsSuccess, ct: ct);
 
     /// <inheritdoc />
     public async Task<int> LayoutVersion(CancellationToken ct = default)

@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Tests.Clients.Resilience;
 using Wolfe.Lab.Build.Clients.Ollama;
 
 namespace Wolfe.Lab.Build.Tests.Workflows.Ollama;
@@ -6,7 +7,16 @@ public class DryRunOllamaTests
 {
     private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
 
-    private DryRunOllama Rehearsal() => new(Substitute.For<IWorkflowLog>(), new OllamaClient(_commands));
+    private DryRunOllama Rehearsal() => new(Substitute.For<IWorkflowLog>(),
+        new OllamaClient(_commands, Pipelines.Polling(OllamaClient.Serving, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(1))));
+
+    [Fact]
+    public async Task AwaitServing_WaitsForNothingOnARehearsal()
+    {
+        (await Rehearsal().AwaitServing(TestContext.Current.CancellationToken)).ShouldBeTrue();
+
+        await _commands.DidNotReceiveWithAnyArgs().Run(default!, TestContext.Current.CancellationToken);
+    }
 
     [Fact]
     public async Task Installed_IsNothingWhereNoServerIsRunningYet()

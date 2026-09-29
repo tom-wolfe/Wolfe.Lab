@@ -34,7 +34,7 @@ public class ResolveRunnerTests
     [Fact]
     public void ToDefaults_IsNullWhileAnythingRequiredIsMissing()
     {
-        new ForgejoRunnersSettings { Vault = "Wolfe.Lab", Repository = "tom-wolfe/Wolfe.Lab", Image = "node:22-bookworm" }.ToDefaults().ShouldBe(Defaults);
-        new ForgejoRunnersSettings { Vault = "Wolfe.Lab" }.ToDefaults().ShouldBeNull();
+        new ForgejoRunnersOptions { Vault = "Wolfe.Lab", Repository = "tom-wolfe/Wolfe.Lab", Image = "node:22-bookworm" }.ToDefaults().ShouldBe(Defaults);
+        new ForgejoRunnersOptions { Vault = "Wolfe.Lab" }.ToDefaults().ShouldBeNull();
     }
 }

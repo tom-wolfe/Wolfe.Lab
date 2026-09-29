@@ -9,7 +9,7 @@ namespace Wolfe.Lab.Build.Workflows.ImmichImport.Jobs;
 /// <summary>
 /// Imports the Google Takeout into the running server.
 /// </summary>
-internal sealed class ImportJob : LabJob<ImmichImportSettings>
+internal sealed class ImportJob : LabJob<ImmichImportOptions>
 {
     public override string Name => "import";
 
@@ -25,26 +25,26 @@ internal sealed class ImportJob : LabJob<ImmichImportSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<ImmichImportSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<ImmichImportOptions> options) => options
         .Require(s => s.Server.Url is not null, "'server.url' not set in ritten.json.")
         .Require(s => s.Server.ApiKey is not null, "'server.apiKey' not set in ritten.json.")
         .Require(s => s.Takeout.Path is not null, "'takeout.path' not set in ritten.json.")
         .Require(s => s.Import.Concurrency is >= 1 and <= 20, "'import.concurrency' must be between 1 and 20.");
 
-    protected override void Configure(IWorkflowBuilder builder, ImmichImportSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, ImmichImportOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddDocker();
-        builder.Services.AddSingleton(new ImportOptions(settings.Import.Concurrency));
+        builder.Services.AddSingleton(options.Import);
 
         // Validation has already refused a missing value; the patterns keep that promise in the
         // types rather than restating it with a null-forgiving operator.
-        if (settings.Takeout.Path is { } takeout)
+        if (options.Takeout.Path is { } takeout)
         {
             builder.Services.AddSingleton(new TakeoutLocation(takeout.Directory));
         }
 
-        if (settings.Server is { Url: { } url, ApiKey: { } apiKey })
+        if (options.Server is { Url: { } url, ApiKey: { } apiKey })
         {
             builder.Services.AddSingleton(new ImmichServer(url, apiKey));
         }

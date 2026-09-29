@@ -30,10 +30,10 @@ internal static class SliceComponents
     /// this workflow, by directory name.
     /// </summary>
     /// <param name="component">The component being checked.</param>
-    public static IReadOnlyDictionary<string, ModelSettings> Read(IDirectory component)
+    public static IReadOnlyDictionary<string, ModelOptions> Read(IDirectory component)
     {
         var slice = Path.GetFullPath(Path.Combine(component.AbsolutePath, ".."));
-        var found = new Dictionary<string, ModelSettings>(StringComparer.Ordinal);
+        var found = new Dictionary<string, ModelOptions>(StringComparer.Ordinal);
 
         foreach (var directory in Directory.GetDirectories(slice).OrderBy(Path.GetFileName, StringComparer.Ordinal))
         {
@@ -54,8 +54,8 @@ internal static class SliceComponents
                 continue;
             }
 
-            var settings = document.RootElement.Deserialize<OllamaSettings>(Options);
-            found[Path.GetFileName(directory)] = settings?.Models ?? new ModelSettings();
+            var options = document.RootElement.Deserialize<OllamaOptions>(Options);
+            found[Path.GetFileName(directory)] = options?.Models ?? new ModelOptions();
         }
 
         return found;

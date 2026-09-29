@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Build.Clients.Caddy;
 using Ritten.Docker;
 using Wolfe.Lab.Build.Clients.Caddy.Steps;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
@@ -15,7 +17,7 @@ namespace Wolfe.Lab.Build.Workflows.CaddyRoutes.Jobs;
 /// Snippets arrive through a bind mount and never change compose's config hash, so the door
 /// has to be told; a plain redeploy of the compose component would notice nothing.
 /// </remarks>
-internal sealed class DeployJob : LabJob<CaddyRoutesSettings>
+internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
 {
     public override string Name => "deploy";
 
@@ -32,14 +34,19 @@ internal sealed class DeployJob : LabJob<CaddyRoutesSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<CaddyRoutesSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<CaddyRoutesOptions> options) => options
+        .Require(s => s.Caddy.ToInstance() is not null, "'caddy.container' and 'caddy.caddyfile' must both be set in ritten.json: the caddy this reloads.")
         .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the directory the Caddyfile imports routes from.");
 
-    protected override void Configure(IWorkflowBuilder builder, CaddyRoutesSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, CaddyRoutesOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddDocker();
-        if (settings.Release is { Length: > 0 } release)
+        if (options.Caddy.ToInstance() is { } caddy)
+        {
+            builder.Services.AddSingleton(caddy);
+        }
+        if (options.Release is { Length: > 0 } release)
         {
             builder.AddReleases(release);
         }

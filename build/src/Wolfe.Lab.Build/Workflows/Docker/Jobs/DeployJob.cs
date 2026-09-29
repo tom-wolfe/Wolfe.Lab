@@ -19,7 +19,7 @@ namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 /// built from the checkout first, because a build context is source and the installer does not
 /// carry source onto the node.
 /// </remarks>
-internal sealed class DeployJob<TSettings> : LabJob<TSettings> where TSettings : DockerSettings
+internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : DockerComponentOptions
 {
     public override string Name => "deploy";
 
@@ -39,20 +39,20 @@ internal sealed class DeployJob<TSettings> : LabJob<TSettings> where TSettings :
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<TSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<TOptions> options) => options
         .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the name the component is installed under.")
         .Require(s => s.Images.All(image => image.ToImage() is not null), "every entry in 'images' needs a 'tag' and a 'context'.");
 
-    protected override void Configure(IWorkflowBuilder builder, TSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, TOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddDocker([.. settings.Images.Select(image => image.ToImage()).OfType<DockerImage>()]).AddVolumes(settings.Volumes);
-        if (settings.Release is { Length: > 0 } release)
+        base.Configure(builder, options);
+        builder.AddDocker([.. options.Images.Select(image => image.ToImage()).OfType<DockerImage>()]).AddVolumes(options.Volumes);
+        if (options.Release is { Length: > 0 } release)
         {
             // The release is the first artifact: the component, where the stack runs from.
             builder.AddReleases(release).AddArtifacts([
-                new ArtifactSettings { Source = ".", Output = $"${{{LabRoots.RootVariable}}}/{release}" },
-                .. settings.Artifacts
+                new ArtifactOptions { Source = ".", Output = $"${{{LabRoots.RootVariable}}}/{release}" },
+                .. options.Artifacts
             ]);
         }
     }

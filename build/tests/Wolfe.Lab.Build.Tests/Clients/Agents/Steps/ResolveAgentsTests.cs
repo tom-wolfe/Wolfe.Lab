@@ -29,11 +29,11 @@ public class ResolveAgentsTests : IDisposable
         return path;
     }
 
-    private Task<StepResult<AgentPlan>> Resolve(params (string Name, AgentSettings Settings)[] agents) =>
+    private Task<StepResult<AgentPlan>> Resolve(params (string Name, AgentOptions Options)[] agents) =>
         Resolve(new Dictionary<string, InstalledPackage>(), agents);
 
-    private Task<StepResult<AgentPlan>> Resolve(Dictionary<string, InstalledPackage> packages, params (string Name, AgentSettings Settings)[] agents) =>
-        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Settings)), _secrets, _environment, Substitute.For<IWorkflowLog>())
+    private Task<StepResult<AgentPlan>> Resolve(Dictionary<string, InstalledPackage> packages, params (string Name, AgentOptions Options)[] agents) =>
+        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Options)), _secrets, _environment, Substitute.For<IWorkflowLog>())
             .Run(new AgentPackages(packages), TestContext.Current.CancellationToken);
 
     private static InstalledPackage Alloy(string directory, PackageOutcome outcome) =>
@@ -42,7 +42,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_ResolvesWhatTheNodeCanActuallyRun()
     {
-        var result = await Resolve(("ollama", new AgentSettings { Program = HostPath.From(Program()), Arguments = ["serve"] }));
+        var result = await Resolve(("ollama", new AgentOptions { Program = HostPath.From(Program()), Arguments = ["serve"] }));
 
         var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
         agent.Label.Value.ShouldBe("dev.twolfe.ollama");
@@ -54,7 +54,7 @@ public class ResolveAgentsTests : IDisposable
     {
         var program = Program();
 
-        var result = await Resolve(("ollama", new AgentSettings { Program = HostPath.From(program) }));
+        var result = await Resolve(("ollama", new AgentOptions { Program = HostPath.From(program) }));
 
         result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem()
             .ProgramStamp.ShouldBe(File.GetLastWriteTimeUtc(program));
@@ -63,7 +63,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_ResolvesVaultReferencesAndLeavesEverythingElse()
     {
-        var result = await Resolve(("beszel-agent", new AgentSettings
+        var result = await Resolve(("beszel-agent", new AgentOptions
         {
             Program = HostPath.From(Program("beszel-agent")),
             Environment = new Dictionary<string, string>
@@ -82,7 +82,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_CarriesWhatTheAgentSupersedes()
     {
-        var result = await Resolve(("beszel-agent", new AgentSettings
+        var result = await Resolve(("beszel-agent", new AgentOptions
         {
             Program = HostPath.From(Program("beszel-agent")),
             Supersedes = ["sh.brew.beszel-agent"]
@@ -103,7 +103,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_RefusesAnAgentWhoseProgramIsNotOnThisNode()
     {
-        var result = await Resolve(("ollama", new AgentSettings { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) }));
+        var result = await Resolve(("ollama", new AgentOptions { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) }));
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("not on this node");
@@ -112,7 +112,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_RefusesAnAgentThatNamesNoProgram()
     {
-        var result = await Resolve(("ollama", new AgentSettings()));
+        var result = await Resolve(("ollama", new AgentOptions()));
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("'program'");
@@ -121,7 +121,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_RefusesAKeyThatCannotBeALabel()
     {
-        var result = await Resolve(("not a name", new AgentSettings { Program = HostPath.From(Program()) }));
+        var result = await Resolve(("not a name", new AgentOptions { Program = HostPath.From(Program()) }));
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("cannot name an agent");
@@ -131,8 +131,8 @@ public class ResolveAgentsTests : IDisposable
     public async Task Run_ReportsEverySlicesProblemAtOnce()
     {
         var result = await Resolve(
-            ("ollama", new AgentSettings()),
-            ("watcher", new AgentSettings { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) }));
+            ("ollama", new AgentOptions()),
+            ("watcher", new AgentOptions { Program = HostPath.From(Path.Combine(_node.FullName, "absent")) }));
 
         result.Outcome.Errors.ShouldNotBeNull().Count.ShouldBe(2);
     }
@@ -141,8 +141,8 @@ public class ResolveAgentsTests : IDisposable
     public async Task Run_OrdersTheAgentsSoAConvergeIsRepeatable()
     {
         var result = await Resolve(
-            ("watcher", new AgentSettings { Program = HostPath.From(Program("watcher")) }),
-            ("ollama", new AgentSettings { Program = HostPath.From(Program()) }));
+            ("watcher", new AgentOptions { Program = HostPath.From(Program("watcher")) }),
+            ("ollama", new AgentOptions { Program = HostPath.From(Program()) }));
 
         result.Value.ShouldNotBeNull().Agents.Select(a => a.Label.Name).ShouldBe(["ollama", "watcher"]);
     }
@@ -150,7 +150,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_RefusesAHomePathTheProcessWouldReceiveLiterally()
     {
-        var result = await Resolve(("ollama", new AgentSettings
+        var result = await Resolve(("ollama", new AgentOptions
         {
             Program = HostPath.From(Program()),
             Environment = new Dictionary<string, string> { ["OLLAMA_MODELS"] = "~/.ollama/models", ["OLLAMA_HOST"] = "0.0.0.0:11434" }
@@ -172,7 +172,7 @@ public class ResolveAgentsTests : IDisposable
     [Fact]
     public async Task Run_WritesTheLabsRootsIntoArgumentsAndVariables()
     {
-        var result = await Resolve(("alloy", new AgentSettings
+        var result = await Resolve(("alloy", new AgentOptions
         {
             Program = HostPath.From(Program("alloy")),
             Arguments = ["run", "${LAB_ROOT}/alloy/config.alloy", "--storage.path=${LAB_DATA}/alloy"],
@@ -192,7 +192,7 @@ public class ResolveAgentsTests : IDisposable
         var program = Program("alloy-darwin-arm64");
 
         var result = await Resolve(new Dictionary<string, InstalledPackage> { ["alloy"] = Alloy(_node.FullName, PackageOutcome.Installed) },
-            ("alloy", new AgentSettings { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64"), Arguments = ["run", "${PACKAGE}/x"] }));
+            ("alloy", new AgentOptions { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64"), Arguments = ["run", "${PACKAGE}/x"] }));
 
         var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
         agent.Program.Value.ShouldBe(program);
@@ -203,7 +203,7 @@ public class ResolveAgentsTests : IDisposable
     public async Task Run_RehearsesAnAgentWhosePackageIsNotInstalledYet()
     {
         var result = await Resolve(new Dictionary<string, InstalledPackage> { ["alloy"] = Alloy("/nowhere/alloy/1.20.1", PackageOutcome.WouldInstall) },
-            ("alloy", new AgentSettings { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }));
+            ("alloy", new AgentOptions { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }));
 
         result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem().Program.Value.ShouldBe("/nowhere/alloy/1.20.1/alloy-darwin-arm64");
     }

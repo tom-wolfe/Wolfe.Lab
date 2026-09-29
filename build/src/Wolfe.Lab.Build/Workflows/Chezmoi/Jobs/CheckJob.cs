@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Build.Workflows.Chezmoi.Jobs;
 /// <summary>
 /// Proves the source renders for every machine and that what it renders is valid shell.
 /// </summary>
-internal sealed class CheckJob : LabJob<ChezmoiSettings>
+internal sealed class CheckJob : LabJob<ChezmoiOptions>
 {
     public override string Name => "check";
 
@@ -27,13 +27,13 @@ internal sealed class CheckJob : LabJob<ChezmoiSettings>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<ChezmoiSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<ChezmoiOptions> options) => options
         .Require(s => s.Profiles.Count > 0, "'profiles' names nothing in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, ChezmoiSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, ChezmoiOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddChezmoi().AddTools("shellcheck");
-        builder.Services.AddSingleton(new Profiles(settings.Profiles));
+        builder.Services.AddSingleton(new Profiles(options.Profiles));
     }
 }

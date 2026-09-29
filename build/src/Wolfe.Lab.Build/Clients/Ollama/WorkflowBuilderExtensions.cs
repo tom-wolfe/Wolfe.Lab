@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Resilience;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -15,7 +16,9 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddOllama()
         {
-            builder.AddCommandRunner();
+            builder
+                .AddCommandRunner()
+                .AddPolling(OllamaClient.Serving, "Ollama:Serving");
             builder.Services.TryAddSingleton<OllamaClient>();
             builder.Services.TryAddSingleton<IOllama>(services => services.GetRequiredService<OllamaClient>());
             builder.Decorators.Replace<IOllama, DryRunOllama>();

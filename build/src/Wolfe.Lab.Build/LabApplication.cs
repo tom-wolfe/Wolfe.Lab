@@ -56,7 +56,8 @@ public static class LabApplication
             .Add<LabRuntime>();
 
         builder
-            .AddOnePassword(options => options.ServiceAccountTokenFile = "~/Docker/1password/service-account-token");
+            .AddOnePassword(options => options.ServiceAccountTokenFile = LabConfiguration.Current["OnePassword:ServiceAccountTokenFile"]
+            is { Length: > 0 } file ? file : throw new InvalidOperationException("'OnePassword:ServiceAccountTokenFile' is not set in appsettings.json."));
 
         return builder;
     }

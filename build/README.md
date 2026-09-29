@@ -8,14 +8,14 @@ it can be typed, rehearsed and tested.
 ## How a component opts in
 
 A directory the CLI serves carries a `ritten.json` naming its workflow
-— `"workflow": "docker"` — plus that workflow's settings. That directory
+— `"workflow": "docker"` — plus that workflow's options. That directory
 is a *component*: a slice is the folder that groups a service's
 components (`sonarr/compose/`, `sonarr/backup/`, `forgejo/tofu/`,
 `forgejo/runners/`), and never carries a declaration of its own. Run
 from a component's directory, `lab` offers exactly that workflow's jobs
 as commands, each option of which is a job argument the job declared. A
 workflow is a class here: its jobs, each job's ordered steps, and the
-settings shape its `ritten.json` must satisfy, judged before anything
+options shape its `ritten.json` must satisfy, judged before anything
 runs. Steps hand each other typed values (a `Release`, say) rather than
 sharing state, and reach outside the working directory only through a
 client that has a dry-run twin, so `--dry-run` rehearses any job
@@ -168,7 +168,7 @@ tree says which:
 
 - `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name,
   the folder named for the workflow (`CaddyRoutes/` for
-  `caddy-routes`): the workflow class, its settings record under
+  `caddy-routes`): the workflow class, its options record under
   `Models/`, and the jobs and steps only it lists under `Jobs/` and
   `Steps/`. Where several names are one family (`docker`, `image`,
   `dotnet-service`) they share a folder.
@@ -184,6 +184,15 @@ tree says which:
 Dependencies point one way: workflows use domain modules, everything
 uses values. Nothing under `Clients/` knows a workflow exists, and no
 workflow knows another.
+
+A bound shape is an *options* type, whichever file it comes from — a
+workflow's `ritten.json` (`ResticOptions`) or a client's section of
+`appsettings.json` (`HealthchecksOptions`) — as it is in
+`Microsoft.Extensions.Options`; `WorkflowSettings`, `SettingsValidator`
+and `ValidateSettings` are Ritten's names, not the lab's. Production code
+has no null-forgiving operator (`!`): a value validation has already
+promised is taken with a pattern (`is { } path`), or through an accessor
+that throws saying which setting is missing.
 
 The other line is between this project and Ritten. A client for a tool
 with no lab policy in it — Docker, git, the .NET SDK, OpenTofu — is a
@@ -233,6 +242,43 @@ command runner for every process. The lab adds what Ritten doesn't have:
   environment value is handed to the process exactly as written, so one
   that starts with `~` is refused — nothing between the declaration and
   the process would expand it.
+
+### Waiting and retrying
+
+Resilience is a client's implementation detail, never a step's. A step
+asks for what it needs — `garage.AwaitReady()`, `ollama.AwaitServing()`,
+the supervisor converging an agent — and reports the answer; how long
+that may take, how often to ask again and what to retry live inside the
+client, which registers them with itself (`AddGarage()`, `AddOllama()`,
+`AddAgents()`).
+
+Inside a client, anything that waits or retries goes through
+`Microsoft.Extensions.Resilience` (Polly), never a loop of its own. A wait
+is a **polling** pipeline (`Clients/Resilience/Polling.cs`): the question
+is asked again at an interval until it answers yes, and the wait gives
+up at a limit, which a call may set for itself (an agent's exit
+timeout). It runs on the injected `TimeProvider`, so a test moves a fake
+clock rather than sleeping. An HTTP client gets the standard resilience
+handler (`AddConfiguredResilience`).
+
+None of the numbers are in code. **`appsettings.json`**, shipped beside
+the CLI in the tool, holds how the CLI behaves and where it reaches out
+to — each wait's `Limit` and `Interval` under its client's section
+(`Garage:Answering`, `Ollama:Serving`, `Launchd:Unloading`), each HTTP
+client's `HttpStandardResilienceOptions` (`Packages:Http`, `Gatus:Http`),
+the services it calls (`Alerts:Endpoint`, `Heartbeat:Endpoint`,
+`Packages:Releases` and `Packages:Api`) and the vault's service account
+(`OnePassword:ServiceAccountTokenFile`) — where a component's
+`ritten.json` holds what the component is, including a fact another
+component defines and it needs, such as the container and Caddyfile path
+of the caddy it reloads (`caddy`). What stays in code is the contract the
+repository is written against — `secrets.env`, `lab-tools.json`, the
+`.lab-volume` sentinel — where a setting would only be a way for a node
+to disagree with the repository. Environment
+variables prefixed `LAB_` override it on a node
+(`LAB_Ollama__Serving__Limit=00:01:00`). A section that is missing, or a
+limit of zero, fails as the client is built, and a test binds every
+section of the shipped file.
 
 ## Alerting
 

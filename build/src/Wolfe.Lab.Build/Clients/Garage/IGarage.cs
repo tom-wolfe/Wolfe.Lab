@@ -6,9 +6,9 @@ namespace Wolfe.Lab.Build.Clients.Garage;
 public interface IGarage
 {
     /// <summary>
-    /// Whether the daemon answers yet.
+    /// Waits for the daemon to answer.
     /// </summary>
-    Task<bool> IsReady(CancellationToken ct = default);
+    Task<bool> AwaitReady(CancellationToken ct = default);
 
     /// <summary>
     /// The current cluster layout version; zero before any layout has been applied.

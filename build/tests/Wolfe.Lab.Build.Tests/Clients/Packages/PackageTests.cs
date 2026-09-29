@@ -4,7 +4,7 @@ namespace Wolfe.Lab.Build.Tests.Clients.Packages;
 
 public class PackageTests
 {
-    private static readonly PackageSettings Tofu = new()
+    private static readonly PackageOptions Tofu = new()
     {
         Github = "opentofu/opentofu",
         Version = "1.12.6",
@@ -23,16 +23,16 @@ public class PackageTests
 
         package.ShouldBe(new Package("tofu", "opentofu/opentofu", "1.12.6", "v1.12.6", "tofu_1.12.6_linux_arm64.tar.gz", "tofu_1.12.6_SHA256SUMS"));
         package.Verification.ShouldBe("`tofu_1.12.6_SHA256SUMS`");
-        package.Download(package.Asset).ToString()
+        package.Download(new Uri("https://github.com/"), package.Asset).ToString()
             .ShouldBe("https://github.com/opentofu/opentofu/releases/download/v1.12.6/tofu_1.12.6_linux_arm64.tar.gz");
     }
 
     [Fact]
     public void From_TakesASingleAssetOverThePlatforms()
     {
-        var settings = Tofu with { Asset = "alloy-darwin-arm64.zip" };
+        var options = Tofu with { Asset = "alloy-darwin-arm64.zip" };
 
-        Package.From("alloy", settings, "linux-arm64").Value.ShouldNotBeNull().Asset.ShouldBe("alloy-darwin-arm64.zip");
+        Package.From("alloy", options, "linux-arm64").Value.ShouldNotBeNull().Asset.ShouldBe("alloy-darwin-arm64.zip");
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public class PackageTests
     [Fact]
     public void From_TakesAPackageWithNoChecksumFileOnGitHubsDigest()
     {
-        var shellcheck = new PackageSettings
+        var shellcheck = new PackageOptions
         {
             Github = "koalaman/shellcheck",
             Version = "0.11.0",
@@ -63,6 +63,6 @@ public class PackageTests
         package.Checksums.ShouldBeNull();
         package.Verification.ShouldBe("GitHub's digest");
         package.Bin.ShouldBe("shellcheck-v0.11.0");
-        package.Release.ToString().ShouldBe("https://api.github.com/repos/koalaman/shellcheck/releases/tags/v0.11.0");
+        package.Release(new Uri("https://api.github.com/")).ToString().ShouldBe("https://api.github.com/repos/koalaman/shellcheck/releases/tags/v0.11.0");
     }
 }

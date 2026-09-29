@@ -1,4 +1,5 @@
 using Wolfe.Lab.Build.Clients.Ollama;
+using Wolfe.Lab.Build.Tests.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Tests.Workflows.Ollama;
 
@@ -26,4 +27,28 @@ public class OllamaClientTests
             [OllamaModel.From("qwen3:8b")] = "500a1f067a9f",
             [OllamaModel.From("llama3.2:3b")] = "a80c4f17acd5"
         });
+
+    [Fact]
+    public async Task AwaitServing_AsksUntilTheServerAnswers()
+    {
+        var commands = Substitute.For<ICommandRunner>();
+        commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(
+            new CommandResult(1, "", "could not connect"), new CommandResult(0, Listing, ""));
+
+        var client = new OllamaClient(commands, Pipelines.Polling(OllamaClient.Serving, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(1)));
+
+        (await client.AwaitServing(TestContext.Current.CancellationToken)).ShouldBeTrue();
+        await commands.Received(2).Run(Arg.Any<Command>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AwaitServing_GivesUpOnAServerThatNeverAnswers()
+    {
+        var commands = Substitute.For<ICommandRunner>();
+        commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(1, "", "could not connect"));
+
+        var client = new OllamaClient(commands, Pipelines.Polling(OllamaClient.Serving, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(1)));
+
+        (await client.AwaitServing(TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
 }

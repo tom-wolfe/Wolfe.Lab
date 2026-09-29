@@ -2,6 +2,7 @@ using System.Xml.Linq;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Clients.Agents.Launchd;
+using Wolfe.Lab.Build.Tests.Clients.Resilience;
 using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Agents;
@@ -14,7 +15,9 @@ public class LaunchdSupervisorTests : IDisposable
     public void Dispose() => _agents.Delete(recursive: true);
 
     private LaunchdSupervisor Supervisor() =>
-        new(new AgentDirectory(new PhysicalDirectory(_agents.FullName)), _commands, Substitute.For<IWorkflowLog>());
+        new(new AgentDirectory(new PhysicalDirectory(_agents.FullName)), _commands, Substitute.For<IWorkflowLog>(),
+            Pipelines.Polling(LaunchdSupervisor.Unloading, TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(1)),
+            Microsoft.Extensions.Options.Options.Create(new LaunchdOptions { Margin = TimeSpan.FromSeconds(1) }));
 
     private static AgentDefinition Agent(
         IReadOnlyDictionary<string, string>? environment = null,
@@ -145,6 +148,23 @@ public class LaunchdSupervisorTests : IDisposable
     }
 
     [Fact]
+    public async Task Converge_LoadsTheNewUnitOnlyOnceLaunchdHasLetGoOfTheOld()
+    {
+        // Alloy, flushing its queues: still loaded for a few listings after its bootout.
+        var supervisor = Supervisor();
+        Install(supervisor.Render(Agent(keepAlive: false)).Content);
+        Loaded(true, lingers: 3);
+
+        await supervisor.Converge(Agent(), TestContext.Current.CancellationToken);
+
+        var verbs = _commands.ReceivedCalls()
+            .Select(call => ((Command)call.GetArguments()[0]!).Arguments.FirstOrDefault())
+            .Where(verb => verb is "bootout" or "list" or "bootstrap")
+            .ToList();
+        verbs.SkipWhile(verb => verb != "bootout").ShouldBe(["bootout", "list", "list", "list", "list", "bootstrap"]);
+    }
+
+    [Fact]
     public async Task Converge_SignalsInsteadOfReloadingWhenTheAgentIsHostingThisJob()
     {
         var supervisor = Supervisor();
@@ -174,12 +194,37 @@ public class LaunchdSupervisorTests : IDisposable
     private void Install(string content) =>
         File.WriteAllText(Path.Combine(_agents.FullName, "dev.twolfe.ollama.plist"), content);
 
-    /// <summary>`launchctl list` says what launchd is running; `id -u` answers everything else.</summary>
-    private void Loaded(bool loaded) =>
+    /// <summary>
+    /// `launchctl list` says what launchd is running — until a `bootout`, after which the unit
+    /// lingers for as many listings as it takes to stop; `id -u` answers everything else.
+    /// </summary>
+    private void Loaded(bool loaded, int lingers = 0)
+    {
+        var stopping = false;
         _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(call =>
-            call.Arg<Command>().Arguments.Contains("list")
-                ? new CommandResult(0, loaded ? "PID\tStatus\tLabel\n-\t0\tdev.twolfe.ollama\n" : "PID\tStatus\tLabel\n", "")
-                : new CommandResult(0, "501", ""));
+        {
+            var arguments = call.Arg<Command>().Arguments;
+            if (arguments.Contains("bootout"))
+            {
+                stopping = true;
+            }
+            else if (arguments.Contains("bootstrap"))
+            {
+                (stopping, loaded) = (false, true);
+            }
+            else if (arguments.Contains("list"))
+            {
+                if (stopping && lingers-- <= 0)
+                {
+                    (stopping, loaded) = (false, false);
+                }
+
+                return new CommandResult(0, loaded ? "PID\tStatus\tLabel\n-\t0\tdev.twolfe.ollama\n" : "PID\tStatus\tLabel\n", "");
+            }
+
+            return new CommandResult(0, "501", "");
+        });
+    }
 
     private async Task Ran(string verb) =>
         await _commands.Received().Run(Arg.Is<Command>(c => c.Arguments.Contains(verb)), Arg.Any<CancellationToken>());
@@ -203,10 +248,19 @@ public class LaunchdSupervisorTests : IDisposable
     public async Task Retire_UnloadsAndRemovesAUnitSoItDoesNotComeBackAtLogin()
     {
         File.WriteAllText(Path.Combine(_agents.FullName, "sh.brew.beszel-agent.plist"), "<plist/>");
+        var loaded = true;
         _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(call =>
-            call.Arg<Command>().Arguments.Contains("list")
-                ? new CommandResult(0, "PID\tStatus\tLabel\n-\t0\tsh.brew.beszel-agent\n", "")
-                : new CommandResult(0, "501", ""));
+        {
+            var arguments = call.Arg<Command>().Arguments;
+            if (arguments.Contains("bootout"))
+            {
+                loaded = false;
+            }
+
+            return arguments.Contains("list")
+                ? new CommandResult(0, loaded ? "PID\tStatus\tLabel\n-\t0\tsh.brew.beszel-agent\n" : "PID\tStatus\tLabel\n", "")
+                : new CommandResult(0, "501", "");
+        });
 
         await Supervisor().Retire("sh.brew.beszel-agent", TestContext.Current.CancellationToken);
 

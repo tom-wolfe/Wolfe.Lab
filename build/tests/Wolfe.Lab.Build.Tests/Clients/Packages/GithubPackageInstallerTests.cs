@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Wolfe.Lab.Build.Clients.Packages;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Packages;
@@ -7,6 +8,9 @@ public class GithubPackageInstallerTests : IDisposable
     private readonly DirectoryInfo _root = Directory.CreateTempSubdirectory("lab-packages-");
 
     public void Dispose() => _root.Delete(recursive: true);
+
+    private static readonly IOptions<GithubOptions> Sources =
+        Options.Create(new GithubOptions { Releases = new Uri("https://github.com/"), Api = new Uri("https://api.github.com/") });
 
     [Theory]
     [InlineData("abc123  restic_0.19.1_darwin_arm64.bz2", "restic_0.19.1_darwin_arm64.bz2", "abc123")]
@@ -24,7 +28,7 @@ public class GithubPackageInstallerTests : IDisposable
         var directory = Directory.CreateDirectory(Path.Combine(_root.FullName, "packages", "alloy", "1.20.1"));
         File.WriteAllText(Path.Combine(directory.FullName, GithubPackageInstaller.Complete), "");
         var http = new HttpClient(new RefusingHandler());
-        var installer = new GithubPackageInstaller(http, Substitute.For<ICommandRunner>(),
+        var installer = new GithubPackageInstaller(Clients(http), Sources, Substitute.For<ICommandRunner>(),
             new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null), Substitute.For<IWorkflowLog>());
 
         var installed = await installer.Install(package, TestContext.Current.CancellationToken);
@@ -53,7 +57,7 @@ public class GithubPackageInstallerTests : IDisposable
         {
             assets = new object[] { digest is null ? new { name = "shellcheck" } : new { name = "shellcheck", digest = digest == "MATCH" ? actual : digest } }
         });
-        var installer = new GithubPackageInstaller(new HttpClient(new ReleaseHandler(body, release)), Substitute.For<ICommandRunner>(),
+        var installer = new GithubPackageInstaller(Clients(new HttpClient(new ReleaseHandler(body, release))), Sources, Substitute.For<ICommandRunner>(),
             new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null), Substitute.For<IWorkflowLog>());
 
         if (failure is null)
@@ -76,5 +80,12 @@ public class GithubPackageInstallerTests : IDisposable
             {
                 Content = request.RequestUri!.Host == "api.github.com" ? new StringContent(release) : new ByteArrayContent(asset)
             });
+    }
+
+    private static IHttpClientFactory Clients(HttpClient client)
+    {
+        var clients = Substitute.For<IHttpClientFactory>();
+        clients.CreateClient(Arg.Any<string>()).Returns(client);
+        return clients;
     }
 }

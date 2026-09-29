@@ -4,4 +4,4 @@ namespace Wolfe.Lab.Build.Workflows.Ollama.Models;
 /// This component's <c>models</c> section, as the role check judges it.
 /// </summary>
 /// <param name="Models">The section.</param>
-public sealed record DeclaredRoles(ModelSettings Models);
+public sealed record DeclaredRoles(ModelOptions Models);

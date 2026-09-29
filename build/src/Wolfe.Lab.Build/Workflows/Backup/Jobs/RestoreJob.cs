@@ -21,7 +21,7 @@ namespace Wolfe.Lab.Build.Workflows.Backup.Jobs;
 /// by moving it back. The stack is held to the image the snapshot was taken under, because a
 /// database written by one version and opened by another is the failure that looks like success.
 /// </remarks>
-internal sealed class RestoreJob : LabJob<BackupSettings>
+internal sealed class RestoreJob : LabJob<BackupOptions>
 {
     internal static readonly JobArgument<string> Snapshot = JobArgument.Value<string>(
         "snapshot",
@@ -52,17 +52,17 @@ internal sealed class RestoreJob : LabJob<BackupSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<BackupSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<BackupOptions> options) => options
         .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the name the snapshot is filed under.")
         .Require(s => s.Paths.Count > 0, "'paths' names nothing to restore.");
 
-    protected override void Configure(IWorkflowBuilder builder, BackupSettings settings, JobArguments args)
+    protected override void Configure(IWorkflowBuilder builder, BackupOptions options, JobArguments args)
     {
-        base.Configure(builder, settings, args);
-        builder.AddDocker().AddRestic().AddStateDirectories().AddVolumes(settings.Volumes);
-        builder.Services.AddSingleton(settings.ToPlan());
+        base.Configure(builder, options, args);
+        builder.AddDocker().AddRestic().AddStateDirectories().AddVolumes(options.Volumes);
+        builder.Services.AddSingleton(options.ToPlan());
         builder.Services.AddSingleton(new RestoreRequest(args.Get(Snapshot), args.Get(AnyImage)));
-        if (settings.Release is { Length: > 0 } release)
+        if (options.Release is { Length: > 0 } release)
         {
             builder.AddReleases(release);
         }

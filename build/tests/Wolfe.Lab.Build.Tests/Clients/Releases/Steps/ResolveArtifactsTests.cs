@@ -18,7 +18,7 @@ public class ResolveArtifactsTests : IDisposable
 
     public void Dispose() => _component.Delete(recursive: true);
 
-    private StepResult<Artifacts> Resolve(params ArtifactSettings[] artifacts) =>
+    private StepResult<Artifacts> Resolve(params ArtifactOptions[] artifacts) =>
         new ResolveArtifacts(new ArtifactDeclarations(artifacts), _fileSystem, _environment, Substitute.For<IWorkflowLog>()).Run();
 
     private static string Message(StepResult<Artifacts> result) =>
@@ -27,7 +27,7 @@ public class ResolveArtifactsTests : IDisposable
     [Fact]
     public void Run_PublishesADirectoryOfTheComponentIntoTheRoot()
     {
-        var artifact = Resolve(new ArtifactSettings { Source = "config", Output = "${LAB_ROOT}/alloy" }).Value.ShouldNotBeNull().Items.ShouldHaveSingleItem();
+        var artifact = Resolve(new ArtifactOptions { Source = "config", Output = "${LAB_ROOT}/alloy" }).Value.ShouldNotBeNull().Items.ShouldHaveSingleItem();
 
         artifact.Source.AbsolutePath.ShouldBe(Path.Combine(_component.FullName, "config"));
         artifact.Output.AbsolutePath.ShouldBe("/lab/root/alloy");
@@ -35,23 +35,23 @@ public class ResolveArtifactsTests : IDisposable
 
     [Fact]
     public void Run_RefusesAnOutputOutsideTheRoot() =>
-        Message(Resolve(new ArtifactSettings { Source = "config", Output = "/Users/tomwolfe/.config/alloy" })).ShouldContain("not inside /lab/root");
+        Message(Resolve(new ArtifactOptions { Source = "config", Output = "/Users/tomwolfe/.config/alloy" })).ShouldContain("not inside /lab/root");
 
     [Fact]
     public void Run_RefusesTheRootItself() =>
-        Message(Resolve(new ArtifactSettings { Source = "config", Output = "${LAB_ROOT}" })).ShouldContain("not inside /lab/root");
+        Message(Resolve(new ArtifactOptions { Source = "config", Output = "${LAB_ROOT}" })).ShouldContain("not inside /lab/root");
 
     [Fact]
     public void Run_RefusesASourceOutsideTheComponent() =>
-        Message(Resolve(new ArtifactSettings { Source = "../elsewhere", Output = "${LAB_ROOT}/x" })).ShouldContain("outside the component");
+        Message(Resolve(new ArtifactOptions { Source = "../elsewhere", Output = "${LAB_ROOT}/x" })).ShouldContain("outside the component");
 
     [Fact]
     public void Run_RefusesASourceThatIsNotThere() =>
-        Message(Resolve(new ArtifactSettings { Source = "missing", Output = "${LAB_ROOT}/x" })).ShouldContain("not a directory");
+        Message(Resolve(new ArtifactOptions { Source = "missing", Output = "${LAB_ROOT}/x" })).ShouldContain("not a directory");
 
     [Fact]
     public void Run_RefusesOutputsThatNest() =>
         Message(Resolve(
-            new ArtifactSettings { Source = ".", Output = "${LAB_ROOT}/grafana" },
-            new ArtifactSettings { Source = "config", Output = "${LAB_ROOT}/grafana/config" })).ShouldContain("mirror the other away");
+            new ArtifactOptions { Source = ".", Output = "${LAB_ROOT}/grafana" },
+            new ArtifactOptions { Source = "config", Output = "${LAB_ROOT}/grafana/config" })).ShouldContain("mirror the other away");
 }

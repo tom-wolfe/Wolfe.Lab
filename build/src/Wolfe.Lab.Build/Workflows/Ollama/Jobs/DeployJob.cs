@@ -18,7 +18,7 @@ namespace Wolfe.Lab.Build.Workflows.Ollama.Jobs;
 /// <summary>
 /// Converges the model server and what it holds.
 /// </summary>
-internal sealed class DeployJob : LabJob<OllamaSettings>
+internal sealed class DeployJob : LabJob<OllamaOptions>
 {
     private const string AgentName = "ollama";
     private const string StoreVariable = "OLLAMA_MODELS";
@@ -46,7 +46,7 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<OllamaSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<OllamaOptions> options) => options
         .Require(s => s.Agents.Count > 0, "'agents' names nothing in ritten.json.")
         .Require(s => s.Models.Store is not null, "'models.store' not set in ritten.json.")
         // One directory named in two places is a pair that drifts, and the way it fails is the
@@ -58,17 +58,16 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
                  && HostPath.From(declared) == store,
             $"'models.store' must match the {AgentName} agent's {StoreVariable}.");
 
-    protected override void Configure(IWorkflowBuilder builder, OllamaSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddPackages().AddAgents().AddOllama().AddVolumes(settings.Volumes).AddArtifacts([]);
-        builder.Services.AddSingleton(new AgentDeclarations(settings.Agents));
-        builder.Services.AddSingleton(new ModelPlan([.. settings.Models.Pull]));
-        builder.Services.AddSingleton(RolePlan.From(settings.Models.Roles));
-        builder.Services.AddSingleton(new DeclaredRoles(settings.Models));
-        builder.Services.AddSingleton(ServerWait.Default);
+        base.Configure(builder, options);
+        builder.AddPackages().AddAgents().AddOllama().AddVolumes(options.Volumes).AddArtifacts([]);
+        builder.Services.AddSingleton(new AgentDeclarations(options.Agents));
+        builder.Services.AddSingleton(new ModelPlan([.. options.Models.Pull]));
+        builder.Services.AddSingleton(RolePlan.From(options.Models.Roles));
+        builder.Services.AddSingleton(new DeclaredRoles(options.Models));
 
-        if (settings.Models.Store is { } store)
+        if (options.Models.Store is { } store)
         {
             builder.Services.AddSingleton(new ModelStore(store.Directory));
         }

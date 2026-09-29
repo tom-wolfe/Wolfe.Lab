@@ -15,7 +15,7 @@ namespace Wolfe.Lab.Build.Workflows.Agents.Jobs;
 /// <summary>
 /// Converges one node's agents.
 /// </summary>
-internal sealed class DeployJob : LabJob<AgentsSettings>
+internal sealed class DeployJob : LabJob<AgentsOptions>
 {
     private static readonly JobArgument<string> Node =
         JobArgument.Value<string>("node", "The node this runs on, as ritten.json names it: MacMini, MacStudio, wolfe-pi5.", required: true);
@@ -39,14 +39,14 @@ internal sealed class DeployJob : LabJob<AgentsSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<AgentsSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<AgentsOptions> options) => options
         .Require(s => s.Nodes.Count > 0, "'nodes' names no node in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, AgentsSettings settings, JobArguments args)
+    protected override void Configure(IWorkflowBuilder builder, AgentsOptions options, JobArguments args)
     {
-        base.Configure(builder, settings);
-        var node = settings.Nodes.GetValueOrDefault(args.Get(Node)!) ?? new NodeAgentsSettings();
-        builder.AddPackages().AddAgents().AddVolumes(node.Volumes).AddArtifacts(settings.Artifacts);
+        base.Configure(builder, options);
+        var node = (args.Get(Node) is { } name ? options.Nodes.GetValueOrDefault(name) : null) ?? new NodeAgentsOptions();
+        builder.AddPackages().AddAgents().AddVolumes(node.Volumes).AddArtifacts(options.Artifacts);
         builder.Services.AddSingleton(new AgentDeclarations(node.Agents));
     }
 }

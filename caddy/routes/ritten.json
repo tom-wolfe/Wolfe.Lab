@@ -1,4 +1,8 @@
 {
   "workflow": "caddy-routes",
-  "release": "caddy-routes"
+  "release": "caddy-routes",
+  "caddy": {
+    "container": "caddy",
+    "caddyfile": "/etc/caddy/lab/caddy/Caddyfile"
+  }
 }

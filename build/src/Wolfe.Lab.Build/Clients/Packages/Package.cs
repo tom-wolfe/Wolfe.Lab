@@ -14,19 +14,19 @@ public sealed record Package(string Name, string Repository, string Version, str
     /// <summary>
     /// The package as declared, for this node's platform — or the reason it cannot be.
     /// </summary>
-    public static Result<Package> From(string name, PackageSettings settings, string platform)
+    public static Result<Package> From(string name, PackageOptions options, string platform)
     {
-        if (settings.Github is not { Length: > 0 } repository || settings.Version is not { Length: > 0 } version)
+        if (options.Github is not { Length: > 0 } repository || options.Version is not { Length: > 0 } version)
         {
             return new Error($"Package '{name}' needs 'github' and 'version'.");
         }
 
-        var asset = settings.Asset ?? settings.Assets.GetValueOrDefault(platform);
+        var asset = options.Asset ?? options.Assets.GetValueOrDefault(platform);
         return asset is { Length: > 0 }
-            ? new Package(name, repository, version, settings.Expand(settings.Tag), settings.Expand(asset),
-                settings.Checksums is { Length: > 0 } checksums ? settings.Expand(checksums) : null)
+            ? new Package(name, repository, version, options.Expand(options.Tag), options.Expand(asset),
+                options.Checksums is { Length: > 0 } checksums ? options.Expand(checksums) : null)
             {
-                Bin = settings.Bin is { Length: > 0 } bin ? settings.Expand(bin) : null
+                Bin = options.Bin is { Length: > 0 } bin ? options.Expand(bin) : null
             }
             : new Error($"Package '{name}' names no asset for {platform}.");
     }
@@ -42,14 +42,17 @@ public sealed record Package(string Name, string Repository, string Version, str
     public string Verification => Checksums != null ? $"`{Checksums}`" : "GitHub's digest";
 
     /// <summary>
-    /// Where the release is described in GitHub's API, with each asset's digest.
+    /// Where the release is described in the API, with each asset's digest.
     /// </summary>
-    public Uri Release => new($"https://api.github.com/repos/{Repository}/releases/tags/{Tag}");
+    /// <param name="api">The API's base (<c>Packages:Api</c>).</param>
+    public Uri Release(Uri api) => new(api, $"repos/{Repository}/releases/tags/{Tag}");
 
     /// <summary>
     /// Where a release asset of this package downloads from.
     /// </summary>
-    public Uri Download(string asset) => new($"https://github.com/{Repository}/releases/download/{Tag}/{asset}");
+    /// <param name="releases">The downloads' base (<c>Packages:Releases</c>).</param>
+    /// <param name="asset">The asset.</param>
+    public Uri Download(Uri releases, string asset) => new(releases, $"{Repository}/releases/download/{Tag}/{asset}");
 
     /// <summary>
     /// This node's platform, as a package's <c>assets</c> are keyed: <c>darwin-arm64</c>.

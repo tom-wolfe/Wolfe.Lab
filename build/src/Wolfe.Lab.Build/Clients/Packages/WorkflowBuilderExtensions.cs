@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Build.Clients.Resilience;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Wolfe.Lab.Build.Clients.Packages;
@@ -15,8 +16,12 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddPackages()
         {
-            builder.AddCommandRunner().AddBuildReporting();
-            builder.Services.TryAddSingleton(new HttpClient { Timeout = TimeSpan.FromMinutes(10) });
+            builder.AddCommandRunner().AddBuildReporting().AddLabConfiguration();
+            builder.Services.AddOptions<GithubOptions>().BindConfiguration("Packages")
+                .Validate(options => options.Releases is not null && options.Api is not null, "'Packages:Releases' and 'Packages:Api' must both be set in appsettings.json.");
+            builder.Services
+                .AddHttpClient(GithubPackageInstaller.Client)
+                .AddConfiguredResilience("Packages:Http");
             builder.Services.TryAddSingleton<IPackageInstaller, GithubPackageInstaller>();
             builder.Decorators.Replace<IPackageInstaller, DryRunPackageInstaller>();
             return builder;

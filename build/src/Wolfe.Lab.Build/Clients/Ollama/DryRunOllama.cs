@@ -41,6 +41,14 @@ internal sealed class DryRunOllama(IWorkflowLog log, OllamaClient inner) : IOlla
     public Task<bool> IsServing(CancellationToken ct = default) => inner.IsServing(ct);
 
     /// <inheritdoc />
+    public Task<bool> AwaitServing(CancellationToken ct = default)
+    {
+        // A rehearsal restarted nothing, so there is nothing to wait for.
+        log.Skipped("Would wait for the server to answer.");
+        return Task.FromResult(true);
+    }
+
+    /// <inheritdoc />
     public Task Pull(OllamaModel model, CancellationToken ct = default)
     {
         log.Skipped($"Would pull {model.Value}.");

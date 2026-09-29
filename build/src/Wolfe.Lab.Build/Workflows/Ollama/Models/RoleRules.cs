@@ -11,7 +11,7 @@ internal static partial class RoleRules
     /// The problems with one component's roles, judged on its own file.
     /// </summary>
     /// <param name="models">The component's <c>models</c> section.</param>
-    public static IEnumerable<string> Local(ModelSettings models)
+    public static IEnumerable<string> Local(ModelOptions models)
     {
         foreach (var (name, role) in models.Roles.OrderBy(r => r.Key, StringComparer.Ordinal))
         {
@@ -38,7 +38,7 @@ internal static partial class RoleRules
     /// instead. A role marked identical must also name the same model everywhere.
     /// </summary>
     /// <param name="components">Every component of the slice, by name.</param>
-    public static IEnumerable<string> Across(IReadOnlyDictionary<string, ModelSettings> components)
+    public static IEnumerable<string> Across(IReadOnlyDictionary<string, ModelOptions> components)
     {
         var names = components.Values
             .SelectMany(models => models.Roles.Keys)
@@ -58,11 +58,13 @@ internal static partial class RoleRules
                 yield return $"Role '{name}' must be declared by every server, so it degrades rather than disappears when one is off; {string.Join(", ", missing)} does not declare it.";
             }
 
-            var present = declared.Where(d => d.Role is not null).ToList();
-            if (present.Any(d => d.Role!.Identical)
-                && present.Select(d => (d.Role!.Model, d.Role.Identical)).Distinct().Count() > 1)
+            var present = declared
+                .SelectMany(IEnumerable<(string Component, ModelRole Role)> (d) => d.Role is { } role ? [(d.Component, role)] : [])
+                .ToList();
+            if (present.Any(d => d.Role.Identical)
+                && present.Select(d => (d.Role.Model, d.Role.Identical)).Distinct().Count() > 1)
             {
-                var each = present.Select(d => $"{d.Component}: {d.Role!.Model?.Value ?? "nothing"}{(d.Role.Identical ? "" : " (not marked identical)")}");
+                var each = present.Select(d => $"{d.Component}: {d.Role.Model?.Value ?? "nothing"}{(d.Role.Identical ? "" : " (not marked identical)")}");
                 yield return $"Role '{name}' must be identical everywhere, and is not: {string.Join("; ", each)}.";
             }
         }

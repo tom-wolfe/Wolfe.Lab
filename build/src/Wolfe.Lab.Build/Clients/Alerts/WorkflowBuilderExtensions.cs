@@ -14,6 +14,9 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddAlerts()
         {
+            builder.AddLabConfiguration();
+            builder.Services.AddOptions<AlertsOptions>().BindConfiguration("Alerts")
+                .Validate(options => options.Endpoint is not null, "'Alerts:Endpoint' is not set in appsettings.json.");
             builder.Services.AddHttpClient<IAlerts, PushoverAlerts>();
             builder.Decorators.Replace<IAlerts, DryRunAlerts>();
             return builder;

@@ -7,11 +7,11 @@ namespace Wolfe.Lab.Build.Workflows.Restic.Jobs;
 /// <summary>
 /// What every restic job registers: the client, and the drive the local repository lives on.
 /// </summary>
-internal abstract class ResticJob : LabJob<ResticSettings>
+internal abstract class ResticJob : LabJob<ResticOptions>
 {
-    protected override void Configure(IWorkflowBuilder builder, ResticSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, ResticOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddRestic().AddVolumes(settings.Volumes);
+        base.Configure(builder, options);
+        builder.AddRestic().AddVolumes(options.Volumes);
     }
 }

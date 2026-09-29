@@ -9,7 +9,7 @@ namespace Wolfe.Lab.Build.Workflows.Heartbeat.Jobs;
 /// One ping. The schedule is the workflow's; the check's expectation of it is declared in
 /// <c>tofu/</c>, so a slot this job misses is what healthchecks.io shouts about.
 /// </summary>
-internal sealed class PingJob : LabJob<HeartbeatSettings>
+internal sealed class PingJob : LabJob<HeartbeatOptions>
 {
     public override string Name => "ping";
 
@@ -19,14 +19,14 @@ internal sealed class PingJob : LabJob<HeartbeatSettings>
 
     public override JobKind Kind => JobKind.Work;
 
-    protected override void ValidateSettings(SettingsValidator<HeartbeatSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<HeartbeatOptions> options) => options
         .Require(s => s.Heartbeat.ToCheck() is not null, "'heartbeat.check' and 'heartbeat.key' must both be set in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, HeartbeatSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, HeartbeatOptions options)
     {
-        base.Configure(builder, settings);
+        base.Configure(builder, options);
         builder.AddHeartbeat();
-        if (settings.Heartbeat.ToCheck() is { } check)
+        if (options.Heartbeat.ToCheck() is { } check)
         {
             builder.Services.AddSingleton(check);
         }

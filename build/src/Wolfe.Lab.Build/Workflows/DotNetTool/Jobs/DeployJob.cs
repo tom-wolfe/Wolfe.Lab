@@ -12,7 +12,7 @@ namespace Wolfe.Lab.Build.Workflows.DotNetTool.Jobs;
 /// <summary>
 /// Packs the tool and pushes it to the lab's feed.
 /// </summary>
-internal sealed class DeployJob : LabJob<DotNetToolSettings>
+internal sealed class DeployJob : LabJob<DotNetToolOptions>
 {
     public override string Name => "deploy";
 
@@ -37,15 +37,18 @@ internal sealed class DeployJob : LabJob<DotNetToolSettings>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<DotNetToolSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<DotNetToolOptions> options) => options
         .Require(s => s.Project is { Length: > 0 }, "'project' not set in ritten.json.")
         .Require(s => s.Feed.Source is not null, "'feed.source' not set in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, DotNetToolSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, DotNetToolOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddBuildReporting()
-            .AddDotNet([settings.Project!], settings.Configuration)
-            .AddNuGet(settings.Feed.Source!.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
+        base.Configure(builder, options);
+        builder.AddBuildReporting();
+        if (options.Project is { Length: > 0 } project && options.Feed.Source is { } source)
+        {
+            builder.AddDotNet([project], options.Configuration)
+                .AddNuGet(source.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
+        }
     }
 }

@@ -33,14 +33,14 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
         foreach (var (name, declared) in declarations.Agents.OrderBy(agent => agent.Key, StringComparer.Ordinal))
         {
             var package = packages.Packages.GetValueOrDefault(name);
-            var settings = Expand(declared, roots, package?.Directory.AbsolutePath);
+            var options = Expand(declared, roots, package?.Directory.AbsolutePath);
             if (AgentLabel.ForName(name) is not { } label)
             {
                 errors.Add(new Error($"'{name}' cannot name an agent: no dots, slashes or whitespace."));
                 continue;
             }
 
-            if (settings.Program is not { } program)
+            if (options.Program is not { } program)
             {
                 errors.Add(new Error($"Agent '{name}' names no 'program' in ritten.json."));
                 continue;
@@ -56,14 +56,14 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
                 continue;
             }
 
-            if (UnexpandedHomePaths(settings.Environment).ToList() is { Count: > 0 } unexpanded)
+            if (UnexpandedHomePaths(options.Environment).ToList() is { Count: > 0 } unexpanded)
             {
                 errors.Add(new Error($"Agent '{name}' sets {string.Join(", ", unexpanded)} to a path under ~, which nothing expands: "
                                      + "the process would receive the ~ as written. Write the absolute path."));
                 continue;
             }
 
-            if (settings.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : File.GetLastWriteTimeUtc(program.Value)) is not { } definition)
+            if (options.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : File.GetLastWriteTimeUtc(program.Value)) is not { } definition)
             {
                 errors.Add(new Error($"Agent '{name}' is incomplete."));
                 continue;
@@ -82,25 +82,25 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
     }
 
     /// <summary>
-    /// The settings with the lab's roots written in.
+    /// The options with the lab's roots written in.
     /// </summary>
-    internal static AgentSettings Expand(AgentSettings settings, LabRoots roots, string? package = null)
+    internal static AgentOptions Expand(AgentOptions options, LabRoots roots, string? package = null)
     {
         string Value(string value) => roots.Expand(package is null ? value : value.Replace(PackageVariable, package, StringComparison.Ordinal));
         HostPath? Path(HostPath? path) => path is { } value ? HostPath.From(Value(value.Value)) : null;
 
-        return settings with
+        return options with
         {
-            Program = Path(settings.Program),
-            Arguments = [.. settings.Arguments.Select(Value)],
-            Environment = settings.Environment.ToDictionary(variable => variable.Key, variable => Value(variable.Value), StringComparer.Ordinal),
-            WorkingDirectory = Path(settings.WorkingDirectory),
-            Log = Path(settings.Log)
+            Program = Path(options.Program),
+            Arguments = [.. options.Arguments.Select(Value)],
+            Environment = options.Environment.ToDictionary(variable => variable.Key, variable => Value(variable.Value), StringComparer.Ordinal),
+            WorkingDirectory = Path(options.WorkingDirectory),
+            Log = Path(options.Log)
         };
     }
 
     /// <summary>
-    /// The agent's installed package, in any of its settings.
+    /// The agent's installed package, in any of its options.
     /// </summary>
     internal const string PackageVariable = "${PACKAGE}";
 

@@ -10,5 +10,9 @@
     "NETLIFY_TOKEN": "op://Wolfe.Lab/netlify-pat/credential"
   },
   "propagationWait": "90s",
-  "store": "~/Docker/caddy/lego"
+  "store": "~/Docker/caddy/lego",
+  "caddy": {
+    "container": "caddy",
+    "caddyfile": "/etc/caddy/lab/caddy/Caddyfile"
+  }
 }

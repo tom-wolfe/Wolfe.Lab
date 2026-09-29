@@ -6,7 +6,7 @@ namespace Wolfe.Lab.Build.Clients.Garage;
 internal sealed class DryRunGarage(IWorkflowLog log, GarageClient inner) : IGarage
 {
     /// <inheritdoc />
-    public Task<bool> IsReady(CancellationToken ct = default) => inner.IsReady(ct);
+    public Task<bool> AwaitReady(CancellationToken ct = default) => inner.AwaitReady(ct);
 
     /// <inheritdoc />
     public Task<int> LayoutVersion(CancellationToken ct = default) => inner.LayoutVersion(ct);

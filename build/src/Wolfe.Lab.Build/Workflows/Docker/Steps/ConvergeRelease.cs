@@ -46,7 +46,8 @@ internal sealed class ConvergeRelease(IDocker docker, WorkflowEnvironment enviro
             return;
         }
 
-        var file = LabRoots.From(environment).AppliedStamp(release.Name);
+        var roots = LabRoots.From(environment);
+        var file = roots.AppliedStamp(release.Name);
         var current = stamp.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
         var applied = File.Exists(file) ? (await File.ReadAllTextAsync(file, ct)).Trim() : null;
         if (applied == current)
@@ -75,7 +76,7 @@ internal sealed class ConvergeRelease(IDocker docker, WorkflowEnvironment enviro
             report.Section(PublishArtifacts.Section).Success($"Restarted `{release.Name}` for its changed files.");
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        Directory.CreateDirectory(roots.Applied);
         await File.WriteAllTextAsync(file, current, ct);
     }
 }

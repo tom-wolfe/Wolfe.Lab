@@ -4,6 +4,33 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.67.0] - 2026-09-29
+
+### Fixed
+
+- **Restarting an agent that stops gracefully could leave it unloaded.**
+  `launchctl bootout` returns once it has asked the process to stop, not
+  once it has; Alloy, flushing its queues, was still loaded when the new
+  unit was bootstrapped, which launchd refused ("Input/output error") —
+  and the agent stayed down. The deploy now waits for launchd to let go
+  (the agent's exit timeout, or launchd's 20 seconds, and a margin)
+  before loading the new unit, and says so if it does not.
+
+### Changed
+
+- **Waits and retries go through `Microsoft.Extensions.Resilience`.**
+  Launchd's unload, Garage's bring-up and ollama's start are one polling
+  pipeline each — ask again at an interval, give up at a limit — inside
+  their client: a step asks `AwaitReady()` and reports the answer, and
+  never sees a limit. Each reports through the same telemetry and is
+  testable on a fake clock. Package downloads and the Gatus probe get
+  the standard HTTP resilience handler: retries, per-attempt and overall
+  timeouts, and a breaker.
+- **The CLI reads `appsettings.json`**, shipped beside it in the tool and
+  overridden per node by `LAB_` environment variables: every wait's limit
+  and interval, and each HTTP client's resilience options, rather than
+  numbers in code.
+
 ## [0.66.0] - 2026-09-29
 
 ### Fixed

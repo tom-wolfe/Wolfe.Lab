@@ -5,4 +5,4 @@ namespace Wolfe.Lab.Build.Clients.Releases;
 /// compose publishes the component itself as its release.
 /// </summary>
 /// <param name="Artifacts">The declarations.</param>
-public sealed record ArtifactDeclarations(IReadOnlyList<ArtifactSettings> Artifacts);
+public sealed record ArtifactDeclarations(IReadOnlyList<ArtifactOptions> Artifacts);

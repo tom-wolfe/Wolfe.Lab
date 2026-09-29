@@ -8,7 +8,7 @@ namespace Wolfe.Lab.Build.Workflows.Ollama.Jobs;
 /// <summary>
 /// Proves the component's roles are sound before any node points a name at a model.
 /// </summary>
-internal sealed class CheckJob : LabJob<OllamaSettings>
+internal sealed class CheckJob : LabJob<OllamaOptions>
 {
     public override string Name => "check";
 
@@ -18,9 +18,9 @@ internal sealed class CheckJob : LabJob<OllamaSettings>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, OllamaSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
     {
-        base.Configure(builder, settings);
-        builder.Services.AddSingleton(new DeclaredRoles(settings.Models));
+        base.Configure(builder, options);
+        builder.Services.AddSingleton(new DeclaredRoles(options.Models));
     }
 }

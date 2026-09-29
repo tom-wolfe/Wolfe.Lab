@@ -27,13 +27,13 @@ internal sealed class EnsureTools(RequiredTools required, IGit git, IPackageInst
         var errors = new List<Error>();
         foreach (var name in required.Names)
         {
-            if (manifest.Tools.GetValueOrDefault(name) is not { } settings)
+            if (manifest.Tools.GetValueOrDefault(name) is not { } options)
             {
                 log.Detail($"{name} is not pinned in .config/{ToolsManifest.FileName}; the node's own runs.");
                 continue;
             }
 
-            if (!Package.From(name, settings, Package.Platform).TryGetValue(out var package, out var invalid))
+            if (!Package.From(name, options, Package.Platform).TryGetValue(out var package, out var invalid))
             {
                 errors.AddRange(invalid);
                 continue;

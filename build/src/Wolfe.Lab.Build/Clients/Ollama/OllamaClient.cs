@@ -1,3 +1,5 @@
+using Wolfe.Lab.Build.Clients.Resilience;
+using Polly.Registry;
 
 namespace Wolfe.Lab.Build.Clients.Ollama;
 
@@ -6,8 +8,13 @@ namespace Wolfe.Lab.Build.Clients.Ollama;
 /// that reaches here has already converged the agent — and a server that is up but not
 /// answering fails the job loudly rather than silently serving nothing.
 /// </summary>
-internal sealed class OllamaClient(ICommandRunner commands) : IOllama
+internal sealed class OllamaClient(ICommandRunner commands, ResiliencePipelineProvider<string> pipelines) : IOllama
 {
+    /// <summary>
+    /// The wait for a server to answer, configured under <c>Ollama:Serving</c>.
+    /// </summary>
+    internal const string Serving = "ollama.serving";
+
     /// <inheritdoc />
     public async Task<IReadOnlyList<OllamaModel>> Installed(CancellationToken ct = default)
     {
@@ -39,6 +46,10 @@ internal sealed class OllamaClient(ICommandRunner commands) : IOllama
         (await commands.Run(Command.Create("ollama").WithArguments("list").QuietOutput(), ct)).ExitCode == 0;
 
     /// <inheritdoc />
+    public async Task<bool> AwaitServing(CancellationToken ct = default) =>
+        await pipelines.GetPipeline<bool>(Serving).Until(IsServing, ct: ct);
+
+    /// <inheritdoc />
     public async Task Pull(OllamaModel model, CancellationToken ct = default) =>
         await commands.Run(Command.Create("ollama").WithArguments("pull", model.Value).ThrowOnError(), ct);
 
@@ -58,7 +69,7 @@ internal sealed class OllamaClient(ICommandRunner commands) : IOllama
         output.Split('\n')
             .Select(line => line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
             .Where(columns => columns.Length >= 2)
-            .Select(columns => (Model: OllamaModel.TryParse(columns[0]), Id: columns[1]))
-            .Where(row => row.Model is not null)
-            .ToDictionary(row => row.Model!.Value, row => row.Id);
+            .SelectMany(IEnumerable<KeyValuePair<OllamaModel, string>> (columns) =>
+                OllamaModel.TryParse(columns[0]) is { } model ? [KeyValuePair.Create(model, columns[1])] : [])
+            .ToDictionary();
 }

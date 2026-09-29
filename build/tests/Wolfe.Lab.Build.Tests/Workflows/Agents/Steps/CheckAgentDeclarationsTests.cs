@@ -7,15 +7,15 @@ namespace Wolfe.Lab.Build.Tests.Workflows.Agents.Steps;
 
 public class CheckAgentDeclarationsTests
 {
-    private static StepResult Check(params (string Node, string Agent, AgentSettings Settings)[] agents)
+    private static StepResult Check(params (string Node, string Agent, AgentOptions Options)[] agents)
     {
         var nodes = agents
             .GroupBy(a => a.Node)
-            .ToDictionary(g => g.Key, g => new NodeAgentsSettings { Agents = g.ToDictionary(a => a.Agent, a => a.Settings) });
+            .ToDictionary(g => g.Key, g => new NodeAgentsOptions { Agents = g.ToDictionary(a => a.Agent, a => a.Options) });
         return new CheckAgentDeclarations(new AgentsDeclaredPerNode(nodes), Substitute.For<IWorkflowLog>()).Run();
     }
 
-    private static AgentSettings Beszel(string token = "op://Wolfe.Lab/beszel-agent/credential") => new()
+    private static AgentOptions Beszel(string token = "op://Wolfe.Lab/beszel-agent/credential") => new()
     {
         Program = HostPath.From("/opt/homebrew/opt/beszel-agent/bin/beszel-agent"),
         Environment = new Dictionary<string, string> { ["TOKEN"] = token, ["HUB_URL"] = "http://localhost:8090" }
@@ -40,11 +40,11 @@ public class CheckAgentDeclarationsTests
 
     [Fact]
     public void Run_RefusesAnAgentWithNoProgram() =>
-        Check(("MacMini", "beszel-agent", new AgentSettings())).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("'program'");
+        Check(("MacMini", "beszel-agent", new AgentOptions())).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("'program'");
 
     [Fact]
     public void Run_NamesTheNodeOfEveryProblem() =>
-        Check(("MacMini", "beszel-agent", new AgentSettings()), ("wolfe-pi5", "beszel-agent", new AgentSettings()))
+        Check(("MacMini", "beszel-agent", new AgentOptions()), ("wolfe-pi5", "beszel-agent", new AgentOptions()))
             .Errors.ShouldNotBeNull().Select(e => e.Message.Split(':')[0]).ShouldBe(["MacMini", "wolfe-pi5"]);
 
     [Fact]

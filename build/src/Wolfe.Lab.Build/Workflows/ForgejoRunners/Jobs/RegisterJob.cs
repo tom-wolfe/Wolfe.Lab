@@ -13,7 +13,7 @@ namespace Wolfe.Lab.Build.Workflows.ForgejoRunners.Jobs;
 /// node's runner still holds its secret and polls with it. Same secret, same UUID: the node side
 /// needs no change.
 /// </remarks>
-internal sealed class RegisterJob : LabJob<ForgejoRunnersSettings>
+internal sealed class RegisterJob : LabJob<ForgejoRunnersOptions>
 {
     internal static readonly JobArgument<string> Node = JobArgument.Value<string>(
         "node",
@@ -43,14 +43,14 @@ internal sealed class RegisterJob : LabJob<ForgejoRunnersSettings>
     private static Result<RunnerKind> ParseKind(string text) =>
         Enum.TryParse<RunnerKind>(text, ignoreCase: true, out var kind) ? kind : new Error($"'{text}' is not a runner kind; host or docker.");
 
-    protected override void ValidateSettings(SettingsValidator<ForgejoRunnersSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<ForgejoRunnersOptions> options) => options
         .Require(s => s.ToDefaults() is not null, "'vault', 'repository' and 'image' must all be set in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, ForgejoRunnersSettings settings, JobArguments args)
+    protected override void Configure(IWorkflowBuilder builder, ForgejoRunnersOptions options, JobArguments args)
     {
-        base.Configure(builder, settings, args);
+        base.Configure(builder, options, args);
         builder.Services.AddSingleton(new RunnerRequest(args.Get(Node) ?? "", args.Get(RunnerKindArgument)));
-        if (settings.ToDefaults() is { } defaults)
+        if (options.ToDefaults() is { } defaults)
         {
             builder.Services.AddSingleton(defaults);
         }

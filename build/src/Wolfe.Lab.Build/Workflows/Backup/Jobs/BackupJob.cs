@@ -15,7 +15,7 @@ namespace Wolfe.Lab.Build.Workflows.Backup.Jobs;
 /// <summary>
 /// Snapshots the state into the restic repository.
 /// </summary>
-internal sealed class BackupJob : LabJob<BackupSettings>
+internal sealed class BackupJob : LabJob<BackupOptions>
 {
     public override string Name => "backup";
 
@@ -33,17 +33,17 @@ internal sealed class BackupJob : LabJob<BackupSettings>
 
     public override JobKind Kind => JobKind.Work;
 
-    protected override void ValidateSettings(SettingsValidator<BackupSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<BackupOptions> options) => options
         .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the name the snapshot is filed under.")
         .Require(s => s.Paths.Count > 0, "'paths' names nothing to snapshot.")
         .Require(s => s.Stop is null or { Length: > 0 }, "'stop' must name a container, or be left out for a warm snapshot.");
 
-    protected override void Configure(IWorkflowBuilder builder, BackupSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, BackupOptions options)
     {
-        base.Configure(builder, settings);
-        builder.AddDocker().AddRestic().AddVolumes(settings.Volumes);
-        builder.Services.AddSingleton(settings.ToPlan());
-        if (settings.Release is { Length: > 0 } release)
+        base.Configure(builder, options);
+        builder.AddDocker().AddRestic().AddVolumes(options.Volumes);
+        builder.Services.AddSingleton(options.ToPlan());
+        if (options.Release is { Length: > 0 } release)
         {
             builder.AddReleases(release);
         }

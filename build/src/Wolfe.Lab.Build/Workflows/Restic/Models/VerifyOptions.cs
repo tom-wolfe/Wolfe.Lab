@@ -1,7 +1,13 @@
 namespace Wolfe.Lab.Build.Workflows.Restic.Models;
 
 /// <summary>
-/// How the check samples the offsite copy.
+/// How the weekly check samples the offsite copy.
 /// </summary>
-/// <param name="ReadDataSubset">The share of pack data read back, as restic spells it.</param>
-public sealed record VerifyOptions(string ReadDataSubset);
+public sealed record VerifyOptions
+{
+    /// <summary>
+    /// The share of pack data read back from the offsite repository, as restic spells it
+    /// (<c>5%</c>). Over a year a small sample covers most of the repository, for pennies.
+    /// </summary>
+    public string ReadDataSubset { get; init; } = "5%";
+}

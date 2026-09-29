@@ -8,7 +8,7 @@ namespace Wolfe.Lab.Build.Workflows.Agents.Jobs;
 /// <summary>
 /// Proves the component's declarations are sound before any node converges on them.
 /// </summary>
-internal sealed class CheckJob : LabJob<AgentsSettings>
+internal sealed class CheckJob : LabJob<AgentsOptions>
 {
     public override string Name => "check";
 
@@ -18,12 +18,12 @@ internal sealed class CheckJob : LabJob<AgentsSettings>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<AgentsSettings> settings) => settings
+    protected override void ValidateSettings(SettingsValidator<AgentsOptions> options) => options
         .Require(s => s.Nodes.Count > 0, "'nodes' names no node in ritten.json.");
 
-    protected override void Configure(IWorkflowBuilder builder, AgentsSettings settings)
+    protected override void Configure(IWorkflowBuilder builder, AgentsOptions options)
     {
-        base.Configure(builder, settings);
-        builder.Services.AddSingleton(new AgentsDeclaredPerNode(settings.Nodes));
+        base.Configure(builder, options);
+        builder.Services.AddSingleton(new AgentsDeclaredPerNode(options.Nodes));
     }
 }

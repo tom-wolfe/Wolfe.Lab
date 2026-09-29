@@ -13,28 +13,26 @@ namespace Wolfe.Lab.Build.Clients.Caddy.Steps;
 /// reload and picks the files up at its first start, which is the bootstrap order.
 /// </remarks>
 [Step("reload caddy", StepKind.Publish)]
-internal sealed class ReloadCaddy(IDocker docker, ICommandRunner commands, WorkflowJob job, IWorkflowLog log)
+internal sealed class ReloadCaddy(CaddyInstance caddy, IDocker docker, ICommandRunner commands, WorkflowJob job, IWorkflowLog log)
 {
-    private const string Container = "caddy";
-    private const string Config = "/etc/caddy/lab/caddy/Caddyfile";
 
     public async Task<StepResult> Run(CancellationToken ct = default)
     {
         if (!await IsRunning(ct))
         {
-            log.Status($"{Container} is not running; nothing to reload.");
+            log.Status($"{caddy.Container} is not running; nothing to reload.");
             return StepResult.Successful;
         }
 
         if (job.DryRun)
         {
-            log.Skipped($"Would reload {Container} from {Config}.");
+            log.Skipped($"Would reload {caddy.Container} from {caddy.Caddyfile}.");
             return StepResult.Successful;
         }
 
         await commands.Run(
             Command.Create("docker")
-                .WithArguments("exec", Container, "caddy", "reload", "--config", Config, "--force")
+                .WithArguments("exec", caddy.Container, "caddy", "reload", "--config", caddy.Caddyfile, "--force")
                 .ThrowOnError(),
             ct);
 
@@ -46,7 +44,7 @@ internal sealed class ReloadCaddy(IDocker docker, ICommandRunner commands, Workf
     {
         try
         {
-            return (await docker.Inspect(Container, ct)).Running;
+            return (await docker.Inspect(caddy.Container, ct)).Running;
         }
         catch (CommandFailedException)
         {

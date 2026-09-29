@@ -45,4 +45,11 @@ public interface IOllama
     /// </summary>
     /// <param name="ct">The cancellation token.</param>
     Task<bool> IsServing(CancellationToken ct = default);
+
+    /// <summary>
+    /// Waits for a server that has just started to answer.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>True when the server started successfully, otherwise false.</returns>
+    Task<bool> AwaitServing(CancellationToken ct = default);
 }
