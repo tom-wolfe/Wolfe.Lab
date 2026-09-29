@@ -14,7 +14,7 @@ services:
       PGID: "20"
       TZ: Europe/London
       # Authentication is DECLARED here, not left to the UI — see
-      # sonarr/compose.yaml for why "disabled for local addresses" would
+      # media/sonarr/compose/compose.yaml for why "disabled for local addresses" would
       # be no authentication at all behind caddy.
       RADARR__AUTH__METHOD: Forms
       RADARR__AUTH__REQUIRED: Enabled
@@ -25,7 +25,7 @@ services:
       # lives outside the repo like every slice.
       - /Users/tomwolfe/Docker/radarr/config:/config
       # Media drives at their HOST paths — jellyfin's ONE RULE; see
-      # sonarr/compose.yaml. Both drives even though only Data2 holds
+      # media/sonarr/compose/compose.yaml. Both drives even though only Data2 holds
       # movies today: the Movies library has a (currently empty) root on
       # Data1 too, and the deploy guard checks both regardless.
       - /Volumes/Data1:/Volumes/Data1
@@ -37,7 +37,7 @@ services:
     networks:
       - lab
 
-    # See sonarr/compose.yaml for the rationale and the 127.0.0.1 note.
+    # See media/sonarr/compose/compose.yaml for the rationale and the 127.0.0.1 note.
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7878/ping"]
       interval: 120s

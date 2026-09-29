@@ -2,9 +2,9 @@
 
 Radarr, pointed at the existing Movies library with **no indexers and
 no download client** — Phase A of `ROADMAP.md` item 5, the movies half
-of the rename that `sonarr/` does for TV. Everything about the shape
+of the rename that `media/sonarr/` does for TV. Everything about the shape
 (host-path mounts, declared auth, no healthcheck, the backup pipeline)
-is the same as `sonarr/README.md` and is not repeated here; this file
+is the same as `media/sonarr/README.md` and is not repeated here; this file
 covers what is different about movies.
 
 | | |
@@ -44,7 +44,7 @@ into `10 Cloverfield Lane (2016)/`.
 ## Secrets
 
 **`radarr-webui`** (Login item), a copy not the origin, and the API key
-in `config.xml` — identical standing to `sonarr/README.md`.
+in `config.xml` — identical standing to `media/sonarr/README.md`.
 
 ## Deliberately not configured
 
@@ -60,7 +60,7 @@ separate call, not a default.
   stem. Jellyfin re-saves artwork and NFO under the new name on the next
   scan (`SaveLocalMetadata` is on for Movies); the originals are
   orphans to sweep afterwards, not a loss.
-- Data2 is APFS, so none of the exFAT caveats in `sonarr/README.md`
+- Data2 is APFS, so none of the exFAT caveats in `media/sonarr/README.md`
   apply to the movies root today. They would if Data1's root were used.
 
 ## Runbook

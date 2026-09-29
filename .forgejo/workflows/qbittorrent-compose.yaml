@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [qbittorrent/compose/**, .forgejo/workflows/qbittorrent-compose.yaml]
+    paths: [media/qbittorrent/compose/**, .forgejo/workflows/qbittorrent-compose.yaml]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: qbittorrent/compose
+      - working-directory: media/qbittorrent/compose
         run: lab check
 
   deploy:
@@ -29,5 +29,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: qbittorrent/compose
+      - working-directory: media/qbittorrent/compose
         run: lab deploy --auto-approve

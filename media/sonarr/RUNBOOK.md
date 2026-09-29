@@ -6,7 +6,7 @@ reasons are in `README.md`.
 ## Bootstrap
 
 At the desk. Do the Jellyfin 12.0 upgrade and its full scan **first**
-(`jellyfin/README.md`, "Sequencing with the *arr rename").
+(`media/jellyfin/README.md`, "Sequencing with the *arr rename").
 
 1. Deploy: merge — the `sonarr compose` workflow converges it on the push.
    Docker creates `~/Docker/sonarr/config` on first start.
@@ -43,7 +43,7 @@ At the desk. Do the Jellyfin 12.0 upgrade and its full scan **first**
 6. Rename folders where the folder name is the mess: the Edit → same
    Root Folder → "Yes, move the files" recipe above, for the selected
    series.
-7. Run `radarr/`'s bootstrap too, then **one** full library scan in
+7. Run `media/radarr/`'s bootstrap too, then **one** full library scan in
    Jellyfin — every renamed path is a new item ID, so the Shows and
    Movies libraries rebuild. Watch history is explicitly not wanted
    (ROADMAP item 5), so that is the whole cost.
@@ -57,7 +57,7 @@ updater is inert in the linuxserver image (the container is the
 release), which is the point: the version is the tag in `compose.yaml`.
 
 ```sh
-cd sonarr/backup && lab backup && cd ../..   # snapshot first
+cd media/sonarr/backup && lab backup && cd ../../..   # snapshot first
 # bump the tag (normal PR; the tick ships it)
 ```
 
@@ -67,7 +67,7 @@ Current stable tags: https://github.com/linuxserver/docker-sonarr/releases
 ## Backup and restore
 
 The nightly backup workflow snapshots `~/Docker/sonarr/config`
-via the shared pipeline (`lab backup` from `sonarr/backup`, whose `ritten.json` declares what):
+via the shared pipeline (`lab backup` from `media/sonarr/backup`, whose `ritten.json` declares what):
 stops the container, `restic backup`, starts it. Excluded: `Backups/`
 (Sonarr's own zips — restic is the backup), `MediaCover/` (artwork
 TVDB re-serves), logs. Restore is the generic recipe in

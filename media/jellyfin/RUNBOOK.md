@@ -24,7 +24,7 @@ State lives outside the container, so upgrades are a tag bump. **Back up first**
 image afterwards will fail.
 
 ```sh
-cd jellyfin/backup && lab backup && cd ../..   # snapshot first
+cd media/jellyfin/backup && lab backup && cd ../../..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let the jellyfin compose workflow converge it or, by hand:
 cd ~/.local/share/Wolfe.Lab/jellyfin
@@ -49,7 +49,7 @@ re-downloads, so it is excluded). Manual snapshot — run the backup
 workflow from the Actions tab, or:
 
 ```sh
-cd jellyfin/backup
+cd media/jellyfin/backup
 lab backup
 ```
 
@@ -70,7 +70,7 @@ the library definitions.
 ## Restore
 
 ```sh
-cd jellyfin/backup
+cd media/jellyfin/backup
 lab restore
 ```
 

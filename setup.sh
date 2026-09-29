@@ -27,9 +27,9 @@ lab caddy/routes deploy
 lab garage/compose deploy
 lab garage/layout init
 lab forgejo/compose deploy
-lab jellyfin/compose deploy
-lab sonarr/compose deploy
-lab radarr/compose deploy
+lab media/jellyfin/compose deploy
+lab media/sonarr/compose deploy
+lab media/radarr/compose deploy
 lab paperless/compose deploy
 lab monitoring/beszel/compose deploy
 

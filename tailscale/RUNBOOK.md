@@ -8,7 +8,7 @@ reasons are in `README.md`.
 In order. Step 1 is the precondition and happens at the desk.
 
 1. **Get the mini off NordVPN** — the qbittorrent slice's bootstrap
-   (`qbittorrent/README.md`). Behind Nord's shared NAT, peers rarely
+   (`media/qbittorrent/README.md`). Behind Nord's shared NAT, peers rarely
    hole-punch and fall back to DERP relays: tolerable for SSH, poor for
    streaming, and streaming is one of the reasons this exists.
 2. Install — **the mini FIRST, and before this branch merges.** The cask

@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [sonarr/compose/**, .forgejo/workflows/sonarr-compose.yaml]
+    paths: [media/sonarr/compose/**, .forgejo/workflows/sonarr-compose.yaml]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: sonarr/compose
+      - working-directory: media/sonarr/compose
         run: lab check
 
   deploy:
@@ -29,5 +29,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: sonarr/compose
+      - working-directory: media/sonarr/compose
         run: lab deploy --auto-approve

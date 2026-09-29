@@ -4,6 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.68.0] - 2026-09-29
+
+### Changed
+
+- **`media/` is the second area** (ROADMAP #12): Jellyfin, Radarr,
+  Sonarr and qBittorrent moved under it, as `media/jellyfin`,
+  `media/radarr`, `media/sonarr` and `media/qbittorrent`. Release names,
+  workflow names and schedules are unchanged, so nothing on a node moves
+  and no required status changes; their routes are now
+  `media-<service>-compose`.
+
 ## [0.67.0] - 2026-09-29
 
 ### Fixed

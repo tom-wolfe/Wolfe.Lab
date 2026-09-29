@@ -94,7 +94,7 @@ the next thing built (#11) should be built where it will stay.
    Published, then pinned.~~ Done (0.55.0).
 2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
    into it from here.~~ Done (0.57.0).
-3. `media/`, `personal/`, `ai/`, `network/`, one pull request each.
+3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *`media/` done (0.68.0).*
 4. `platform/` last — Forgejo and chezmoi.
 
 ### 11. Observability — OpenTelemetry into Grafana
@@ -763,7 +763,7 @@ model earns its memory on somebody's workstation.
 ### Jellyfin's state directory is where the native app left it
 
 Jellyfin stays on the mini — the drives are there. This is about the
-path, on the same machine: `jellyfin/compose.yaml` bind-mounts
+path, on the same machine: `media/jellyfin/compose/compose.yaml` bind-mounts
 `~/Library/Application Support/jellyfin` at the same absolute path
 inside the container and overrides every `JELLYFIN_*_DIR` to match,
 because the database stores absolute paths and item IDs derive from
@@ -952,7 +952,7 @@ seeing what is left.
 **Not on the mini.** Docker Desktop on macOS ignores `network_mode: host` —
 a documented no-op, the container stays isolated. That kills the mDNS/SSDP
 discovery Hue, Sonos and Chromecast rely on; it is the same root cause
-already written into `jellyfin/compose.yaml` for the dead discovery port.
+already written into `media/jellyfin/compose/compose.yaml` for the dead discovery port.
 On a **Raspberry Pi running Linux, host networking is real**, so the
 blocker simply goes away. Use the Pi 5 over the 4: the recorder database is
 write-heavy and benefits from the faster I/O.

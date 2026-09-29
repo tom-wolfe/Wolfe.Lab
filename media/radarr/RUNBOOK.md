@@ -16,7 +16,7 @@ At the desk, after the Jellyfin 12.0 upgrade and its full scan.
    folded by hand.
 2. Deploy: merge — the `radarr compose` workflow converges it on the push.
 3. Create the login through the API — the same recipe as
-   `sonarr/README.md` bootstrap step 2 with `radarr` for `sonarr` and
+   `media/sonarr/README.md` bootstrap step 2 with `radarr` for `sonarr` and
    port `7878`. Then mirror to 1P `radarr-webui`.
 4. *Settings → Media Management*: turn **Rename Movies** on (off by
    default); keep the formats. Add the Data2 root folder (and the Data1
@@ -27,12 +27,12 @@ At the desk, after the Jellyfin 12.0 upgrade and its full scan.
 6. *Movies → Edit Movies → select all → Rename Files* (preview first),
    then the folder-rename recipe above for the folders that need it.
 7. Then the single Jellyfin full scan that closes the pass
-   (`sonarr/README.md`, bootstrap step 7).
+   (`media/sonarr/README.md`, bootstrap step 7).
 
 ## Upgrading, backup, restore
 
-As `sonarr/README.md`, substituting `radarr`: tag bump after a snapshot
-(`lab backup` from `radarr/`), current stable tags at
+As `media/sonarr/README.md`, substituting `radarr`: tag bump after a snapshot
+(`lab backup` from `media/radarr/`), current stable tags at
 https://github.com/linuxserver/docker-radarr/releases (`nightly-…` and
 `develop-…` are prereleases), nightly backup at 04:20 excluding
 `Backups/`, `MediaCover/` and logs. The file a restore drill should

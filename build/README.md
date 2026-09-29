@@ -10,7 +10,7 @@ it can be typed, rehearsed and tested.
 A directory the CLI serves carries a `ritten.json` naming its workflow
 — `"workflow": "docker"` — plus that workflow's options. That directory
 is a *component*: a slice is the folder that groups a service's
-components (`sonarr/compose/`, `sonarr/backup/`, `forgejo/tofu/`,
+components (`media/sonarr/compose/`, `media/sonarr/backup/`, `forgejo/tofu/`,
 `forgejo/runners/`), and never carries a declaration of its own. Run
 from a component's directory, `lab` offers exactly that workflow's jobs
 as commands, each option of which is a job argument the job declared. A

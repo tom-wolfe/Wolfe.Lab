@@ -5,7 +5,7 @@ download client**. In that configuration it does exactly one job: parse
 what is on the drives, match it against TVDB, and rename and re-file it
 into one consistent layout. That is Phase A of `ROADMAP.md` item 5 — the
 bespoke rename script the lab was otherwise going to write, as two
-containers instead (this one and `radarr/`). Acquisition — Prowlarr, the
+containers instead (this one and `media/radarr/`). Acquisition — Prowlarr, the
 client hook-up, Jellyseerr — is Phase B and is deliberately not here.
 
 | | |
@@ -13,7 +13,7 @@ client hook-up, Jellyseerr — is Phase B and is deliberately not here.
 | Web UI | https://sonarr.twolfe.dev (fallback http://macmini.local:8989) |
 | Image | `linuxserver/sonarr` pinned in `compose.yaml` |
 | State | `~/Docker/sonarr/config` — `sonarr.db` (series, root folders, naming), `config.xml` (API key, auth) |
-| Root folders | `/Volumes/Data1/video/shows`, `/Volumes/Data2/videos/shows` — the Shows library's two roots in `jellyfin/` |
+| Root folders | `/Volumes/Data1/video/shows`, `/Volumes/Data2/videos/shows` — the Shows library's two roots in `media/jellyfin/` |
 | Backups | `sonarr-backup.yaml`, nightly at 02:50, into the restic repo (`restic/README.md`); the restore drilled straight after |
 
 ## Why the paths look like jellyfin's
