@@ -291,10 +291,11 @@ already has:
   stopped, its unit retired, its artifacts removed and its unused
   package versions pruned. Its state under `${LAB_DATA}` is kept — the
   old copy is the safety net until the new node's first backup lands.
-- **Cross-slice config is assembled, not gathered**: the agent reads
-  every slice's routes at the commit, renders caddy's config once, and
-  reloads only when it changed. Checks, scrape targets and schedules the
-  same way.
+- **Cross-slice config is published, not gathered**: each component
+  publishes its routes, checks and scrape targets to the config plane
+  (#8) as it deploys, and caddy, Gatus and Alloy render from what is
+  published — reloading only when it changed. No consumer reads another
+  slice's files.
 - **A merge is the desired state, a revert the rollback**, and drift is
   noticed because the agent keeps looking.
 - **What changed is decided the way CI decides it.** The agent keeps,
@@ -488,9 +489,10 @@ one. A learning item, not the plan.
 Two halves because they are the same move —
 resolution goes LAN-local while every reference keeps its shape — and
 they are separable builds, each landing when its own pressure arrives:
-the Garage half on the SECOND cross-slice value, the secrets half once
-the restore drills (#1) have passed — the offsite copy exists first and
-is proven, then the origin moves.
+the Garage half with the agent (#6), the first process that lives on
+every node and so the first that needs configuration to change under
+it; the secrets half once the restore drills (#1) have passed — the
+offsite copy exists first and is proven, then the origin moves.
 
 **The config half.** The first cross-slice values are already here,
 homed nowhere: the runner registration template reads Forgejo's
@@ -498,32 +500,119 @@ homed nowhere: the runner registration template reads Forgejo's
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
 (`caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
-by the Linux move (#2), which is the pressure this half was waiting
-for. Hardcoding one slice's fact into another is the thing to refuse; a
-consumer deriving it from the owning slice's files is only a consumer's
-guess at a format that isn't its own.
+by the Linux move (#2). Hardcoding one slice's fact into another is the
+thing to refuse; a consumer deriving it from the owning slice's files
+is only a consumer's guess at a format that isn't its own.
 
-The pattern: a dedicated `config` bucket
-in Garage. The OWNING slice's tofu root publishes named values as S3
-objects on its apply, so the publisher is never staler than the last
-push. Consumers list-then-read (a list
-tolerates absence where a read errors) and `count` the dependent
-resource on presence, so a root deploying before its dependency simply
-omits the wiring and picks it up on a later plan: partial deployment
-breaks bootstrap cycles, and the daily plan's nag makes the eventual
-consistency visible instead of silent. Two caveats, named at design
-time. The failure mode INVERTS — absent config is a green plan that
-deploys nothing, so every consumer carries a tofu `check` making absence
-at least a named warning (the `heartbeat/tofu` pattern). And published
-config is declared truth, not liveness — proving someone answers is
-monitoring's job (`gatus/`), not this one's.
+**What it is for: configuration that changes without a restart.** The
+shape of Azure App Configuration or SSM Parameter Store: a value changed
+in one place reaches every node, pushed or polled, and the running
+process picks it up. Redeploying the agent on every node to change a
+base URL is the cost this removes. The contract, whatever holds the
+values:
+
+- **Layers**: `appsettings.json` (the defaults the tool ships) under the
+  store, under `LAB_` environment variables — the per-node override that
+  always wins, and the emergency brake.
+- **Polling is what makes it correct.** Each agent lists the bucket
+  every minute or so — one `ListObjectsV2` carries every key's ETag, so
+  no writer has to remember to bump a sentinel — and on any change
+  reloads and fires the reload token; `IOptionsMonitor` subscribers see
+  the new values.
+- **Push is what makes it fast.** Once the event bus lands (Undecided,
+  "An event bus"), a `config.changed` message has every agent refresh at
+  once; a lost message costs one poll interval. Configuration never waits
+  for the bus.
+- **Last known good.** Each agent keeps its last validated snapshot on
+  disk and starts on it when the store is unreachable. A published value
+  that fails validation is refused, the previous one kept, and the
+  refusal reported — which is why the provider is the lab's own:
+  `IOptionsMonitor` alone only fails when the value is read.
+- **A run sees one view.** Each run already gets its own DI scope (#6);
+  through `IOptionsSnapshot` it keeps the configuration it started with,
+  and the next run gets the new one. Clients move from `IOptions<T>` to
+  the monitor or the snapshot as the agent lands; the run-once CLI never
+  needed them.
+- **The kernel's configuration stays out.** Garage's own endpoint, the
+  store's address and the vault's service account stay in
+  `appsettings.json`: the agent deploys Garage, so Garage cannot
+  configure its own deploy.
+
+**The store: a `config` bucket in Garage, read by a provider the lab
+owns.** Garage is LAN-local (every plan already polls it), sits below
+every would-be publisher in the bootstrap order, is snapshotted nightly
+with everything else, and costs no new service. What it lacks — labels,
+versioning — key prefixes and the repository's history cover. Weighed
+and not chosen: **Microsoft's App Configuration emulator**, which is the
+model Tom knows with the real .NET provider (its Key Vault references
+even take a custom resolver), but which Microsoft ships for development
+and CI — revisit it if labels or feature flags ever earn their keep;
+every consumer sees only `IConfiguration`, so the swap is one provider.
+**Consul KV**, a stateful cluster for one feature, whose blocking
+queries are the push the bus already gives.
+
+**One owner per key.** Keys are namespaced by the slice that owns them
+(`media/jellyfin/…`, the areas of #12), and two writers publish, never
+into another slice's namespace:
+
+- **Tofu publishes what only exists after an apply** — endpoints,
+  connection strings, addresses — as S3 objects on its apply, so the
+  publisher is never staler than the last push. The agent that ran the
+  apply sends the nudge, since tofu speaks no AMQP.
+- **The agent publishes what a component declares** in its
+  `ritten.json`, on deploy, and removes it on teardown.
+
+The repository stays the truth: a hand edit in the store is for a value
+deliberately not in it, never a shortcut past a merge.
+
+A tofu consumer lists-then-reads (a list tolerates absence where a read
+errors) and `count`s the dependent resource on presence, so a root
+deploying before its dependency simply omits the wiring and picks it up
+on a later plan: partial deployment breaks bootstrap cycles, and the
+daily plan's nag makes the eventual consistency visible instead of
+silent. Two caveats, named at design time. The failure mode INVERTS —
+absent config is a green plan that deploys nothing, so every consumer
+carries a tofu `check` making absence at least a named warning (the
+`heartbeat/tofu` pattern). And published config is declared truth, not
+liveness — proving someone answers is monitoring's job (`gatus/`), not
+this one's.
+
+**Operational config the same way: owners publish, consumers render.**
+Jellyfin's `ritten.json` declares its endpoint and health check; its
+deploy publishes them as well-known keys; Gatus renders its
+configuration from every published check and reloads, with no change to
+Gatus per service — a status page built declaratively. Caddy's routes
+and Alloy's scrape targets are the same pattern. Placement comes free:
+keys are published where a component deploys and removed when it is
+torn down, so the page shows what runs, wherever it runs. The
+well-known keys — endpoint, health, route, scrape — have a small typed
+schema: a contract between slices, not free text. And the inverted
+failure mode matters most here, since a check that was never published
+is a status page that says nothing is wrong: a failed deploy leaves its
+keys in place, only teardown removes them, and each renderer reports
+what it rendered.
+
+**Secrets are references in configuration.** A value may be
+`secret://<item>/<field>`, resolved through `ISecretProvider` when it is
+read and never stored resolved — App Configuration's Key Vault
+references, without the vendor's syntax leaking into every file the way
+`op://` does today. The Bitwarden move (below) then changes the provider
+and nothing else. Rotating a secret does not change its reference, so a
+resolved value carries a lifetime, or the rotation sends the nudge too.
+
+**Readable from anywhere; a UI of its own from nowhere.** One read-only
+JSON endpoint: every key with its owner, its writer (tofu or agent), the
+commit and when it last changed — carried as S3 object metadata — and
+secrets only ever as their references. Grafana shows it through the
+Infinity data source; whichever portal #9 becomes shows it as a widget
+or a page. Each agent exports the version it runs and when it last
+reloaded, so a node that has fallen behind is a Grafana panel, not a
+guess.
 
 Why Garage and not the vault: configuration and secrets are different
 jobs. 1Password is the origin of *secrets*, is a cloud round-trip —
 deploys and jobs read it, nothing that runs does — and changing a value
-there is a redeploy. Garage is LAN-local (every plan already polls it), sits below
-every would-be publisher in the bootstrap order, and costs no new
-service.
+there is a redeploy.
 
 **The secrets half: leave 1Password for the Bitwarden ecosystem.**
 Tom's decision, on ethical grounds, with the rate-limit outage as the
@@ -548,8 +637,8 @@ from them rather than relitigating:
   vault locally, which is the Connect-shaped property: reads cost no
   quota and survive cloud outages. Ritten's `ISecretProvider` is already
   the one door every caller goes through, so the machine half is a second
-  provider package plus the reference syntax in the env files — no caller
-  changes;
+  provider package behind the neutral `secret://` references (the config
+  half) — no caller changes, and no env file changes either;
   chezmoi has native `bitwarden`/`rbw` template functions for the
   `create_` files that remain (the runner registrations, the Beszel
   agent, the Pi's restic key).
@@ -618,9 +707,12 @@ meant to be followed live in a `runbooks/` tree (or a "Runbook" section
 per slice README) so the site can put them on a page of their own, apart
 from the design prose nobody reads at 2 a.m.
 
-**The UI half: a window into the lab and its agent.** A custom build,
-Tom's preference over Homepage, Glance or Dashy, and more than a status
-page now: once the agent (#6) takes deployments and schedules off
+**The UI half: a window into the lab and its agent.** Which one —
+Homarr, Homepage, Glance or a custom build — is decided after the agent
+(#6), and nothing before then may assume the answer: every surface
+(the config plane, the agents' runs, Gatus, the Hangfire dashboard)
+exposes JSON or a page of its own, and the portal only arranges them.
+More than a status page now: once the agent (#6) takes deployments and schedules off
 Actions, this is where the Actions tab's job goes.
 
 - **The lab at a glance**: every service, whether it is up (Gatus),
@@ -636,7 +728,7 @@ Actions, this is where the Actions tab's job goes.
 - **Grafana stays Grafana.** Metrics dashboards and alert rules live
   there (#11); the portal links into it rather than rebuilding it.
 
-A small .NET web app with a front end, not a static page: it calls the
+If it is a custom build, a small .NET web app with a front end, not a static page: it calls the
 agents across the tailnet and holds nothing of its own, so the agent
 deploys it like any other component and a rebuild loses nothing.
 Useful without the agent — Gatus, restic and Forgejo's Actions API are
