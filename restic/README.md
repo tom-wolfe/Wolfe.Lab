@@ -30,7 +30,7 @@ one offsite.
 **Media splits on whether it can be re-acquired.** Films and television
 can, so they stay out of restic and a lost drive is a re-download.
 Photos and videos taken on a phone cannot, and nor can the personal
-files (`files/`), so both are in and ride the offsite copy at a couple
+files (`personal/files/`), so both are in and ride the offsite copy at a couple
 of pounds a month.
 
 **Per-service backups keep their stop windows.** The stop is the

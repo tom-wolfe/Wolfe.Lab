@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [mail/bridge/**, .forgejo/workflows/mail-bridge.yaml]
+    paths: [personal/mail/bridge/**, .forgejo/workflows/mail-bridge.yaml]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: mail/bridge
+      - working-directory: personal/mail/bridge
         run: lab check
 
   deploy:
@@ -29,5 +29,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: mail/bridge
+      - working-directory: personal/mail/bridge
         run: lab deploy --auto-approve

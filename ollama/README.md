@@ -52,7 +52,7 @@ past 15 minutes pages through the watcher's health check.
 
 Paperless's AI features are the other consumer, and degrade the same
 way: with no model, its suggestions and chat fail and its own
-classifier-based suggestions carry on (`paperless/README.md`, "AI").
+classifier-based suggestions carry on (`personal/paperless/README.md`, "AI").
 
 The Studio (`README.md`, "Nodes") is a second upstream above the mini — the same
 rule one level up: the Studio may serve, but nothing may depend on it.

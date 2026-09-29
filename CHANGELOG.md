@@ -4,6 +4,18 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.69.0] - 2026-09-29
+
+### Changed
+
+- **`personal/` is the third area** (ROADMAP #12): Immich, Paperless,
+  files, Obsidian and mail moved under it, as `personal/immich`,
+  `personal/paperless`, `personal/files`, `personal/obsidian` and
+  `personal/mail`. Release names, workflow names and schedules are
+  unchanged, so nothing on a node moves and no required status changes;
+  their routes are now `personal-<service>-<component>`. The obsidian
+  workflow's errors point at the runbook's new path.
+
 ## [0.68.0] - 2026-09-29
 
 ### Changed

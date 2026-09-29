@@ -30,7 +30,7 @@ lab forgejo/compose deploy
 lab media/jellyfin/compose deploy
 lab media/sonarr/compose deploy
 lab media/radarr/compose deploy
-lab paperless/compose deploy
+lab personal/paperless/compose deploy
 lab monitoring/beszel/compose deploy
 
 echo

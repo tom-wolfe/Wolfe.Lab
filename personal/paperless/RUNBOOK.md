@@ -28,7 +28,7 @@ a major bump changes the database layout and the export format — so
 read them before a bump, and never skip a major. Snapshot first:
 
 ```sh
-cd paperless/backup
+cd personal/paperless/backup
 lab backup
 ```
 
@@ -48,7 +48,7 @@ slice nightly at 02:55 and drills the restore straight after. Manual
 snapshot — run the backup workflow from the Actions tab, or:
 
 ```sh
-cd paperless/backup
+cd personal/paperless/backup
 lab backup
 ```
 
@@ -60,7 +60,7 @@ waits; the consumer picks it up on restart.
 ## Restore
 
 ```sh
-cd paperless/backup
+cd personal/paperless/backup
 lab restore
 ```
 

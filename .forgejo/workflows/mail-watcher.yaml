@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [mail/watcher/**, .forgejo/workflows/mail-watcher.yaml]
+    paths: [personal/mail/watcher/**, .forgejo/workflows/mail-watcher.yaml]
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: build/global.json
-      - working-directory: mail/watcher
+      - working-directory: personal/mail/watcher
         run: lab check
 
   deploy:
@@ -32,5 +32,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: mail/watcher
+      - working-directory: personal/mail/watcher
         run: lab deploy --auto-approve

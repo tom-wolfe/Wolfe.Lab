@@ -59,7 +59,7 @@ else. Immich takes a restore point first.
 **The library**, from restic, into `/Volumes/Data2/immich`:
 
 ```sh
-cd immich/backup
+cd personal/immich/backup
 lab restore
 ```
 

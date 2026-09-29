@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
-      - working-directory: paperless/backup
+      - working-directory: personal/paperless/backup
         run: lab backup
 
   # The snapshot just taken, restored to scratch and asserted.
@@ -25,5 +25,5 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - working-directory: paperless/backup
+      - working-directory: personal/paperless/backup
         run: lab restore-drill

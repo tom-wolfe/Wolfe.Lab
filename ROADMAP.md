@@ -94,7 +94,7 @@ the next thing built (#11) should be built where it will stay.
    Published, then pinned.~~ Done (0.55.0).
 2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
    into it from here.~~ Done (0.57.0).
-3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *`media/` done (0.68.0).*
+3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *`media/` (0.68.0) and `personal/` (0.69.0) done.*
 4. `platform/` last — Forgejo and chezmoi.
 
 ### 11. Observability — OpenTelemetry into Grafana
@@ -738,7 +738,7 @@ there today — but the agent is what makes it necessary.
 
 The Obsidian vaults as something a model answers from, at the desk:
 ollama plus a RAG layer over a clone of the vault repositories on
-Forgejo (`obsidian/`), not a mount. The corpus is already versioned and
+Forgejo (`personal/obsidian/`), not a mount. The corpus is already versioned and
 already synced by workflows, so the index job is an ordinary `lab` job
 with a clean input.
 
@@ -750,7 +750,7 @@ person is waiting, so a question may use most of the machine for as
 long as it takes — and the mini's while it sleeps: worse answers, not
 none (`ollama/README.md`, "Roles"). Paperless already runs the same
 shape over its documents, a nightly embedding index behind a chat
-(`paperless/README.md`, "AI"); worth learning from before building.
+(`personal/paperless/README.md`, "AI"); worth learning from before building.
 
 Still to decide: the front end — Open WebUI in front of `ai.twolfe.dev`
 is the cheapest start, an MCP server for the vault the durable shape
@@ -1054,7 +1054,7 @@ The shape, roughly:
 should be able to see the mail that arrived before it. A RabbitMQ
 *stream* for the raw classified messages gives that; a new consumer
 reads from the start. The mailbox stays the real origin, so the broker's
-own state is re-derivable and, like `mail/bridge`'s volume, needs no
+own state is re-derivable and, like `personal/mail/bridge`'s volume, needs no
 backup section.
 
 On the client side: MassTransit moved to a commercial licence from v9;
@@ -1111,7 +1111,7 @@ A Humble Bundle library of PDF, EPUB and MOBI, a Kindle and an iPad, with
 nothing between them. CWA on the mini, library on the data drive: files
 dropped into an ingest folder get imported, converted (MOBI → EPUB) and
 their metadata fixed. **Send-to-Kindle by email** is the join: through
-`mail/bridge`'s SMTP (the sender address approved in Amazon's
+`personal/mail/bridge`'s SMTP (the sender address approved in Amazon's
 settings), a book reaches the Kindle *and* the Kindle app on the iPad,
 with reading position synced across both. Amazon no longer accepts MOBI
 this way, so the conversion is required, not optional. Image-heavy technical

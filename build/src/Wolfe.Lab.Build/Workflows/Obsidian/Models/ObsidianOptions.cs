@@ -1,7 +1,7 @@
 namespace Wolfe.Lab.Build.Workflows.Obsidian.Models;
 
 /// <summary>
-/// The shape of <c>obsidian/ritten.json</c>.
+/// The shape of <c>personal/obsidian/vaults/ritten.json</c>.
 /// </summary>
 public sealed record ObsidianOptions : WorkflowSettings
 {

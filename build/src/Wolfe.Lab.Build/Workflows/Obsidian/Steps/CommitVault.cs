@@ -16,7 +16,7 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
         var repository = git.InRepository(vault.Directory);
         if (!await repository.IsRepository(cancellationToken))
         {
-            return new Error($"{vault.Directory.AbsolutePath} is not a git repository — see obsidian/RUNBOOK.md.");
+            return new Error($"{vault.Directory.AbsolutePath} is not a git repository — see personal/obsidian/RUNBOOK.md.");
         }
 
         // Written before anything is counted, so an excluded path never shows up as a change.
@@ -54,7 +54,7 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
     /// </summary>
     private Task WriteExcludes(IDirectory dotGit, CancellationToken cancellationToken)
     {
-        var lines = excludes.Patterns.Prepend("# Written by `lab sync` from obsidian/ritten.json; edits here are overwritten.");
+        var lines = excludes.Patterns.Prepend("# Written by `lab sync` from personal/obsidian/vaults/ritten.json; edits here are overwritten.");
         return dotGit.GetDirectory("info").GetFile("exclude").WriteAllText(string.Join('\n', lines) + '\n', cancellationToken: cancellationToken);
     }
 }

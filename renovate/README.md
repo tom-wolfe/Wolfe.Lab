@@ -38,7 +38,7 @@ password and the GitHub token, in the vault.
 |---|---|---|
 | Container images | every `compose.yaml`, Dockerfile `FROM` | linuxserver and the mail bridge have their tag shapes spelled out; Immich's server and ML move together |
 | The lab CLI | `.config/dotnet-tools.json` | the one pin; the CI image and chezmoi's `install-lab` script read it. What it moves to passed the CLI's tests before it was published (`build/README.md`, "Shipping") |
-| NuGet packages and the .NET SDK | `build/`, `mail/watcher/` | grouped by family; a new .NET major waits on the dashboard until asked for |
+| NuGet packages and the .NET SDK | `build/`, `personal/mail/watcher/` | grouped by family; a new .NET major waits on the dashboard until asked for |
 | Actions | `.forgejo/workflows/*.yaml` | looked up on github.com; Forgejo's runner fetches the same actions from its own mirror |
 | Tofu providers | every `tofu/` root, with the lock file | |
 | Renovate itself | its workflow's `container:` image | weekly, not on every release |

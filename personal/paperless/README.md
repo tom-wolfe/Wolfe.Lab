@@ -66,7 +66,7 @@ Three doors, all to the same consumer:
   into the scanner.
 
 Mail is a fourth door Paperless has and this slice does not open:
-`mail/` runs Proton Bridge, so a mail rule polling an IMAP folder is a
+`personal/mail/` runs Proton Bridge, so a mail rule polling an IMAP folder is a
 configuration in the UI rather than anything here. Not configured.
 
 ## AI

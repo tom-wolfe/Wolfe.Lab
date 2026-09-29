@@ -17,7 +17,7 @@ internal sealed class ResolveVault(KnownVaults vaults, RequestedVault requested)
 
         if (!vault.Directory.Exists)
         {
-            return new Error($"{vault.Directory.AbsolutePath} does not exist — see obsidian/RUNBOOK.md.");
+            return new Error($"{vault.Directory.AbsolutePath} does not exist — see personal/obsidian/RUNBOOK.md.");
         }
 
         return vault;
