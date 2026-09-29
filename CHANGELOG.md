@@ -4,6 +4,18 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.64.0] - 2026-09-29
+
+### Changed
+
+- **chezmoi and shellcheck are pinned** in `.config/lab-tools.json`
+  (2.72.2 and 0.11.0): the chezmoi check installs both, and a node's
+  chezmoi deploy applies with the pinned chezmoi, so a local `lab check`,
+  the pull request's and the nodes agree.
+- **A package needs no checksum file.** Without `checksums` the asset is
+  checked against the SHA-256 GitHub records for it; `bin` names the
+  directory a tool's command is nested in.
+
 ## [0.63.0] - 2026-09-29
 
 ### Changed

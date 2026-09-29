@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Clients.Chezmoi;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.Chezmoi.Models;
@@ -16,6 +17,7 @@ internal sealed class DeployJob : LabJob<ChezmoiSettings>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<EnsureTools>(),
         Step.FromType<GateApproval>(),
         Step.FromType<UpdateNode>()
     ];

@@ -15,7 +15,7 @@ internal static class Packages
         switch (installed.Outcome)
         {
             case PackageOutcome.Installed:
-                section.Success($"Installed {what} for {package.Name}, checked against `{package.Checksums}`.");
+                section.Success($"Installed {what} for {package.Name}, checked against {package.Verification}.");
                 log.Status($"Installed {package.Repository} {package.Tag} into {installed.Directory.AbsolutePath}.");
                 break;
             case PackageOutcome.WouldInstall:

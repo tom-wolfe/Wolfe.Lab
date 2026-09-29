@@ -17,6 +17,24 @@
         "darwin-arm64": "restic_{version}_darwin_arm64.bz2",
         "linux-arm64": "restic_{version}_linux_arm64.bz2"
       }
+    },
+    "chezmoi": {
+      "github": "twpayne/chezmoi",
+      "version": "2.72.2",
+      "checksums": "chezmoi_{version}_checksums.txt",
+      "assets": {
+        "darwin-arm64": "chezmoi_{version}_darwin_arm64.tar.gz",
+        "linux-arm64": "chezmoi_{version}_linux_arm64.tar.gz"
+      }
+    },
+    "shellcheck": {
+      "github": "koalaman/shellcheck",
+      "version": "0.11.0",
+      "bin": "shellcheck-v{version}",
+      "assets": {
+        "darwin-arm64": "shellcheck-v{version}.darwin.aarch64.tar.gz",
+        "linux-arm64": "shellcheck-v{version}.linux.aarch64.tar.gz"
+      }
     }
   }
 }

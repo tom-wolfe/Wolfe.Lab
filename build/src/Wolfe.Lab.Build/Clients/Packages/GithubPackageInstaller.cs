@@ -41,13 +41,11 @@ internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner com
                 await body.CopyToAsync(file, ct);
             }
 
-            using var listing = await Get(package, package.Checksums, ct);
-            var expected = Expected(await listing.Content.ReadAsStringAsync(ct), package.Asset)
-                           ?? throw new InvalidOperationException($"{package.Checksums} in {package.Repository} {package.Tag} lists no {package.Asset}.");
+            var expected = await Expected(package, ct);
             var actual = Convert.ToHexStringLower(await SHA256.HashDataAsync(File.OpenRead(download), ct));
             if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException($"{package.Asset} does not match {package.Checksums}: expected {expected}, got {actual}.");
+                throw new InvalidOperationException($"{package.Asset} does not match {package.Verification}: expected {expected}, got {actual}.");
             }
 
             Directory.CreateDirectory(staging);
@@ -71,6 +69,46 @@ internal sealed class GithubPackageInstaller(HttpClient http, ICommandRunner com
                 Directory.Delete(staging, recursive: true);
             }
         }
+    }
+
+    /// <summary>
+    /// The SHA-256 the release records for the asset: from its checksum file, or — for a project
+    /// that publishes none — the digest GitHub keeps for every asset.
+    /// </summary>
+    private async Task<string> Expected(Package package, CancellationToken ct)
+    {
+        if (package.Checksums is { } checksums)
+        {
+            using var listing = await Get(package, checksums, ct);
+            return Expected(await listing.Content.ReadAsStringAsync(ct), package.Asset)
+                   ?? throw new InvalidOperationException($"{checksums} in {package.Repository} {package.Tag} lists no {package.Asset}.");
+        }
+
+        return await Digest(http, package, ct);
+    }
+
+    /// <summary>
+    /// The asset's digest from GitHub's releases API, without the <c>sha256:</c> prefix.
+    /// </summary>
+    internal static async Task<string> Digest(HttpClient http, Package package, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, package.Release);
+        request.Headers.UserAgent.ParseAdd("Wolfe.Lab.Build");
+        request.Headers.Accept.ParseAdd("application/vnd.github+json");
+        using var response = await http.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"{package.Repository} has no release {package.Tag} ({(int)response.StatusCode}): {package.Release}");
+        }
+
+        using var release = await System.Text.Json.JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+        var digest = release.RootElement.GetProperty("assets").EnumerateArray()
+            .Where(asset => asset.GetProperty("name").GetString() == package.Asset)
+            .Select(asset => asset.TryGetProperty("digest", out var value) ? value.GetString() : null)
+            .FirstOrDefault();
+        return digest is { } value && value.StartsWith("sha256:", StringComparison.Ordinal)
+            ? value["sha256:".Length..]
+            : throw new InvalidOperationException($"{package.Repository} {package.Tag} records no SHA-256 for {package.Asset}, and the package names no checksum file.");
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Wolfe.Lab.Build.Clients.Packages;
 
 namespace Wolfe.Lab.Build.Clients.Chezmoi;
 
@@ -16,6 +17,7 @@ public static class WorkflowBuilderExtensions
         public IWorkflowBuilder AddChezmoi()
         {
             builder.AddCommandRunner();
+            builder.AddTools("chezmoi");
             builder.Services.TryAddSingleton<ChezmoiClient>();
             builder.Services.TryAddSingleton<IChezmoi>(services => services.GetRequiredService<ChezmoiClient>());
             builder.Decorators.Replace<IChezmoi, DryRunChezmoi>();

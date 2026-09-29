@@ -1,3 +1,5 @@
+using Wolfe.Lab.Build.Clients.Packages.Steps;
+using Wolfe.Lab.Build.Clients.Packages;
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Chezmoi;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
@@ -18,6 +20,7 @@ internal sealed class CheckJob : LabJob<ChezmoiSettings>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<EnsureTools>(),
         Step.FromType<RenderProfiles>(),
         Step.FromType<CheckScripts>()
     ];
@@ -30,7 +33,7 @@ internal sealed class CheckJob : LabJob<ChezmoiSettings>
     protected override void Configure(IWorkflowBuilder builder, ChezmoiSettings settings)
     {
         base.Configure(builder, settings);
-        builder.AddChezmoi();
+        builder.AddChezmoi().AddTools("shellcheck");
         builder.Services.AddSingleton(new Profiles(settings.Profiles));
     }
 }

@@ -62,6 +62,21 @@ public class EnsureToolsTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_PutsANestedCommandsDirectoryOnThePath()
+    {
+        File.WriteAllText(Path.Combine(_checkout.FullName, ".config", "lab-tools.json"), """
+            { "tools": { "shellcheck": { "github": "koalaman/shellcheck", "version": "0.11.0", "bin": "shellcheck-v{version}",
+              "assets": { "darwin-arm64": "a.tar.gz", "linux-arm64": "a.tar.gz" } } } }
+            """);
+        var bin = Directory.CreateDirectory(Path.Combine(_package.FullName, "shellcheck-v0.11.0")).FullName;
+        File.WriteAllText(Path.Combine(bin, "shellcheck"), "");
+
+        (await Ensure(PackageOutcome.Installed, tools: "shellcheck")).IsFailure.ShouldBeFalse();
+
+        Environment.GetEnvironmentVariable("PATH").ShouldBe($"{bin}{Path.PathSeparator}{_path}");
+    }
+
+    [Fact]
     public async Task Run_LeavesAToolTheManifestDoesNotPinToTheNode()
     {
         (await Ensure(PackageOutcome.Installed, tools: "restic")).IsFailure.ShouldBeFalse();

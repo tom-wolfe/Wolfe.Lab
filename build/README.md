@@ -128,11 +128,13 @@ to. One installer, two kinds of declaration:
   `tofu`, `restic` — with an asset per platform (`darwin-arm64`,
   `linux-arm64`), since any node may run it. A job that runs one lists
   `EnsureTools` first; it installs the pinned version and puts it first on
-  the path of `lab` itself, so every command it starts runs that one. A
-  tool the manifest does not pin is the node's own.
+  the path of `lab` itself, so every command it starts runs that one —
+  from `bin` inside the package when the archive nests it. A tool the
+  manifest does not pin is the node's own.
 
 A package is downloaded, checked against the checksum file the release
-publishes beside it (`checksums`), and unpacked — zip, tar.gz or a single
+publishes beside it (`checksums`) — or, for a project that publishes
+none, against the SHA-256 GitHub records for the asset — and unpacked — zip, tar.gz or a single
 compressed or bare file — into `${LAB_ROOT}/packages/<name>/<version>`,
 beside the directory and renamed into place, with a marker written last,
 so a version that exists was installed whole. Versions sit side by side:

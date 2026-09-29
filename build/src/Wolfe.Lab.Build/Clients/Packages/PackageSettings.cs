@@ -33,6 +33,12 @@ public sealed record PackageSettings
     public string? Checksums { get; init; }
 
     /// <summary>
+    /// The directory inside the package that holds a tool's command,
+    /// for an archive that nests it. The package's top level when unset.
+    /// </summary>
+    public string? Bin { get; init; }
+
+    /// <summary>
     /// The asset to install, for a package that runs on one platform — an agent, declared per node.
     /// </summary>
     public string? Asset { get; init; }

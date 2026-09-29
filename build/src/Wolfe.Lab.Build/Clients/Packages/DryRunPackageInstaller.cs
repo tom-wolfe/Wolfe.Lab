@@ -18,7 +18,13 @@ internal sealed class DryRunPackageInstaller(HttpClient http, WorkflowEnvironmen
             return new InstalledPackage(package, new PhysicalDirectory(directory), PackageOutcome.Present);
         }
 
-        foreach (var asset in new[] { package.Asset, package.Checksums })
+        if (package.Checksums is null)
+        {
+            // Resolving the digest is the check that the release, and its asset, are there.
+            await GithubPackageInstaller.Digest(http, package, ct);
+        }
+
+        foreach (var asset in new[] { package.Asset, package.Checksums }.OfType<string>())
         {
             using var request = new HttpRequestMessage(HttpMethod.Head, package.Download(asset));
             using var response = await http.SendAsync(request, ct);

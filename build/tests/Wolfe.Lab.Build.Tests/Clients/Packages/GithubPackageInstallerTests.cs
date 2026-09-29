@@ -39,4 +39,42 @@ public class GithubPackageInstallerTests : IDisposable
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             throw new InvalidOperationException($"No request was expected: {request.RequestUri}");
     }
+
+    [Theory]
+    [InlineData("MATCH", null)]
+    [InlineData("sha256:0000000000000000000000000000000000000000000000000000000000000000", "does not match GitHub's digest")]
+    [InlineData(null, "records no SHA-256")]
+    public async Task Install_ChecksAPackageWithNoChecksumFileAgainstGitHubsDigest(string? digest, string? failure)
+    {
+        var body = "#!/bin/sh\necho shellcheck\n"u8.ToArray();
+        var actual = "sha256:" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(body));
+        var package = new Package("shellcheck", "koalaman/shellcheck", "0.11.0", "v0.11.0", "shellcheck", null);
+        var release = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            assets = new object[] { digest is null ? new { name = "shellcheck" } : new { name = "shellcheck", digest = digest == "MATCH" ? actual : digest } }
+        });
+        var installer = new GithubPackageInstaller(new HttpClient(new ReleaseHandler(body, release)), Substitute.For<ICommandRunner>(),
+            new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null), Substitute.For<IWorkflowLog>());
+
+        if (failure is null)
+        {
+            var installed = await installer.Install(package, TestContext.Current.CancellationToken);
+            installed.Outcome.ShouldBe(PackageOutcome.Installed);
+            File.Exists(Path.Combine(installed.Directory.AbsolutePath, "shellcheck")).ShouldBeTrue();
+        }
+        else
+        {
+            (await Should.ThrowAsync<InvalidOperationException>(() => installer.Install(package, TestContext.Current.CancellationToken)))
+                .Message.ShouldContain(failure);
+        }
+    }
+
+    private sealed class ReleaseHandler(byte[] asset, string release) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = request.RequestUri!.Host == "api.github.com" ? new StringContent(release) : new ByteArrayContent(asset)
+            });
+    }
 }
