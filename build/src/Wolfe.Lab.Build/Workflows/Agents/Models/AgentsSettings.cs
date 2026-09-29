@@ -1,6 +1,4 @@
 using Wolfe.Lab.Build.Clients.Releases;
-using Wolfe.Lab.Build.Clients.Agents;
-using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Workflows.Agents.Models;
 
@@ -18,20 +16,4 @@ public sealed record AgentsSettings : WorkflowSettings
     /// Directories of the component published to every node it runs on.
     /// </summary>
     public IReadOnlyList<ArtifactSettings> Artifacts { get; init; } = [];
-}
-
-/// <summary>
-/// One node's agents.
-/// </summary>
-public sealed record NodeAgentsSettings
-{
-    /// <summary>
-    /// External volumes the agents read, which must be mounted before they are converged.
-    /// </summary>
-    public IReadOnlyList<HostPath> Volumes { get; init; } = [];
-
-    /// <summary>
-    /// The agents, by the name each is labelled after.
-    /// </summary>
-    public Dictionary<string, AgentSettings> Agents { get; init; } = [];
 }

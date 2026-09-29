@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Heartbeat;
 using Wolfe.Lab.Build.Clients.Heartbeat.Steps;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Clients.Restic.Steps;
 using Wolfe.Lab.Build.Clients.Volumes.Steps;
 using Wolfe.Lab.Build.Workflows.Restic.Models;
@@ -19,6 +20,7 @@ internal sealed class OffsiteJob : ResticJob
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<EnsureTools>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveRepository>(),
         Step.FromType<ResolveOffsite>(),

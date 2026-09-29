@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Wolfe.Lab.Build.Clients.Packages;
 
 namespace Wolfe.Lab.Build.Clients.Restic;
 
@@ -16,7 +17,9 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddRestic()
         {
-            builder.AddCommandRunner();
+            // restic's version is the repository's to pin (.config/lab-tools.json): every node
+            // writes the same repositories, so every node runs the same one.
+            builder.AddCommandRunner().AddTools("restic");
             builder.Services.TryAddSingleton<ResticClient>();
             builder.Services.TryAddSingleton<IRestic>(s => s.GetRequiredService<ResticClient>());
             builder.Decorators.Replace<IRestic, DryRunRestic>();

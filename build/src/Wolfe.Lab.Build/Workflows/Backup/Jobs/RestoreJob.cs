@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Clients.Releases.Steps;
 using Wolfe.Lab.Build.Clients.Restic;
@@ -38,6 +39,7 @@ internal sealed class RestoreJob : LabJob<BackupSettings>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<EnsureTools>(),
         Step.FromType<ResolveRelease>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveRepository>(),

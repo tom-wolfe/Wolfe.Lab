@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Clients.Releases.Steps;
 using Wolfe.Lab.Build.Clients.Restic;
@@ -26,6 +27,7 @@ internal sealed class DrillJob : LabJob<BackupSettings>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<EnsureTools>(),
         Step.FromType<ResolveRelease>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveRepository>(),

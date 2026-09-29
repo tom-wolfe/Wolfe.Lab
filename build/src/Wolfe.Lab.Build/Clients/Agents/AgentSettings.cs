@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Packages;
 using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Clients.Agents;
@@ -7,6 +8,11 @@ namespace Wolfe.Lab.Build.Clients.Agents;
 /// </summary>
 public sealed record AgentSettings
 {
+    /// <summary>
+    /// What the agent runs, installed by the deploy from a GitHub release.
+    /// </summary>
+    public PackageSettings? Package { get; init; }
+
     /// <summary>
     /// The executable the agent runs.
     /// </summary>
