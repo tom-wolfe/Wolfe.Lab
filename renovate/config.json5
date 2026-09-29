@@ -73,13 +73,9 @@
       groupName: "immich",
     },
 
-    // The hub's pin has a twin Renovate cannot move: the Pi's agent, pinned by
-    // version and checksum in chezmoi (monitoring/beszel/RUNBOOK.md, "Two pins").
     {
       matchPackageNames: ["henrygd/beszel"],
-      prBodyNotes: [
-        "Move the Pi's agent in the same pull request: version and checksum in `chezmoi/home/.chezmoiexternal.toml.tmpl`.",
-      ],
+      groupName: "beszel",
     },
 
     // Tags Renovate cannot order without being told their shape.

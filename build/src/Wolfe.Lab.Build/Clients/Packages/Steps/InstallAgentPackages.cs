@@ -10,6 +10,8 @@ namespace Wolfe.Lab.Build.Clients.Packages.Steps;
 /// <remarks>
 /// The lab runs the agent, so it installs it too: its version pinned beside its unit, not left to
 /// whatever Homebrew last upgraded to. An agent without a package runs what the node already has.
+/// The package goes first on the job's path as well, so a command the job itself runs by name is
+/// the agent's version.
 /// </remarks>
 [Step("install agent packages", StepKind.Work)]
 internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPackageInstaller installer, WorkflowEnvironment environment, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
@@ -44,6 +46,14 @@ internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPack
                 && File.Exists(program.Value))
             {
                 GithubPackageInstaller.Executable(program.Value);
+            }
+
+            // What the job runs of the agent's own — ollama's `pull` against ollama's server —
+            // is the version the agent runs, not whatever else the node has.
+            if (!job.DryRun)
+            {
+                Environment.SetEnvironmentVariable(EnsureTools.PathVariable,
+                    $"{directory}{Path.PathSeparator}{Environment.GetEnvironmentVariable(EnsureTools.PathVariable)}");
             }
         }
 

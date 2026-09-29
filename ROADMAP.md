@@ -224,9 +224,9 @@ lab's pins.
 **In order.** After #12's `monitoring/` move:
 
 1. The backend on the mini and the mini's collector; the watchdog
-   check; Gatus watching Grafana. Then a look at the mini's memory. *The backend, the
-   watchdog and Gatus's check shipped in 0.58.0; the collector waits on
-   agents that carry files.*
+   check; Gatus watching Grafana. Then a look at the mini's memory. *Shipped: the backend,
+   the watchdog and Gatus's check in 0.58.0, the mini's collector in
+   0.62.0.*
 2. The mail watcher instrumented — the bottleneck question answered.
 3. Collectors on the Pi and the Studio, forwarding; container and
    host-process logs from every node.
@@ -292,14 +292,26 @@ already has:
   same way.
 - **A merge is the desired state, a revert the rollback**, and drift is
   noticed because the agent keeps looking.
+- **What changed is decided the way CI decides it.** The agent keeps,
+  per component on its node, the last commit it deployed successfully;
+  on a new commit it diffs the two and deploys the components whose
+  paths changed — `GatePathFilter`'s rule, with the paths a component
+  reads outside its directory declared in its `ritten.json` rather than
+  in a workflow's `paths:`. So a check that runs in CI means a deploy
+  that runs in CD. A failed deploy does not advance its commit, so the
+  next pass retries it; an occasional full pass catches drift that did
+  not come from the repository.
+- **It publishes and installs what components declare** — artifacts to
+  `${LAB_ROOT}`, and the pinned packages agents and tools run from
+  (build/README.md) — the same steps the workflows run today.
 - **It resolves each component's secrets itself**, which makes it the
   place to narrow what each node can read (#8).
 - **It reaches Forgejo directly** — loopback or the tailnet, never
   through caddy — so it never depends on anything it deploys: a broken
   route cannot cut it off from the fix.
 
-**The agent decides; the operating system runs.** The agent is a
-controller, not a supervisor or a scheduler of its own:
+**The agent decides; the operating system keeps daemons alive.** The
+agent is a controller and a scheduler, not a supervisor:
 
 - **Daemons stay launchd's and systemd's.** The kernel installs one
   unit, the agent's; the agent reconciles every other daemon into units
@@ -311,31 +323,62 @@ controller, not a supervisor or a scheduler of its own:
   would need Full Disk Access on the agent, the most privileged process
   in the lab. Starting before login, restart with backoff, limits, logs
   and sleep and wake come with the OS.
-- **Schedules become the agent's to declare and the OS's to run.**
-  Backups, the offsite copy, verification and drills move off Actions
-  cron: a component declares its schedule, and the agent installs it as
-  a launchd calendar entry or a systemd timer that runs the `lab` job —
-  so 02:30 does not depend on the agent being healthy at 02:30, and
-  launchd runs what a sleeping Mac missed. Jobs that must not overlap
-  take a per-node lock, which replaces the `MacMini` concurrency group.
-  Backups also stop depending on Forgejo being up — Forgejo's own
-  included.
-- **Every scheduled job gets its own healthchecks.io check**, pinged on
-  success. Leaving Actions loses its run history (traces replace it,
-  #11) and its visible schedule; a check per job is what catches a
-  schedule that silently stops, from outside the building. Today only
-  the heartbeat has one.
+- **Schedules are the agent's.** Backups, the offsite copy, verification
+  and drills move off Actions cron into the agent, run by **Hangfire**:
+  recurring jobs, jobs enqueued from outside (a webhook, a button),
+  retries, and no two of a kind at once (`DisableConcurrentExecution`),
+  in place of the `MacMini` concurrency group. Its storage is SQLite
+  under `${LAB_DATA}` and disposable: schedules are declared by the
+  components and re-registered from the repository on every start,
+  and history lives in Tempo. *Revisited:* this was once "the agent
+  declares, launchd and systemd run", so that 02:30 would not depend on
+  the agent being healthy at 02:30. Given up on purpose: in the agent,
+  every run is observable — its schedule, next and last run, misfires,
+  retries and a trace per run, beside everything else in Grafana —
+  where a launchd timer is a log file. Backups also stop depending on
+  Forgejo being up, Forgejo's own included.
+- **Failures alert through Grafana**, like everything else in the lab: a
+  run that failed, a schedule that missed its slot, the agent's own
+  health, from its telemetry. healthchecks.io stays for what only an
+  observer outside the building can see — that the mini and the Pi are
+  alive at all, and that Grafana's own alerting runs (#11) — not a check
+  per job: an agent that dies is caught by the node's heartbeat and the
+  missing telemetry, not by twenty silent pings.
 
-**It serves an API, not a UI.** A small one — read-mostly, tailnet-only,
-authenticated: the commit each node converged, each component's last
-result, each schedule's last and next run, and a few narrow actions
-("reconcile now", "run this schedule now"). History is not kept here;
-every reconcile and run is a trace in Tempo. The UI is the portal (#9),
-which the agent deploys like anything else — so the kernel stays small,
-the most privileged process carries no web front end, a UI change never
-restarts the deployer, and one page covers every node. A status endpoint
-of the same shape could be part of Ritten's agent mode. For development,
-`lab agent --once` runs a single reconcile in the foreground.
+**It serves an API: ASP.NET Core.** Tailnet-only and authenticated —
+this is the process that can deploy anything. A standard host brings
+what a hand-built endpoint would not: health checks, OpenTelemetry for
+every request, error handling that fails a request rather than the
+process, and an OpenAPI document from which clients are generated. It
+answers what each node converged, each component's last result, each
+schedule's last and next run, and takes a few narrow actions ("reconcile
+now", "run this job now"); Forgejo's webhooks arrive on it too. The
+Hangfire dashboard mounts on the same host, behind the same
+authentication. For development, `lab agent --once` runs a single
+reconcile in the foreground.
+
+**The portal dispatches; the agents act.** Each node's agent exposes
+its own endpoints, and the portal (#9) is where they meet: one page
+across every node, with the button that runs a job on whichever node it
+belongs to, through the generated client. The agent carries no UI of its
+own beyond the dashboard, so a UI change never restarts the deployer.
+
+**Runs are in-process.** One process per node: fewer moving parts, one
+telemetry pipeline, and concurrency controlled by locks in memory rather
+than two processes clashing. Each run gets its own DI scope, a timeout
+and cancellation, and an exception fails its run, not the agent;
+launchd and systemd keep the agent itself up. What today's run-once CLI
+gets away with because every run is its own process has to hold for a
+process that lives:
+
+- **Nothing a run needs goes in process-wide state.** Commands set their
+  own working directory; the process's current directory is never
+  changed.
+- **Tools are the agent's, one version each.** `EnsureTools` puts a
+  pinned tool first on the path — right for an agent, which should run
+  one version of `tofu` everywhere — but changing that version takes a
+  lock: a job holds its tools for its whole duration, and a new version
+  is swapped in only between jobs.
 
 Two things make it safe to hand deployment over: **it is observable
 from its first reconcile** (#11: each reconcile a trace, each step a
@@ -344,10 +387,10 @@ per node on the commit it converged, so a deploy still goes green or red
 in Forgejo.
 
 **Tofu: planned on the pull request, applied after merge, both by the
-agent.** Atlantis's shape. The agent watches pull requests rather than
-exposing an API — nothing to call it, so nothing to authenticate — and
-for one that changes a tofu root it plans the head commit and posts the
-plan as a comment and a status; on merge it applies. Be exact about what
+agent.** Atlantis's shape. Forgejo's pull request webhook reaches the
+agent's API, and for a pull request that changes a tofu root it plans
+the head commit and posts the plan as a comment and a status; on merge
+it applies. Be exact about what
 this buys: a plan runs the pull request's code with that root's
 credentials — providers are binaries it can change, `external` and
 `http` data sources can run and send anything, and state (which holds
@@ -365,10 +408,12 @@ the components a pull request changed and runs each one's `lab check`
 (the path filter gate already does half of this). The next best thing
 to pipeline files living in their slices.
 
-**Agent mode is a Ritten feature.** Today the engine runs a job once;
-an agent runs the same job again whenever the desired state moves. The
-step model, rules and reporting carry over — a Ritten release before the
-lab's agent can exist.
+**Agent mode is a Ritten feature.** A second host beside today's
+run-once CLI: the Generic Host, with workflows linked to **triggers**
+rather than to commands — a timer, a webhook, a call on the API — each
+producing a request to run a workflow's job with its arguments, which
+the same engine runs, with the same steps, rules and reports. A Ritten
+release before the lab's agent can exist.
 
 **`lab init` onboards a node.** `dotnet tool install -g
 Wolfe.Lab.Build`, then `lab init`: apply chezmoi for the machine's
@@ -405,9 +450,9 @@ one. A learning item, not the plan.
    component, while the workflows still deploy.
 5. Ritten's agent mode, then the lab's agent: one low-stakes service
    first, then the rest, then caddy's assembled routes.
-6. Schedules: a healthchecks.io check per scheduled job first, then the
-   schedules move from Actions cron into installed timers — backups
-   last, once the rest have run quietly for a while.
+6. Schedules move from Actions cron into the agent's Hangfire, with
+   Grafana rules for failed and missed runs first — backups last, once
+   the rest have run quietly for a while.
 7. Tofu through the agent — plans on pull requests, applies on merge —
    and CI as one workflow.
 8. The trust boundary.

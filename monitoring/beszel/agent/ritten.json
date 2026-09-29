@@ -4,7 +4,13 @@
     "MacMini": {
       "agents": {
         "beszel-agent": {
-          "program": "/opt/homebrew/opt/beszel-agent/bin/beszel-agent",
+          "package": {
+            "github": "henrygd/beszel",
+            "version": "0.20.0",
+            "asset": "beszel-agent_darwin_arm64.tar.gz",
+            "checksums": "beszel_{version}_checksums.txt"
+          },
+          "program": "${PACKAGE}/beszel-agent",
           "environment": {
             "TOKEN": "op://Wolfe.Lab/beszel-agent/credential",
             "KEY": "op://Wolfe.Lab/beszel-agent/username",
@@ -21,7 +27,13 @@
     "MacStudio": {
       "agents": {
         "beszel-agent": {
-          "program": "/opt/homebrew/opt/beszel-agent/bin/beszel-agent",
+          "package": {
+            "github": "henrygd/beszel",
+            "version": "0.20.0",
+            "asset": "beszel-agent_darwin_arm64.tar.gz",
+            "checksums": "beszel_{version}_checksums.txt"
+          },
+          "program": "${PACKAGE}/beszel-agent",
           "environment": {
             "TOKEN": "op://Wolfe.Lab/beszel-agent/credential",
             "KEY": "op://Wolfe.Lab/beszel-agent/username",
@@ -36,7 +48,13 @@
     "wolfe-pi5": {
       "agents": {
         "beszel-agent": {
-          "program": "~/.local/bin/beszel-agent",
+          "package": {
+            "github": "henrygd/beszel",
+            "version": "0.20.0",
+            "asset": "beszel-agent_linux_arm64.tar.gz",
+            "checksums": "beszel_{version}_checksums.txt"
+          },
+          "program": "${PACKAGE}/beszel-agent",
           "environment": {
             "TOKEN": "op://Wolfe.Lab/beszel-agent/credential",
             "KEY": "op://Wolfe.Lab/beszel-agent/username",

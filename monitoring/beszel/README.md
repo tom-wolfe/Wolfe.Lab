@@ -10,8 +10,7 @@ native process on each monitored machine).
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel-compose.yaml` on every push that touches `compose/` (the mini's host runner); first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
-| Agent binary (Macs) | declared in the Brewfile (`chezmoi/home/dot_Brewfile.tmpl`); upgraded by hand (see "Two pins") |
-| Agent binary (Linux nodes) | pinned release in `chezmoi/home/.chezmoiexternal.toml.tmpl`, installed to `~/.local/bin` |
+| Agent binary | each node's `package` in `agent/ritten.json`: the release the deploy installs, pinned to the hub's version (build/README.md, "Packages and tools"); Renovate moves both as one |
 | Agent supervision and config | the `agent/` component: `agent/ritten.json` declares each node's agent — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
 | Hub liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
 | Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
@@ -40,9 +39,9 @@ server, and `lab deploy` renders the platform's unit and converges it
 observable, which was the actual requirement.
 
 Two workflows, two halves: **`beszel compose` converges the hub, and
-`beszel agent` converges the agent on every node.** The binary is still
-a host package — Homebrew's on the Macs, chezmoi's pinned download on the
-Pi — and only its supervision and config belong to the component.
+`beszel agent` converges the agent on every node.** The binary, its
+supervision and its config all belong to the component: the deploy
+installs the pinned release before it converges the unit.
 
 ## How the two halves find each other
 

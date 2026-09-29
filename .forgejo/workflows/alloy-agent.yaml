@@ -1,0 +1,35 @@
+name: alloy agent
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [monitoring/alloy/agent/**, .forgejo/workflows/alloy-agent.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - working-directory: monitoring/alloy/agent
+        run: lab check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    strategy:
+      matrix:
+        node: [MacMini]
+    runs-on: ${{ matrix.node }}
+    concurrency:
+      group: ${{ matrix.node }}
+      cancel-in-progress: false
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - working-directory: monitoring/alloy/agent
+        run: lab deploy --node "${{ matrix.node }}" --auto-approve

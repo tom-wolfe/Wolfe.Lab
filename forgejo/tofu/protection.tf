@@ -27,6 +27,7 @@ resource "forgejo_branch_protection" "main" {
     "gatus tofu / check*",
     "restic tofu / check*",
     "tailscale tofu / check*",
+    "alloy agent / check*",
     "beszel agent / check*",
     "beszel compose / check*",
     "caddy compose / check*",

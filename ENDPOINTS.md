@@ -39,6 +39,8 @@ fallback when the front door is down.
 | `:80`   | Caddy — HTTP→HTTPS redirect                      | —                                                          | `caddy`                     |
 | `:443`  | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below)                               | `caddy`.                    |
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
+| `:4317`, `:4318` | Alloy — OTLP gRPC, HTTP, from applications (**loopback only**; containers use `host.docker.internal`) | none | `monitoring/alloy` |
+| `:12345` | Alloy — UI and API (**loopback only**)   | none                                                       | `monitoring/alloy`          |
 | `:3100` | Loki — push + query API (**loopback only**)     | none; only the mini's Alloy writes                        | `grafana`                   |
 | `:9090` | Prometheus — remote write, OTLP, query (**loopback only**) | none; only the mini's Alloy writes              | `grafana`                   |
 | `:14317`, `:14318` | Tempo — OTLP gRPC, HTTP (**loopback only**; `:4317`/`:4318` are Alloy's) | none; only the mini's Alloy writes | `grafana` |

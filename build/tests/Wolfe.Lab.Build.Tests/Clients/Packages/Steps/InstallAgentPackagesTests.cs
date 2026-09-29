@@ -7,6 +7,7 @@ using Wolfe.Lab.Build.Values;
 namespace Wolfe.Lab.Build.Tests.Clients.Packages.Steps;
 
 [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
+[Collection(nameof(ProcessPath))]
 public class InstallAgentPackagesTests : IDisposable
 {
     private readonly DirectoryInfo _package = Directory.CreateTempSubdirectory("lab-alloy-");
@@ -27,7 +28,13 @@ public class InstallAgentPackagesTests : IDisposable
         File.SetUnixFileMode(Program, UnixFileMode.UserRead | UnixFileMode.UserWrite);
     }
 
-    public void Dispose() => _package.Delete(recursive: true);
+    private readonly string? _path = Environment.GetEnvironmentVariable("PATH");
+
+    public void Dispose()
+    {
+        Environment.SetEnvironmentVariable("PATH", _path);
+        _package.Delete(recursive: true);
+    }
 
     private string Program => Path.Combine(_package.FullName, "alloy-darwin-arm64");
 
@@ -61,11 +68,20 @@ public class InstallAgentPackagesTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_PutsThePackageFirstOnTheJobsPath()
+    {
+        await Install(PackageOutcome.Installed);
+
+        Environment.GetEnvironmentVariable("PATH").ShouldBe($"{_package.FullName}{Path.PathSeparator}{_path}");
+    }
+
+    [Fact]
     public async Task Run_ChangesNothingOnARehearsal()
     {
         await Install(PackageOutcome.Present, dryRun: true);
 
         (File.GetUnixFileMode(Program) & UnixFileMode.UserExecute).ShouldBe((UnixFileMode)0);
+        Environment.GetEnvironmentVariable("PATH").ShouldBe(_path);
     }
 
     [Fact]

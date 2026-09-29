@@ -17,7 +17,13 @@
   },
   "agents": {
     "ollama": {
-      "program": "/opt/homebrew/bin/ollama",
+      "package": {
+        "github": "ollama/ollama",
+        "version": "0.34.4",
+        "asset": "ollama-darwin.tgz",
+        "checksums": "sha256sum.txt"
+      },
+      "program": "${PACKAGE}/ollama",
       "arguments": ["serve"],
       "environment": {
         "OLLAMA_HOST": "0.0.0.0:11434",

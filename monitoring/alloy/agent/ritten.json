@@ -1,0 +1,33 @@
+{
+  "workflow": "agents",
+  "artifacts": [
+    { "source": "config", "output": "${LAB_ROOT}/alloy" }
+  ],
+  "nodes": {
+    "MacMini": {
+      "agents": {
+        "alloy": {
+          "package": {
+            "github": "grafana/alloy",
+            "version": "1.20.1",
+            "asset": "alloy-darwin-arm64.zip",
+            "checksums": "SHA256SUMS"
+          },
+          "program": "${PACKAGE}/alloy-darwin-arm64",
+          "arguments": [
+            "run",
+            "${LAB_ROOT}/alloy/config.alloy",
+            "--storage.path=${LAB_DATA}/alloy",
+            "--server.http.listen-addr=127.0.0.1:12345"
+          ],
+          "environment": {
+            "LAB_HOST": "mini",
+            "LAB_ROLE": "server"
+          },
+          "log": "~/.cache/alloy/alloy.log",
+          "supersedes": ["homebrew.mxcl.grafana-alloy"]
+        }
+      }
+    }
+  }
+}

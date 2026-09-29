@@ -4,6 +4,30 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.62.0] - 2026-09-29
+
+### Added
+
+- **Alloy** (`monitoring/alloy/`, ROADMAP #11) on the mini, as a host
+  agent from its pinned release: OTLP from applications on loopback,
+  labelled with the node and forwarded to Loki, Tempo and Prometheus,
+  with its own health beside it. Its config is the first agent artifact.
+
+### Changed
+
+- **The lab installs its agents.** The Beszel agent (every node, at the
+  hub's 0.20.0 — the Pi's had drifted to 0.19.0), Ollama (0.34.4 on the
+  mini and the Studio) and Alloy declare a `package`, and the deploy
+  installs it; the Brewfile's and the Pi's chezmoi copies of the Beszel
+  agent are gone. Renovate moves the Beszel hub and agents as one.
+- **A job runs its agent's version.** Installing an agent's package puts
+  it first on the job's path, so the `ollama pull` a deploy runs is the
+  server's own. Homebrew's `ollama` on the Macs goes once this is pinned.
+- **The agent design is revised** (ROADMAP #6): the agent owns
+  schedules, in Hangfire; runs in-process behind an ASP.NET Core API;
+  and alerts through Grafana, with healthchecks.io kept for what only an
+  outside observer can see.
+
 ## [0.61.0] - 2026-09-29
 
 ### Added

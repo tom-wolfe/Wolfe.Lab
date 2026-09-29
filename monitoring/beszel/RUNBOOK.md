@@ -29,12 +29,12 @@ as `garage/tofu` — run once, harvest the outputs, store them.
    enrolled it keeps working without it, so a stale vaulted token only
    bites when you enrol a new machine or wipe `~/.cache/beszel`. That's
    also why persistence matters — the laptops enrol months from now.
-4. **Install the binary**: the chezmoi workflow does it from the Brewfile
-   (the Macs) or the pinned download (the Pi); by hand, `brew bundle
-   install --file ~/.Brewfile`.
+4. **Declare the node**: an entry under `nodes` in `agent/ritten.json`,
+   with its `package` asset for the node's platform.
 5. **Start the agent**: run the **beszel agent** workflow, or on the node
-   `cd monitoring/beszel/agent && lab deploy --node <node>`. It resolves the token
-   and key from the vault into the agent's unit and starts it.
+   `cd monitoring/beszel/agent && lab deploy --node <node>`. It installs the
+   pinned binary, resolves the token and key from the vault into the
+   agent's unit and starts it.
 6. **Confirm enrolment.** The mini should appear in the hub within a few
    seconds. If it doesn't, `tail ~/.cache/beszel/beszel-agent.log`.
 7. **Configure notifications and thresholds** (see "Alerting"). Nothing
@@ -42,35 +42,18 @@ as `garage/tofu` — run once, harvest the outputs, store them.
 
 ## Upgrading
 
-Two pins, and they should move together — the hub and agent speak a
-versioned protocol and are only tested as a pair:
+One version, for the hub and every agent — they speak a versioned protocol
+and are only tested as a pair. It is written in two places, the hub's
+`image:` in `compose/compose.yaml` and each node's `package` in
+`agent/ritten.json`, and Renovate moves them in one pull request (the
+`beszel` group). The merge redeploys both: the new package is a new
+directory, so each agent's unit changes and it restarts on the new
+binary.
 
-1. `image:` in `compose.yaml` (hub) — pinned, bumped by hand.
-2. On the Macs the agent has **no version to pin**: the tap ships a single
-   `beszel-agent.rb` regenerated on each release, so there is nothing
-   versioned to name in the Brewfile. On Linux nodes it does: the release
-   URL and checksum in `.chezmoiexternal.toml.tmpl`, bumped in the same
-   commit as the hub image.
-
-So the agent moves when you upgrade packages on the mini by hand — nothing
-upgrades on a schedule there (`chezmoi/README.md`). Do it through bundle,
-not plain `brew upgrade`, specifically for services like this one:
-
-```sh
-brew bundle install --file ~/.Brewfile --upgrade
-```
-
-Either way the old process keeps running the old binary until something
-restarts it — a monitor silently running stale code is the exact failure
-worth avoiding. So **run the beszel agent workflow afterwards**: the
-binary's timestamp is part of each agent's unit, so an upgraded binary is
-a changed unit and the deploy restarts it. Bump the hub's `image:` pin in
-the same sitting, so the pair moves together.
-
-If the agent does get ahead of the hub, a protocol mismatch is loud rather
-than silent — the mini drops off the dashboard, and Gatus
-and `~/.cache/beszel/beszel-agent.log` both say so. To hold it, `brew pin
-beszel-agent` on the mini; upgrades skip pinned packages.
+If an agent does get ahead of the hub, a protocol mismatch is loud rather
+than silent — the node drops off the dashboard, and Gatus and
+`~/.cache/beszel/beszel-agent.log` both say so. To hold a version, close
+the pull request.
 
 Bump the image via a normal PR; the push deploys it. Check the release notes first — the hub migrates its SQLite
 schema forward on boot and downgrades are not supported, so going back means
