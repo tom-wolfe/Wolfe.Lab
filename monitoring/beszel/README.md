@@ -61,7 +61,7 @@ why the unit is written for its owner alone:
 and deliberately: routing host monitoring through a public DNS name would
 mean the lab stops watching itself the moment the internet goes down, which
 is exactly when you want it watching. Names are for humans
-(`caddy/README.md`); the hostname exists for the browser.
+(`network/caddy/README.md`); the hostname exists for the browser.
 
 The legacy direction (hub connects to an agent listening on :45876) is not
 used, so `LISTEN` is pinned to loopback rather than published to the LAN.

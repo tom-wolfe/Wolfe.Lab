@@ -26,7 +26,7 @@ handle @ai {
 	# ai/ollama/README.md "The Studio".
 	#
 	# The Studio by its MagicDNS name, over the tailnet: tag:server may reach
-	# tag:hybrid on 11434 and nothing else (tailscale/tofu/policy.hujson).
+	# tag:hybrid on 11434 and nothing else (network/tailscale/tofu/policy.hujson).
 	#
 	reverse_proxy macstudio.tailf823b8.ts.net:11434 host.docker.internal:11434 {
 		header_up Host {upstream_hostport}

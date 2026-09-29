@@ -19,7 +19,7 @@ terraform {
 
   required_providers {
     # healthchecks.io is a PROVIDER, not a slice — same call as netlify
-    # (see caddy/tofu/providers.tf). A check belongs to the slice that owns
+    # (see network/caddy/tofu/providers.tf). A check belongs to the slice that owns
     # the thing being checked, so the tick's check lives here rather than in
     # a monitoring/ slice that would collect other slices' concerns.
     healthchecksio = {

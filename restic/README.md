@@ -10,7 +10,7 @@ contorted (dropping gzip) so restic could undo their duplication. When
 layer B has to reshape layer A's output to deduplicate it, layer B should
 just replace layer A.
 
-Not a service: no compose stack, nothing to deploy. Like `dns/`, the slice
+Not a service: no compose stack, nothing to deploy. Like `network/dns/`, the slice
 is a tofu root (the offsite bucket, key and dead man's switch) plus flows.
 
 ## The design

@@ -2,7 +2,7 @@
 
 Every service address in the lab. Hosts resolve via mDNS on the LAN;
 `*.twolfe.dev` names resolve via public DNS to the mini's Tailscale
-address (one wildcard record, owned by `caddy/tofu`). ONE name per
+address (one wildcard record, owned by `network/caddy/tofu`). ONE name per
 service, working wherever the tailnet is — at home included, where
 Tailscale connects directly over the LAN rather than relaying. Nothing
 is exposed to the internet: the address these names resolve to is a
@@ -89,5 +89,5 @@ Notes:
 ## Conventions
 
 New service = new row, same commit — and a hostname row if it's proxied
-(see caddy/README.md for the contract). If a port or a `caddy.caddyfile`
+(see network/caddy/README.md for the contract). If a port or a `caddy.caddyfile`
 changes, this file changes with it.

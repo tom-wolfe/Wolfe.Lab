@@ -73,7 +73,7 @@ name tags that already exist.
    against what the tailnet really has rather than an overwrite:
 
    ```sh
-   cd tailscale/tofu
+   cd network/tailscale/tofu
    run="op run --env-file ../../build/tofu-state.env --env-file secrets.env --"
    $run tofu init
    $run tofu import tailscale_acl.lab acl
@@ -87,7 +87,7 @@ name tags that already exist.
 4. **Merge.** `tailscale-tofu.yaml` applies. Or by hand: `tofu apply`
    from the same shell.
 5. **Verify.** `tailscale status` from a laptop: the three servers show
-   `tag:server` and their addresses are unchanged (`caddy/tofu` and
+   `tag:server` and their addresses are unchanged (`network/caddy/tofu` and
    `forgejo/tofu` carry them); `ssh macmini` over the tailnet still
    works. From the Pi, `curl -s http://macmini.tailf823b8.ts.net:8090/api/health`
    — the server↔server rule.

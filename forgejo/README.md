@@ -88,7 +88,7 @@ namespace (`network_mode: service:server`) and advertised as
 **`git.twolfe.dev`** (an A record in `tofu/records.tf` at the sidecar's
 address). The entire point is one fact: on a dedicated address, container
 port 22 is free, so clone URLs need no port. This is
-`tailscale/README.md` follow-up #3, and the end of the wait recorded in
+`network/tailscale/README.md` follow-up #3, and the end of the wait recorded in
 `compose.yaml`'s clone-URL decision.
 
 Mechanics worth knowing (the rest is comments in `compose.yaml`):
@@ -106,7 +106,7 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   (`code.twolfe.dev` has the same trap: the `*.ts` wildcard is
   also the mini.) So SSH gets its own name — the per-service "neat
   public name in the owning slice's tofu, pointing at a Tailscale IP"
-  pattern from `caddy/README.md`, here in its first instance. The cost:
+  pattern from `network/caddy/README.md`, here in its first instance. The cost:
   resolution rides Netlify DNS, like every `.lab` name. The sidecar's
   MagicDNS name, `forgejo.tailf823b8.ts.net`, is the same endpoint with
   no DNS dependency — the fallback when Netlify is the broken thing.

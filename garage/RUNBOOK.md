@@ -20,7 +20,7 @@ rm -rf terraform.tfstate terraform.tfstate.backup
 ```
 
 Every other tofu root in the repo (`forgejo/tofu`,
-`caddy/tofu`, …) then uses the `s3` backend against
+`network/caddy/tofu`, …) then uses the `s3` backend against
 `http://macmini.local:3900` with those credentials.
 
 ## Re-running later

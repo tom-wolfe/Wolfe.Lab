@@ -5,7 +5,7 @@ name: caddy routes
 on:
   push:
     branches: [main]
-    paths: [caddy/routes/**, '**/caddy.caddyfile', .forgejo/workflows/caddy-routes.yaml]
+    paths: [network/caddy/routes/**, '**/caddy.caddyfile', .forgejo/workflows/caddy-routes.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -18,5 +18,5 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - working-directory: caddy/routes
+      - working-directory: network/caddy/routes
         run: lab deploy --auto-approve

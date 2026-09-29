@@ -15,10 +15,10 @@ exists. A record that exists because a service exists lives with the
 service:
 
 - **The front-door records** (`*.twolfe.dev` and `lab.twolfe.dev`) stay
-  in `caddy/tofu` — they point at the front door, so the front door owns
-  them (`caddy/tofu/records.tf` records the decision).
+  in `network/caddy/tofu` — they point at the front door, so the front door owns
+  them (`network/caddy/tofu/records.tf` records the decision).
 - **Per-service public names** (`git.twolfe.dev`) stay in the owning
-  slice's tofu root — the contract in `caddy/README.md`, untouched.
+  slice's tofu root — the contract in `network/caddy/README.md`, untouched.
 - **Apex and `www`** are deliberately absent: they are Netlify's own
   site-attachment records (type `NETLIFY`), managed by the site, not
   declarable by the provider — its type list has no `NETLIFY` — and not
@@ -26,10 +26,10 @@ service:
 
 ## On the name
 
-`netlify/` would be wrong twice over: `caddy/README.md` already
+`netlify/` would be wrong twice over: `network/caddy/README.md` already
 establishes Netlify as a provider, not a slice; and the zone outlives
 its host — move it to another DNS service and every record here
-survives while a `netlify/` path lies. Nor is `dns/` a departure from
+survives while a `netlify/` path lies. Nor is `network/dns/` a departure from
 the technology-named directories elsewhere: those are named for the
 thing they own (the `forgejo/` tree *is* Forgejo artifacts), and the
 thing this root owns is the domain's records. Same convention, applied
@@ -39,7 +39,7 @@ to a thing that isn't a deployment.
 
 - `.forgejo/workflows/dns-tofu.yaml` plans on every pull request and
   applies on the merge that changes the root — the OpenTofu CD model.
-  (`lab check` from `dns/tofu` on a workstation still works for
+  (`lab check` from `network/dns/tofu` on a workstation still works for
   development; applies go through the workflow.) Same 1Password items as the
   other roots (`netlify-pat`, `tofu-state-passphrase`, garage state key)
   — nothing new to create.

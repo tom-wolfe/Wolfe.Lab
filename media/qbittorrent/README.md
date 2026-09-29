@@ -16,7 +16,7 @@ would rarely hole-punch and would fall back to DERP relays.
 
 So the dependency is inverted: the one app that needs a VPN moved into a
 container that cannot reach the network *except* through the tunnel, and
-the host got its real interface back. See `tailscale/README.md` for what
+the host got its real interface back. See `network/tailscale/README.md` for what
 that unblocks.
 
 ## Why qBittorrent, not Transmission

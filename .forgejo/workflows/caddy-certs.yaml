@@ -15,5 +15,5 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - working-directory: caddy/certs
+      - working-directory: network/caddy/certs
         run: lab renew --auto-approve

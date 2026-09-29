@@ -4,7 +4,7 @@ namespace Wolfe.Lab.Build.Clients.Caddy;
 /// The running caddy a component reloads: the <c>caddy</c> block of its <c>ritten.json</c>.
 /// </summary>
 /// <remarks>
-/// Facts of <c>caddy/compose</c> — the container it names, the path it mounts the Caddyfile at —
+/// Facts of <c>network/caddy/compose</c> — the container it names, the path it mounts the Caddyfile at —
 /// that every component reloading caddy repeats. The first candidate for the config plane
 /// (ROADMAP.md #8): a value one component owns and others read.
 /// </remarks>

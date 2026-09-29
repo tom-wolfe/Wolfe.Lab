@@ -41,7 +41,7 @@ services:
       # ::1 first, and servers that bind only 0.0.0.0/127.0.0.1 then refuse
       # the connection — a healthcheck that can never pass and that nothing
       # alerts on. Caddy's has been red since it was written for exactly
-      # this reason (see caddy/compose.yaml).
+      # this reason (see network/caddy/compose/compose.yaml).
       test: ["CMD", "/beszel", "health", "--url", "http://127.0.0.1:8090"]
       # Deliberately slow: the docs warn these cost measurable CPU, and
       # nothing reads the result anyway — Gatus, from the Pi, is what
@@ -53,6 +53,6 @@ services:
 
 networks:
   # The shared edge network — owned and created by the caddy slice, which
-  # must be deployed once before this stack. See caddy/README.md.
+  # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

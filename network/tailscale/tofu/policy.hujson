@@ -1,4 +1,4 @@
-// The lab's tailnet policy. Managed by tailscale/tofu (policy.tf).
+// The lab's tailnet policy. Managed by network/tailscale/tofu (policy.tf).
 //
 // Two tags. A tagged device belongs to its tag rather than to a user, which
 // is what a node is: nobody is logged in to vouch for it, and its key must

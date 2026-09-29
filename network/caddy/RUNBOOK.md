@@ -8,12 +8,12 @@ reasons are in `README.md`.
 1. **1Password items** (Wolfe.Lab vault): `netlify-pat` (exists) and
    `tofu-state-passphrase` — create as a Password item, e.g.
    `op item create --vault Wolfe.Lab --category password --title tofu-state-passphrase --generate-password=64,letters,digits`.
-2. **DNS records**: `lab deploy` from `caddy/tofu` (the `tofu caddy` workflow,
-   or by hand: `cd caddy/tofu && lab deploy`).
+2. **DNS records**: `lab deploy` from `network/caddy/tofu` (the `tofu caddy` workflow,
+   or by hand: `cd network/caddy/tofu && lab deploy`).
    Check `lab_tailscale_ipv4` still matches the mini first — the record
    is only as stable as the address, and a re-enrolment that mints a new
    one means updating the variable and re-applying.
-3. **First certificate**: `lab renew` from `caddy/certs/` on the mini (or
+3. **First certificate**: `lab renew` from `network/caddy/certs/` on the mini (or
    the `caddy certs` workflow); it reads the Netlify token its
    `ritten.json` names, for the DNS-01 challenge.
    Caddy loads the cert from files and cannot START without them —
@@ -76,7 +76,7 @@ workflow:
    the mini. One root at a time; `deploy` plans first and stops at the
    gate with the plan on screen, so read it there before approving:
 
-       cd caddy/tofu && lab deploy
+       cd network/caddy/tofu && lab deploy
        cd ../../forgejo/tofu && lab deploy
        cd ../../gatus/tofu && lab deploy
 

@@ -53,7 +53,7 @@ services:
     # should say the same thing Beszel does.
     healthcheck:
       # 127.0.0.1 rather than localhost: the image resolves `localhost`
-      # to ::1 first (the caddy trap, caddy/compose.yaml). Sonarr happens
+      # to ::1 first (the caddy trap, network/caddy/compose/compose.yaml). Sonarr happens
       # to listen dual-stack so both work today; the literal address
       # doesn't depend on that staying true. /ping is the one route that
       # answers without the API key. Verified in the image.
@@ -67,6 +67,6 @@ services:
 
 networks:
   # The shared edge network — owned and created by the caddy slice, which
-  # must be deployed once before this stack. See caddy/README.md.
+  # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

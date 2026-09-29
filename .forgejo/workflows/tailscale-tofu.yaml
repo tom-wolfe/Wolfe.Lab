@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [tailscale/tofu/**, .forgejo/workflows/tailscale-tofu.yaml]
+    paths: [network/tailscale/tofu/**, .forgejo/workflows/tailscale-tofu.yaml]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: tailscale/tofu
+      - working-directory: network/tailscale/tofu
         run: lab check
 
   deploy:
@@ -28,5 +28,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: tailscale/tofu
+      - working-directory: network/tailscale/tofu
         run: lab deploy --auto-approve

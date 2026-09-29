@@ -4,6 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.72.0] - 2026-09-30
+
+### Changed
+
+- **`network/` is the fifth area** (ROADMAP #12): caddy, dns and
+  tailscale moved under it, as `network/caddy`, `network/dns` and
+  `network/tailscale`. Release names, tofu state keys, workflow names and
+  schedules are unchanged, so nothing on a node moves, no state migrates
+  and no required status changes; caddy's own routes need no rename, as
+  the front door has no snippet of its own.
+
 ## [0.71.0] - 2026-09-30
 
 ### Changed

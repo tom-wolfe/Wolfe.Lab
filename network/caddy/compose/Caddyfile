@@ -4,7 +4,7 @@
 #
 # Routes do NOT live in this file. A component that wants a hostname
 # drops a caddy.caddyfile beside its compose file — a named host matcher
-# plus a handle block — and the caddy/routes component gathers every one
+# plus a handle block — and the network/caddy/routes component gathers every one
 # of them into its own release, which the import glob below reads.
 # Adding a service never edits this component. See README.md for the
 # snippet shape.
@@ -17,7 +17,7 @@
 # declares it; the two must agree).
 #
 # Certificates do NOT live here either: caddy is a pure proxy. The
-# caddy/certs component obtains and renews ONE cert with the wildcard SAN
+# network/caddy/certs component obtains and renews ONE cert with the wildcard SAN
 # via lego + DNS-01 and reloads caddy; this file just loads the result
 # from the read-only /certs mount. One wildcard cert on purpose — per-name
 # certs would list every internal hostname in public Certificate

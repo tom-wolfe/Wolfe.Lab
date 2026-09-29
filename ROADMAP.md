@@ -94,7 +94,7 @@ the next thing built (#11) should be built where it will stay.
    Published, then pinned.~~ Done (0.55.0).
 2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
    into it from here.~~ Done (0.57.0).
-3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *`media/` (0.68.0), `personal/` (0.69.0) and `ai/` (0.71.0) done.*
+3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *Done: `media/` (0.68.0), `personal/` (0.69.0), `ai/` (0.71.0), `network/` (0.72.0).*
 4. `platform/` last — Forgejo and chezmoi.
 
 ### 11. Observability — OpenTelemetry into Grafana
@@ -499,7 +499,7 @@ homed nowhere: the runner registration template reads Forgejo's
 `ROOT_URL` out of `forgejo/compose/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
-(`caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
+(`network/caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
 by the Linux move (#2). Hardcoding one slice's fact into another is the
 thing to refuse; a consumer deriving it from the owning slice's files
 is only a consumer's guess at a format that isn't its own.
@@ -830,14 +830,14 @@ Today nodes address each other by MagicDNS name
 (`<host>.tailf823b8.ts.net`) — no IPs in the repo, but the tailnet suffix
 recurs and node-to-node traffic rides the tailnet even on the LAN. Local
 names under `*.lab`, with Tailscale split DNS pointing the `lab` domain
-at the Pi (in `tailscale/tofu`), are what replaces that.
+at the Pi (in `network/tailscale/tofu`), are what replaces that.
 
 It ran on the old Pi until it broke (probably SD card wear; this one
 boots from NVMe). The
 second Pi is the obvious home for it: DNS wants port 53 and real host
 networking, which is exactly what macOS cannot give a container.
 
-The argument is not ad-blocking, though. `caddy/README.md` already concedes
+The argument is not ad-blocking, though. `network/caddy/README.md` already concedes
 the weakness: *"The lab must keep working with the internet down; DNS for
 `*.twolfe.dev` lives on Netlify's nameservers and resolves only while
 the internet is up."* Local DNS records on a Pi-hole would make lab names
@@ -974,7 +974,7 @@ anyway. But that is the wrong axis. HA's native IaC is **YAML in git**:
 automations, scripts, scenes, templates and dashboards are all files. Only
 integration config entries (`.storage/`, holding OAuth tokens and
 discovered devices) are UI-managed — and that is exactly the split this
-repo already runs everywhere else, where `caddy/Caddyfile` is code and
+repo already runs everywhere else, where `network/caddy/compose/Caddyfile` is code and
 the Netlify token is vaulted credential state. The decisions are declarable; only
 the credentials aren't. That makes HA *better* on this axis than beszel,
 whose alert thresholds have no file representation at all.

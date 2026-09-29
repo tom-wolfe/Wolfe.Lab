@@ -10,12 +10,12 @@ flow here — like chezmoi, this slice's artifact is host configuration
 Three things already written down wait on it:
 
 - the neat public names (`jellyfin.twolfe.dev`) point at a Tailscale IP —
-  the edge/DNS design in `caddy/README.md`;
+  the edge/DNS design in `network/caddy/README.md`;
 - forgejo's portless clone URL waits on a dedicated IP with a free port
   22 (`forgejo/compose/compose.yaml` records the decision);
 - `100.64.0.0/10` isn't RFC1918, so the router's DNS-rebind filter has
   no objection to the `*.ts` names — they need no workaround at all.
-  (The `*.lab` workaround in `caddy/README.md` stays: those names still
+  (The `*.lab` workaround in `network/caddy/README.md` stays: those names still
   resolve to RFC1918 space, by design — see below.)
 
 ## Decisions
@@ -61,7 +61,7 @@ verbatim, comments included. It says four things:
   nobody is logged in to vouch for it. Tagged devices don't expire their
   node key, and `tofu/devices.tf` declares that rather than relying on
   the default — a server whose key silently expires drops off the tailnet
-  with nothing to notice, and `caddy/tofu` and `forgejo/tofu` carry
+  with nothing to notice, and `network/caddy/tofu` and `forgejo/tofu` carry
   tailnet addresses as record targets.
 - **`tag:hybrid`** on the Studio (`hybrids`): a workstation that also
   serves while it is on (`README.md`, "Nodes"). Tagged for the same reasons as a

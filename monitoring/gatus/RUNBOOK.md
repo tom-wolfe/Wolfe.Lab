@@ -10,7 +10,7 @@ reasons are in `README.md`.
 2. **Bring the container up**: the `gatus compose` workflow on the merge, or
    `lab deploy` from the slice in a checkout on the Pi.
 3. **Re-issue the certificate** so it carries `status.twolfe.dev` (and
-   `code.twolfe.dev`, added in the same change) — `caddy/README.md`
+   `code.twolfe.dev`, added in the same change) — `network/caddy/README.md`
    "Neat names", step 4. At the desk. Until then the `.lab` and `.ts`
    names work and the neat name doesn't.
 4. **Reload caddy's routes** — the `caddy routes` workflow (it fires on any `caddy.caddyfile` change) does

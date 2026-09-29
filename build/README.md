@@ -30,15 +30,15 @@ to be quiet while it is taken, and what a restore must bring back),
 the node services that used to live in chezmoi — deployed to each node by
 its own runner with `lab deploy --node <name>`). Two slices with the same shape share a
 workflow and differ only in what they declare. What only one slice does
-is a component of its own with a workflow of its own — `caddy/certs`,
-`caddy/routes`, `forgejo/runners`, `garage/layout`, `personal/immich/import`,
+is a component of its own with a workflow of its own — `network/caddy/certs`,
+`network/caddy/routes`, `forgejo/runners`, `garage/layout`, `personal/immich/import`,
 `monitoring/gatus/health` — named for the slice and the thing, so a `ritten.json`
 reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each
 workflow lists it for itself.
 
 A job's name has to read from inside the component it runs in, because
-that is all the context there is: `renew` in `caddy/certs/`, `register`
+that is all the context there is: `renew` in `network/caddy/certs/`, `register`
 in `forgejo/runners/`, `init` in `garage/layout/`, `verify` in
 `restic/repositories/`. One intent gets one verb, too: making a node
 match its component is `deploy` whether the stack is containers, a
@@ -55,7 +55,7 @@ there with its `secrets.env` resolved into the environment of that one
 checkout, which is right for the check and wrong for the deploy; the
 one step that differs is owned here, the rest are a `using`.
 
-`caddy/routes` is the one component that reads other components, and
+`network/caddy/routes` is the one component that reads other components, and
 deliberately: it gathers every `caddy.caddyfile` in the checkout into a
 release of its own that the door's Caddyfile imports, so adding a
 service never edits the front door, and a route added in the same push

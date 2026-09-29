@@ -46,7 +46,7 @@ and no GUI, so it is the same idea with different mechanics. In order:
    services (the runners, the Beszel agent) start at boot with nobody
    logged in.
 3. **Tailscale**, the native Linux client: `tailscale up`, then add the
-   node to `servers` in `tailscale/tofu/variables.tf` (a normal PR) — that
+   node to `servers` in `network/tailscale/tofu/variables.tf` (a normal PR) — that
    tags it and disables its key expiry.
 4. **The chezmoi source's deploy key**: `ssh-keygen -t ed25519 -f
    ~/.ssh/forgejo_deploy`, and the public half as a read-only deploy key

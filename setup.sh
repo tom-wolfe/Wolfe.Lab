@@ -21,9 +21,9 @@ lab() {
   (cd "$repo/$component" && dotnet run --project "$repo/build/src/Wolfe.Lab.Build" -- "$@" --auto-approve ${extra[@]+"${extra[@]}"})
 }
 
-lab caddy/certs renew
-lab caddy/compose deploy
-lab caddy/routes deploy
+lab network/caddy/certs renew
+lab network/caddy/compose deploy
+lab network/caddy/routes deploy
 lab garage/compose deploy
 lab garage/layout init
 lab forgejo/compose deploy

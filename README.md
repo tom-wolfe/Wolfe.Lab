@@ -13,7 +13,7 @@ its slices sit at the root.
 
 | Path                               | Purpose                                                                                                                                                                                                                                                               |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[<area>/]<name>/`                 | one slice per thing the lab runs, under its area once that area has moved (`monitoring/`, `media/`, `personal/` and `ai/` so far): a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
+| `[<area>/]<name>/`                 | one slice per thing the lab runs, under its area once that area has moved (every area but `platform/` so far): a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
 | `chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
 | `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: one workflow per component shape, run from the component's directory                                                                                                    |
 | `setup.sh`                         | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence)                                                                                                                                                                     |
@@ -35,7 +35,7 @@ its slices sit at the root.
   today the upper tier of models behind `ai.twolfe.dev`
   (`ai/ollama/README.md`, "The Studio"). Its own tag, `tag:hybrid`, so the
   policy lets in the ports it serves and nothing else
-  (`tailscale/README.md`); a host runner holding no privacy grants, whose
+  (`network/tailscale/README.md`); a host runner holding no privacy grants, whose
   jobs queue while it sleeps (`forgejo/README.md`, "The Studio's
   runner"); a Beszel agent and a Gatus check that never alert. Nothing in
   the platform layer, nothing on the drives, and no job whose failure is

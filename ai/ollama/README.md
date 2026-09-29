@@ -81,7 +81,7 @@ What it does not need: the mini's drive, and so the mini's file-access
 grant. Its store is the default `~/.ollama/models` on the internal disk.
 It binds `0.0.0.0` like the mini's, for the same reason and with the same
 cost (above), and servers reach it on 11434 alone
-(`tailscale/tofu/policy.hujson`). Gatus asks it directly, without alerting:
+(`network/tailscale/tofu/policy.hujson`). Gatus asks it directly, without alerting:
 off is its normal state, and the check that pages is the front door's,
 which the mini keeps up.
 

@@ -31,7 +31,7 @@ endpoints:
 
   - name: proton mail inbound
     group: personal
-    # Can twolfe.dev RECEIVE mail: the primary MX from dns/tofu/records.tf,
+    # Can twolfe.dev RECEIVE mail: the primary MX from network/dns/tofu/records.tf,
     # answered with STARTTLS. This is the check that matters for a custom
     # domain — a working webmail says nothing about whether mail sent to
     # the domain is arriving. Half-hourly: an SMTP handshake is not a thing
