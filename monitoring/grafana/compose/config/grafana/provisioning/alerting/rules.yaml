@@ -1,0 +1,40 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: watchdog
+    folder: Lab
+    interval: 1m
+    rules:
+      # Always firing, so its notifications are a heartbeat.
+      - uid: watchdog
+        title: Watchdog
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: vector(1)
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        noDataState: Alerting
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: >-
+            Always firing: every notification pings healthchecks.io
+            (lab-grafana-watchdog). Silence there pages; this alert itself
+            is not a problem.

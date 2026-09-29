@@ -1,0 +1,4 @@
+@grafana host grafana.twolfe.dev
+handle @grafana {
+	reverse_proxy grafana:3000
+}

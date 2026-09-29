@@ -224,7 +224,9 @@ lab's pins.
 **In order.** After #12's `monitoring/` move:
 
 1. The backend on the mini and the mini's collector; the watchdog
-   check; Gatus watching Grafana. Then a look at the mini's memory.
+   check; Gatus watching Grafana. Then a look at the mini's memory. *The backend, the
+   watchdog and Gatus's check shipped in 0.58.0; the collector waits on
+   agents that carry files.*
 2. The mail watcher instrumented — the bottleneck question answered.
 3. Collectors on the Pi and the Studio, forwarding; container and
    host-process logs from every node.

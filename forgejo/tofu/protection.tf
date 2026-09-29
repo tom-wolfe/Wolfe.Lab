@@ -33,6 +33,7 @@ resource "forgejo_branch_protection" "main" {
     "forgejo compose / check*",
     "garage compose / check*",
     "gatus compose / check*",
+    "grafana compose / check*",
     "immich compose / check*",
     "jellyfin compose / check*",
     "paperless compose / check*",

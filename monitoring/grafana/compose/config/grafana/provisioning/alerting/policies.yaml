@@ -1,0 +1,15 @@
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: pushover
+    group_by: [grafana_folder, alertname]
+    routes:
+      # Re-sent every five minutes for as long as it fires, which is always:
+      # each re-send is a ping (rules.yaml).
+      - receiver: watchdog
+        object_matchers:
+          - [alertname, "=", Watchdog]
+        group_wait: 0s
+        group_interval: 1m
+        repeat_interval: 5m

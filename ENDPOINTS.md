@@ -22,6 +22,7 @@ fallback when the front door is down.
 | `https://jellyfin.twolfe.dev`    | Jellyfin                                | `jellyfin:8096`                               |
 | `https://s3.twolfe.dev`          | Garage S3 (path-style only)             | `garage:3900`                                 |
 | `https://beszel.twolfe.dev`      | Beszel monitoring hub                   | `beszel:8090`                                 |
+| `https://grafana.twolfe.dev`     | Grafana — logs, traces, metrics, alerts | `grafana:3000`                                |
 | `https://qbittorrent.twolfe.dev` | qBittorrent web UI                      | `gluetun:8080`                                |
 | `https://sonarr.twolfe.dev`      | Sonarr (TV renamer)                     | `sonarr:8989`                                 |
 | `https://radarr.twolfe.dev`      | Radarr (movie renamer)                  | `radarr:7878`                                 |
@@ -38,6 +39,9 @@ fallback when the front door is down.
 | `:80`   | Caddy — HTTP→HTTPS redirect                      | —                                                          | `caddy`                     |
 | `:443`  | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below)                               | `caddy`.                    |
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
+| `:3100` | Loki — push + query API (**loopback only**)     | none; only the mini's Alloy writes                        | `grafana`                   |
+| `:9090` | Prometheus — remote write, OTLP, query (**loopback only**) | none; only the mini's Alloy writes              | `grafana`                   |
+| `:14317`, `:14318` | Tempo — OTLP gRPC, HTTP (**loopback only**; `:4317`/`:4318` are Alloy's) | none; only the mini's Alloy writes | `grafana` |
 | `:3900` | Garage — S3 API                                  | 1P `garage-tofu-state-key` (per-bucket keys)               | `garage`                    |
 | `:3903` | Garage — admin API                               | 1P `garage-s3-admin-token`                                 | `garage`                    |
 | `:2283` | Immich — web, API and the phone app              | Immich accounts (1P `immich-admin`); API: 1P `immich-api-key`; `/api/server/ping` is unauthenticated | `immich`   |

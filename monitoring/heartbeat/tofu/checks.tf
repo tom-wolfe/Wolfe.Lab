@@ -57,3 +57,27 @@ resource "healthchecksio_check" "chezmoi_tick" {
     data.healthchecksio_channel.email.id,
   ]
 }
+
+resource "healthchecksio_check" "grafana_watchdog" {
+  name = "lab-grafana-watchdog"
+  desc = <<-EOT
+    Grafana's watchdog: an alert rule that always fires, whose every
+    notification pings this (monitoring/grafana/README.md). Silence means
+    Grafana's alerting stopped — the engine, Prometheus or the notifier —
+    or the mini did. Managed by monitoring/heartbeat/tofu — edits here are
+    reverted.
+  EOT
+
+  # Pinged every five minutes (the watchdog route's repeat interval), so
+  # a simple period rather than a schedule: two missed pings, and the grace
+  # after them, before it pages.
+  timeout = 600
+  grace   = 600
+
+  tags = ["lab", "grafana"]
+
+  channels = [
+    data.healthchecksio_channel.pushover.id,
+    data.healthchecksio_channel.email.id,
+  ]
+}

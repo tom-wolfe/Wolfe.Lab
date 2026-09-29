@@ -1,0 +1,34 @@
+# Retention and receivers are flags, in compose.yaml.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+otlp:
+  promote_resource_attributes:
+    - service.name
+    - host.name
+    - lab.area
+    - lab.service
+    - lab.component
+    - lab.role
+
+storage:
+  tsdb:
+    # A sleeping Studio's collector catches up when it wakes; its samples
+    # arrive late rather than never.
+    out_of_order_time_window: 1h
+
+# The stack watching itself. The lab's own targets come through Alloy.
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]
+  - job_name: tempo
+    static_configs:
+      - targets: ["tempo:3200"]
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]

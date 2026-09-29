@@ -82,6 +82,17 @@ endpoints:
     alerts:
       - type: pushover
 
+  - name: grafana
+    group: lab
+    url: https://grafana.twolfe.dev/api/health
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].database == ok"
+      - "[CERTIFICATE_EXPIRATION] > 336h"
+    alerts:
+      - type: pushover
+
   - name: qbittorrent
     group: lab
     url: https://qbittorrent.twolfe.dev/
