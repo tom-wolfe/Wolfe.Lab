@@ -20,7 +20,7 @@
     },
     "chezmoi": {
       "github": "twpayne/chezmoi",
-      "version": "2.72.2",
+      "version": "2.73.0",
       "checksums": "chezmoi_{version}_checksums.txt",
       "assets": {
         "darwin-arm64": "chezmoi_{version}_darwin_arm64.tar.gz",
