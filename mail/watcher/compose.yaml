@@ -14,6 +14,9 @@ services:
       Watcher__StatePath: /state/watermark.json
       Model__Endpoint: https://ai.twolfe.dev
       Model__Name: lab/background
+      # Telemetry, to the node's collector (monitoring/alloy), which adds the node's own labels.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4317
+      OTEL_RESOURCE_ATTRIBUTES: lab.area=personal,lab.service=mail,lab.component=watcher
       TZ: Europe/London
     healthcheck:
       test: ["CMD", "curl", "-sS", "--fail-with-body", "http://127.0.0.1:8080/health"]

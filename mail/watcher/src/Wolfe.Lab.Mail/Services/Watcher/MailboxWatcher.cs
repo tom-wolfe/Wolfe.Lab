@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -5,8 +6,10 @@ using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using Wolfe.Lab.Mail.Detection;
+using Wolfe.Lab.Mail.Diagnostics;
 using Wolfe.Lab.Mail.Invitations;
 using Wolfe.Lab.Mail.Mailbox;
+using Wolfe.Lab.Mail.Models;
 using Microsoft.Extensions.Options;
 using Wolfe.Lab.Mail.Services.Ai;
 
@@ -121,8 +124,26 @@ internal sealed class MailboxWatcher(
 
         foreach (var uid in arrived.OrderBy(id => id.Id))
         {
-            var message = await inbox.GetMessageAsync(uid, ct);
-            await Consider(message, ct);
+            // One trace per message: where its time went, and what came of it.
+            using var activity = MailTelemetry.Source.StartActivity("mail.message");
+            activity?.SetTag("mail.uid", uid.Id);
+            try
+            {
+                MimeMessage message;
+                using (MailTelemetry.Source.StartActivity("mail.fetch"))
+                {
+                    message = await inbox.GetMessageAsync(uid, ct);
+                }
+
+                var outcome = await Consider(message, ct);
+                activity?.SetTag(MailTelemetry.OutcomeTag, outcome);
+                MailTelemetry.Messages.Add(1, new KeyValuePair<string, object?>(MailTelemetry.OutcomeTag, outcome));
+            }
+            catch (Exception failure)
+            {
+                activity?.AddException(failure).SetStatus(ActivityStatusCode.Error, failure.Message);
+                throw;
+            }
 
             // After the send, not before: a crash between the two re-sends an invitation,
             // which is an annoyance, where the other order loses one silently.
@@ -133,33 +154,45 @@ internal sealed class MailboxWatcher(
         return watermark;
     }
 
-    private async Task Consider(MimeMessage message, CancellationToken ct)
+    /// <summary>
+    /// Acts on one message, and says what came of it (<see cref="MailTelemetry.Outcome"/>).
+    /// </summary>
+    private async Task<string> Consider(MimeMessage message, CancellationToken ct)
     {
         // Proton already offers to add an event that arrives as an invitation, so touching
         // these would only duplicate what the mail client does natively.
         if (message.BodyParts.Any(part => part.ContentType.IsMimeType("text", "calendar")))
         {
             log.LogDebug("{Subject} is already an invitation.", message.Subject);
-            return;
+            return MailTelemetry.Outcome.Invitation;
         }
 
-        var detected = StructuredEvents.Read(message.HtmlBody);
+        IReadOnlyList<DetectedEvent> detected;
+        using (MailTelemetry.Source.StartActivity("mail.structured"))
+        {
+            detected = StructuredEvents.Read(message.HtmlBody);
+        }
 
+        var outcome = MailTelemetry.Outcome.Structured;
         if (detected.Count == 0 && MessageText.Prose(message) is { Length: > 0 } text)
         {
+            // The model client records its own span beneath this message's.
             detected = await events.Detect(text, message.Date, ct);
+            outcome = MailTelemetry.Outcome.Model;
         }
 
         if (detected.Count == 0)
         {
             log.LogDebug("No event in {Subject}.", message.Subject);
-            return;
+            return MailTelemetry.Outcome.None;
         }
 
         for (var i = 0; i < detected.Count; i++)
         {
             await sender.Send(detected[i], message, i, ct);
         }
+
+        return outcome;
     }
 
     /// <summary>

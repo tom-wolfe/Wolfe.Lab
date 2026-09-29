@@ -130,6 +130,31 @@ off the source's `From`, `To` or `Reply-To`. A reply-shaped mail is one
 field away from answering the airline, and there is a test whose only job
 is to keep it that way.
 
+### What it reports
+
+Traces, metrics and logs, over OTLP to the node's collector
+(`monitoring/alloy`), under `service.name` `mail-watcher` and the lab's
+labels (ROADMAP.md #11). Each message read is one trace, `mail.message`,
+tagged with its UID and what came of it — `mail.outcome`: `invitation`
+(left to Proton), `structured`, `model` or `none` — with a span for each
+part of the work beneath it: fetching the message, reading its structured
+data, the model call, and each invitation sent with MailKit's SMTP
+spans inside it. The model call follows the generative AI conventions:
+which model, how long, and the tokens in and out — so a slow message says
+whether the time went on the model or on the mailbox.
+
+Nothing that reports carries what a message says: no subject, no sender,
+no prompt and no answer, only which message it was and what came of it.
+The logs are the exception they always were — an invitation's log line
+names the event and the subject it answered — and they now reach Loki as
+well as `docker logs`.
+
+Two counters for dashboards and alerts: `mail.messages` by outcome and
+`mail.invitations` by where the event was found; beside them the model
+client's `gen_ai.client.operation.duration` and
+`gen_ai.client.token.usage`, MailKit's own client metrics and the
+runtime's.
+
 ## Reachability
 
 No published ports and no route through the front door. Bridge binds

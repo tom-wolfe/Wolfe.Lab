@@ -1,4 +1,5 @@
 using MailKit.Net.Smtp;
+using Wolfe.Lab.Mail.Diagnostics;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using Wolfe.Lab.Mail.Services.Watcher;
@@ -15,6 +16,10 @@ internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, 
 {
     public async Task Send(DetectedEvent detected, MimeMessage source, int index, CancellationToken ct = default)
     {
+        var evidence = MailTelemetry.Tag(detected.Source);
+        using var activity = MailTelemetry.Source.StartActivity("mail.invite");
+        activity?.SetTag(MailTelemetry.SourceTag, evidence);
+
         var message = Compose(detected, source, options.Value.Recipient, DateTimeOffset.UtcNow, index);
 
         using var client = new SmtpClient();
@@ -27,6 +32,7 @@ internal sealed class InvitationSender(IOptions<MailboxWatcherOptions> options, 
         await client.AuthenticateAsync(options.Value.Username, options.Value.Password, ct);
         await client.SendAsync(message, ct);
         await client.DisconnectAsync(true, ct);
+        MailTelemetry.Invitations.Add(1, new KeyValuePair<string, object?>(MailTelemetry.SourceTag, evidence));
 
         log.LogInformation("Invited {Summary} at {Start:u} in reply to {Subject}", detected.Summary, detected.Start, source.Subject);
     }

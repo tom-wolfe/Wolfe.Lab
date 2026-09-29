@@ -82,7 +82,14 @@ see that email" is answerable:
 
 `lastUid` is the highest message it has finished with. A message with a
 lower UID has been dealt with — either an invitation was sent, or it
-found no event, and the logs say which.
+found no event, and its trace says which. In Grafana's Explore, on Tempo:
+
+    { resource.service.name = "mail-watcher" && name = "mail.message" }
+
+Each trace's `mail.outcome` is what came of the message, and its spans
+say where the time went: the fetch, the model call, the send. Add
+`&& span.mail.outcome = "none"` for the ones it found nothing in. The
+logs are in Loki under `{service_name="mail-watcher"}`.
 
 To make it re-read recent mail, stop the watcher, lower `lastUid`, start
 it again. To make it forget everything and resume from now, delete the
@@ -99,8 +106,10 @@ In the order worth checking:
     docker logs --tail 100 mail-watcher
 
 A message it skipped as "already an invitation" is Proton's to handle,
-not a fault. "No event in ..." means both tiers declined — for prose that
-is the model's answer, and the model is only as good as it is.
+not a fault; one where both tiers declined is `mail.outcome = "none"` on
+its trace (those two are debug-level logs, so the trace is where they
+show) — for prose that is the model's answer, and the model is only as
+good as it is.
 
 If nothing is logged at all, it is not seeing the mail: check the
 watermark has not run ahead, and that bridge is serving.

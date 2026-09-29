@@ -6,6 +6,7 @@ using Wolfe.Lab.Mail.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddTelemetry();
 builder.Services
     .AddMailboxWatcher()
     .AddChatClient()

@@ -1,8 +1,10 @@
 using System.ClientModel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI;
+using Wolfe.Lab.Mail.Diagnostics;
 using Wolfe.Lab.Mail.Invitations;
 using Wolfe.Lab.Mail.Services.Ai;
 using Wolfe.Lab.Mail.Services.Watcher;
@@ -61,10 +63,14 @@ internal static class ServiceCollectionExtensions
                     });
             });
 
-            services.AddSingleton<IChatClient>(provider =>
-                provider.GetRequiredService<OpenAIClient>()
-                    .GetChatClient(provider.GetRequiredService<IOptions<ModelOptions>>().Value.Name)
-                    .AsIChatClient());
+            services.AddSingleton<IChatClient>(provider => provider
+                .GetRequiredService<OpenAIClient>()
+                .GetChatClient(provider.GetRequiredService<IOptions<ModelOptions>>().Value.Name)
+                .AsIChatClient()
+                .AsBuilder()
+                .UseOpenTelemetry(provider.GetService<ILoggerFactory>(), MailTelemetry.Name)
+                .Build(provider)
+            );
 
             return services;
         }
