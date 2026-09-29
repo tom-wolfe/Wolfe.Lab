@@ -1,3 +1,5 @@
+using Wolfe.Lab.Build.Clients.Packages;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Clients.Secrets;
 using Wolfe.Lab.Build.Values;
@@ -11,13 +13,13 @@ namespace Wolfe.Lab.Build.Clients.Agents.Steps;
 /// An environment value that is a vault reference — <c>op://vault/item/field</c> — is resolved
 /// here, so a secret reaches the agent the way it reaches a container: through the deploy, never
 /// through a file in the repository. It lands in the unit, which is written for the owner alone.
-/// <c>${LAB_ROOT}</c> and <c>${LAB_DATA}</c> are expanded in every path, argument and variable
-/// first, so an agent can name its published artifacts wherever this node keeps them.
+/// <c>${LAB_ROOT}</c>, <c>${LAB_DATA}</c> and <c>${PACKAGE}</c> are expanded in every path, argument
+/// and variable first, so an agent can name its artifacts and its program wherever this node keeps them.
 /// </remarks>
 [Step("resolve agents", StepKind.Work)]
 internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvider secrets, WorkflowEnvironment environment, IWorkflowLog log)
 {
-    public async Task<StepResult<AgentPlan>> Run(CancellationToken ct = default)
+    public async Task<StepResult<AgentPlan>> Run(AgentPackages packages, CancellationToken ct = default)
     {
         if (declarations.Agents.Count == 0)
         {
@@ -30,7 +32,8 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
 
         foreach (var (name, declared) in declarations.Agents.OrderBy(agent => agent.Key, StringComparer.Ordinal))
         {
-            var settings = Expand(declared, roots);
+            var package = packages.Packages.GetValueOrDefault(name);
+            var settings = Expand(declared, roots, package?.Directory.AbsolutePath);
             if (AgentLabel.ForName(name) is not { } label)
             {
                 errors.Add(new Error($"'{name}' cannot name an agent: no dots, slashes or whitespace."));
@@ -43,9 +46,13 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
                 continue;
             }
 
-            if (!File.Exists(program.Value))
+            // A rehearsal installs nothing, so a package it would install is not there to find.
+            var rehearsed = package?.Outcome == PackageOutcome.WouldInstall;
+            if (!rehearsed && !File.Exists(program.Value))
             {
-                errors.Add(new Error($"Agent '{name}' runs {program.Value}, which is not on this node."));
+                errors.Add(new Error(package is null
+                    ? $"Agent '{name}' runs {program.Value}, which is not on this node."
+                    : $"Agent '{name}' runs {program.Value}, which its package {package.Package.Repository} {package.Package.Tag} does not contain."));
                 continue;
             }
 
@@ -56,7 +63,7 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
                 continue;
             }
 
-            if (settings.ToDefinition(label, File.GetLastWriteTimeUtc(program.Value)) is not { } definition)
+            if (settings.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : File.GetLastWriteTimeUtc(program.Value)) is not { } definition)
             {
                 errors.Add(new Error($"Agent '{name}' is incomplete."));
                 continue;
@@ -77,17 +84,25 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
     /// <summary>
     /// The settings with the lab's roots written in.
     /// </summary>
-    internal static AgentSettings Expand(AgentSettings settings, LabRoots roots) => settings with
+    internal static AgentSettings Expand(AgentSettings settings, LabRoots roots, string? package = null)
     {
-        Program = Expand(settings.Program, roots),
-        Arguments = [.. settings.Arguments.Select(roots.Expand)],
-        Environment = settings.Environment.ToDictionary(variable => variable.Key, variable => roots.Expand(variable.Value), StringComparer.Ordinal),
-        WorkingDirectory = Expand(settings.WorkingDirectory, roots),
-        Log = Expand(settings.Log, roots)
-    };
+        string Value(string value) => roots.Expand(package is null ? value : value.Replace(PackageVariable, package, StringComparison.Ordinal));
+        HostPath? Path(HostPath? path) => path is { } value ? HostPath.From(Value(value.Value)) : null;
 
-    private static HostPath? Expand(HostPath? path, LabRoots roots) =>
-        path is { } value ? HostPath.From(roots.Expand(value.Value)) : null;
+        return settings with
+        {
+            Program = Path(settings.Program),
+            Arguments = [.. settings.Arguments.Select(Value)],
+            Environment = settings.Environment.ToDictionary(variable => variable.Key, variable => Value(variable.Value), StringComparer.Ordinal),
+            WorkingDirectory = Path(settings.WorkingDirectory),
+            Log = Path(settings.Log)
+        };
+    }
+
+    /// <summary>
+    /// The agent's installed package, in any of its settings.
+    /// </summary>
+    internal const string PackageVariable = "${PACKAGE}";
 
     private async Task<IReadOnlyDictionary<string, string>> Resolve(IReadOnlyDictionary<string, string> environment, CancellationToken ct)
     {

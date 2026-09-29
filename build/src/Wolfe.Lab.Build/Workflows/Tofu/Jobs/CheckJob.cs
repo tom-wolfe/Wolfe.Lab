@@ -1,6 +1,8 @@
 using Ritten.OpenTofu;
 using Ritten.OpenTofu.Steps;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
+using Wolfe.Lab.Build.Clients.Packages;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Workflows.Tofu.Models;
 using Wolfe.Lab.Build.Workflows.Tofu.Steps;
 
@@ -18,6 +20,7 @@ internal sealed class CheckJob : LabJob<TofuSettings>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<EnsureTools>(),
         Step.FromType<ResolveEnvironment>(),
         Step.FromType<TofuFormatCheck>(),
         Step.FromType<TofuInit>(),
@@ -29,6 +32,6 @@ internal sealed class CheckJob : LabJob<TofuSettings>
     protected override void Configure(IWorkflowBuilder builder, TofuSettings settings)
     {
         base.Configure(builder, settings);
-        builder.AddBuildReporting().AddOpenTofu();
+        builder.AddBuildReporting().AddOpenTofu().AddTools("tofu");
     }
 }

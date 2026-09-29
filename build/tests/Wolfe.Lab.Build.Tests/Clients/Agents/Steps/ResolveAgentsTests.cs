@@ -1,5 +1,7 @@
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Clients.Agents.Steps;
+using Wolfe.Lab.Build.Clients.Packages;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
 using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Agents.Steps;
@@ -28,8 +30,14 @@ public class ResolveAgentsTests : IDisposable
     }
 
     private Task<StepResult<AgentPlan>> Resolve(params (string Name, AgentSettings Settings)[] agents) =>
+        Resolve(new Dictionary<string, InstalledPackage>(), agents);
+
+    private Task<StepResult<AgentPlan>> Resolve(Dictionary<string, InstalledPackage> packages, params (string Name, AgentSettings Settings)[] agents) =>
         new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Settings)), _secrets, _environment, Substitute.For<IWorkflowLog>())
-            .Run(TestContext.Current.CancellationToken);
+            .Run(new AgentPackages(packages), TestContext.Current.CancellationToken);
+
+    private static InstalledPackage Alloy(string directory, PackageOutcome outcome) =>
+        new(new Package("alloy", "grafana/alloy", "1.20.1", "v1.20.1", "alloy-darwin-arm64.zip", "SHA256SUMS"), new Ritten.Engine.FileSystem.PhysicalDirectory(directory), outcome);
 
     [Fact]
     public async Task Run_ResolvesWhatTheNodeCanActuallyRun()
@@ -176,5 +184,27 @@ public class ResolveAgentsTests : IDisposable
         agent.Environment["CONFIG"].ShouldBe("/lab/root/alloy");
         // Only the lab's own two are expanded; anything else reaches the process as written.
         agent.Environment["KEPT"].ShouldBe("${HOME}/as-written");
+    }
+
+    [Fact]
+    public async Task Run_RunsTheProgramOutOfItsPackage()
+    {
+        var program = Program("alloy-darwin-arm64");
+
+        var result = await Resolve(new Dictionary<string, InstalledPackage> { ["alloy"] = Alloy(_node.FullName, PackageOutcome.Installed) },
+            ("alloy", new AgentSettings { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64"), Arguments = ["run", "${PACKAGE}/x"] }));
+
+        var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
+        agent.Program.Value.ShouldBe(program);
+        agent.Arguments.ShouldBe(["run", $"{_node.FullName}/x"]);
+    }
+
+    [Fact]
+    public async Task Run_RehearsesAnAgentWhosePackageIsNotInstalledYet()
+    {
+        var result = await Resolve(new Dictionary<string, InstalledPackage> { ["alloy"] = Alloy("/nowhere/alloy/1.20.1", PackageOutcome.WouldInstall) },
+            ("alloy", new AgentSettings { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }));
+
+        result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem().Program.Value.ShouldBe("/nowhere/alloy/1.20.1/alloy-darwin-arm64");
     }
 }

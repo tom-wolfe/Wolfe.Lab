@@ -106,6 +106,49 @@ container whose definition changed, never one whose bind-mounted file did.
 Both read the state of the node rather than of the job, so a restart that
 failed is still owed on the next deploy.
 
+### Packages and tools
+
+The lab installs what it runs, from GitHub releases, at versions the
+repository pins — rather than whatever a node's Homebrew last upgraded
+to. One installer, two kinds of declaration:
+
+- **An agent's `package`**, in its `ritten.json`: the release its program
+  comes from, on that node. The deploy installs it before resolving the
+  agent, and `${PACKAGE}` names its directory:
+
+  ```json
+  "alloy": {
+    "package": { "github": "grafana/alloy", "version": "1.20.1",
+                 "asset": "alloy-darwin-arm64.zip", "checksums": "SHA256SUMS" },
+    "program": "${PACKAGE}/alloy-darwin-arm64"
+  }
+  ```
+
+- **A tool**, in `.config/lab-tools.json`: a program jobs run by name —
+  `tofu`, `restic` — with an asset per platform (`darwin-arm64`,
+  `linux-arm64`), since any node may run it. A job that runs one lists
+  `EnsureTools` first; it installs the pinned version and puts it first on
+  the path of `lab` itself, so every command it starts runs that one. A
+  tool the manifest does not pin is the node's own.
+
+A package is downloaded, checked against the checksum file the release
+publishes beside it (`checksums`), and unpacked — zip, tar.gz or a single
+compressed or bare file — into `${LAB_ROOT}/packages/<name>/<version>`,
+beside the directory and renamed into place, with a marker written last,
+so a version that exists was installed whole. Versions sit side by side:
+a bump installs a new directory, which changes the agent's unit and
+restarts it, and rolling back is reverting the bump. `{version}` in any
+name is the version; the tag is `v{version}` unless `tag` says otherwise.
+Whatever the lab runs out of a package is made executable, since not
+every release ships it so. A rehearsal installs nothing, but checks the
+release has both files.
+
+Only the version is pinned. The checksum is the release's own, read over
+the same TLS as the asset, which proves the download is whole rather than
+who made it — and is what keeps one value per package for Renovate to
+move (`github`, then `version`, in that order: its rule reads them as a
+pair).
+
 ### Two roots
 
 Every node keeps the lab in two places, which chezmoi sets for the host

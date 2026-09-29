@@ -30,6 +30,22 @@
     },
   ],
 
+  customManagers: [
+    {
+      // What the lab installs from GitHub releases (build/README.md,
+      // "Packages and tools"): an agent's `package` in its ritten.json, and
+      // every tool in .config/lab-tools.json. Only the version is pinned —
+      // the checksum is read from the release — so this is all that moves.
+      customType: "regex",
+      managerFilePatterns: ["/(^|/)ritten\\.json$/", "/^\\.config/lab-tools\\.json$/"],
+      matchStrings: [
+        "\"github\":\\s*\"(?<depName>[^\"]+)\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\"",
+      ],
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v?(?<version>.+)$",
+    },
+  ],
+
   packageRules: [
     {
       matchPackageNames: ["/^wolfe\\.lab\\.build$/i"],

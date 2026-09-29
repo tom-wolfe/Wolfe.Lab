@@ -1,9 +1,11 @@
-using Wolfe.Lab.Build.Clients.Releases.Steps;
-using Wolfe.Lab.Build.Clients.Releases;
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Clients.Agents.Steps;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
+using Wolfe.Lab.Build.Clients.Packages;
+using Wolfe.Lab.Build.Clients.Packages.Steps;
+using Wolfe.Lab.Build.Clients.Releases;
+using Wolfe.Lab.Build.Clients.Releases.Steps;
 using Wolfe.Lab.Build.Clients.Volumes;
 using Wolfe.Lab.Build.Clients.Volumes.Steps;
 using Wolfe.Lab.Build.Workflows.Agents.Models;
@@ -24,6 +26,7 @@ internal sealed class DeployJob : LabJob<AgentsSettings>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveArtifacts>(),
@@ -43,7 +46,7 @@ internal sealed class DeployJob : LabJob<AgentsSettings>
     {
         base.Configure(builder, settings);
         var node = settings.Nodes.GetValueOrDefault(args.Get(Node)!) ?? new NodeAgentsSettings();
-        builder.AddAgents().AddVolumes(node.Volumes).AddArtifacts(settings.Artifacts);
+        builder.AddPackages().AddAgents().AddVolumes(node.Volumes).AddArtifacts(settings.Artifacts);
         builder.Services.AddSingleton(new AgentDeclarations(node.Agents));
     }
 }

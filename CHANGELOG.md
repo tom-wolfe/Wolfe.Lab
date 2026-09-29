@@ -4,6 +4,21 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.61.0] - 2026-09-29
+
+### Added
+
+- **Packages and tools** (`build/README.md`): the lab installs what it
+  runs from GitHub releases, at pinned versions, checked against each
+  release's own checksums. An agent declares its `package` in
+  `ritten.json` (`${PACKAGE}` is its directory); a job's tools —
+  `tofu`, `restic` — are pinned in `.config/lab-tools.json`, installed
+  before the job runs them, and put first on its path. Renovate moves
+  both. Nothing is pinned yet: agents and tools move over in their own
+  pull requests.
+- **Paths may start from `${LAB_ROOT}`, `${LAB_DATA}` or `${PACKAGE}`**
+  wherever `ritten.json` takes one.
+
 ## [0.60.0] - 2026-09-29
 
 ### Fixed
