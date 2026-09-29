@@ -70,7 +70,7 @@ and descriptions for a dashboard or a panel, a summary of a dashboard's
 changes on save. It answers with the lab's own models rather than a
 vendor's — `ai.twolfe.dev`, as a "custom" OpenAI-compatible provider with
 no key, and both of the app's sizes (`base` and `large`) mapped to the
-`lab/interactive` role (`ollama/README.md`, "Roles"): someone is waiting
+`lab/interactive` role (`ai/ollama/README.md`, "Roles"): someone is waiting
 on the answer. So it is the Studio's instruct model by day and the mini's
 smaller one while the Studio sleeps. The self-hosted edition gets the app,
 not Grafana Cloud's Assistant — the chat that writes queries — so this is

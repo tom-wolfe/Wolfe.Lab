@@ -23,7 +23,7 @@ handle @ai {
 	# (lb_try_duration). Nothing that calls this notices either way:
 	# the hybrid rule (README.md, "Nodes"): the Studio may serve but nothing may depend on it.
 	# That only holds while the Studio holds every model the mini does — see
-	# ollama/README.md "The Studio".
+	# ai/ollama/README.md "The Studio".
 	#
 	# The Studio by its MagicDNS name, over the tailnet: tag:server may reach
 	# tag:hybrid on 11434 and nothing else (tailscale/tofu/policy.hujson).

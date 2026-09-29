@@ -4,7 +4,7 @@ using Wolfe.Lab.Build.Values;
 namespace Wolfe.Lab.Build.Workflows.Ollama.Models;
 
 /// <summary>
-/// The shape of <c>ollama/ritten.json</c>.
+/// The shape of <c>ai/ollama/ritten.json</c>.
 /// </summary>
 public sealed record OllamaOptions : WorkflowSettings
 {

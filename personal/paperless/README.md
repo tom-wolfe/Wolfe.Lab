@@ -72,7 +72,7 @@ configuration in the UI rather than anything here. Not configured.
 ## AI
 
 Paperless's optional AI features, against the lab's own model endpoint
-(`ollama/`): nothing leaves the house.
+(`ai/ollama/`): nothing leaves the house.
 
 - **Suggestions** — title, tags, correspondent, document type, storage
   path and dates, from the "Suggest" control on a document, and
@@ -85,7 +85,7 @@ Paperless's optional AI features, against the lab's own model endpoint
   both of the above in similar documents already filed. It lives in
   `data/`, so the backup holds it.
 
-It asks for roles, not models (`ollama/README.md`, "Roles"):
+It asks for roles, not models (`ai/ollama/README.md`, "Roles"):
 `lab/interactive`, because everything here is a person waiting, and
 `lab/embedding`. By day that is the Studio's model, overnight the
 mini's; with neither, suggestions and chat fail and nothing else does.

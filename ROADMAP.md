@@ -94,7 +94,7 @@ the next thing built (#11) should be built where it will stay.
    Published, then pinned.~~ Done (0.55.0).
 2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
    into it from here.~~ Done (0.57.0).
-3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *`media/` (0.68.0) and `personal/` (0.69.0) done.*
+3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *`media/` (0.68.0), `personal/` (0.69.0) and `ai/` (0.71.0) done.*
 4. `platform/` last — Forgejo and chezmoi.
 
 ### 11. Observability — OpenTelemetry into Grafana
@@ -748,7 +748,7 @@ and the index can be a nightly job on the mini like everything else
 scheduled. `lab/interactive` is the Studio's model while it is on — a
 person is waiting, so a question may use most of the machine for as
 long as it takes — and the mini's while it sleeps: worse answers, not
-none (`ollama/README.md`, "Roles"). Paperless already runs the same
+none (`ai/ollama/README.md`, "Roles"). Paperless already runs the same
 shape over its documents, a nightly embedding index behind a chat
 (`personal/paperless/README.md`, "AI"); worth learning from before building.
 

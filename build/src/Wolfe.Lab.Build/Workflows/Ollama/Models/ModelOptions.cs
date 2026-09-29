@@ -3,7 +3,7 @@ using Wolfe.Lab.Build.Values;
 namespace Wolfe.Lab.Build.Workflows.Ollama.Models;
 
 /// <summary>
-/// The <c>models</c> section of <c>ollama/ritten.json</c>: where models live, which ones the
+/// The <c>models</c> section of <c>ai/ollama/ritten.json</c>: where models live, which ones the
 /// node should have, and which of them fills each role.
 /// </summary>
 public sealed record ModelOptions

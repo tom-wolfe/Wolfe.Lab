@@ -111,7 +111,7 @@ workflow:
    it. Nothing else in the merge is order-sensitive once step 1 is done.
 
 4. **Pull a model**, before Gatus's `ai` check trips — three failures at
-   a 2-minute interval is about six minutes. See `ollama/RUNBOOK.md`.
+   a 2-minute interval is about six minutes. See `ai/ollama/RUNBOOK.md`.
 
 5. **Check.** Every name in `ENDPOINTS.md`, and the `lab` group in Gatus
    going green.
