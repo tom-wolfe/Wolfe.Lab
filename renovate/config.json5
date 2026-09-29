@@ -44,6 +44,15 @@
       datasourceTemplate: "github-releases",
       extractVersionTemplate: "^v?(?<version>.+)$",
     },
+    {
+      // Grafana's plugins, pinned where the container installs them.
+      customType: "regex",
+      managerFilePatterns: ["/^monitoring/grafana/compose/compose\\.yaml$/"],
+      matchStrings: ["grafana-llm-app@(?<currentValue>[0-9][^\\s,]*)"],
+      depNameTemplate: "grafana/grafana-llm-app",
+      datasourceTemplate: "github-tags",
+      extractVersionTemplate: "^v?(?<version>.+)$",
+    },
   ],
 
   packageRules: [

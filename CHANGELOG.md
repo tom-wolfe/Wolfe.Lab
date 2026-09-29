@@ -4,6 +4,16 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.70.0] - 2026-09-30
+
+### Added
+
+- **Grafana's AI features answer with the lab's own models.** The LLM
+  app (`grafana-llm-app`, pinned and bumped by Renovate) is installed at
+  start and provisioned to use `ai.twolfe.dev` as an OpenAI-compatible
+  provider, both of its sizes on the `lab/interactive` role. Grafana's
+  memory limit rises from 512 MB to 768 MB to make room for its backend.
+
 ## [0.69.0] - 2026-09-29
 
 ### Changed

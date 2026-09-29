@@ -20,6 +20,7 @@ services:
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_SYNC: grafana-llm-app@1.1.0
       PUSHOVER_APP_TOKEN:
       PUSHOVER_USER_KEY:
       HEALTHCHECKS_PING_KEY:
@@ -36,7 +37,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512m
+          memory: 768m
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 60s
