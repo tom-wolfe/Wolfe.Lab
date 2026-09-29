@@ -21,10 +21,10 @@ structure only, and pings nothing.
 1. Create a Backblaze B2 account. Account → Application Keys → note the
    **master** key into 1P item `b2-master-key`; create the `restic-repo`
    Password item (generated, letters+digits).
-2. Merge this slice; let the tick ship it. `brew "restic"` is in the
-   Brewfile, so the chezmoi workflow (`00-install-packages.sh` on apply) installs it on every machine.
-3. Apply the tofu root (from the mini or via `tofu-restic.yaml` once the
-   flows land): creates the bucket, the scoped key, the check. Then fill
+2. Merge this slice. The jobs install the restic they run, pinned in
+   `.config/lab-tools.json`.
+3. Apply the tofu root (via `tofu-restic.yaml`, or `lab deploy` from
+   `restic/tofu`, which installs the pinned `tofu` first): creates the bucket, the scoped key, the check. Then fill
    the `restic-b2` item: `username`/`credential` from
    `op run --env-file build/tofu-state.env --env-file restic/tofu/secrets.env -- tofu -chdir=restic/tofu output -raw restic_application_key_id`
    (and `…_key`), `repository` from the bucket name plus the S3 endpoint

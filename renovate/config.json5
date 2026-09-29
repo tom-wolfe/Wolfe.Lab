@@ -51,9 +51,6 @@
       matchPackageNames: ["/^wolfe\\.lab\\.build$/i"],
       registryUrls: ["https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"],
       groupName: "lab CLI pin",
-      prBodyNotes: [
-        "Before merging: install the published package into a scratch path and dry-run a real component against it (`build/README.md`, \"Shipping\"). A version that only installs has not been tested.",
-      ],
     },
 
     // Built on the node from source, not pulled: nothing to look up.

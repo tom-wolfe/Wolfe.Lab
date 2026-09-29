@@ -4,6 +4,25 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.63.0] - 2026-09-29
+
+### Changed
+
+- **OpenTofu and restic are pinned** in `.config/lab-tools.json` (1.12.6
+  and 0.19.1, what the nodes already ran): every tofu, backup and restic
+  job installs its version and runs it — on a laptop running `lab check`
+  too, so a local check matches the pull request's — and Renovate moves
+  them. Homebrew's copies and the Pi's chezmoi download of restic are
+  gone.
+- **Releases are checked by tests, not by hand.** The CLI's tests build
+  every workflow the lab runs, as `lab` does at start, and run the
+  installer against the real rsync; the manual smoke test on each pin
+  is gone. The CI image gains `rsync` and `bzip2` to run them.
+- **Placement is recorded as configuration** (ROADMAP #6): a component
+  declared once with where it runs beside it, torn down wherever it is no
+  longer placed, so moving a service is changing its placement — with a
+  staged migration for one that keeps state.
+
 ## [0.62.0] - 2026-09-29
 
 ### Added

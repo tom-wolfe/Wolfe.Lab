@@ -286,6 +286,11 @@ already has:
 - **A component declares where it runs**, in its own `ritten.json`, so
   "what runs on this node" is a question the repo answers; the per-slice
   deploy workflows go, and each slice owns everything about itself.
+- **What is no longer placed is torn down.** The agent remembers what it
+  deployed on its node; a component placed elsewhere, or deleted, is
+  stopped, its unit retired, its artifacts removed and its unused
+  package versions pruned. Its state under `${LAB_DATA}` is kept — the
+  old copy is the safety net until the new node's first backup lands.
 - **Cross-slice config is assembled, not gathered**: the agent reads
   every slice's routes at the commit, renders caddy's config once, and
   reloads only when it changed. Checks, scrape targets and schedules the
@@ -309,6 +314,27 @@ already has:
 - **It reaches Forgejo directly** — loopback or the tailnet, never
   through caddy — so it never depends on anything it deploys: a broken
   route cannot cut it off from the fix.
+
+**Placement is configuration, not structure.** Today a component is
+declared once per node — the Beszel agent three times over, the same
+package and program in each — because a push deploy runs on one node's
+runner and each runner needs its own entry. Pulled, a component is
+declared once, and where it runs is one setting beside it: a list of
+nodes, or a rule ("every server", "every node"). What really differs by
+node is an override, and most of what differs today goes away without
+one — a package's asset is chosen by platform (`assets`, as the tools
+manifest does), and a node's facts are variables (`${LAB_HOST}`; the
+node a component's dependency is placed on) rather than addresses
+written into each entry.
+
+**Moving a service is changing its placement.** Stateless, it is only
+that: the new node brings it up and the old node's agent, finding it no
+longer placed, takes it down. Stateful — Immich, Paperless, a hub — it
+is the standard staged migration: place it on the new node beside the
+old, restore its data there (`lab restore`, which the drills already
+exercise), cut over, then remove the old placement. A single-instance
+service is never torn down before its replacement answers: the old
+node's agent waits on the new one's status through the API.
 
 **The agent decides; the operating system keeps daemons alive.** The
 agent is a controller and a scheduler, not a supervisor:

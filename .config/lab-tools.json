@@ -1,0 +1,22 @@
+{
+  "tools": {
+    "tofu": {
+      "github": "opentofu/opentofu",
+      "version": "1.12.6",
+      "checksums": "tofu_{version}_SHA256SUMS",
+      "assets": {
+        "darwin-arm64": "tofu_{version}_darwin_arm64.tar.gz",
+        "linux-arm64": "tofu_{version}_linux_arm64.tar.gz"
+      }
+    },
+    "restic": {
+      "github": "restic/restic",
+      "version": "0.19.1",
+      "checksums": "SHA256SUMS",
+      "assets": {
+        "darwin-arm64": "restic_{version}_darwin_arm64.bz2",
+        "linux-arm64": "restic_{version}_linux_arm64.bz2"
+      }
+    }
+  }
+}

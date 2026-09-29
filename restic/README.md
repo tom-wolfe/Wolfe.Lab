@@ -84,7 +84,7 @@ What a Linux node needs, all of it chezmoi's (`chezmoi/home/`):
 
 | Piece | Where | Note |
 | --- | --- | --- |
-| `restic` | `~/.local/bin`, pinned in `.chezmoiexternal.toml.tmpl` | the Macs get it from the Brewfile |
+| `restic` | installed by the job that runs it, at the version `.config/lab-tools.json` pins (build/README.md, "Packages and tools") | the same on every node, and on a laptop running `lab` by hand |
 | `~/.ssh/restic` | `private_dot_ssh/create_private_restic.tmpl`, from the vault | SSH Key item `restic-sftp-<node>`, generated in the vault, written once |
 | `Host macmini.tailf823b8.ts.net` | `private_dot_ssh/config.tmpl`, the `pi-node` block | user, the key, `accept-new` — the tailnet already authenticates the peer, and a first contact must not block a non-interactive job |
 | the mini's `authorized_keys` line | `private_dot_ssh/private_authorized_keys.tmpl`, the `macmini-node` block | `restrict,command="/usr/libexec/sftp-server"` — the key cannot open a shell, forward a port or run anything else; the public half is read from the same vault item |

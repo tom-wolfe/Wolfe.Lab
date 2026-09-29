@@ -43,16 +43,16 @@ RUN set -eux; \
     docker --version; \
     docker compose version
 
-# shellcheck and chezmoi, for the chezmoi slice's check.
 ARG CHEZMOI_VERSION=2.72.2
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends shellcheck jq; \
+    apt-get install -y --no-install-recommends shellcheck jq rsync bzip2; \
     rm -rf /var/lib/apt/lists/*; \
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "v${CHEZMOI_VERSION}"; \
     chezmoi --version; \
     shellcheck --version; \
-    jq --version
+    jq --version; \
+    rsync --version | head -n 1
 
 # The lab's CLI, `lab`, at the version its pin names, so a job runs the LAST, 
 # because it moves most often: a bump rebuilds from the COPY down, nothing above it.
