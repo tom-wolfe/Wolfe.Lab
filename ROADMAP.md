@@ -818,6 +818,25 @@ on Linux, natively, as the Pi already runs it. Trying OrbStack or Colima on
 the mini is worth an afternoon only if #2 stays unfunded long enough to
 hurt.
 
+**Decided: OrbStack, until the Linux node.** Memory is what made it worth
+the afternoon. Docker Desktop's VM claims about 12.5 GB of the mini's
+16 GB up front, and the mini is short of free pages whenever ollama has a
+model loaded (#11); OrbStack's VM grows and shrinks with its containers
+and hands memory back to macOS. It is lighter at idle, its file sharing
+is faster, it speaks Docker's API and keeps `host.docker.internal` (which
+Alloy's loopback receiver relies on), and it runs without a window —
+still an app that starts at login, and free for personal use. It does
+not remove the VM: host networking, port 53 and the first-boot sharing
+races stay until #2. Colima is the headless, open-source alternative,
+but its VM's memory is fixed, which gives up the reason for moving;
+Apple's `container` has no Docker API and no compose yet.
+
+The move, the Studio first as the lower-stakes machine, then the mini:
+the Beszel agent's `DOCKER_HOST` (Docker Desktop's socket path today),
+the runners' headless Docker config (`~/.docker-headless`), the file
+shares for `/Volumes`, Alloy's `host.docker.internal`, and the
+Brewfile's "deliberately NOT docker" note, which becomes OrbStack's.
+
 **Orchestration is a separate question** and mostly the k8s one below.
 Between "compose per host" and Kubernetes there is Docker Swarm (a
 multi-host compose, effectively, and still maintained) and not much

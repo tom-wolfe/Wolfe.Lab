@@ -4,6 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.65.0] - 2026-09-29
+
+### Changed
+
+- **Homebrew's `ollama` is gone from the mini and the Studio**: the
+  server runs from its pinned package, and its deploy runs that
+  package's client. The laptop keeps its own.
+- **OrbStack replaces Docker Desktop until the Linux node** (ROADMAP,
+  "The container runtime"), for memory first: its VM hands memory back
+  to macOS, where Docker Desktop's holds about 12.5 GB of the mini's 16.
+
 ## [0.64.0] - 2026-09-29
 
 ### Changed
