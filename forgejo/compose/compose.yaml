@@ -11,6 +11,10 @@ services:
       # Keep jobs idle so that workstations have plenty of time to update.
       FORGEJO__actions__ABANDONED_JOB_TIMEOUT: 168h
       FORGEJO__cron__ENABLED: "true"
+      # We have so many CI checks that we get over 1,000 logs and crash the 
+      # branches page in Forgejo. Clear old branches every hour instead.
+      FORGEJO__cron_0X2E_deleted_branches_cleanup__SCHEDULE: "@every 1h"
+      FORGEJO__cron_0X2E_deleted_branches_cleanup__OLDER_THAN: 1h
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__database__PATH: /data/gitea/forgejo.db
       FORGEJO__indexer__REPO_INDEXER_ENABLED: "true"
