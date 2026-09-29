@@ -1,3 +1,4 @@
+using Ritten.Reporting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -19,6 +20,19 @@ public static class WorkflowBuilderExtensions
         {
             builder.AddCommandRunner();
             builder.Services.AddSingleton(new ReleaseName(name));
+            builder.Services.TryAddSingleton<IReleaseInstaller, RsyncInstaller>();
+            builder.Decorators.Replace<IReleaseInstaller, DryRunInstaller>();
+            return builder;
+        }
+
+        /// <summary>
+        /// Adds the artifacts a job publishes, and the installer that mirrors them onto the node.
+        /// </summary>
+        /// <param name="artifacts">The component's declarations, and any the workflow adds.</param>
+        public IWorkflowBuilder AddArtifacts(IReadOnlyList<ArtifactSettings> artifacts)
+        {
+            builder.AddCommandRunner().AddBuildReporting();
+            builder.Services.AddSingleton(new ArtifactDeclarations(artifacts));
             builder.Services.TryAddSingleton<IReleaseInstaller, RsyncInstaller>();
             builder.Decorators.Replace<IReleaseInstaller, DryRunInstaller>();
             return builder;

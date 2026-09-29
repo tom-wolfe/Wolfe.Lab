@@ -1,3 +1,5 @@
+using Wolfe.Lab.Build.Clients.Releases.Steps;
+using Wolfe.Lab.Build.Clients.Releases;
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Clients.Agents.Steps;
@@ -18,13 +20,15 @@ internal sealed class DeployJob : LabJob<AgentsSettings>
 
     public override string Name => "deploy";
 
-    public override string Description => "Converges this node's agents, retiring any they supersede.";
+    public override string Description => "Publishes the component's artifacts and converges this node's agents, retiring any they supersede.";
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
+        Step.FromType<ResolveArtifacts>(),
         Step.FromType<GateApproval>(),
+        Step.FromType<PublishArtifacts>(),
         Step.FromType<ConvergeAgents>()
     ];
 
@@ -39,7 +43,7 @@ internal sealed class DeployJob : LabJob<AgentsSettings>
     {
         base.Configure(builder, settings);
         var node = settings.Nodes.GetValueOrDefault(args.Get(Node)!) ?? new NodeAgentsSettings();
-        builder.AddAgents().AddVolumes(node.Volumes);
+        builder.AddAgents().AddVolumes(node.Volumes).AddArtifacts(settings.Artifacts);
         builder.Services.AddSingleton(new AgentDeclarations(node.Agents));
     }
 }

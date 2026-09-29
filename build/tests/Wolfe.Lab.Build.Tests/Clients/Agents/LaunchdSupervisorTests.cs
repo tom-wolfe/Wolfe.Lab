@@ -235,4 +235,20 @@ public class LaunchdSupervisorTests : IDisposable
         (await Supervisor().IsInstalled("sh.brew.beszel-agent", TestContext.Current.CancellationToken)).ShouldBeTrue();
         (await Supervisor().IsInstalled("sh.brew.other", TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
+
+    [Fact]
+    public void Render_StampsTheUnitWithItsArtifactsSoAChangedConfigRestartsIt()
+    {
+        var unit = Supervisor().Render(Agent() with { ArtifactStamp = new DateTimeOffset(2026, 9, 29, 12, 0, 0, TimeSpan.Zero) });
+
+        unit.Content.ShouldContain(" artifacts: 2026-09-29T12:00:00.0000000Z");
+    }
+
+    [Fact]
+    public void Render_IsUnchangedForAnAgentWithoutArtifacts()
+    {
+        // A unit is compared as text: an extra line for agents that publish nothing would
+        // restart every one of them on the deploy that shipped this.
+        Supervisor().Render(Agent()).Content.ShouldNotContain("artifacts:");
+    }
 }

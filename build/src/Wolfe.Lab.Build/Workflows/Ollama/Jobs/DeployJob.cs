@@ -1,3 +1,5 @@
+using Wolfe.Lab.Build.Clients.Releases.Steps;
+using Wolfe.Lab.Build.Clients.Releases;
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Clients.Agents.Steps;
@@ -28,8 +30,10 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
         Step.FromType<CheckRoles>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
+        Step.FromType<ResolveArtifacts>(),
         Step.FromType<GateApproval>(),
         Step.FromType<EnsureModelStore>(),
+        Step.FromType<PublishArtifacts>(),
         Step.FromType<ConvergeAgents>(),
         Step.FromType<AwaitServer>(),
         Step.FromType<ResolveModels>(),
@@ -54,7 +58,7 @@ internal sealed class DeployJob : LabJob<OllamaSettings>
     protected override void Configure(IWorkflowBuilder builder, OllamaSettings settings)
     {
         base.Configure(builder, settings);
-        builder.AddAgents().AddOllama().AddVolumes(settings.Volumes);
+        builder.AddAgents().AddOllama().AddVolumes(settings.Volumes).AddArtifacts([]);
         builder.Services.AddSingleton(new AgentDeclarations(settings.Agents));
         builder.Services.AddSingleton(new ModelPlan([.. settings.Models.Pull]));
         builder.Services.AddSingleton(RolePlan.From(settings.Models.Roles));

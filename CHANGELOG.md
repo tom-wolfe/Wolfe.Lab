@@ -4,6 +4,20 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.59.0] - 2026-09-29
+
+### Added
+
+- **Artifacts** (`build/README.md`, "Artifacts"): a component publishes
+  directories of itself to the node, under `${LAB_ROOT}`, and a change to
+  them restarts what reads them.
+- **`LAB_ROOT` and `LAB_DATA`**, set by chezmoi for the host runners and
+  every shell, and expanded in `ritten.json` paths.
+
+### Changed
+
+- **Renovate holds majors of the telemetry stack on the dependency dashboard.**
+
 ## [0.58.0] - 2026-09-29
 
 ### Added

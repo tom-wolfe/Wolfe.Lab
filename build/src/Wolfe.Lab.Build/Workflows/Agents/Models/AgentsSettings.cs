@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Values;
 
@@ -12,6 +13,11 @@ public sealed record AgentsSettings : WorkflowSettings
     /// What each node runs, by the node's name — the same name its runner carries.
     /// </summary>
     public Dictionary<string, NodeAgentsSettings> Nodes { get; init; } = [];
+
+    /// <summary>
+    /// Directories of the component published to every node it runs on.
+    /// </summary>
+    public IReadOnlyList<ArtifactSettings> Artifacts { get; init; } = [];
 }
 
 /// <summary>

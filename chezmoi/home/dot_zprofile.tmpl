@@ -2,6 +2,9 @@
 export PATH="$PATH:/Users/tomwolfe/.docker/bin"
 # End of Docker Desktop section.
 
+export LAB_ROOT="$HOME/.local/share/Wolfe.Lab"
+export LAB_DATA="$HOME/Docker"
+
 {{ if has .profile (list "macbook" "macstudio" "work-macbook") -}}
 eval "$(/opt/homebrew/bin/brew shellenv)"
 

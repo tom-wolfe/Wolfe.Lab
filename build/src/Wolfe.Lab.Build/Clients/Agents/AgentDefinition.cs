@@ -36,4 +36,9 @@ public sealed record AgentDefinition(
     /// Units an earlier supervisor ran this agent under, retired before it is converged.
     /// </summary>
     public IReadOnlyList<string> Supersedes { get; init; } = [];
+
+    /// <summary>
+    /// When the component's artifacts last changed on this node, or null when it publishes none.
+    /// </summary>
+    public DateTimeOffset? ArtifactStamp { get; init; }
 }

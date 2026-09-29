@@ -8,6 +8,12 @@ public class ResolveAgentsTests : IDisposable
 {
     private readonly DirectoryInfo _node = Directory.CreateTempSubdirectory("lab-node-");
     private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
+    private readonly WorkflowEnvironment _environment = new(name => name switch
+    {
+        "LAB_ROOT" => "/lab/root",
+        "LAB_DATA" => "/lab/data",
+        _ => null
+    });
 
     public ResolveAgentsTests() =>
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(call => $"secret-of-{call.Arg<string>()}");
@@ -22,7 +28,7 @@ public class ResolveAgentsTests : IDisposable
     }
 
     private Task<StepResult<AgentPlan>> Resolve(params (string Name, AgentSettings Settings)[] agents) =>
-        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Settings)), _secrets, Substitute.For<IWorkflowLog>())
+        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Settings)), _secrets, _environment, Substitute.For<IWorkflowLog>())
             .Run(TestContext.Current.CancellationToken);
 
     [Fact]
@@ -154,4 +160,21 @@ public class ResolveAgentsTests : IDisposable
     [InlineData("a~b", false)]
     public void UnexpandedHomePaths_FindsWhatStartsAtHome(string value, bool found) =>
         ResolveAgents.UnexpandedHomePaths(new Dictionary<string, string> { ["V"] = value }).Any().ShouldBe(found);
+
+    [Fact]
+    public async Task Run_WritesTheLabsRootsIntoArgumentsAndVariables()
+    {
+        var result = await Resolve(("alloy", new AgentSettings
+        {
+            Program = HostPath.From(Program("alloy")),
+            Arguments = ["run", "${LAB_ROOT}/alloy/config.alloy", "--storage.path=${LAB_DATA}/alloy"],
+            Environment = new Dictionary<string, string> { ["CONFIG"] = "${LAB_ROOT}/alloy", ["KEPT"] = "${HOME}/as-written" }
+        }));
+
+        var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
+        agent.Arguments.ShouldBe(["run", "/lab/root/alloy/config.alloy", "--storage.path=/lab/data/alloy"]);
+        agent.Environment["CONFIG"].ShouldBe("/lab/root/alloy");
+        // Only the lab's own two are expanded; anything else reaches the process as written.
+        agent.Environment["KEPT"].ShouldBe("${HOME}/as-written");
+    }
 }

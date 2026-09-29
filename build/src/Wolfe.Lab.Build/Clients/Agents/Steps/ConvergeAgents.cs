@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Releases;
 namespace Wolfe.Lab.Build.Clients.Agents.Steps;
 
 /// <summary>
@@ -6,9 +7,11 @@ namespace Wolfe.Lab.Build.Clients.Agents.Steps;
 [Step("converge agents", StepKind.Publish)]
 internal sealed class ConvergeAgents(IServiceSupervisor supervisor, WorkflowJob job, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(AgentPlan plan, CancellationToken ct = default)
+    public async Task<StepResult> Run(AgentPlan plan, PublishedArtifacts artifacts, CancellationToken ct = default)
     {
-        foreach (var agent in plan.Agents)
+        // The artifacts' stamp goes into every unit, so a changed config file restarts the agents
+        // that read it, the way a changed binary does.
+        foreach (var agent in plan.Agents.Select(agent => agent with { ArtifactStamp = artifacts.Stamp }))
         {
             // Before the converge, so the old copy has stopped by the time the new one starts:
             // two agents with one identity would each think they were the node.
@@ -34,7 +37,7 @@ internal sealed class ConvergeAgents(IServiceSupervisor supervisor, WorkflowJob 
                     log.Status($"Installed and started {agent.Label.Value}.");
                     break;
                 case AgentOutcome.Restarted:
-                    log.Status($"Restarted {agent.Label.Value} on a changed unit.");
+                    log.Status($"Restarted {agent.Label.Value} on a changed unit or changed artifacts.");
                     break;
             }
         }

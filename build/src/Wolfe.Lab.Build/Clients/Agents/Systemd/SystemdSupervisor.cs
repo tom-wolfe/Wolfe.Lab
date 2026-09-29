@@ -35,7 +35,10 @@ internal sealed class SystemdSupervisor(AgentDirectory agents, ICommandRunner co
                 .Select(variable => new UnitVariable(variable.Key, Quoted(Specifiers($"{variable.Key}={variable.Value}"))))],
             agent.KeepAlive,
             agent.ExitTimeout,
-            agent.Log is { } path ? Specifiers(path.Value) : null);
+            agent.Log is { } path ? Specifiers(path.Value) : null)
+        {
+            ArtifactsStamped = agent.ArtifactStamp?.UtcDateTime.ToString("O", CultureInfo.InvariantCulture)
+        };
 
         return new AgentUnit(UnitName(agent.Label), UnitTemplate.Fill(Service.Value, unit));
     }

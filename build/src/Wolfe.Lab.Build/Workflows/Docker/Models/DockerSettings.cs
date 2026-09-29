@@ -1,3 +1,4 @@
+using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Workflows.Docker.Models;
@@ -34,4 +35,9 @@ public record DockerSettings : WorkflowSettings
     /// previous one and say nothing.
     /// </remarks>
     public IReadOnlyList<ImageSettings> Images { get; init; } = [];
+
+    /// <summary>
+    /// Directories published to the node beside the release, which is itself one.
+    /// </summary>
+    public IReadOnlyList<ArtifactSettings> Artifacts { get; init; } = [];
 }

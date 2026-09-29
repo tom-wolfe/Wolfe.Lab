@@ -76,6 +76,46 @@ A tofu root runs under the same state backend, declared once in
 own `secrets.env`; both name secrets by reference, read through Ritten's
 provider as each command starts.
 
+### Artifacts
+
+A deploy publishes files to the node as **artifacts**: a directory of the
+component, mirrored to an output directory, declared in `ritten.json`:
+
+```json
+"artifacts": [{ "source": "config", "output": "${LAB_ROOT}/alloy" }]
+```
+
+A compose component's release is one already — the component itself,
+published to `${LAB_ROOT}/<release>` — and it may declare more; an agents
+component declares the ones its agents read, and names them in their
+arguments the same way (`"run", "${LAB_ROOT}/alloy/config.alloy"`). An
+output is a mirror, so what its source lacks is deleted: it must lie
+strictly inside `${LAB_ROOT}`, and no two outputs may nest. The run's
+report has an **Artifacts** section: each artifact, where it went, the
+files that changed (`+` added, `~` changed, `-` deleted) folded beneath it,
+and any restart that followed — a rehearsal reports the same as what it
+would do.
+
+A published file is written only when its content changed, so the newest
+write under the outputs says when the artifacts last did, and that moves
+the runtime: an agent's unit carries it (as it carries its binary's), so a
+changed config reloads the agent; a compose stack is restarted, and the
+time it was restarted for is kept in `${LAB_ROOT}/.applied/<release>`,
+written only once the restart has happened. `up` alone would recreate a
+container whose definition changed, never one whose bind-mounted file did.
+Both read the state of the node rather than of the job, so a restart that
+failed is still owed on the next deploy.
+
+### Two roots
+
+Every node keeps the lab in two places, which chezmoi sets for the host
+runners' jobs and for every shell: `LAB_ROOT`, where components and their
+artifacts are installed (`~/.local/share/Wolfe.Lab`), and `LAB_DATA`, where
+services keep their state (`~/Docker`). A `ritten.json` path names them —
+`${LAB_ROOT}` and `${LAB_DATA}` are expanded in artifact outputs and in an
+agent's program, arguments, variables, working directory and log, and
+nothing else is, so every other value reaches its process as written.
+
 ## Layout
 
 A folder under `src/Wolfe.Lab.Build` is one of three things, and the

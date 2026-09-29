@@ -24,6 +24,11 @@ public sealed record LaunchdUnit(
     string? Log)
 {
     /// <summary>
+    /// When the agent's artifacts last changed on this node, or null when it publishes none.
+    /// </summary>
+    public string? ArtifactsStamped { get; init; }
+
+    /// <summary>
     /// Whether to write the environment block at all, asked as a flag because a template
     /// should read as the file it becomes rather than count things.
     /// </summary>

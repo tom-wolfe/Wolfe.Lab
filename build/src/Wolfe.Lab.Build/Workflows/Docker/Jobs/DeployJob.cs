@@ -29,7 +29,8 @@ internal sealed class DeployJob<TSettings> : LabJob<TSettings> where TSettings :
     [
         Step.FromType<ResolveRelease>(),
         Step.FromType<CheckVolumes>(),
-        Step.FromType<InstallRelease>(),
+        Step.FromType<ResolveArtifacts>(),
+        Step.FromType<PublishArtifacts>(),
         Step.FromType<BuildImages>(),
         Step.FromType<ResolveComposeSecrets>(),
         Step.FromType<GateApproval>(),
@@ -48,7 +49,11 @@ internal sealed class DeployJob<TSettings> : LabJob<TSettings> where TSettings :
         builder.AddDocker([.. settings.Images.Select(image => image.ToImage()).OfType<DockerImage>()]).AddVolumes(settings.Volumes);
         if (settings.Release is { Length: > 0 } release)
         {
-            builder.AddReleases(release);
+            // The release is the first artifact: the component, where the stack runs from.
+            builder.AddReleases(release).AddArtifacts([
+                new ArtifactSettings { Source = ".", Output = $"${{{LabRoots.RootVariable}}}/{release}" },
+                .. settings.Artifacts
+            ]);
         }
     }
 }

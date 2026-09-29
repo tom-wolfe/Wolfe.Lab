@@ -100,6 +100,12 @@
       dependencyDashboardApproval: true,
     },
 
+    {
+      matchPackageNames: ["grafana/grafana", "grafana/loki", "grafana/tempo", "prom/prometheus"],
+      matchUpdateTypes: ["major"],
+      dependencyDashboardApproval: true,
+    },
+
     // The CLI's dependencies, in the families that release together.
     {
       matchPackageNames: ["Ritten.*"],

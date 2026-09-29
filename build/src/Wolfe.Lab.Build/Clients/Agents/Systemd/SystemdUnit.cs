@@ -22,4 +22,10 @@ public sealed record SystemdUnit(
     bool KeepAlive,
     int? ExitTimeout,
     string? Log
-);
+)
+{
+    /// <summary>
+    /// When the agent's artifacts last changed on this node, or null when it publishes none.
+    /// </summary>
+    public string? ArtifactsStamped { get; init; }
+}

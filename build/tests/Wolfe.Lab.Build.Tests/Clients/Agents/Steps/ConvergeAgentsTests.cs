@@ -1,5 +1,6 @@
 using Wolfe.Lab.Build.Clients.Agents;
 using Wolfe.Lab.Build.Clients.Agents.Steps;
+using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Agents.Steps;
@@ -11,6 +12,8 @@ public class ConvergeAgentsTests
 
     private ConvergeAgents Step(bool dryRun = false) =>
         new(_supervisor, new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), _log);
+
+    private static readonly PublishedArtifacts NoArtifacts = new([], null);
 
     private static AgentPlan Plan() => new([
         new AgentDefinition(
@@ -31,7 +34,7 @@ public class ConvergeAgentsTests
     {
         _supervisor.Converge(Arg.Any<AgentDefinition>(), Arg.Any<CancellationToken>()).Returns(AgentOutcome.Installed);
 
-        await Step().Run(Plan(), TestContext.Current.CancellationToken);
+        await Step().Run(Plan(), NoArtifacts, TestContext.Current.CancellationToken);
 
         _log.Received().Status(Arg.Is<string>(m => m.Contains("Installed and started")));
     }
@@ -41,7 +44,7 @@ public class ConvergeAgentsTests
     {
         _supervisor.Converge(Arg.Any<AgentDefinition>(), Arg.Any<CancellationToken>()).Returns(AgentOutcome.Installed);
 
-        await Step(dryRun: true).Run(Plan(), TestContext.Current.CancellationToken);
+        await Step(dryRun: true).Run(Plan(), NoArtifacts, TestContext.Current.CancellationToken);
 
         _log.DidNotReceiveWithAnyArgs().Status(default!);
     }
@@ -51,12 +54,22 @@ public class ConvergeAgentsTests
     {
         var plan = new AgentPlan([Plan().Agents[0] with { Supersedes = ["sh.brew.ollama"] }]);
 
-        await Step().Run(plan, TestContext.Current.CancellationToken);
+        await Step().Run(plan, NoArtifacts, TestContext.Current.CancellationToken);
 
         Received.InOrder(() =>
         {
             _supervisor.Retire("sh.brew.ollama", Arg.Any<CancellationToken>());
             _supervisor.Converge(Arg.Any<AgentDefinition>(), Arg.Any<CancellationToken>());
         });
+    }
+
+    [Fact]
+    public async Task Run_StampsEveryAgentWithWhenItsArtifactsLastChanged()
+    {
+        var stamp = new DateTimeOffset(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
+
+        await Step().Run(Plan(), new PublishedArtifacts([], stamp), TestContext.Current.CancellationToken);
+
+        await _supervisor.Received().Converge(Arg.Is<AgentDefinition>(agent => agent.ArtifactStamp == stamp), Arg.Any<CancellationToken>());
     }
 }

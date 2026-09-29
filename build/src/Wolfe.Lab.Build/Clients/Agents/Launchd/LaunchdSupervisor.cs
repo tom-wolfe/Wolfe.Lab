@@ -28,7 +28,10 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
                 .Select(variable => new UnitVariable(Escape(variable.Key), Escape(variable.Value)))],
             agent.KeepAlive,
             agent.ExitTimeout,
-            agent.Log is { } log ? Escape(log.Value) : null);
+            agent.Log is { } log ? Escape(log.Value) : null)
+        {
+            ArtifactsStamped = agent.ArtifactStamp?.UtcDateTime.ToString("O", CultureInfo.InvariantCulture)
+        };
 
         return new AgentUnit($"{agent.Label.Value}.plist", UnitTemplate.Fill(Plist.Value, unit));
     }
