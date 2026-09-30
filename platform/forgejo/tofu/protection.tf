@@ -15,7 +15,11 @@ resource "forgejo_branch_protection" "main" {
 
   enable_status_check = true
   status_check_contexts = [
-    "build / check*",
+    # Either name, while the CLI's workflow is renamed from "build" to "lab tool"
+    # with its move to platform/lab/tool: the pull request that renames it
+    # posts the new name, and must satisfy this list as it stands. Narrowed
+    # to "lab tool / check*" once the rename has merged.
+    "{build,lab tool} / check*",
     "ci image / check*",
     "chezmoi / check*",
     "mail bridge / check*",

@@ -41,6 +41,11 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Branch protection accepts the CLI's check under either name**,
+  `build` or `lab tool`, so the pull request that moves the CLI to
+  `platform/lab/tool` — renaming its workflow to match — can satisfy it.
+  Narrowed to `lab tool` once that has merged.
+
 - **The tofu state backend is found in the Garage slice.** Every root's
   shared `tofu-state.env` is looked for as `garage/` — at any level up,
   or inside an area — as restic's files already were, the lookup now
