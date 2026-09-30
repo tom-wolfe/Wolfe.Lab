@@ -1,7 +1,7 @@
 namespace Wolfe.Lab.Build.Workflows.Chezmoi.Models;
 
 /// <summary>
-/// What <c>chezmoi/ritten.json</c> declares: the profiles a machine can be.
+/// What <c>platform/chezmoi/ritten.json</c> declares: the profiles a machine can be.
 /// </summary>
 public sealed record ChezmoiOptions : WorkflowSettings
 {

@@ -15,5 +15,5 @@ jobs:
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v7
-      - working-directory: restic/repositories
+      - working-directory: platform/restic/repositories
         run: lab offsite

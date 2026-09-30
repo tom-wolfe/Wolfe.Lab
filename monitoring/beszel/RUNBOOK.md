@@ -7,7 +7,7 @@ reasons are in `README.md`.
 
 The ordering is forced: the hub must exist before the token does, and the
 token must be in the vault before the agent can start. Same chicken-and-egg
-as `garage/tofu` — run once, harvest the outputs, store them.
+as `platform/garage/tofu` — run once, harvest the outputs, store them.
 
 > **Create the `beszel-agent` item in 1Password before the agent's first
 > deploy**, with placeholder values if you like — the real ones come from

@@ -35,7 +35,7 @@ fallback when the front door is down.
 
 | Address | Service                                          | Auth                                                       | Defined in                   |
 | ------- | ------------------------------------------------ | ---------------------------------------------------------- | --------------------------- |
-| `:22`   | SSH (macOS Remote Login)                         | 1Password SSH key via `~/.ssh/authorized_keys`; per Linux node an sftp-only restic key (`restic/README.md`) | chezmoi (`private_dot_ssh`) |
+| `:22`   | SSH (macOS Remote Login)                         | 1Password SSH key via `~/.ssh/authorized_keys`; per Linux node an sftp-only restic key (`platform/restic/README.md`) | chezmoi (`private_dot_ssh`) |
 | `:80`   | Caddy — HTTP→HTTPS redirect                      | —                                                          | `caddy`                     |
 | `:443`  | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below)                               | `caddy`.                    |
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
@@ -66,10 +66,10 @@ fallback when the front door is down.
 
 Forgejo's own seat on the tailnet — a tailscale sidecar sharing the
 container's network namespace, so git gets a portless clone URL. The
-record (`forgejo/tofu`) points at the *sidecar's* Tailscale address, not
+record (`platform/forgejo/tofu`) points at the *sidecar's* Tailscale address, not
 the mini's: resolution needs the internet like every name here, routing
 needs the tailnet. `forgejo.tailf823b8.ts.net` is the same endpoint by
-its DNS-independent MagicDNS name (forgejo/README.md "Tailnet identity").
+its DNS-independent MagicDNS name (platform/forgejo/README.md "Tailnet identity").
 
 | Address | Service | Auth | Defined in |
 | --- | --- | --- | --- |

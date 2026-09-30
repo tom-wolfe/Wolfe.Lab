@@ -24,5 +24,5 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - working-directory: forgejo/runners
+      - working-directory: platform/forgejo/runners
         run: lab register --node "${{ inputs.node }}" --kind "${{ inputs.kind }}" --auto-approve

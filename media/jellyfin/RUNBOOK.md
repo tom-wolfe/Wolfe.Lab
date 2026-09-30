@@ -55,7 +55,7 @@ lab backup
 
 Writes a snapshot into the restic repo on `/Volumes/Data2` (the image tag
 rides on it as a snapshot tag; `restic-offsite.yaml` ships it to B2 and
-owns retention — see `restic/README.md`). It refuses to run if the drive
+owns retention — see `platform/restic/README.md`). It refuses to run if the drive
 isn't mounted — an unmounted `/Volumes` path on macOS silently writes to
 the internal disk. It stops the container first — SQLite copied mid-write
 can be inconsistent — so expect ~30s of downtime; if a concurrent deploy
@@ -74,7 +74,7 @@ cd media/jellyfin/backup
 lab restore
 ```
 
-`restic/RUNBOOK.md` "Restore" for what it does and its options. The
+`platform/restic/RUNBOOK.md` "Restore" for what it does and its options. The
 snapshot carries no `metadata/`, so artwork is missing until the
 "Refresh Metadata" task re-downloads it — or copy `metadata/` back from
 the `.bak` directory the job set aside.

@@ -78,7 +78,7 @@ One Forgejo access token publishes both the CLI package and the CI image:
 the `PACKAGES_TOKEN` Actions secret on Wolfe.Lab, scope **package: read
 and write** and nothing else, belonging to `tom-wolfe` (packages under a
 user are writable only by that user). Both publishes run in the
-containerised pool, which never reaches the vault, so `forgejo/tofu`
+containerised pool, which never reaches the vault, so `platform/forgejo/tofu`
 (`packages.tf`) writes it from the vault into the secret. Made by hand,
 not minted: minting a user's token means logging in as that user, and
 no root should hold the owner's password. Reading needs no token:

@@ -41,7 +41,7 @@ internal sealed class RegisterRunner(ICommandRunner commands, ISecretProvider se
         {
             return new Error(
                 $"{registration.Secret.Value} holds {secret.Length} characters, and a runner secret is {SecretLength}: mint it again " +
-                "(forgejo/RUNBOOK.md \"The mini's runner\", step 1).");
+                "(platform/forgejo/RUNBOOK.md \"The mini's runner\", step 1).");
         }
 
         string[] scope = registration.Scope is { } repository ? ["--scope", repository] : [];

@@ -7,7 +7,7 @@ runs, nothing deploys, and the only job is the backup.
 | | |
 |---|---|
 | Where | `/Volumes/Data2/files` |
-| Backups | restic, nightly, warm (`ritten.json`); offsite with everything else (`restic/README.md`) |
+| Backups | restic, nightly, warm (`ritten.json`); offsite with everything else (`platform/restic/README.md`) |
 
 ## Why it is backed up
 
@@ -24,5 +24,5 @@ them up. Anything irreplaceable that lands elsewhere on the drive is
 
 ## Restore
 
-`restic/RUNBOOK.md` "Restore", selecting `--tag service:files`; the
+`platform/restic/RUNBOOK.md` "Restore", selecting `--tag service:files`; the
 target is the directory itself.

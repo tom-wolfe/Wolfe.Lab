@@ -18,7 +18,7 @@ expected and stops on its own.
    repositories. Tripwire: **2 to add**, 0 changed, 0 destroyed. The
    chezmoi workflow rewrites the runner's config with `dotnet` on its
    PATH, which the runner reads only at start: restart it
-   (`forgejo/RUNBOOK.md` "Restarting a runner").
+   (`platform/forgejo/RUNBOOK.md` "Restarting a runner").
 4. **Re-point each vault** on the mini. `ob` is already signed in;
    `sync-setup` prompts for the vault's end-to-end password. The vault
    IDs are what `ob sync-list-local` prints today.
@@ -80,7 +80,7 @@ expected and stops on its own.
 ## Adding a vault
 
 1. `ob sync-list-remote` for its ID; add `"<name>" = "Obsidian vault: …"`
-   to `locals.vaults` in `forgejo/tofu/vaults.tf`, and the vault's
+   to `locals.vaults` in `platform/forgejo/tofu/vaults.tf`, and the vault's
    `path` and `repository` under `vaults` in `ritten.json`.
 2. Copy `.forgejo/workflows/obsidian-dnd.yaml` to `obsidian-<name>.yaml`,
    change the vault name, the concurrency group and the alert title,
@@ -104,7 +104,7 @@ nvm-run ob sync-config --path ~/Obsidian/main --mode mirror-remote --file-types 
 `$configs` is the list from Bootstrap.
 
 **Forgejo is gone.** The repositories return with Forgejo's own restore
-(`forgejo/RUNBOOK.md`); the checkout keeps pushing once it is back, and
+(`platform/forgejo/RUNBOOK.md`); the checkout keeps pushing once it is back, and
 a clean Forgejo with empty repositories takes the checkout's full
 history on the next push.
 

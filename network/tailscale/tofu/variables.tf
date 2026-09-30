@@ -26,7 +26,7 @@ variable "servers" {
   description = <<-EOT
     Machine names of the always-on nodes: tagged tag:server and their key
     expiry disabled. Adding a node is adding it here. The forgejo entry is
-    the sidecar (forgejo/README.md "Tailnet identity").
+    the sidecar (platform/forgejo/README.md "Tailnet identity").
   EOT
   type        = list(string)
   default     = ["macmini", "wolfe-pi5", "forgejo"]

@@ -1,0 +1,22 @@
+{{- /* The CONTAINERIZED runner: every job in a fresh container, no host env,
+       no socket in the job. Builds are stateless, so more than one at a
+       time, and the cache server on for actions/cache. The `docker` label
+       is a ROLE shared by every node that runs one, so a build lands on
+       whichever node is idle; the image after `docker://` is the default
+       a job gets unless it names its own `container:`. That image is the
+       lab's own (platform/ci/): node for JS actions like actions/checkout, the .NET
+       SDK for the CLI, and docker's CLIENT for a compose check — the client
+       only, because `compose config` parses the file and never calls a
+       daemon — and the lab's CLI, `lab`, at the pinned version. The `ci
+       image` workflow builds it and pushes it to Forgejo's registry, and
+       every runner pulls it from there (force_pull, in the shared template),
+       so a node that did not build it runs the same image. */ -}}
+{{- template "forgejo-runner/config.yaml" (dict
+      "home" .chezmoi.homeDir
+      "dir" "forgejo-runner-docker"
+      "capacity" 2
+      "host" false
+      "labels" (list "docker:docker://code.twolfe.dev/tom-wolfe/ci:latest")
+      "cache" true
+      "path" ""
+      "envs" (dict)) -}}

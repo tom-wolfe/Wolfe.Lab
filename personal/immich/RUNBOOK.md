@@ -64,7 +64,7 @@ lab restore
 ```
 
 The library is set aside as `/Volumes/Data2/immich.bak-<timestamp>`
-and the snapshot restored in its place (`restic/RUNBOOK.md` "Restore").
+and the snapshot restored in its place (`platform/restic/RUNBOOK.md` "Restore").
 
 Then Administration → Jobs → run the thumbnail and transcode jobs to
 regenerate what was excluded.

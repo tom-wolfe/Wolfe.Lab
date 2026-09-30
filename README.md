@@ -13,8 +13,8 @@ its slices sit at the root.
 
 | Path                               | Purpose                                                                                                                                                                                                                                                               |
 |------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `[<area>/]<name>/`                 | one slice per thing the lab runs, under its area once that area has moved (every area but `platform/` so far): a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
-| `chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
+| `[<area>/]<name>/`                 | one slice per thing the lab runs, under its area: a folder of *components*, each a directory with a `ritten.json` naming its shape — `compose/` (the stack, its secrets references and its route snippet), `backup/` (what restic keeps of it), `tofu/` (its API resources), and one of its own for anything only that slice does — plus one README and its runbook. The schedule is the workflow in `.forgejo/workflows/<slice>-<component>.yaml` |
+| `platform/chezmoi/home/`                    | the chezmoi source — dotfiles, the Brewfile, the runner and agent files a node's own services read at start: everything *declarative* about a machine (`.chezmoiroot` points here)                                                                                    |
 | `build/`                           | the lab's jobs as a CLI, `lab`, built on Ritten: one workflow per component shape, run from the component's directory                                                                                                    |
 | `setup.sh`                         | fresh-server bring-up — the one imperative bootstrap (Forgejo can't deploy itself into existence)                                                                                                                                                                     |
 | `k8s/`                             | *(planned)* Argo CD applications and manifests                                                                                                                                                                                                                        |
@@ -36,7 +36,7 @@ its slices sit at the root.
   (`ai/ollama/README.md`, "The Studio"). Its own tag, `tag:hybrid`, so the
   policy lets in the ports it serves and nothing else
   (`network/tailscale/README.md`); a host runner holding no privacy grants, whose
-  jobs queue while it sleeps (`forgejo/README.md`, "The Studio's
+  jobs queue while it sleeps (`platform/forgejo/README.md`, "The Studio's
   runner"); a Beszel agent and a Gatus check that never alert. Nothing in
   the platform layer, nothing on the drives, and no job whose failure is
   an outage runs there — which is why Immich's machine learning stays on
@@ -69,7 +69,7 @@ their own env files the same way at run time. The vault is reachable or
 a deploy fails; a running stack never notices.
 
 Machine config is chezmoi's and separate: `.forgejo/workflows/chezmoi.yaml`
-runs `chezmoi update` on a node when `chezmoi/` changes. Everything
+runs `chezmoi update` on a node when `platform/chezmoi/` changes. Everything
 scheduled — the nightly backups, restic's offsite copy and weekly verify,
 the obsidian syncs, the Immich deploy and import, certificate renewal, the heartbeat and the Gatus probe
 — is a cron-triggered workflow on the mini's host runner, over the same
@@ -111,12 +111,12 @@ chezmoi update --init   # pull the repo and apply (--init: regenerate config if 
 chezmoi add ~/.zshrc   # start managing a new dotfile
 ```
 
-Edit the Brewfile at `chezmoi/home/dot_Brewfile.tmpl`. chezmoi renders it to
+Edit the Brewfile at `platform/chezmoi/home/dot_Brewfile.tmpl`. chezmoi renders it to
 `~/.Brewfile` and stops there — it *declares* the package set, it does not
 install it. On a laptop the apply-time script installs whatever is missing;
 on the mini that's the chezmoi workflow (`00-install-packages.sh` on apply). Nothing upgrades
 automatically on the mini: versions move when you run `brew bundle install
---file ~/.Brewfile --upgrade` there. See `chezmoi/README.md`.
+--file ~/.Brewfile --upgrade` there. See `platform/chezmoi/README.md`.
 
 ## Runbook
 

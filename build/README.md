@@ -10,8 +10,8 @@ it can be typed, rehearsed and tested.
 A directory the CLI serves carries a `ritten.json` naming its workflow
 — `"workflow": "docker"` — plus that workflow's options. That directory
 is a *component*: a slice is the folder that groups a service's
-components (`media/sonarr/compose/`, `media/sonarr/backup/`, `forgejo/tofu/`,
-`forgejo/runners/`), and never carries a declaration of its own. Run
+components (`media/sonarr/compose/`, `media/sonarr/backup/`, `platform/forgejo/tofu/`,
+`platform/forgejo/runners/`), and never carries a declaration of its own. Run
 from a component's directory, `lab` offers exactly that workflow's jobs
 as commands, each option of which is a job argument the job declared. A
 workflow is a class here: its jobs, each job's ordered steps, and the
@@ -31,7 +31,7 @@ the node services that used to live in chezmoi — deployed to each node by
 its own runner with `lab deploy --node <name>`). Two slices with the same shape share a
 workflow and differ only in what they declare. What only one slice does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
-`network/caddy/routes`, `forgejo/runners`, `garage/layout`, `personal/immich/import`,
+`network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`, `personal/immich/import`,
 `monitoring/gatus/health` — named for the slice and the thing, so a `ritten.json`
 reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each
@@ -39,8 +39,8 @@ workflow lists it for itself.
 
 A job's name has to read from inside the component it runs in, because
 that is all the context there is: `renew` in `network/caddy/certs/`, `register`
-in `forgejo/runners/`, `init` in `garage/layout/`, `verify` in
-`restic/repositories/`. One intent gets one verb, too: making a node
+in `platform/forgejo/runners/`, `init` in `platform/garage/layout/`, `verify` in
+`platform/restic/repositories/`. One intent gets one verb, too: making a node
 match its component is `deploy` whether the stack is containers, a
 supervised agent, or a root module.
 
@@ -66,7 +66,7 @@ the release (the snapshot's tag and, when a container is named in
 `stop`, the installed stack that is stopped for the duration), the
 paths, the excludes, and the `verify` paths a restore must bring back.
 The repositories themselves are the restic slice's to define: every
-backup component reads `restic/restic.env` (or `sftp.env` on a Linux
+backup component reads `platform/restic/restic.env` (or `sftp.env` on a Linux
 node) by walking up to the checkout — the one file a component reads
 outside its own directory, because a copy in every component would be a
 copy that drifts.
@@ -321,7 +321,7 @@ of the lab's own is `AuthenticateFeed`, which reads the feed key from the
 vault where Ritten's would read the environment.
 
 Every machine on the tailnet has the feed as a NuGet source
-(`chezmoi/home/dot_nuget/NuGet/NuGet.Config.tmpl`), mapped to
+(`platform/chezmoi/home/dot_nuget/NuGet/NuGet.Config.tmpl`), mapped to
 `Wolfe.Lab.*` alone so a laptop off the tailnet still restores everything
 else from nuget.org: `dotnet tool install -g Wolfe.Lab.Build` works
 anywhere, and `--version` matches what the runners are pinned to.
@@ -339,7 +339,7 @@ The pinned tool, `lab`, is on every runner. The pin is one line: the
 repository's tool manifest, `.config/dotnet-tools.json`. chezmoi installs
 that version on each node with a host runner (`.chezmoiscripts/install-lab.sh`,
 on the Mac mini, the Pi and the Studio), and the CI image bakes it in as
-its last layer (`ci/image/Dockerfile`, which reads the manifest with jq);
+its last layer (`platform/ci/image/Dockerfile`, which reads the manifest with jq);
 the chezmoi and `ci image` workflows both roll it out on the merge. On a
 laptop, `dotnet tool restore` then `dotnet lab` runs the same version
 from anywhere in the repository.
@@ -354,7 +354,7 @@ publishes, and the next chezmoi apply installs `lab` — the install script
 runs on every apply and warns, rather than fails, while the feed is
 unreachable.
 
-The CI image (`ci/image/`) is an `image` component, and the one with a
+The CI image (`platform/ci/image/`) is an `image` component, and the one with a
 `check` and no `deploy`: the check runs on the pull request (each image's
 Dockerfile exists, each tag names its registry), and the merge's build
 and push are kaniko's, in `ci-image.yaml`, to Forgejo's registry as

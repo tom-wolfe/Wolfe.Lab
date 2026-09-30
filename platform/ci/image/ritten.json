@@ -1,0 +1,10 @@
+{
+  "workflow": "image",
+  "images": [
+    {
+      "tag": "code.twolfe.dev/tom-wolfe/ci",
+      "context": "../../..",
+      "dockerfile": "platform/ci/image/Dockerfile"
+    }
+  ]
+}

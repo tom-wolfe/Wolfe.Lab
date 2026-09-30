@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [forgejo/tofu/**, .forgejo/workflows/forgejo-tofu.yaml]
+    paths: [platform/forgejo/tofu/**, .forgejo/workflows/forgejo-tofu.yaml]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: forgejo/tofu
+      - working-directory: platform/forgejo/tofu
         run: lab check
 
   deploy:
@@ -28,5 +28,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: forgejo/tofu
+      - working-directory: platform/forgejo/tofu
         run: lab deploy --auto-approve

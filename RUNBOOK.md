@@ -12,7 +12,7 @@ reasons are in `README.md`.
    ```
 3. You'll be asked which machine this is — `macbook`, `macstudio`,
    `work-macbook`, `macmini-node` or `pi-node` — and every file in the source says what
-   that profile gets (`chezmoi/README.md` "Profiles").
+   that profile gets (`platform/chezmoi/README.md` "Profiles").
 4. Servers additionally: `./setup.sh` from the checkout to bring the stacks up and hand convergence over to Forgejo Actions — the script header documents the details.
 
 chezmoi always applies its own clone in `~/.local/share/chezmoi`, never
@@ -59,9 +59,9 @@ and no GUI, so it is the same idea with different mechanics. In order:
    git@git.twolfe.dev:tom-wolfe/Wolfe.Lab.git` — answer `pi-node`. That
    profile gets no Homebrew and no macOS scripts; binaries arrive as
    pinned externals under `~/.local/bin`.
-7. Then, per slice: the runners (`forgejo/RUNBOOK.md` "Bringing up the
+7. Then, per slice: the runners (`platform/forgejo/RUNBOOK.md` "Bringing up the
    Pi"), the Beszel agent's hub-side setup (`monitoring/beszel/RUNBOOK.md`), the
-   backup path (`restic/RUNBOOK.md` "A Linux node").
+   backup path (`platform/restic/RUNBOOK.md` "A Linux node").
 
 ## Manual sign-ins (not automatable)
 
@@ -104,8 +104,8 @@ are done once per fresh server, in order.
   3. Register every node's Actions runner, this machine's included — registrations live in
      Forgejo's database, so a fresh Forgejo knows none of them, while each
      node's runner.json still holds its vault secret and will poll with it
-     until the server knows it again (forgejo/README.md "Runners"):
-       cd forgejo/runners
+     until the server knows it again (platform/forgejo/README.md "Runners"):
+       cd platform/forgejo/runners
        lab register --node MacMini
        lab register --node wolfe-pi5
        lab register --node wolfe-pi5 --kind docker

@@ -88,7 +88,7 @@ name tags that already exist.
    from the same shell.
 5. **Verify.** `tailscale status` from a laptop: the three servers show
    `tag:server` and their addresses are unchanged (`network/caddy/tofu` and
-   `forgejo/tofu` carry them); `ssh macmini` over the tailnet still
+   `platform/forgejo/tofu` carry them); `ssh macmini` over the tailnet still
    works. From the Pi, `curl -s http://macmini.tailf823b8.ts.net:8090/api/health`
    — the server↔server rule.
 

@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [restic/tofu/**, .forgejo/workflows/restic-tofu.yaml]
+    paths: [platform/restic/tofu/**, .forgejo/workflows/restic-tofu.yaml]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: restic/tofu
+      - working-directory: platform/restic/tofu
         run: lab check
 
   deploy:
@@ -28,5 +28,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: restic/tofu
+      - working-directory: platform/restic/tofu
         run: lab deploy --auto-approve

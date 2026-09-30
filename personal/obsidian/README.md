@@ -44,7 +44,7 @@ reads it only when there is something to push, and hands it to git
 through a one-shot credential helper, so it never lands in the remote
 URL, the checkout or the process list.
 
-The repositories are declared in `forgejo/tofu/vaults.tf` —
+The repositories are declared in `platform/forgejo/tofu/vaults.tf` —
 private, git only, `prevent_destroy`. Adding a vault is one entry
 there, one in `ritten.json`, one workflow, and the bootstrap in
 `RUNBOOK.md`.

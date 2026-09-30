@@ -71,5 +71,5 @@ via the shared pipeline (`lab backup` from `media/sonarr/backup`, whose `ritten.
 stops the container, `restic backup`, starts it. Excluded: `Backups/`
 (Sonarr's own zips — restic is the backup), `MediaCover/` (artwork
 TVDB re-serves), logs. Restore is the generic recipe in
-`restic/README.md`; the thing the restore drill should assert exists is
+`platform/restic/README.md`; the thing the restore drill should assert exists is
 `sonarr.db`.

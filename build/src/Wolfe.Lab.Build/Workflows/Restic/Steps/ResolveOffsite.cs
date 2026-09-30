@@ -4,7 +4,7 @@ using Wolfe.Lab.Build.Workflows.Restic.Models;
 namespace Wolfe.Lab.Build.Workflows.Restic.Steps;
 
 /// <summary>
-/// Reads the offsite repository from <c>restic/offsite.env</c>, whose environment names the
+/// Reads the offsite repository from <c>platform/restic/offsite.env</c>, whose environment names the
 /// local repository as the copy's source as well.
 /// </summary>
 [Step("resolve offsite", StepKind.Work)]

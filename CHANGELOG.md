@@ -4,6 +4,26 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.74.0] - 2026-09-30
+
+### Changed
+
+- **`platform/` is the last area** (ROADMAP #12): Forgejo, Garage,
+  restic, chezmoi, the CI image and Renovate moved under it. Every slice
+  is now `<area>/<service>/<component>`. Release names, tofu state keys,
+  workflow names and schedules are unchanged, so nothing on a node moves,
+  no state migrates and no required status changes.
+- **`.chezmoiroot` names `platform/chezmoi/home`**, in the same commit as
+  the move. A node's `chezmoi update --init` — what the chezmoi deploy
+  runs — pulls and applies from the new root in one pass; a plain
+  `chezmoi update` by hand reads the old root before it pulls, applies
+  nothing, and catches up on the next run. The chezmoi workflow now also
+  fires on `.chezmoiroot`.
+- **The CI image builds from the checkout's root one level further up**
+  (`context: ../../..`), with its Dockerfile at
+  `platform/ci/image/Dockerfile`; Renovate reads
+  `platform/renovate/config.json5`.
+
 ## [0.73.0] - 2026-09-30
 
 ### Changed

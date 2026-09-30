@@ -1,0 +1,34 @@
+{{- /* Binaries chezmoi fetches rather than a package manager: pinned by
+       URL and checksum, installed under ~/.local/bin without sudo. The Pi
+       only — the Macs get the same tools from the Brewfile. Checksums are
+       for linux-arm64; another Linux node on another arch needs its own
+       pair. To upgrade: bump the version and checksum. */ -}}
+{{- if eq .profile "pi-node" }}
+# The Forgejo Actions runner — the per-node CD agent (platform/forgejo/README.md
+# "Runners"). Release assets: code.forgejo.org/forgejo/runner/releases.
+[".local/bin/forgejo-runner"]
+    type = "file"
+    url = "https://code.forgejo.org/forgejo/runner/releases/download/v13.1.0/forgejo-runner-13.1.0-linux-arm64"
+    executable = true
+    checksum.sha256 = "4a18a9a2aad9619e61aca5d81d2c69cc624b26af8605118bfc4729ff994d12d3"
+
+# 1Password CLI, so create_ templates can read the vault on this node the
+# same way they do on the mini (service account; see .chezmoi.toml.tmpl).
+# Versions: app-updates.agilebits.com/product_history/CLI2.
+[".local/bin/op"]
+    type = "archive-file"
+    url = "https://cache.agilebits.com/dist/1P/op2/pkg/v2.39.0/op_linux_arm64_v2.39.0.zip"
+    path = "op"
+    executable = true
+    checksum.sha256 = "829baeff1c07e055cfa132031b1d9f2282ccdf5076258e482caf2fda70aea5d0"
+
+# Node — only because actions/checkout is a JavaScript action and a host
+# runner runs those with the host's node. Nothing else here needs it.
+# Versions + checksums: nodejs.org/dist/<version>/SHASUMS256.txt.
+[".local/bin/node"]
+    type = "archive-file"
+    url = "https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-arm64.tar.xz"
+    path = "node-v22.23.2-linux-arm64/bin/node"
+    executable = true
+    checksum.sha256 = "fff4078c5def658577f92c88db7db3bc0072924bfb93fe52c1e744a54e94abb8"
+{{- end }}

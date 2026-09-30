@@ -1,4 +1,4 @@
-# This slice's route through the front door — see forgejo/caddy.caddyfile
+# This slice's route through the front door — see platform/forgejo/compose/caddy.caddyfile
 # for the shape's rationale.
 #
 # The NAME IS THE CAPABILITY, not the implementation. `ai` rather than

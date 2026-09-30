@@ -64,7 +64,7 @@ cd personal/paperless/backup
 lab restore
 ```
 
-`restic/RUNBOOK.md` "Restore" for what it does and its options. The
+`platform/restic/RUNBOOK.md` "Restore" for what it does and its options. The
 snapshot carries no search index and no thumbnails; regenerate both
 once the stack is up:
 

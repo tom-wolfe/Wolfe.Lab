@@ -10,7 +10,7 @@ keeping the existing library, watch history and artwork exactly as they were.
 | State | `~/Library/Application Support/jellyfin` (bind mounted at the **same path** inside the container) |
 | Database | SQLite at `~/Library/Application Support/jellyfin/data/jellyfin.db` |
 | Media | `/Volumes/Data1` and `/Volumes/Data2` (both USB, mounted at the same paths) |
-| Backups | restic repo on `/Volumes/Data2` + B2 offsite (nightly; `restic/README.md`) |
+| Backups | restic repo on `/Volumes/Data2` + B2 offsite (nightly; `platform/restic/README.md`) |
 
 ## Deployment
 

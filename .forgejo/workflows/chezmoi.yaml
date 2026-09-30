@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [chezmoi/**, .config/dotnet-tools.json, build/global.json, .forgejo/workflows/chezmoi.yaml]
+    paths: [platform/chezmoi/**, .chezmoiroot, .config/dotnet-tools.json, build/global.json, .forgejo/workflows/chezmoi.yaml]
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: chezmoi/profiles
+      - working-directory: platform/chezmoi/profiles
         run: lab check
 
   deploy:
@@ -34,5 +34,5 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - working-directory: chezmoi/profiles
+      - working-directory: platform/chezmoi/profiles
         run: lab deploy --auto-approve

@@ -31,7 +31,7 @@ establishes Netlify as a provider, not a slice; and the zone outlives
 its host — move it to another DNS service and every record here
 survives while a `netlify/` path lies. Nor is `network/dns/` a departure from
 the technology-named directories elsewhere: those are named for the
-thing they own (the `forgejo/` tree *is* Forgejo artifacts), and the
+thing they own (the `platform/forgejo/` tree *is* Forgejo artifacts), and the
 thing this root owns is the domain's records. Same convention, applied
 to a thing that isn't a deployment.
 

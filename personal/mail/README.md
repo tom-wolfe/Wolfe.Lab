@@ -34,7 +34,7 @@ an amd64 build and crashed, so the mini is exactly the machine that bug
 was about. Version management is the image tag, which is how the rest of
 the lab pins anything.
 
-Renovate watches this tag (`renovate/README.md`) and opens a pull request
+Renovate watches this tag (`platform/renovate/README.md`) and opens a pull request
 when the fork publishes a new build. What it cannot watch is the fork
 itself: this is still a dependency on a third party's spare time, and the
 failure mode if they stop is a login that stops working rather than a

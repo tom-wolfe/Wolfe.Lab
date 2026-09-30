@@ -76,7 +76,7 @@ root's `providers.tf`, so no state migrates.
   `ResolveEnvironment` already does, and routes are gathered
   recursively. A CLI change, so it ships and is pinned before anything
   moves. The ollama siblings check reads its parent and is unaffected.
-- **`.chezmoiroot` moves in the same commit as `chezmoi/`**, or every
+- **`.chezmoiroot` moves in the same commit as `platform/chezmoi/`**, or every
   node's `chezmoi update` loses its source — the riskiest single move,
   which is why `platform/` goes last.
 - **Every workflow's `paths:` and `working-directory`**, and the
@@ -95,7 +95,8 @@ the next thing built (#11) should be built where it will stay.
 2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
    into it from here.~~ Done (0.57.0).
 3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *Done: `media/` (0.68.0), `personal/` (0.69.0), `ai/` (0.71.0), `network/` (0.72.0).*
-4. `platform/` last — Forgejo and chezmoi.
+4. ~~`platform/` last — Forgejo and chezmoi.~~ Done (0.74.0), after 0.73.0 taught
+   the backups to find `restic/` inside an area.
 
 ### 11. Observability — OpenTelemetry into Grafana
 
@@ -496,10 +497,10 @@ offsite copy exists first and is proven, then the origin moves.
 
 **The config half.** The first cross-slice values are already here,
 homed nowhere: the runner registration template reads Forgejo's
-`ROOT_URL` out of `forgejo/compose/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
+`ROOT_URL` out of `platform/forgejo/compose/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
-(`network/caddy/tofu/variables.tf`, `forgejo/README.md`). Every one is retyped
+(`network/caddy/tofu/variables.tf`, `platform/forgejo/README.md`). Every one is retyped
 by the Linux move (#2). Hardcoding one slice's fact into another is the
 thing to refuse; a consumer deriving it from the owning slice's files
 is only a consumer's guess at a format that isn't its own.
@@ -785,14 +786,14 @@ part of that step rather than optional cleanup.
 The fix is a signed copy of the runner at a fixed path, so the grant
 survives an upgrade that moves Homebrew's binary: a step of the runner
 component once the runners' install moves out of chezmoi into the CLI
-(#6, `lab init`; registration already has, `forgejo/runners/`). Until then the grant is
+(#6, `lab init`; registration already has, `platform/forgejo/runners/`). Until then the grant is
 re-given by hand after an upgrade. The Studio's runner holds no grants,
 so it has no such problem.
 
 ### The Studio wakes only by hand
 
 A job for the Studio queues while it sleeps and runs when it next wakes
-(`forgejo/README.md`, "The Studio's runner"), which is enough while
+(`platform/forgejo/README.md`, "The Studio's runner"), which is enough while
 nothing is urgent. A Mac cannot be woken from *off* over the network,
 and a cold boot behind FileVault stops at the login window before any
 LaunchAgent starts; from *sleep*, with "Wake for network access" on, a

@@ -1,0 +1,147 @@
+// Renovate's whole configuration: the bot's (where it runs, as whom) and the
+// repository's (what it watches, how it groups) in one file, so the repo
+// needs no renovate.json at its root and nothing here is onboarded.
+// Read by `.forgejo/workflows/renovate.yaml`; see platform/renovate/README.md.
+{
+  platform: "forgejo",
+  endpoint: "https://code.twolfe.dev/api/v1/",
+  repositories: ["tom-wolfe/Wolfe.Lab"],
+  gitAuthor: "Renovate <renovate@twolfe.dev>",
+  onboarding: false,
+  requireConfig: "ignored",
+
+  extends: ["config:recommended"],
+
+  // Branch protection blocks a pull request that is behind main, and Forgejo
+  // does not tell Renovate so: rebase whenever main moves.
+  rebaseWhen: "behind-base-branch",
+
+  // It runs once a day, so config:recommended's two pull requests an hour
+  // meant two a day. Open pull requests are still capped (ten, the default),
+  // which is the limit that matters to the person merging them.
+  prHourlyLimit: 0,
+
+  // The lab's own feed resolves to a tailnet address, which Renovate is
+  // about to start refusing unless told the host is meant to be internal.
+  hostRules: [
+    {
+      matchHost: "code.twolfe.dev",
+      allowInternal: true,
+    },
+  ],
+
+  customManagers: [
+    {
+      // What the lab installs from GitHub releases (build/README.md,
+      // "Packages and tools"): an agent's `package` in its ritten.json, and
+      // every tool in .config/lab-tools.json. Only the version is pinned —
+      // the checksum is read from the release — so this is all that moves.
+      customType: "regex",
+      managerFilePatterns: ["/(^|/)ritten\\.json$/", "/^\\.config/lab-tools\\.json$/"],
+      matchStrings: [
+        "\"github\":\\s*\"(?<depName>[^\"]+)\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\"",
+      ],
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v?(?<version>.+)$",
+    },
+    {
+      // Grafana's plugins, pinned where the container installs them.
+      customType: "regex",
+      managerFilePatterns: ["/^monitoring/grafana/compose/compose\\.yaml$/"],
+      matchStrings: ["grafana-llm-app@(?<currentValue>[0-9][^\\s,]*)"],
+      depNameTemplate: "grafana/grafana-llm-app",
+      datasourceTemplate: "github-tags",
+      extractVersionTemplate: "^v?(?<version>.+)$",
+    },
+  ],
+
+  packageRules: [
+    {
+      matchPackageNames: ["/^wolfe\\.lab\\.build$/i"],
+      registryUrls: ["https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"],
+      groupName: "lab CLI pin",
+    },
+
+    // Built on the node from source, not pulled: nothing to look up.
+    {
+      matchPackageNames: ["lab/mail-watcher"],
+      enabled: false,
+    },
+
+    // Immich's own compose file pins its database and cache, by digest, per
+    // release. They move when Immich's release notes say so, not before.
+    {
+      matchPackageNames: ["docker.io/valkey/valkey", "valkey/valkey", "ghcr.io/immich-app/postgres"],
+      enabled: false,
+    },
+    {
+      matchPackageNames: ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
+      groupName: "immich",
+    },
+
+    {
+      matchPackageNames: ["henrygd/beszel"],
+      groupName: "beszel",
+    },
+
+    // Tags Renovate cannot order without being told their shape.
+    {
+      matchPackageNames: ["linuxserver/radarr", "linuxserver/sonarr"],
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\.(?<build>\\d+)-ls(?<revision>\\d+)$",
+    },
+    {
+      matchPackageNames: ["linuxserver/qbittorrent"],
+      versioning: "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)_v\\d+\\.\\d+\\.\\d+-ls(?<build>\\d+)$",
+    },
+    {
+      matchPackageNames: ["dancwilliams/protonmail-bridge"],
+      versioning: "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<build>\\d+)$",
+    },
+
+    // `required_version` in each tofu root is OpenTofu's, which Renovate
+    // would look up as Terraform's.
+    {
+      matchDepNames: ["hashicorp/terraform"],
+      enabled: false,
+    },
+
+    // .NET: the SDK pins and the images move together, and a new major is a
+    // migration, not a bump — it waits on the dependency dashboard until
+    // asked for.
+    {
+      matchPackageNames: ["dotnet-sdk", "mcr.microsoft.com/dotnet/*"],
+      groupName: ".NET",
+    },
+    {
+      matchPackageNames: ["dotnet-sdk", "mcr.microsoft.com/dotnet/*"],
+      matchUpdateTypes: ["major"],
+      dependencyDashboardApproval: true,
+    },
+
+    {
+      matchPackageNames: ["grafana/grafana", "grafana/loki", "grafana/tempo", "prom/prometheus"],
+      matchUpdateTypes: ["major"],
+      dependencyDashboardApproval: true,
+    },
+
+    // The CLI's dependencies, in the families that release together.
+    {
+      matchPackageNames: ["Ritten.*"],
+      groupName: "Ritten",
+    },
+    {
+      matchPackageNames: ["Microsoft.Extensions.*"],
+      groupName: "Microsoft.Extensions",
+    },
+    {
+      matchPackageNames: ["Microsoft.Testing.*", "NSubstitute", "Shouldly", "xunit.v3"],
+      groupName: "test packages",
+    },
+
+    // Renovate itself releases several times a day; once a week is plenty.
+    {
+      matchPackageNames: ["ghcr.io/renovatebot/renovate"],
+      extends: ["schedule:weekly"],
+    },
+  ],
+}

@@ -14,7 +14,7 @@ document whether or not any desktop is awake.
 | State | `~/Docker/paperless/data` — `db.sqlite3`, the search index, the classifier |
 | Documents | `/Volumes/Data2/paperless/media/documents` — `originals/`, `archive/`, `thumbnails/` |
 | Inbox | `/Volumes/Data2/paperless/consume` — anything dropped here is consumed and removed |
-| Backups | `paperless-backup.yaml`, nightly at 02:55, into the restic repo (`restic/README.md`); the restore drilled straight after |
+| Backups | `paperless-backup.yaml`, nightly at 02:55, into the restic repo (`platform/restic/README.md`); the restore drilled straight after |
 
 ## SQLite, not Postgres
 

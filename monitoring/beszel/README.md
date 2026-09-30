@@ -138,7 +138,7 @@ a row in total silence. The check that alerts is the one that asks.
 ## The configuration that isn't code
 
 Every other slice declares its API resources in tofu — buckets in
-`garage/tofu`, repositories in `forgejo/tofu`, checks in `monitoring/gatus/tofu`. This
+`platform/garage/tofu`, repositories in `platform/forgejo/tofu`, checks in `monitoring/gatus/tofu`. This
 one can't: Beszel has no Terraform/OpenTofu provider. Registered systems,
 alert thresholds and notification URLs are clicked into the UI and live only
 in `~/Docker/beszel/data`.
@@ -200,7 +200,7 @@ One item, Wolfe.Lab vault:
 `ritten.json` declares the paths — stops the hub, snapshots `~/Docker/beszel/data`
 into the restic repo on `/Volumes/Data2` (tagged with the image it was
 taken under; `restic-offsite.yaml` ships it to B2 and owns retention — see
-`restic/README.md`), and starts it again, refusing to run if the drive
+`platform/restic/README.md`), and starts it again, refusing to run if the drive
 isn't mounted. Nightly via `beszel-backup.yaml` at 02:20, the restore
 drilled straight after.
 

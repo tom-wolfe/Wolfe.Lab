@@ -24,7 +24,7 @@ internal sealed class ResolveRepository(ISecretProvider secrets, IFileSystem fil
 
         if (repository.IsLocal && !new PhysicalDirectory(repository.Location).GetFile(ConfigFile).Exists)
         {
-            return new Error($"No restic repository at {repository.Location}: the drive is unmounted, or the repository was never initialised (restic/RUNBOOK.md, Bootstrap).");
+            return new Error($"No restic repository at {repository.Location}: the drive is unmounted, or the repository was never initialised (platform/restic/RUNBOOK.md, Bootstrap).");
         }
 
         log.Detail($"Backing up into {repository.Location}.");

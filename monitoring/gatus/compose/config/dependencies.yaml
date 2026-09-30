@@ -66,7 +66,7 @@ endpoints:
 
   - name: backblaze s3 endpoint
     group: dependencies
-    # The region restic's offsite repo lives in (restic/README.md). A bare
+    # The region restic's offsite repo lives in (platform/restic/README.md). A bare
     # GET is 403 AccessDenied and needs no key; TLS with a valid cert is
     # the signal. The repo's own health is restic-verify.yaml's job.
     url: tls://s3.eu-central-003.backblazeb2.com:443
@@ -175,7 +175,7 @@ endpoints:
 
   - name: git.twolfe.dev
     group: dependencies
-    # Forgejo's own tailnet seat (the sidecar, forgejo/README.md "Tailnet
+    # Forgejo's own tailnet seat (the sidecar, platform/forgejo/README.md "Tailnet
     # identity") at its 100.x address — the clone URL every machine uses.
     # VERIFY on first deploy: this asks the Docker Desktop VM to route to
     # the tailnet, which works only if container egress rides the host's

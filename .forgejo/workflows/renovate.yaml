@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [renovate/**, .forgejo/workflows/renovate.yaml]
+    paths: [platform/renovate/**, .forgejo/workflows/renovate.yaml]
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - run: renovate-config-validator --strict renovate/config.json5
+      - run: renovate-config-validator --strict platform/renovate/config.json5
 
   run:
     if: github.event_name != 'pull_request'
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v7
       - run: renovate
         env:
-          RENOVATE_CONFIG_FILE: renovate/config.json5
+          RENOVATE_CONFIG_FILE: platform/renovate/config.json5
           RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
           RENOVATE_GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
           LOG_LEVEL: info

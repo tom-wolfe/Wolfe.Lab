@@ -66,7 +66,7 @@ Everything happens in the service's own slice; this one is never edited.
 
 `git.twolfe.dev` is an A record at the forgejo sidecar's own tailnet IP,
 not a route through this door, because SSH needs a machine where port 22
-is free. It lives in `forgejo/tofu` and has nothing to do with this
+is free. It lives in `platform/forgejo/tofu` and has nothing to do with this
 slice.
 
 Everything else is just a name under the wildcard. There used to be a

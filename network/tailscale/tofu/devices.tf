@@ -6,7 +6,7 @@ data "tailscale_device" "server" {
 
 # The tag is defined in the policy first (tagOwners); tagging a device
 # with an undefined tag is refused, hence depends_on. Tagging an existing
-# device keeps its address — network/caddy/tofu and forgejo/tofu carry those
+# device keeps its address — network/caddy/tofu and platform/forgejo/tofu carry those
 # addresses as record targets.
 resource "tailscale_device_tags" "server" {
   for_each  = data.tailscale_device.server

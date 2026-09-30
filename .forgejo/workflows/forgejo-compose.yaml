@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [forgejo/compose/**, .forgejo/workflows/forgejo-compose.yaml]
+    paths: [platform/forgejo/compose/**, .forgejo/workflows/forgejo-compose.yaml]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: forgejo/compose
+      - working-directory: platform/forgejo/compose
         run: lab check
 
   deploy:
@@ -29,5 +29,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: forgejo/compose
+      - working-directory: platform/forgejo/compose
         run: lab deploy --auto-approve

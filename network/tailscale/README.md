@@ -12,7 +12,7 @@ Three things already written down wait on it:
 - the neat public names (`jellyfin.twolfe.dev`) point at a Tailscale IP —
   the edge/DNS design in `network/caddy/README.md`;
 - forgejo's portless clone URL waits on a dedicated IP with a free port
-  22 (`forgejo/compose/compose.yaml` records the decision);
+  22 (`platform/forgejo/compose/compose.yaml` records the decision);
 - `100.64.0.0/10` isn't RFC1918, so the router's DNS-rebind filter has
   no objection to the `*.ts` names — they need no workaround at all.
   (The `*.lab` workaround in `network/caddy/README.md` stays: those names still
@@ -61,7 +61,7 @@ verbatim, comments included. It says four things:
   nobody is logged in to vouch for it. Tagged devices don't expire their
   node key, and `tofu/devices.tf` declares that rather than relying on
   the default — a server whose key silently expires drops off the tailnet
-  with nothing to notice, and `network/caddy/tofu` and `forgejo/tofu` carry
+  with nothing to notice, and `network/caddy/tofu` and `platform/forgejo/tofu` carry
   tailnet addresses as record targets.
 - **`tag:hybrid`** on the Studio (`hybrids`): a workstation that also
   serves while it is on (`README.md`, "Nodes"). Tagged for the same reasons as a
@@ -116,13 +116,13 @@ the LAN and the API over the internet, none of them through the tailnet.
    and its lab traffic rides the tailnet: the Beszel agent reaches the hub
    over it (monitoring/beszel/README.md "The Pi"), Gatus probes the mini by its
    MagicDNS name (monitoring/gatus/README.md "Placement"), and its restic snapshots
-   go to the mini over SFTP (restic/README.md "From a Linux node").
+   go to the mini over SFTP (platform/restic/README.md "From a Linux node").
 3. **Per-service sidecar IPs.** forgejo is the first customer: a userspace `tailscale/tailscale` sidecar in the
    forgejo container's network namespace gives it its own tailnet seat
    with port 22 free, and clone URLs go portless at `git.twolfe.dev`
-   (an A record in forgejo/tofu at the sidecar's address — the
+   (an A record in platform/forgejo/tofu at the sidecar's address — the
    per-service neat-name pattern from the edge/DNS design). Design and
-   bootstrap in forgejo/README.md "Tailnet identity"; further customers
+   bootstrap in platform/forgejo/README.md "Tailnet identity"; further customers
    as they prove worth a dedicated address.
 
 ## Runbook
