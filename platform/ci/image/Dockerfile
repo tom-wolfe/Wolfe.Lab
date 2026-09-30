@@ -43,14 +43,10 @@ RUN set -eux; \
     docker --version; \
     docker compose version
 
-ARG CHEZMOI_VERSION=2.72.2
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends shellcheck jq rsync bzip2; \
+    apt-get install -y --no-install-recommends jq rsync bzip2; \
     rm -rf /var/lib/apt/lists/*; \
-    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin -t "v${CHEZMOI_VERSION}"; \
-    chezmoi --version; \
-    shellcheck --version; \
     jq --version; \
     rsync --version | head -n 1
 
