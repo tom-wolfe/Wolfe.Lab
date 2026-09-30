@@ -19,7 +19,7 @@
     "ollama": {
       "package": {
         "github": "ollama/ollama",
-        "version": "0.34.4",
+        "version": "0.35.0",
         "asset": "ollama-darwin.tgz",
         "checksums": "sha256sum.txt"
       },
