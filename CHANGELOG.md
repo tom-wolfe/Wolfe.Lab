@@ -4,6 +4,19 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.75.0] - 2026-09-30
+
+### Added
+
+- **Every container says where in the lab it lives.** A compose deploy
+  writes a `compose.override.yaml` into the release, which compose merges
+  by itself, putting `lab.area`, `lab.service` and `lab.component` — the
+  component's path — on every service as Docker labels, and as
+  `OTEL_RESOURCE_ATTRIBUTES` for an application sending its own
+  telemetry (ROADMAP #11 step 3: container logs are collected under
+  them). The first deploy of each stack after this recreates its
+  containers once, for the new labels.
+
 ## [0.74.0] - 2026-09-30
 
 ### Changed

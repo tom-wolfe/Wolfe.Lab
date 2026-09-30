@@ -25,7 +25,8 @@ internal sealed class RsyncInstaller(ICommandRunner commands) : IReleaseInstalle
         // component's; published, it would read as a change on every run after a local one.
         var command = Command.Create("rsync")
             .WithArguments("-rlp", "--checksum", "--delete", "--itemize-changes",
-                "--exclude", "ritten.json", "--exclude", "/artifacts/", "--exclude", "/temp/");
+                "--exclude", "ritten.json", "--exclude", "/artifacts/", "--exclude", "/temp/",
+                "--exclude", "/compose.override.yaml");
 
         if (dryRun)
         {

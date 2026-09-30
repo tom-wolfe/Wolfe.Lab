@@ -55,6 +55,18 @@ there with its `secrets.env` resolved into the environment of that one
 checkout, which is right for the check and wrong for the deploy; the
 one step that differs is owned here, the rest are a `using`.
 
+Every container says where in the lab it lives. The component's path is
+`<area>/<service>/<component>`, which is the label schema (ROADMAP.md
+#11) already, so the deploy writes a `compose.override.yaml` into the
+release — compose merges it by itself — putting `lab.area`,
+`lab.service` and `lab.component` on every service as Docker labels,
+which the collector reads a container's logs under, and as
+`OTEL_RESOURCE_ATTRIBUTES`, which an application sending its own
+telemetry reads. No compose file in the repository carries them, so none
+can disagree with where it sits; the file is the deploy's, so the
+release's mirror leaves it in place. A component anywhere but three
+levels down fails the deploy rather than going unlabelled.
+
 `network/caddy/routes` is the one component that reads other components, and
 deliberately: it gathers every `caddy.caddyfile` in the checkout into a
 release of its own that the door's Caddyfile imports, so adding a

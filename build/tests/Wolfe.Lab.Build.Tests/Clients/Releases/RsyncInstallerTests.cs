@@ -44,4 +44,8 @@ public class RsyncInstallerTests
         arguments.ShouldContain("/temp/");
         arguments.ShouldContain("ritten.json");
     }
+
+    [Fact]
+    public void Rsync_LeavesTheDeploysOwnOverrideInPlace() =>
+        RsyncInstaller.Rsync(new PhysicalDirectory("/src"), new PhysicalDirectory("/out")).Arguments.ShouldContain("/compose.override.yaml");
 }
