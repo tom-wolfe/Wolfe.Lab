@@ -41,6 +41,14 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The runners run `Wolfe.Lab`.** The pin names the new package,
+  `wolfe.lab` 1.0.53; chezmoi's install script gives up `Wolfe.Lab.Build`
+  first on a node that still has it — both provide the command `lab`,
+  which dotnet will not install twice — and only once the feed answers,
+  so a node is never left without one. The CI image installs the new
+  package, Renovate watches it, and branch protection requires
+  `lab tool / check` alone.
+
 - **The CLI is `platform/lab/tool`, and `Wolfe.Lab`.** `build/` held a
   general CLI in a project called `Wolfe.Lab.Build`, about to become an
   agent too; it is now the `lab` service in `platform/`, its README and

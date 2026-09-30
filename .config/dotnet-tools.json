@@ -2,8 +2,8 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "wolfe.lab.build": {
-      "version": "1.0.52",
+    "wolfe.lab": {
+      "version": "1.0.53",
       "commands": [
         "lab"
       ],

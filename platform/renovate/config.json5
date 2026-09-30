@@ -58,7 +58,7 @@
 
   packageRules: [
     {
-      matchPackageNames: ["/^wolfe\\.lab\\.build$/i"],
+      matchPackageNames: ["/^wolfe\\.lab$/i"],
       registryUrls: ["https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"],
       groupName: "lab CLI pin",
     },

@@ -13,7 +13,7 @@
 # apply retries.
 set -euo pipefail
 
-version="{{ index (include (joinPath .chezmoi.workingTree ".config/dotnet-tools.json") | fromJson).tools "wolfe.lab.build" "version" }}"
+version="{{ index (include (joinPath .chezmoi.workingTree ".config/dotnet-tools.json") | fromJson).tools "wolfe.lab" "version" }}"
 feed="https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"
 {{- if eq .profile "pi-node" }}
 
@@ -27,7 +27,7 @@ export PATH="$HOME/.dotnet:$PATH"
 export PATH="$PATH:/usr/local/bin"
 {{- end }}
 
-installed="$(dotnet tool list --global | awk 'tolower($1) == "wolfe.lab.build" { print $2 }')"
+installed="$(dotnet tool list --global | awk 'tolower($1) == "wolfe.lab" { print $2 }')"
 [ "$installed" = "$version" ] && exit 0
 
 if ! curl -fsS --max-time 10 -o /dev/null "$feed"; then
@@ -35,7 +35,15 @@ if ! curl -fsS --max-time 10 -o /dev/null "$feed"; then
   exit 0
 fi
 
+# The CLI was published as Wolfe.Lab.Build until 2026-09-30. Both packages
+# provide the command `lab`, and dotnet will not install a tool whose command
+# another already has, so the old one goes first — here, once the feed is
+# known to answer, so a node never loses `lab` to an install that can't run.
+if dotnet tool list --global | awk 'tolower($1) == "wolfe.lab.build" { found = 1 } END { exit !found }'; then
+  dotnet tool uninstall --global Wolfe.Lab.Build
+fi
+
 # update installs when missing; --allow-downgrade makes the pin exact in
 # both directions, so rolling back is reverting the bump.
-dotnet tool update --global Wolfe.Lab.Build --version "$version" --allow-downgrade
+dotnet tool update --global Wolfe.Lab --version "$version" --allow-downgrade
 {{ end -}}
