@@ -158,11 +158,10 @@ which reads well once its parent names the service —
 ```
 monitoring/  grafana/ alloy/ gatus/ heartbeat/ beszel/ (until #11 retires it)
 network/     caddy/ dns/ tailscale/ (pihole/)
-platform/    forgejo/ garage/ restic/ chezmoi/ ci/ renovate/
+platform/    forgejo/ garage/ restic/ chezmoi/ ci/ renovate/ lab/
 media/       jellyfin/ radarr/ sonarr/ qbittorrent/ (prowlarr/ jellyseerr/)
 personal/    immich/ paperless/ files/ obsidian/ mail/
 ai/          ollama/
-build/       the CLI, where it is
 ```
 
 Immich is `personal/`: it is the photo library, not part of the *arr
@@ -418,7 +417,7 @@ already has:
   not come from the repository.
 - **It publishes and installs what components declare** — artifacts to
   `${LAB_ROOT}`, and the pinned packages agents and tools run from
-  (build/README.md) — the same steps the workflows run today.
+  (platform/lab/README.md) — the same steps the workflows run today.
 - **It resolves each component's secrets itself**, which makes it the
   place to narrow what each node can read (#8).
 - **It reaches Forgejo directly** — loopback or the tailnet, never
@@ -552,7 +551,7 @@ the same engine runs, with the same steps, rules and reports. A Ritten
 release before the lab's agent can exist.
 
 **`lab init` onboards a node.** `dotnet tool install -g
-Wolfe.Lab.Build`, then `lab init`: apply chezmoi for the machine's
+Wolfe.Lab`, then `lab init`: apply chezmoi for the machine's
 profile, register its runners, install the agent. The reverse tears a
 node down — deregister, stop, remove — so a node is one command either
 way. On a laptop, `lab init` is only the chezmoi apply, uncommitted to

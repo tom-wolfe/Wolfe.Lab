@@ -6,7 +6,7 @@
 terraform.tfstate
 terraform.tfstate.backup
 
-# .NET (build/)
+# .NET (platform/lab/tool/)
 bin/
 obj/
 dist/

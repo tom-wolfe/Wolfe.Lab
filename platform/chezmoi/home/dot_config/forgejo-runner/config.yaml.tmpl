@@ -1,6 +1,6 @@
 {{- /* The HOST runner: one job at a time (deploys mutate node state; a job
        that overlaps itself queues). */ -}}
-{{- /* The lab's two roots (build/README.md, "Two roots"): where components and
+{{- /* The lab's two roots (platform/lab/README.md, "Two roots"): where components and
        their artifacts are installed, and where services keep their state. The
        same values the zprofile exports, so a job and a shell agree. */ -}}
 {{- $root := joinPath .chezmoi.homeDir ".local/share/Wolfe.Lab" -}}

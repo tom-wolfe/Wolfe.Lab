@@ -13,12 +13,12 @@ extra=("$@")
 
 # Compiles the checkout rather than running the pinned `lab`: on a fresh
 # server the feed `lab` installs from is on the Forgejo this script is
-# bringing up (build/README.md "How workflows run it").
+# bringing up (platform/lab/README.md "How workflows run it").
 lab() {
   local component=$1
   shift
   echo "==> $component $1"
-  (cd "$repo/$component" && dotnet run --project "$repo/build/src/Wolfe.Lab.Build" -- "$@" --auto-approve ${extra[@]+"${extra[@]}"})
+  (cd "$repo/$component" && dotnet run --project "$repo/platform/lab/tool/src/Wolfe.Lab" -- "$@" --auto-approve ${extra[@]+"${extra[@]}"})
 }
 
 lab network/caddy/certs renew

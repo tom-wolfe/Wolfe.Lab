@@ -3,7 +3,7 @@
 <!--
 The user-level NuGet config on every machine that can reach the lab: the
 SDK's default (nuget.org) plus the lab's own feed on Forgejo, so
-`dotnet tool install -g Wolfe.Lab.Build` works anywhere without naming it.
+`dotnet tool install -g Wolfe.Lab` works anywhere without naming it.
 
 The feed is tailnet-only, which is what the source mapping is for: NuGet
 asks a source only for the packages mapped to it, so everything but the
@@ -25,6 +25,7 @@ add source` edits here are overwritten on the next apply.
       <package pattern="*" />
     </packageSource>
     <packageSource key="wolfe-lab">
+      <package pattern="Wolfe.Lab" />
       <package pattern="Wolfe.Lab.*" />
     </packageSource>
   </packageSourceMapping>

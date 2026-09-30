@@ -33,7 +33,7 @@
 
   customManagers: [
     {
-      // What the lab installs from GitHub releases (build/README.md,
+      // What the lab installs from GitHub releases (platform/lab/README.md,
       // "Packages and tools"): an agent's `package` in its ritten.json, and
       // every tool in .config/lab-tools.json. Only the version is pinned —
       // the checksum is read from the release — so this is all that moves.

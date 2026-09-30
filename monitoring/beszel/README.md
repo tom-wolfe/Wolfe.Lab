@@ -10,7 +10,7 @@ native process on each monitored machine).
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel-compose.yaml` on every push that touches `compose/` (the mini's host runner); first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
-| Agent binary | each node's `package` in `agent/ritten.json`: the release the deploy installs, pinned to the hub's version (build/README.md, "Packages and tools"); Renovate moves both as one |
+| Agent binary | each node's `package` in `agent/ritten.json`: the release the deploy installs, pinned to the hub's version (platform/lab/README.md, "Packages and tools"); Renovate moves both as one |
 | Agent supervision and config | the `agent/` component: `agent/ritten.json` declares each node's agent — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
 | Hub liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
 | Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
@@ -35,7 +35,7 @@ The cost is supervision: a native process needs launchd on a Mac and
 systemd on Linux. The lab declares it rather than scripting it — the
 `agent/` component is an `agents` component, the same shape as ollama's
 server, and `lab deploy` renders the platform's unit and converges it
-(build/README.md "Agents"). It reports into a dashboard, so it is
+(platform/lab/README.md "Agents"). It reports into a dashboard, so it is
 observable, which was the actual requirement.
 
 Two workflows, two halves: **`beszel compose` converges the hub, and
@@ -196,7 +196,7 @@ One item, Wolfe.Lab vault:
 
 ## Backup
 
-`lab backup` — the shared pipeline (`build/`); the `backup` section of
+`lab backup` — the shared pipeline (`platform/lab/`); the `backup` section of
 `ritten.json` declares the paths — stops the hub, snapshots `~/Docker/beszel/data`
 into the restic repo on `/Volumes/Data2` (tagged with the image it was
 taken under; `restic-offsite.yaml` ships it to B2 and owns retention — see
