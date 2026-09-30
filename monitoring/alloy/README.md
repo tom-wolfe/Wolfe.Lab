@@ -18,7 +18,7 @@ step 3.
 On a Mac a container sees Docker Desktop's VM, not the Mac: its CPU,
 memory and disks rather than `/Volumes/Data1`, and none of the host
 processes' logs. So Alloy runs on the host, like the Beszel agent, and
-reaches containers through the Docker socket (step 3).
+reaches containers through the Docker socket.
 
 ## What it does today
 
@@ -29,8 +29,19 @@ reaches containers through the Docker socket (step 3).
 - **Labels it** with the node: `host.name` and `lab.role`, from the
   agent's environment, set only where the sender did not — an application
   that names its own host keeps it.
+- **Reads every container's logs** through the Docker socket
+  (`/var/run/docker.sock`; on a Mac they live inside the VM, out of reach
+  as files), each stream named `service_name` for its container and
+  carrying `host_name`, `lab_role`, and the `lab.area`, `lab.service` and
+  `lab.component` the deploy labels every container with
+  (build/README.md). A container that sends its own logs over OTLP is
+  labelled `lab.logs: otlp` in its compose file and left out, rather than
+  stored twice; the mail watcher is the one today. The first start reads
+  each container's whole history — Loki refuses what is older than its
+  seven days — and tails from then on.
 - **Forwards it** to the stores on their loopback ports: logs to Loki's
-  `/otlp`, traces to Tempo, metrics to Prometheus's OTLP receiver.
+  `/otlp` (container logs to its push API), traces to Tempo, metrics to
+  Prometheus's OTLP receiver.
 - **Reports on itself**: its own metrics, under the same labels with
   `service_name="alloy"`, by remote write — so a pipeline that is failing
   shows up in Grafana beside what it carries.

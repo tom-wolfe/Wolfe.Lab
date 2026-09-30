@@ -74,6 +74,71 @@ otelcol.processor.batch "default" {
 	}
 }
 
+// ── Container logs ─────────────────────────────────────────────────────────
+// Every container on the node, read through the Docker socket (on a Mac the
+// logs live inside the VM, out of reach as files). Each stream is named for
+// its container and carries the labels the deploy put on it (build/README.md):
+// the node's own, and where in the lab the container lives. A container that
+// sends its own logs over OTLP says so with `lab.logs: otlp`, and is left out
+// here rather than stored twice.
+
+discovery.docker "containers" {
+	host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_label_lab_logs"]
+		regex         = "otlp"
+		action        = "drop"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "service_name"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_lab_area"]
+		target_label  = "lab_area"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_lab_service"]
+		target_label  = "lab_service"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_lab_component"]
+		target_label  = "lab_component"
+	}
+
+	rule {
+		target_label = "host_name"
+		replacement  = sys.env("LAB_HOST")
+	}
+
+	rule {
+		target_label = "lab_role"
+		replacement  = sys.env("LAB_ROLE")
+	}
+}
+
+loki.source.docker "containers" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.containers.output
+	forward_to = [loki.write.stores.receiver]
+}
+
+loki.write "stores" {
+	endpoint {
+		url = "http://127.0.0.1:3100/loki/api/v1/push"
+	}
+}
+
 // ── The stores, on the mini's loopback ─────────────────────────────────────
 
 otelcol.exporter.otlp "tempo" {

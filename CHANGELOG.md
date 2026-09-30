@@ -4,6 +4,20 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.76.0] - 2026-09-30
+
+### Added
+
+- **The mini's container logs are in Loki.** Alloy reads every
+  container's logs through the Docker socket, each stream named for its
+  container (`service_name`) and labelled with the node and where in the
+  lab the container lives — the labels the deploy puts on it (0.75.0). A
+  container that sends its own logs over OTLP is labelled
+  `lab.logs: otlp` and left out; the mail watcher is, and its
+  hand-written `OTEL_RESOURCE_ATTRIBUTES` goes, since the deploy now
+  supplies them. Loki indexes the lab's labels on OTLP logs too, so one
+  selector finds both kinds.
+
 ## [0.75.0] - 2026-09-30
 
 ### Added

@@ -31,6 +31,11 @@ limits_config:
   retention_period: 168h
   allow_structured_metadata: true
   volume_enabled: true
+  otlp_config:
+    resource_attributes:
+      attributes_config:
+        - action: index_label
+          attributes: [host.name, lab.role, lab.area, lab.service, lab.component]
 
 compactor:
   working_directory: /loki/compactor

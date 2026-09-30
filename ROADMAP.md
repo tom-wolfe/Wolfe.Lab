@@ -230,7 +230,8 @@ lab's pins.
    0.62.0.*
 2. The mail watcher instrumented — the bottleneck question answered.
 3. Collectors on the Pi and the Studio, forwarding; container and
-   host-process logs from every node.
+   host-process logs from every node. *The mini's container logs in 0.76.0, labelled by the
+   deploy (0.75.0).*
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
    each need theirs enabled — then labelled for scraping.
