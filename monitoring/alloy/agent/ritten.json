@@ -1,7 +1,10 @@
 {
   "workflow": "agents",
   "artifacts": [
-    { "source": "config", "output": "${LAB_ROOT}/alloy" }
+    {
+      "source": "config",
+      "output": "${LAB_ROOT}/alloy"
+    }
   ],
   "nodes": {
     "MacMini": {
@@ -23,10 +26,13 @@
           ],
           "environment": {
             "LAB_HOST": "mini",
-            "LAB_ROLE": "server"
+            "LAB_ROLE": "server",
+            "LAB_ROOT": "${LAB_ROOT}"
           },
           "log": "~/.cache/alloy/alloy.log",
-          "supersedes": ["homebrew.mxcl.grafana-alloy"]
+          "supersedes": [
+            "homebrew.mxcl.grafana-alloy"
+          ]
         }
       }
     }

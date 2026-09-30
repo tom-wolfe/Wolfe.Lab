@@ -31,6 +31,8 @@ public class RepositoryTelemetryTests
             data.Add(Path.GetRelativePath(checkout, Path.GetDirectoryName(declaration) ?? checkout));
         }
 
+        // Not a component, but it declares a log file to the collector: the runner's.
+        data.Add(Path.Combine("platform", "chezmoi", "home"));
         return data;
     }
 

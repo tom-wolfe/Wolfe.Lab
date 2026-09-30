@@ -280,7 +280,7 @@ lab's pins.
    *Shipped on 2026-09-29.*
 3. Collectors on the Pi and the Studio, forwarding; container and
    host-process logs from every node. *The mini's container logs on 2026-09-30, labelled by the
-   deploy.*
+   deploy; its host-process logs on 2026-10-01.*
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
    each need theirs enabled — then labelled for scraping.

@@ -4,6 +4,20 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-01
+
+### Added
+
+- **The mini's host-process logs are in Loki.** Alloy reads the files
+  declared in `${LAB_ROOT}/.logs` — each agent deploy writes its agents'
+  (Alloy's, Beszel's, ollama's), and chezmoi writes the runner's on a Mac
+  that has one — from where each file ends when first seen, each stream
+  named and placed by its target. Container logs now carry every `lab.*`
+  label the deploy set, mapped as a set rather than one rule each, and
+  both kinds get the node's `host_name` and `lab_role` where they are
+  written. The telemetry-name check reads discovery targets too, chezmoi's
+  source included.
+
 ## 2026-09-30
 
 ### Added

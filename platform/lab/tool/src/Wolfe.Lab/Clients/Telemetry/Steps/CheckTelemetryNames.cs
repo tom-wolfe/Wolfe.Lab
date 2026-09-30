@@ -34,13 +34,16 @@ internal sealed class CheckTelemetryNames(IFileSystem fileSystem, IWorkflowLog l
         {
             var text = File.ReadAllText(file);
             var name = Path.GetFileName(file);
-            var found = Path.GetExtension(file) switch
-            {
-                ".alloy" => TelemetryNames.Alloy(text),
-                ".yaml" or ".yml" when name == ComposeFile => TelemetryNames.Compose(text).Concat(TelemetryNames.Yaml(text)),
-                ".yaml" or ".yml" => TelemetryNames.Yaml(text),
-                _ => []
-            };
+            // A log file declared to the collector is JSON, and chezmoi's copy is a template of it.
+            var found = name.EndsWith(".json", StringComparison.Ordinal) || name.EndsWith(".json.tmpl", StringComparison.Ordinal)
+                ? TelemetryNames.Targets(text)
+                : Path.GetExtension(file) switch
+                {
+                    ".alloy" => TelemetryNames.Alloy(text),
+                    ".yaml" or ".yml" when name == ComposeFile => TelemetryNames.Compose(text).Concat(TelemetryNames.Yaml(text)),
+                    ".yaml" or ".yml" => TelemetryNames.Yaml(text),
+                    _ => []
+                };
 
             problems.AddRange(found.Select(problem => $"{Path.GetRelativePath(component, file)}: {problem}"));
         }
