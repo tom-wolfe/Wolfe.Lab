@@ -58,8 +58,8 @@ RUN set -eux; \
 # because it moves most often: a bump rebuilds from the COPY down, nothing above it.
 COPY .config/dotnet-tools.json /tmp/dotnet-tools.json
 RUN set -eux; \
-    version="$(jq -er '.tools["wolfe.lab.build"].version' /tmp/dotnet-tools.json)"; \
-    dotnet tool install --tool-path /opt/lab Wolfe.Lab.Build \
+    version="$(jq -er '.tools["wolfe.lab"].version' /tmp/dotnet-tools.json)"; \
+    dotnet tool install --tool-path /opt/lab Wolfe.Lab \
       --version "${version}" \
       --add-source https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json; \
     /opt/lab/lab --help > /dev/null; \
