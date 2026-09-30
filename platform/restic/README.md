@@ -36,13 +36,13 @@ of pounds a month.
 **Per-service backups keep their stop windows.** The stop is the
 load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared
-pipeline: `lab backup` in `build/` (stop → `restic backup` → start, with
+pipeline: `lab backup` in `platform/lab/` (stop → `restic backup` → start, with
 the mount, repo and mid-backup restart guards). Per-slice variation is
 data — the `backup` section of the slice's `ritten.json` — declaring
 what to snapshot: the paths, the excludes, the container to stop (or
 none for a warm snapshot), and the container whose image tags it. No job keeps or prunes anything, because —
 
-**Retention lives in ONE place:** `lab offsite` (`build/`, settings in
+**Retention lives in ONE place:** `lab offsite` (`platform/lab/`, settings in
 `ritten.json`), nightly at 04:35, after every backup has finished:
 
 1. `restic copy` — ship every snapshot B2 doesn't have. This is
@@ -84,7 +84,7 @@ What a Linux node needs, all of it chezmoi's (`platform/chezmoi/home/`):
 
 | Piece | Where | Note |
 | --- | --- | --- |
-| `restic` | installed by the job that runs it, at the version `.config/lab-tools.json` pins (build/README.md, "Packages and tools") | the same on every node, and on a laptop running `lab` by hand |
+| `restic` | installed by the job that runs it, at the version `.config/lab-tools.json` pins (platform/lab/README.md, "Packages and tools") | the same on every node, and on a laptop running `lab` by hand |
 | `~/.ssh/restic` | `private_dot_ssh/create_private_restic.tmpl`, from the vault | SSH Key item `restic-sftp-<node>`, generated in the vault, written once |
 | `Host macmini.tailf823b8.ts.net` | `private_dot_ssh/config.tmpl`, the `pi-node` block | user, the key, `accept-new` — the tailnet already authenticates the peer, and a first contact must not block a non-interactive job |
 | the mini's `authorized_keys` line | `private_dot_ssh/private_authorized_keys.tmpl`, the `macmini-node` block | `restrict,command="/usr/libexec/sftp-server"` — the key cannot open a shell, forward a port or run anything else; the public half is read from the same vault item |

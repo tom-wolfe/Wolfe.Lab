@@ -1,0 +1,46 @@
+name: lab tool
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [platform/lab/tool/**, .forgejo/workflows/lab-tool.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    concurrency:
+      group: lab-tool-check-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - working-directory: platform/lab/tool
+        run: lab check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    concurrency:
+      group: lab-tool-deploy
+      cancel-in-progress: false
+    steps:
+      # The whole history: the version is computed based on it.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - working-directory: platform/lab/tool
+        env:
+          RITTEN_NUGET_API_KEY: ${{ secrets.PACKAGES_TOKEN }}
+        run: dotnet run --project src/Wolfe.Lab -- deploy --auto-approve

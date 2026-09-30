@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v6
         with:
-          global-json-file: build/global.json
+          global-json-file: global.json
       - working-directory: personal/mail/watcher
         run: lab check
 

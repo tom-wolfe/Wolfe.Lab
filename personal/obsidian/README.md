@@ -4,7 +4,7 @@ The vaults — `Main` and `Dungeons & Dragons` — live in Obsidian Sync.
 The mini keeps a headless copy of each under `~/Obsidian/<name>` and
 turns it into git history on Forgejo. `ritten.json` declares the
 vaults, where each pushes, what git leaves out and how the push
-authenticates; `lab sync --vault <name>` (the CLI in `build/`) runs one
+authenticates; `lab sync --vault <name>` (the CLI in `platform/lab/`) runs one
 pass: sync, commit what changed, push what Forgejo lacks. One workflow
 per vault, because each has its own rhythm: `main` every ten minutes;
 `dnd` daily, which makes a game night one commit.

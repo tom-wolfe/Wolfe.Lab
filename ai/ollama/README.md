@@ -157,7 +157,7 @@ for is the caller's.
 ## Order of operations
 
 The deploy installs the pinned release itself (`package` in each
-component's `ritten.json`; build/README.md, "Packages and tools") before
+component's `ritten.json`; platform/lab/README.md, "Packages and tools") before
 it converges the server, and puts it first on the job's path, so the
 `ollama pull` and `ollama cp` the job runs are the server's own version.
 Nothing needs to land before it.

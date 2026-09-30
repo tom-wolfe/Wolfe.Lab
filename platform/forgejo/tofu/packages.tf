@@ -1,4 +1,4 @@
-# The package token the publishes push with (build/RUNBOOK.md, "The package
+# The package token the publishes push with (platform/lab/RUNBOOK.md, "The package
 # token").
 
 resource "forgejo_repository_action_secret" "packages_token" {

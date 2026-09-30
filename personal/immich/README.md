@@ -8,7 +8,7 @@ models beside it. The phone app talks to `immich.twolfe.dev`, the
 tailnet twin of the front-door name, and its background upload is what
 replaces Google Photos as the place a photo lands after it is taken.
 
-Three components, each a job through the CLI in `build/`: `compose/`
+Three components, each a job through the CLI in `platform/lab/`: `compose/`
 (`lab deploy` installs the stack and converges it), `backup/` (what
 restic keeps of the library) and `import/` (`lab import` brings the
 Google Takeout in, with immich-go built from the Dockerfile beside it).

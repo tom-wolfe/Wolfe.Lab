@@ -7,9 +7,9 @@ step 3.
 
 | Concern | Handled by |
 | --- | --- |
-| Binary | the agent's `package` in `agent/ritten.json`: the release the deploy installs, pinned (build/README.md, "Packages and tools") |
+| Binary | the agent's `package` in `agent/ritten.json`: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
 | Process | `agent/`, the `agents` workflow: a launchd unit per node, `.forgejo/workflows/alloy-agent.yaml` |
-| Config | `agent/config/config.alloy`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts the agent (build/README.md, "Artifacts") |
+| Config | `agent/config/config.alloy`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts the agent (platform/lab/README.md, "Artifacts") |
 | State | `${LAB_DATA}/alloy` — its write-ahead log; disposable |
 | UI | `127.0.0.1:12345` on the node — component health and a live view of each pipeline |
 
@@ -34,7 +34,7 @@ reaches containers through the Docker socket.
   as files), each stream named `service_name` for its container and
   carrying `host_name`, `lab_role`, and the `lab.area`, `lab.service` and
   `lab.component` the deploy labels every container with
-  (build/README.md). A container that sends its own logs over OTLP is
+  (platform/lab/README.md). A container that sends its own logs over OTLP is
   labelled `lab.logs: otlp` in its compose file and left out, rather than
   stored twice; the mail watcher is the one today. The first start reads
   each container's whole history — Loki refuses what is older than its

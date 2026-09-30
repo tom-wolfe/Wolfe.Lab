@@ -77,7 +77,7 @@ otelcol.processor.batch "default" {
 // ── Container logs ─────────────────────────────────────────────────────────
 // Every container on the node, read through the Docker socket (on a Mac the
 // logs live inside the VM, out of reach as files). Each stream is named for
-// its container and carries the labels the deploy put on it (build/README.md):
+// its container and carries the labels the deploy put on it (platform/lab/README.md):
 // the node's own, and where in the lab the container lives. A container that
 // sends its own logs over OTLP says so with `lab.logs: otlp`, and is left out
 // here rather than stored twice.

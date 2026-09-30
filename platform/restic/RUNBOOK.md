@@ -26,7 +26,7 @@ structure only, and pings nothing.
 3. Apply the tofu root (via `tofu-restic.yaml`, or `lab deploy` from
    `platform/restic/tofu`, which installs the pinned `tofu` first): creates the bucket, the scoped key, the check. Then fill
    the `restic-b2` item: `username`/`credential` from
-   `op run --env-file build/tofu-state.env --env-file platform/restic/tofu/secrets.env -- tofu -chdir=platform/restic/tofu output -raw restic_application_key_id`
+   `op run --env-file platform/garage/tofu-state.env --env-file platform/restic/tofu/secrets.env -- tofu -chdir=platform/restic/tofu output -raw restic_application_key_id`
    (and `…_key`), `repository` from the bucket name plus the S3 endpoint
    shown in the B2 UI.
 4. Initialize the repos — local first, then B2 **with the same chunker

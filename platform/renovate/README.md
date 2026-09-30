@@ -37,8 +37,8 @@ password and the GitHub token, in the vault.
 | Pins | Where | Notes |
 |---|---|---|
 | Container images | every `compose.yaml`, Dockerfile `FROM` | linuxserver and the mail bridge have their tag shapes spelled out; Immich's server and ML move together |
-| The lab CLI | `.config/dotnet-tools.json` | the one pin; the CI image and chezmoi's `install-lab` script read it. What it moves to passed the CLI's tests before it was published (`build/README.md`, "Shipping") |
-| NuGet packages and the .NET SDK | `build/`, `personal/mail/watcher/` | grouped by family; a new .NET major waits on the dashboard until asked for |
+| The lab CLI | `.config/dotnet-tools.json` | the one pin; the CI image and chezmoi's `install-lab` script read it. What it moves to passed the CLI's tests before it was published (`platform/lab/README.md`, "Shipping") |
+| NuGet packages and the .NET SDK | `platform/lab/tool/`, `personal/mail/watcher/` | grouped by family; a new .NET major waits on the dashboard until asked for |
 | Actions | `.forgejo/workflows/*.yaml` | looked up on github.com; Forgejo's runner fetches the same actions from its own mirror |
 | Tofu providers | every `tofu/` root, with the lock file | |
 | Renovate itself | its workflow's `container:` image | weekly, not on every release |
@@ -72,5 +72,5 @@ Because Renovate cannot move them safely:
 
 A Renovate pull request is merged like any other, and gets the same
 `CHANGELOG.md` entry any change does — Renovate does not write one. A
-bump to `build/Directory.Packages.props` changes what the CLI ships, so
-its merge publishes a new CLI (`build/README.md`, "Shipping").
+bump to `platform/lab/tool/Directory.Packages.props` changes what the CLI ships, so
+its merge publishes a new CLI (`platform/lab/README.md`, "Shipping").
