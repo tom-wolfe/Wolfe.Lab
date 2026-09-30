@@ -39,6 +39,113 @@ runbook: today both jobs read the local one.
 
 Add Prowlarr and Jellyseerr to the existing Radarr/Sonarr/Jellyfin stack.
 
+### 13. The primary node becomes a Linux box — the DXP480T Plus
+
+Bought 2026-09-30. The reason to move is still the physical one: **a Mac
+cannot host a storage controller.** No Mac takes internal drives or an HBA,
+so every disk the lab owns arrives through a bridge chip in an external
+enclosure. Today that is a 3U Sabrent DAS with four 3.5" bays, two of them
+used. The VM boundary ("The container runtime") is the other half: host
+networking, port 53 and the first-boot sharing races all go once containers
+run natively.
+
+**The machine is a UGREEN NASync DXP480T Plus**, not the specced N305
+build. That build was a mini-ITX NAS board, a 2U case, an IcyDock cage and a
+Pico-PSU, about £1,000 and all self-assembly. This is £730 and none:
+
+- **i5-1235U**, 10 cores and 12 threads, well past what the platform layer
+  needs; the heavy work still goes to the Studio.
+- **8 GB DDR5, two slots with one free, 32 GB max** by the spec sheet. A
+  16 GB stick in the free slot is the next purchase.
+- **Four M.2 NVMe slots and a separate 128 GB system SSD**, so all four
+  slots stay data. UGOS Pro comes off (save its image first); Linux goes
+  on the system SSD.
+- **10GbE and two Thunderbolt 4 ports.**
+- **178 × 142 × ~50 mm**, so a 2U shelf in the 10" rack.
+  `assets/models/nasync-dxp480t-plus-mount.3mf` is a mount for it.
+
+**Storage is NVMe, and one drive to start.** A 4 TB Samsung 990 Pro is the
+first data drive, with more NVMe as money allows. One drive has no
+redundancy: until a second mirrors it, the recovery plan is the local
+restic repository plus B2. That is a decision, not an oversight.
+
+**The HDDs stay, as the backup tier.** The Sabrent holds a Seagate
+BarraCuda 2 TB (7200 rpm, bought 2023-09) and an IronWolf 4 TB (5400 rpm,
+bought 2025-05). They move to a 1U shelf that takes two 3.5" drives flat,
+on USB-SATA adapters into the node, and hold the local restic repository.
+Backups then live on a different device from the data, which is the
+decorrelation Data2 was bought for. Spin them down when idle, since backups
+run nightly, and SMART-check the BarraCuda before trusting it. The Sabrent
+is decommissioned, which frees 3U and a socket (see "Rack power" under
+Hardware).
+
+**The bundled US3000 is not the rack UPS.** A UGREEN 120 W DC UPS came with
+the node: 43 Wh, inline between the node's brick and the node, zero
+transfer time. It signals shutdown to UGOS Pro over USB. Whether NUT sees it
+under Linux is unverified, and without that it runs until empty and then
+cuts, which is the failure the UPS exists to prevent. Test it during
+burn-in. Either way it covers the node and nothing upstream of it.
+
+**The backup transport gets revisited here, by its own instruction.**
+`restic/README.md` declines a `rest-server` on the mini because sshd is
+native and the drive is native, and says to revisit "when the platform
+layer moves to Linux and the drive's host changes", which is this. An
+append-only mode and a path jail are the gain. A container in the backup
+path is the cost, and on Linux it is no longer a container behind a VM.
+
+**The filesystem is a decision, not a default.** ext4 or xfs is the simple
+answer. ZFS or btrfs adds checksumming and scheduled scrubs, which is the
+only thing that would ever notice bit rot in the media library. The library
+is deliberately unbacked and today watched by nothing, because restic
+verifies its own repository and not files it was never given. A second
+NVMe makes a ZFS mirror the natural next step.
+
+**Sequence.** APFS forces the order. Linux reads it only through unreliable
+read-only tooling, so nothing is re-seated: data is copied across the
+network from the mini, and a drive is wiped only once it is empty. Every
+step is safe to stop at, and the lab keeps running on the mini throughout:
+
+1. Build and burn in with no lab data. Linux on the system SSD, memtest, a
+   stress run, and the US3000 against NUT while pulling its plug costs
+   nothing. The 8 GB it ships with is enough for this.
+2. Make it a node that does nothing: chezmoi profile, Tailscale, host
+   runner, Beszel agent, Gatus check. The mini is untouched and still
+   primary; this proves the machine before anything depends on it.
+3. With the 990 Pro in, migrate slices one at a time, Forgejo last because
+   it runs the deploys. Each keeps its `backup` section and takes the
+   node's own restic path (`restic/README.md`, "From a Linux node").
+4. Media onto the 990 Pro. Then the HDDs, one at a time: wipe the emptied
+   media drive, reformat it, and copy the restic repository onto it. Run a
+   restore drill from B2 **before** wiping the second drive, because for
+   that window B2 is the only other copy.
+5. The mini stops being primary.
+
+Step 3 restores each slice's state onto new hardware and boots the service
+on it. That **is** the boot-on-restore drill #1 asks for, provided it goes
+through `lab restore` rather than by hand, so the migration retires that
+half of #1 instead of deferring it.
+
+**The Pi keeps its roles.** It runs the containerised CI runner and Gatus.
+Gatus should stay off the primary, since it is what notices the primary is
+down. Home Assistant and Pi-hole are designed for the Pi because they want
+real host networking. The node has that too, so either can host them.
+
+**What the mini becomes.** Not a server, and that is the point: it stops
+being the one machine the lab dies with. What genuinely cannot move:
+
+- **An Apple-platform build runner.** Xcode, codesigning and notarization
+  are practical only on Apple hardware. It slots in as another `runs-on`
+  label with no new architecture.
+- **macOS VMs for bootstrap testing.** Virtualization.framework runs only
+  on Apple silicon, and the `macbook` / `work-macbook` / `macmini-node`
+  profiles have no test target today short of wiping a real machine.
+- **Apple-local data, if the assistant grows past Obsidian and mail.**
+  Messages, Notes, Contacts and Photos live in `~/Library` on a logged-in
+  Mac. It needs Full Disk Access, so it carries the TCC debt, now confined
+  to a machine nothing depends on.
+
+Everything else moves.
+
 ### 12. Areas — group the slices before the lab outgrows a flat root
 
 Twenty-two directories at the root, and more on the way (Prowlarr,
@@ -502,7 +609,7 @@ homed nowhere: the runner registration template reads Forgejo's
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
 (`network/caddy/tofu/variables.tf`, `platform/forgejo/README.md`). Every one is retyped
-by the Linux move (#2). Hardcoding one slice's fact into another is the
+by the Linux move (#13). Hardcoding one slice's fact into another is the
 thing to refuse; a consumer deriving it from the owning slice's files
 is only a consumer's guess at a format that isn't its own.
 
@@ -778,7 +885,7 @@ columns in `jellyfin.db` (or accept a full rescan and lost watch state),
 change the four variables. Only worth doing after the restore drills
 (#1), and only if the exception bothers you more than the rewrite does.
 
-#2 removes the choice. `~/Library/Application Support` does not exist on
+#13 removes the choice. `~/Library/Application Support` does not exist on
 Linux, so the path moves when the slice migrates and the rewrite becomes
 part of that step rather than optional cleanup.
 
@@ -906,10 +1013,10 @@ sessions, and an update that took the lab down (0.18.1).
 containers; every runtime on the mini — Docker Desktop, OrbStack, Colima,
 Podman — boots a Linux VM and shares files and ports across the boundary.
 The filesystem races, the port interception and the no-host-network problem
-all live at that boundary, and **#2 removes the boundary rather than
+all live at that boundary, and **#13 removes the boundary rather than
 changing the runtime**, which answers most of this section: Docker Engine
 on Linux, natively, as the Pi already runs it. Trying OrbStack or Colima on
-the mini is worth an afternoon only if #2 stays unfunded long enough to
+the mini is worth an afternoon only if #13 stays unfunded long enough to
 hurt.
 
 **Decided: OrbStack, until the Linux node.** Memory is what made it worth
@@ -921,7 +1028,7 @@ is faster, it speaks Docker's API and keeps `host.docker.internal` (which
 Alloy's loopback receiver relies on), and it runs without a window —
 still an app that starts at login, and free for personal use. It does
 not remove the VM: host networking, port 53 and the first-boot sharing
-races stay until #2. Colima is the headless, open-source alternative,
+races stay until #13. Colima is the headless, open-source alternative,
 but its VM's memory is fixed, which gives up the reason for moving;
 Apple's `container` has no Docker API and no compose yet.
 
@@ -993,6 +1100,26 @@ can carry beside AMQP. It ships an Ollama conversation integration, so
 `ai.twolfe.dev` can be its assistant with no new service. The aircon and the TV join the list
 above; whether either has a *local* integration depends on the brand, and
 is worth checking before assuming it.
+
+**The thermostat is a wired tado X** (bought 2026-09-30), on Matter over
+Thread. It works on its own through the tado app, HomeKit and Alexa, and
+that is deliberate: it is useful before HA exists, and to whoever lives
+here next without a homelab. For HA:
+
+- **Local, over Matter, not tado's cloud.** Since 2026-01-01 tado's API
+  allows 100 requests a day without an Auto-Assist subscription, which
+  makes HA's `tado` integration the wrong primary path. HA's Matter
+  integration, added as a second admin beside Apple Home, controls it on
+  the LAN. Schedules and hot water stay cloud-only; if they're wanted in
+  HA, [Tado Hijack](https://github.com/banter240/tado_hijack) rations the
+  quota.
+- **Matter needs the same thing as discovery:** host networking, plus IPv6
+  on the LAN. That is the argument above again. The Pi has both, and so
+  does the Linux node (#13).
+- **The Bridge X stays in**, even with the Apple TV as a Thread border
+  router. Without the bridge, tado can't deliver firmware and security
+  updates (they need NAT64, which tado provides through its bridge) and
+  loses Auto-Assist.
 
 ### The personal data plane — out of the walled gardens
 
@@ -1284,27 +1411,61 @@ Wanted, but each adds backup surface.
 
 Not roadmap items, but the physical constraints the items above assume.
 
-**A UPS** — promoted to roadmap item #3; the rack plan places it.
+**A UPS.** Not bought. The rack plan places it: a ~650 VA unit on the
+floor beside the rack, one battery-backed outlet feeding one of the rear
+strips, so the router and switch ride out a blip along with the nodes. The
+nightly backups stop and start SQLite and LMDB stores, and a power cut
+mid-write is how those corrupt, silently, until a restore fails. Buying it
+is the smaller half; the other half is what happens on battery:
 
-**The Linux primary node** — specced in item #2. The largest planned
-expense in the lab, and the one that unblocks storage growth past what a
-Thunderbolt enclosure can hold.
+- **A clean shutdown, set short.** USB goes to the primary: macOS's Energy
+  → UPS setting on the mini today, NUT on the Linux node after #13. The
+  point is a clean stop, not runtime.
+- **Coming back without a hand.** Power-on after power loss on every node,
+  and the whole chain verified once by pulling the plug. That is a drill,
+  on the same quarterly rota as the restore drill.
+- **Making it visible.** Beszel does not read UPS state. NUT exposes battery
+  charge, load and on-battery events, which Gatus and Home Assistant can
+  consume. It isn't needed for the shutdown, but it is how "the battery is
+  five years old and holds nothing" gets noticed before the day it matters.
 
-**A second backup drive — resolved, no purchase needed.** Backups moved to
-`/Volumes/Data2`, which is a separate physical drive with far more room.
-What that buys is *decorrelation*: Data1 previously held 1.5 TB of media and
-every backup, so one drive failure took both at once. Now one event takes
-one thing. Be clear about what it does not buy — the two drives share an
-enclosure, so a controller or PSU failure still takes both, as does theft,
-fire, or an accidental delete. Restic to B2 remains the actual second
-copy; this is a cheap improvement on the way there, not a substitute.
-#2 changes the enclosure, not this
-property: a cage and a Pico-PSU correlate the same way a DAS and its
-controller do. Decorrelation past that point is what the offsite copy is
-for.
+The US3000 that came with the node (#13) does not change any of this. It
+covers one device, and only UGOS is known to hear it.
 
-**Not needed yet:** a Zigbee/Thread coordinator only matters if Home
-Assistant grows past the Hue bridge into Matter devices. And the mini's
+**The Linux primary node — bought** (#13). Still to buy: a 16 GB DDR5
+stick, more NVMe, and the 1U shelf for the two HDDs.
+
+**Rack power.** Eight UK sockets on two 4-way strips on the rear rail, each
+strip on its own wall socket, with seven in use before the node. The node
+takes the eighth, retiring the Sabrent gives one back, and the HDD shelf
+needs one. That closes only if both drive adapters run from **one** 12 V
+brick through a DC splitter, sized for two 3.5" spin-ups (about 2 A each on
+12 V, so a 12 V 5 A brick with the adapters' barrel size). Two things that
+don't work, or cost too much:
+
+- **The Pi and the Hue Bridge Pro on one USB-C charger.** The Pi 5 wants
+  5.1 V at 5 A, which ordinary USB-PD chargers don't offer. At 3 A it caps
+  its USB ports, and its NVMe boot drive shares that budget. It keeps its
+  own supply.
+- **Daisy-chained strips, or a PoE switch bought to free a socket.**
+
+The fallback before either: the Hue Bridge Pro (and the tado Bridge X) can
+draw from a USB port on the node, at the cost of their uptime following the
+node's reboots. When the UPS lands, its battery-backed outlet feeds one
+strip, and what goes on that strip is the next power decision.
+
+**Backup decorrelation.** Backups moved to `/Volumes/Data2`, a separate
+physical drive from Data1's media, so one drive failure takes one thing.
+It stops short of full separation: both drives share the Sabrent, so a
+controller or PSU failure still takes both, as does theft, fire, or an
+accidental delete. #13 goes further: data on the node's NVMe, backups on
+the HDDs, which share a splitter with each other but not with the data.
+Restic to B2 remains the actual second copy.
+
+**Not needed yet:** a Zigbee coordinator. The first Matter-over-Thread
+device (the tado X, under "Smart home") brought its own Thread border
+router in the tado Bridge X, and the Apple TV is another, so Home Assistant
+needs a Matter server and IPv6 on the LAN, not a radio of its own. And the mini's
 mDNS flapping between its two interfaces is a config problem (a DHCP
 reservation, or disabling the unused interface — see "Router as code"),
 not a hardware one.
