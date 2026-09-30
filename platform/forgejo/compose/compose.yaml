@@ -2,7 +2,7 @@ name: forgejo
 
 services:
   server:
-    image: codeberg.org/forgejo/forgejo:16.0.5
+    image: data.forgejo.org/forgejo/forgejo:16.0.5
     container_name: forgejo
     restart: unless-stopped
     environment:

@@ -9,6 +9,7 @@
   gitAuthor: "Renovate <renovate@twolfe.dev>",
   onboarding: false,
   requireConfig: "ignored",
+  exitCodeForErrors: true,
 
   extends: ["config:recommended"],
 

@@ -85,6 +85,10 @@ rather than versioned — the lab is continuous, not released.
   so nothing on a node moves and no required status changes; its route is
   now `ai-ollama-server`.
 
+### Fixed
+
+- **Renovate failed silently.** Renovate now correctly reports its exit code.
+
 ## 2026-09-29
 
 ### Added
