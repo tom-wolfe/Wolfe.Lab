@@ -77,10 +77,10 @@ otelcol.processor.batch "default" {
 // ── Container logs ─────────────────────────────────────────────────────────
 // Every container on the node, read through the Docker socket (on a Mac the
 // logs live inside the VM, out of reach as files). Each stream is named for
-// its container and carries the labels the deploy put on it (platform/lab/README.md):
-// the node's own, and where in the lab the container lives. A container that
-// sends its own logs over OTLP says so with `lab.logs: otlp`, and is left out
-// here rather than stored twice.
+// its container and carries every `lab.*` label the deploy put on it — where
+// in the lab the container lives (platform/lab/README.md) — so a new one needs
+// nothing here. A container that sends its own logs over OTLP says so with
+// `lab.logs: otlp`, and is left out rather than stored twice.
 
 discovery.docker "containers" {
 	host = "unix:///var/run/docker.sock"
@@ -102,28 +102,9 @@ discovery.relabel "containers" {
 	}
 
 	rule {
-		source_labels = ["__meta_docker_container_label_lab_area"]
-		target_label  = "lab_area"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_label_lab_service"]
-		target_label  = "lab_service"
-	}
-
-	rule {
-		source_labels = ["__meta_docker_container_label_lab_component"]
-		target_label  = "lab_component"
-	}
-
-	rule {
-		target_label = "host_name"
-		replacement  = sys.env("LAB_HOST")
-	}
-
-	rule {
-		target_label = "lab_role"
-		replacement  = sys.env("LAB_ROLE")
+		action      = "labelmap"
+		regex       = "__meta_docker_container_label_(lab_.+)"
+		replacement = "$1"
 	}
 }
 
@@ -133,9 +114,33 @@ loki.source.docker "containers" {
 	forward_to = [loki.write.stores.receiver]
 }
 
+// ── Host-process logs ──────────────────────────────────────────────────────
+// The files the node's own processes log to, as whatever runs them declares
+// them in ${LAB_ROOT}/.logs: an agent deploy, for its agents, and chezmoi, for
+// the runner (platform/lab/README.md, "Agents"). Each target names its stream
+// and where it lives. Read from where a file ends on first sight: a launchd
+// log is appended to for as long as the agent has existed, and that history is
+// a burst, not a record.
+
+discovery.file "logs" {
+	files = [sys.env("LAB_ROOT") + "/.logs/*.json"]
+}
+
+loki.source.file "logs" {
+	targets       = discovery.file.logs.targets
+	tail_from_end = true
+	forward_to    = [loki.write.stores.receiver]
+}
+
+// Both kinds, labelled with the node that read them.
 loki.write "stores" {
 	endpoint {
 		url = "http://127.0.0.1:3100/loki/api/v1/push"
+	}
+
+	external_labels = {
+		host_name = sys.env("LAB_HOST"),
+		lab_role  = sys.env("LAB_ROLE"),
 	}
 }
 

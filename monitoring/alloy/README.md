@@ -32,13 +32,22 @@ reaches containers through the Docker socket.
 - **Reads every container's logs** through the Docker socket
   (`/var/run/docker.sock`; on a Mac they live inside the VM, out of reach
   as files), each stream named `service_name` for its container and
-  carrying `host_name`, `lab_role`, and the `lab.area`, `lab.service` and
-  `lab.component` the deploy labels every container with
-  (platform/lab/README.md). A container that sends its own logs over OTLP is
+  carrying every `lab.*` label the deploy put on it — `lab.area`,
+  `lab.service`, `lab.component` (platform/lab/README.md) — mapped as a
+  set, so a new one needs no change here. A container that sends its own logs over OTLP is
   labelled `lab.logs: otlp` in its compose file and left out, rather than
   stored twice; the mail watcher is the one today. The first start reads
   each container's whole history — Loki refuses what is older than its
   seven days — and tails from then on.
+- **Reads the node's host-process logs**: the files declared in
+  `${LAB_ROOT}/.logs` — each agent deploy's for its agents (Alloy's own,
+  Beszel's, ollama's), and chezmoi's for the runner on a Mac that has one
+  — each stream named and placed by its target. A file is read from where
+  it ended when first seen: a launchd log has been appended to for as long
+  as its agent has existed, and that history is a burst, not a record. A
+  new target is found within five minutes.
+- **Labels every log stream it reads** with the node — `host_name` and
+  `lab_role` — once, where they are written, rather than per source.
 - **Forwards it** to the stores on their loopback ports: logs to Loki's
   `/otlp` (container logs to its push API), traces to Tempo, metrics to
   Prometheus's OTLP receiver.
@@ -47,7 +56,8 @@ reaches containers through the Docker socket.
   shows up in Grafana beside what it carries.
 
 The node's identity is the agent's (`LAB_HOST`, `LAB_ROLE` in
-`agent/ritten.json`), so one config serves any node it is placed on.
+`agent/ritten.json`, and `LAB_ROOT` for where the targets are), so one
+config serves any node it is placed on.
 
 ## Checking it
 

@@ -93,4 +93,22 @@ public class TelemetryNamesTests
     [Fact]
     public void Yaml_LeavesAFileThatIsNotYamlToItsOwnTool() =>
         TelemetryNames.Yaml("key: [unclosed").ShouldBeEmpty();
+
+    [Fact]
+    public void Targets_AcceptTheLabsLabelsAndTheCollectorsOwn() =>
+        TelemetryNames.Targets("""
+            [{ "targets": ["localhost"], "labels": { "__path__": "/tmp/x.log", "service_name": "x", "lab_area": "platform", "lab_component": "runners" } }]
+            """).ShouldBeEmpty();
+
+    [Fact]
+    public void Targets_RefuseALabelTheLabDoesNotKnow() =>
+        TelemetryNames.Targets("""[{ "targets": ["localhost"], "labels": { "__path__": "/tmp/x.log", "lab_componet": "runners" } }]""")
+            .ShouldHaveSingleItem().ShouldContain("lab_componet");
+
+    [Fact]
+    public void Targets_LeaveOtherJsonAlone()
+    {
+        TelemetryNames.Targets("""{ "workflow": "docker", "release": "caddy" }""").ShouldBeEmpty();
+        TelemetryNames.Targets("{{ .template }}").ShouldBeEmpty();
+    }
 }

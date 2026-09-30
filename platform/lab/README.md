@@ -262,7 +262,10 @@ command runner for every process. The lab adds what Ritten doesn't have:
   agent and labelled with where the component lives — the placement a
   compose deploy labels its containers with. The file is rewritten
   whole, so an agent dropped from the component, or no longer given a
-  `log`, stops being read.
+  `log`, stops being read. chezmoi declares the one host process that is
+  not a lab agent the same way: the runner on a Mac, whose log its plist
+  names. A target's labels are held to the attribute list like any other
+  file (`CheckTelemetryNames`), chezmoi's included.
 
 ### Waiting and retrying
 

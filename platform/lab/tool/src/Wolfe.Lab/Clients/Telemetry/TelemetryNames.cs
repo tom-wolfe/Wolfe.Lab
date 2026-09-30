@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Wolfe.Lab.Values;
 using YamlDotNet.Core;
@@ -148,6 +150,42 @@ internal static partial class TelemetryNames
                         : $"datasource '{At(source, "name")}' links {key} to the label '{value}': Loki spells it {attribute.Label}.";
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// A file of discovery targets — what an agent deploy or chezmoi writes to <c>${LAB_ROOT}/.logs</c>
+    /// for the collector — labels its streams only with attributes the lab knows. The collector's
+    /// own labels, <c>__path__</c> and the like, are left to it.
+    /// </summary>
+    public static IEnumerable<string> Targets(string json)
+    {
+        if (ParseJson(json) is not JsonArray targets)
+        {
+            yield break;
+        }
+
+        foreach (var label in targets.OfType<JsonObject>()
+                     .Select(target => target["labels"]).OfType<JsonObject>()
+                     .SelectMany(labels => labels.Select(pair => pair.Key)).Distinct())
+        {
+            if (!label.StartsWith("__", StringComparison.Ordinal) && !TelemetryAttribute.IsLabel(label))
+            {
+                yield return $"the target label {label} is not an attribute the lab knows ({Labels()}).";
+            }
+        }
+    }
+
+    private static JsonNode? ParseJson(string json)
+    {
+        try
+        {
+            return JsonNode.Parse(json);
+        }
+        catch (JsonException)
+        {
+            // A template or some other JSON: whether it is valid is its own tool's to say.
+            return null;
         }
     }
 

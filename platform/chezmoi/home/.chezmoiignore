@@ -1,5 +1,6 @@
 {{ if has .profile (list "macbook" "work-macbook") -}}
 .config/forgejo-runner
+.local/share/Wolfe.Lab/.logs/platform-forgejo-runners.json
 .config/forgejo-runner-docker
 .config/systemd
 .docker-headless
@@ -19,6 +20,8 @@
 
 {{ if eq .profile "pi-node" -}}
 .config/terminal
+# The Pi's runner is a systemd unit: its logs are the journal's.
+.local/share/Wolfe.Lab/.logs/platform-forgejo-runners.json
 .docker-headless
 .local/share/forgejo-runner
 Library
