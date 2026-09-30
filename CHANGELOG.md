@@ -120,6 +120,18 @@ rather than versioned — the lab is continuous, not released.
   so nothing on a node moves and no required status changes; its route is
   now `ai-ollama-server`.
 
+### Removed
+
+- **The CI image's own chezmoi and shellcheck.** A job that runs either
+  installs it at the version `.config/lab-tools.json` pins, so the image
+  no longer carries copies that could disagree with the nodes.
+- **The step that uninstalled `Wolfe.Lab.Build`** from a node's chezmoi
+  install script: every node — the mini, the Studio and the Pi — runs
+  `Wolfe.Lab` now.
+- **ROADMAP #12**, the areas, finished and moved here; the roadmap marks
+  #11's instrumented mail watcher shipped, and notes a timeline of the
+  lab's history for the portal (#9).
+
 ### Fixed
 
 - **Renovate failed silently.** Renovate now correctly reports its exit code.

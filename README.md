@@ -8,8 +8,7 @@ Vertically sliced: everything the lab runs is one directory, whatever mix
 of compose, tofu and jobs it needs — even chezmoi is a slice, holding the
 declarative machine plane (`home/`) beside its tick job. Slices are
 grouped into *areas* — `<area>/<service>/<component>`, `monitoring/gatus/compose`
-— moving over one area at a time (ROADMAP.md #12); until an area moves,
-its slices sit at the root.
+— `monitoring/`, `network/`, `platform/`, `media/`, `personal/` and `ai/`.
 
 | Path                               | Purpose                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 |------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

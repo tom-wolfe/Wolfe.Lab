@@ -62,9 +62,9 @@ Because Renovate cannot move them safely:
   node, restic — are pinned by version *and* checksum, and Renovate would
   bump one without the other. The Beszel hub's pull request carries a
   note to move the Pi's agent with it (`monitoring/beszel/RUNBOOK.md`, "Two pins").
-- **Build arguments with a twin elsewhere**: `NODE_VERSION` and
-  `CHEZMOI_VERSION` in `platform/ci/image/Dockerfile` track the nodes, and
-  immich-go's `VERSION` carries its checksum.
+- **Build arguments with a twin elsewhere**: `NODE_VERSION` in
+  `platform/ci/image/Dockerfile` tracks the nodes, and immich-go's
+  `VERSION` carries its checksum.
 - **The Brewfile** is unpinned, and **ollama's models** have no registry
   Renovate reads.
 

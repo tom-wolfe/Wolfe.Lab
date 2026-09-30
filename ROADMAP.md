@@ -146,64 +146,6 @@ being the one machine the lab dies with. What genuinely cannot move:
 
 Everything else moves.
 
-### 12. Areas — group the slices before the lab outgrows a flat root
-
-Twenty-two directories at the root, and more on the way (Prowlarr,
-Jellyseerr, Pi-hole, a collector, Grafana). **Decided: three levels —
-area, service, component.** The area groups; the service keeps its own
-directory, README and runbook; the component keeps its shape name,
-which reads well once its parent names the service —
-`monitoring/gatus/compose`, not `gatus-compose` beside `gatus-health`.
-
-```
-monitoring/  grafana/ alloy/ gatus/ heartbeat/ beszel/ (until #11 retires it)
-network/     caddy/ dns/ tailscale/ (pihole/)
-platform/    forgejo/ garage/ restic/ chezmoi/ ci/ renovate/ lab/
-media/       jellyfin/ radarr/ sonarr/ qbittorrent/ (prowlarr/ jellyseerr/)
-personal/    immich/ paperless/ files/ obsidian/ mail/
-ai/          ollama/
-```
-
-Immich is `personal/`: it is the photo library, not part of the *arr
-pipeline. chezmoi moves into `platform/` with everything else the
-lab stands on.
-
-**What a move does not touch.** Install directories come from each
-component's `release`, not its path, so nothing on a node moves and no
-container is recreated for it; tofu state keys are literals in each
-root's `providers.tf`, so no state migrates.
-
-**What it does.**
-
-- **Two CLI steps assume a slice sits one level under the root.**
-  `GatherRoutes` climbs two directories to the checkout and names a
-  snippet `<slice>-<component>`; chezmoi's `RenderProfiles` climbs two
-  as well. Both find the root by walking up, as the tofu workflow's
-  `ResolveEnvironment` already does, and routes are gathered
-  recursively. A CLI change, so it ships and is pinned before anything
-  moves. The ollama siblings check reads its parent and is unaffected.
-- **`.chezmoiroot` moves in the same commit as `platform/chezmoi/`**, or every
-  node's `chezmoi update` loses its source — the riskiest single move,
-  which is why `platform/` goes last.
-- **Every workflow's `paths:` and `working-directory`**, and the
-  cross-references in the docs. Mechanical, but a merge redeploys
-  everything it moved (backups run on schedule only; the per-node
-  concurrency groups serialise the rest), so one area per pull request.
-
-#6 retires most of those workflows, and its agent will find components
-by their `ritten.json` at any depth — but it is several steps away, and
-the next thing built (#11) should be built where it will stay.
-
-**In order.**
-
-1. ~~The CLI: root found by walking up, routes gathered recursively.
-   Published, then pinned.~~ Done (2026-09-28).
-2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
-   into it from here.~~ Done (2026-09-29).
-3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *Done: `media/`, `personal/`, `ai/` and `network/`, 2026-09-30.*
-4. ~~`platform/` last — Forgejo and chezmoi.~~ Done (2026-09-30), after the CLI taught
-   the backups to find `restic/` inside an area.
-
 ### 11. Observability — OpenTelemetry into Grafana
 
 The lab can say whether things are up (Gatus), how hard the machines are
@@ -224,7 +166,7 @@ Prometheus for metrics, Grafana in front), but it is the standard shape,
 the one that carries over to work, and its dashboards are the best on
 offer.
 
-**The shape.** All of it in the `monitoring/` area (#12): the backend
+**The shape.** All of it in the `monitoring/` area: the backend
 is `monitoring/grafana`, the collectors `monitoring/alloy`.
 
 - **A collector on every node, as a host daemon** — Grafana Alloy,
@@ -300,7 +242,7 @@ emitted:
 - `service.name` — what emitted it (`mail-watcher`, `caddy`, `ollama`).
 - `host.name` — the node (`mini`, `studio`, `pi`).
 - `lab.area`, `lab.service`, `lab.component` — where it lives in the
-  repo (#12): `monitoring`, `gatus`, `compose`.
+  repo: `monitoring`, `gatus`, `compose`.
 - `lab.role` — `server` or `hybrid`, so every rule can leave the Studio
   out in one matcher, as its Beszel agent and Gatus check never alert.
 
@@ -328,13 +270,14 @@ compare over time — the view the Actions tab gives today, for the thing
 that will replace it. A Ritten feature, so a Ritten release, then the
 lab's pins.
 
-**In order.** After #12's `monitoring/` move:
+**In order.**
 
 1. The backend on the mini and the mini's collector; the watchdog
    check; Gatus watching Grafana. Then a look at the mini's memory. *Shipped: the backend,
    the watchdog and Gatus's check on 2026-09-29, the mini's collector on
    2026-09-29.*
 2. The mail watcher instrumented — the bottleneck question answered.
+   *Shipped on 2026-09-29.*
 3. Collectors on the Pi and the Studio, forwarding; container and
    host-process logs from every node. *The mini's container logs on 2026-09-30, labelled by the
    deploy.*
@@ -660,7 +603,7 @@ every consumer sees only `IConfiguration`, so the swap is one provider.
 queries are the push the bus already gives.
 
 **One owner per key.** Keys are namespaced by the slice that owns them
-(`media/jellyfin/…`, the areas of #12), and two writers publish, never
+(`media/jellyfin/…`, by area), and two writers publish, never
 into another slice's namespace:
 
 - **Tofu publishes what only exists after an apply** — endpoints,
@@ -835,6 +778,22 @@ Actions, this is where the Actions tab's job goes.
   run page Actions gives today.
 - **Grafana stays Grafana.** Metrics dashboards and alert rules live
   there (#11); the portal links into it rather than rebuilding it.
+- **The lab's history, as a timeline** — something to show: when each
+  service arrived, the migrations, the hardware, and the milestones and
+  incidents ("first successful restore", "first disk failure"). Related
+  to the changelog but not the same list, so it is its own curated file,
+  `HISTORY.yaml` at the root: dated events, each with a title, a kind
+  (built, migrated, hardware, milestone, incident), a short story and
+  links (the pull request, the changelog's day, the component). The CLI
+  owns the kinds and the rules — valid dates, unique names, newest first
+  — and its check holds the file to them, as it does the telemetry
+  names. A workflow tags each new event `history/<date>-<slug>` on the
+  lab's last commit that day, so the repository can be browsed as it
+  was, and a milestone also becomes a Forgejo release, which makes
+  Forgejo's releases page a trophy hall before the portal exists; the
+  CLI's `lab/v…` tags stay out of it. The portal renders the file.
+  Seeded from the changelog and git when it is built — from the first
+  commit on 2026-08-22 — for Tom to prune.
 
 If it is a custom build, a small .NET web app with a front end, not a static page: it calls the
 agents across the tailnet and holds nothing of its own, so the agent
