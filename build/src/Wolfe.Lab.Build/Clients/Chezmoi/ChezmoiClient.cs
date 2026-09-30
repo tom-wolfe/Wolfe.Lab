@@ -1,16 +1,10 @@
+using System.Text.Json;
+
 namespace Wolfe.Lab.Build.Clients.Chezmoi;
 
 /// <summary>
-/// Runs the <c>chezmoi</c> on the path.
+/// Runs the installed Chezmoi CLI.
 /// </summary>
-/// <remarks>
-/// A render uses a scratch config that supplies the profile and points <c>onepassword.command</c>
-/// at a stub, so every <c>onepasswordRead</c> renders as its own <c>op://</c> reference and the
-/// vault is never touched. Externals are skipped — downloads, not templates. Scripts render like
-/// files, under <c>.chezmoiscripts/</c>. A file gated to other profiles is simply absent.
-/// <c>.chezmoi.homeDir</c> is this machine's, so home-rooted paths read as the renderer's home:
-/// the shape is what to review, not the prefix.
-/// </remarks>
 internal sealed class ChezmoiClient(ICommandRunner commands) : IChezmoi
 {
     internal const string TokenVariable = "OP_SERVICE_ACCOUNT_TOKEN";
@@ -32,9 +26,12 @@ internal sealed class ChezmoiClient(ICommandRunner commands) : IChezmoi
                 File.SetUnixFileMode(op, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             }
 
-
-            var config = Path.Combine(scratch.FullName, "chezmoi.toml");
-            await File.WriteAllTextAsync(config, $"[data]\n  profile = \"{profile}\"\n[onepassword]\n  command = \"{op}\"\n  mode = \"service\"\n", ct);
+            var config = Path.Combine(scratch.FullName, "chezmoi.json");
+            await File.WriteAllTextAsync(config, JsonSerializer.Serialize(new
+            {
+                data = new { profile },
+                onepassword = new { command = op, mode = "service" }
+            }), ct);
 
             var archive = Path.Combine(scratch.FullName, "render.tar");
             await commands.Run(

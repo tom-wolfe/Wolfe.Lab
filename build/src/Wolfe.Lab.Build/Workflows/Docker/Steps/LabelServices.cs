@@ -1,7 +1,7 @@
-using System.Text;
 using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Values;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
+using YamlDotNet.Serialization;
 
 namespace Wolfe.Lab.Build.Workflows.Docker.Steps;
 
@@ -51,31 +51,32 @@ internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSys
     }
 
     /// <summary>
-    /// The override itself. Its values are directory names and service names, neither of which
-    /// needs escaping in a double-quoted YAML string.
+    /// Renders the compose.override.yaml
     /// </summary>
     internal static string Render(Component component, IReadOnlyList<string> services)
     {
-        var yaml = new StringBuilder()
-            .AppendLine("# Written by `lab deploy` from where the component sits in the repository:")
-            .AppendLine("# the lab's labels on every service (build/README.md). Rewritten on every deploy.")
-            .AppendLine("services:");
-
-        foreach (var service in services)
+        var labels = component.Attributes.ToDictionary(attribute => attribute.Key.Name, attribute => attribute.Value);
+        var environment = new Dictionary<string, string> { [TelemetryAttribute.ResourceAttributesVariable] = component.ResourceAttributes };
+        var document = new Dictionary<string, object>
         {
-            yaml.AppendLine($"  {service}:")
-                .AppendLine("    labels:");
-            foreach (var (attribute, value) in component.Attributes)
+            ["services"] = services.ToDictionary(service => service, _ => new Dictionary<string, object>
             {
-                yaml.AppendLine($"      {attribute.Name}: \"{value}\"");
-            }
+                ["labels"] = labels,
+                ["environment"] = environment
+            })
+        };
 
-            yaml.AppendLine("    environment:")
-                .AppendLine($"      OTEL_RESOURCE_ATTRIBUTES: \"{component.ResourceAttributes}\"");
-        }
-
-        return yaml.ToString();
+        return Header + Yaml.Serialize(document);
     }
+
+    // A comment is the one thing a serializer does not write.
+    private const string Header = """
+        # Written by `lab deploy` from where the component sits in the repository: the lab's
+        # labels on every service (build/README.md). Rewritten on every deploy.
+
+        """;
+
+    private static readonly ISerializer Yaml = new SerializerBuilder().WithQuotingNecessaryStrings().DisableAliases().Build();
 
     private static string Count(int services) => $"{services} service{(services == 1 ? "" : "s")}";
 }

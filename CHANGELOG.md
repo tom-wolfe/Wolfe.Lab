@@ -4,25 +4,20 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## [0.78.0] - 2026-09-30
+
+### Added
+
+- **Telemetry attribute names are validated.** Checks run during the pipeline build.
+
 ## [0.77.0] - 2026-09-30
 
 ### Added
 
-- **An agent deploy says which log files its agents write.** After
-  converging, the agents and ollama deploys write
-  `${LAB_ROOT}/.logs/<area>-<service>-<component>.json` — a file
-  discovery target per component, each agent's `log` named for the agent
-  and labelled with where the component lives — for the node's collector
-  to tail (ROADMAP #11 step 3, host-process logs). An agent whose logs go
-  to the journal has none.
+- **Agents publish their log locations.** Launchd agents now writes a file to
+  `${LAB_ROOT}/.logs` that the Alloy agent can use to tail the logs.
+- **Component metadata is resolved during jobs.** Including the area and service.
 
-### Changed
-
-- **Where a component lives is resolved first, and once.** A compose or
-  agent deploy works out `<area>/<service>/<component>` from the
-  component's path before anything is published, and fails there if it
-  is anything else; the compose labels (0.75.0) and the agents' log
-  targets both read it.
 
 ## [0.76.0] - 2026-09-30
 

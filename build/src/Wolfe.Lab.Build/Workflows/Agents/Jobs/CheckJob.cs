@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
+using Wolfe.Lab.Build.Clients.Telemetry.Steps;
 using Wolfe.Lab.Build.Workflows.Agents.Models;
 using Wolfe.Lab.Build.Workflows.Agents.Steps;
 
@@ -14,7 +15,11 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
 
     public override string Description => "Checks every node's agent declarations.";
 
-    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<CheckAgentDeclarations>()];
+    public override IReadOnlyList<Step> Steps { get; } = [
+        Step.FromType<GatePathFilter>(),
+        Step.FromType<CheckAgentDeclarations>(),
+        Step.FromType<CheckTelemetryNames>()
+    ];
 
     public override JobKind Kind => JobKind.Check;
 

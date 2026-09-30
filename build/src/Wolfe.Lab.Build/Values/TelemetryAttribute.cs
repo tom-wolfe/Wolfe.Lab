@@ -5,10 +5,6 @@ namespace Wolfe.Lab.Build.Values;
 /// spelling. The one place each is named: what labels a container, a log file or a process's
 /// own telemetry reads it from here.
 /// </summary>
-/// <remarks>
-/// <c>host.name</c> and <c>lab.role</c> belong to the node, so the collector sets them
-/// (monitoring/alloy), not the CLI.
-/// </remarks>
 public sealed record TelemetryAttribute(string Name)
 {
     /// <summary>
@@ -30,6 +26,36 @@ public sealed record TelemetryAttribute(string Name)
     /// The component itself: <c>compose</c>.
     /// </summary>
     public static TelemetryAttribute Component { get; } = new("lab.component");
+
+    /// <summary>
+    /// The node it ran on.
+    /// </summary>
+    public static TelemetryAttribute HostName { get; } = new("host.name");
+
+    /// <summary>
+    /// The node's role — <c>server</c> or <c>hybrid</c>.
+    /// </summary>
+    public static TelemetryAttribute Role { get; } = new("lab.role");
+
+    /// <summary>
+    /// Every attribute the lab's telemetry carries.
+    /// </summary>
+    public static IReadOnlyList<TelemetryAttribute> All { get; } = [ServiceName, HostName, Area, Service, Component, Role];
+
+    /// <summary>
+    /// The variable an OpenTelemetry SDK reads its resource attributes from.
+    /// </summary>
+    public const string ResourceAttributesVariable = "OTEL_RESOURCE_ATTRIBUTES";
+
+    /// <summary>
+    /// Whether <paramref name="label"/> is one of the attributes in a store's spelling.
+    /// </summary>
+    public static bool IsLabel(string label) => All.Any(attribute => attribute.Label == label);
+
+    /// <summary>
+    /// Whether <paramref name="name"/> is one of the attributes in OpenTelemetry's spelling.
+    /// </summary>
+    public static bool IsName(string name) => All.Any(attribute => attribute.Name == name);
 
     /// <summary>
     /// How a store whose label names cannot hold a dot spells it — Loki's and Prometheus's own

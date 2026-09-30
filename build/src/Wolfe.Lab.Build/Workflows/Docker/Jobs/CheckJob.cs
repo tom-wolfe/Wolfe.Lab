@@ -1,6 +1,7 @@
 using Ritten.Docker;
 using Ritten.Docker.Steps;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
+using Wolfe.Lab.Build.Clients.Telemetry.Steps;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
 
 namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
@@ -8,11 +9,6 @@ namespace Wolfe.Lab.Build.Workflows.Docker.Jobs;
 /// <summary>
 /// Proves the component's stack is sound before anything is deployed from it.
 /// </summary>
-/// <remarks>
-/// Reads the checkout, not a release: a check runs before the merge, when nothing is installed.
-/// Secrets are absent there and that is fine — they reach compose through its environment, and
-/// an interpolation with nothing behind it resolves empty rather than failing.
-/// </remarks>
 internal sealed class CheckJob<TOptions> : LabJob<TOptions> where TOptions : DockerComponentOptions
 {
     public override string Name => "check";
@@ -22,7 +18,8 @@ internal sealed class CheckJob<TOptions> : LabJob<TOptions> where TOptions : Doc
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
-        Step.FromType<ComposeCheck>()
+        Step.FromType<ComposeCheck>(),
+        Step.FromType<CheckTelemetryNames>()
     ];
 
     public override JobKind Kind => JobKind.Check;

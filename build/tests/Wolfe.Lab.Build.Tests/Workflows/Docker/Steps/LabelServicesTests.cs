@@ -4,6 +4,7 @@ using Wolfe.Lab.Build.Clients.Releases;
 using Wolfe.Lab.Build.Values;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
 using Wolfe.Lab.Build.Workflows.Docker.Steps;
+using YamlDotNet.Serialization;
 
 namespace Wolfe.Lab.Build.Tests.Workflows.Docker.Steps;
 
@@ -36,13 +37,22 @@ public class LabelServicesTests : IDisposable
     {
         (await Run()).IsFailure.ShouldBeFalse();
 
-        var written = await File.ReadAllTextAsync(Override, TestContext.Current.CancellationToken);
-        written.ShouldContain("  bridge:\n");
-        written.ShouldContain("  watcher:\n");
-        written.ShouldContain("lab.area: \"personal\"");
-        written.ShouldContain("lab.service: \"mail\"");
-        written.ShouldContain("lab.component: \"watcher\"");
-        written.ShouldContain("OTEL_RESOURCE_ATTRIBUTES: \"lab.area=personal,lab.service=mail,lab.component=watcher\"");
+        var text = await File.ReadAllTextAsync(Override, TestContext.Current.CancellationToken);
+        text.ShouldNotContain("&"); // written out per service, not as anchors and aliases
+        var written = new DeserializerBuilder().Build()
+            .Deserialize<Dictionary<string, Dictionary<string, Dictionary<string, Dictionary<string, string>>>>>(text);
+        var services = written["services"];
+        services.Keys.ShouldBe(["bridge", "watcher"], ignoreOrder: true);
+        foreach (var service in services.Values)
+        {
+            service["labels"].ShouldBe(new Dictionary<string, string>
+            {
+                ["lab.area"] = "personal",
+                ["lab.service"] = "mail",
+                ["lab.component"] = "watcher"
+            });
+            service["environment"]["OTEL_RESOURCE_ATTRIBUTES"].ShouldBe("lab.area=personal,lab.service=mail,lab.component=watcher");
+        }
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Formats.Tar;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Build.Clients.Chezmoi;
@@ -74,7 +75,7 @@ public class ChezmoiClientTests : IDisposable
             }
 
             config = File.ReadAllText(command.Arguments[Array.IndexOf(command.Arguments, "--config") + 1]);
-            var stub = command.Arguments[Array.IndexOf(command.Arguments, "--config") + 1].Replace("chezmoi.toml", "op");
+            var stub = command.Arguments[Array.IndexOf(command.Arguments, "--config") + 1].Replace("chezmoi.json", "op");
             File.Exists(stub).ShouldBeTrue();
             TarFile.CreateFromDirectory(Directory.CreateDirectory(Path.Combine(_root.FullName, "empty")).FullName, command.Arguments[Array.IndexOf(command.Arguments, "--output") + 1], includeBaseDirectory: false);
             return new CommandResult(0, "", "");
@@ -82,10 +83,10 @@ public class ChezmoiClientTests : IDisposable
 
         await new ChezmoiClient(_commands).Render(new PhysicalDirectory(_root.FullName), "macbook", new PhysicalDirectory(Path.Combine(_root.FullName, "out")), TestContext.Current.CancellationToken);
 
-        config.ShouldNotBeNull();
-        config.ShouldContain("profile = \"macbook\"");
-        config.ShouldContain("mode = \"service\"");
-        config.ShouldContain("command = \"");
+        using var read = JsonDocument.Parse(config.ShouldNotBeNull());
+        read.RootElement.GetProperty("data").GetProperty("profile").GetString().ShouldBe("macbook");
+        read.RootElement.GetProperty("onepassword").GetProperty("mode").GetString().ShouldBe("service");
+        read.RootElement.GetProperty("onepassword").GetProperty("command").GetString().ShouldNotBeNullOrEmpty();
     }
 
     [Fact]
