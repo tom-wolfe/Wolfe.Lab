@@ -41,6 +41,13 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The tofu state backend is found in the Garage slice.** Every root's
+  shared `tofu-state.env` is looked for as `garage/` — at any level up,
+  or inside an area — as restic's files already were, the lookup now
+  shared; the file itself moves to `platform/garage/` with the CLI's
+  directory (`build/` becomes `platform/lab/tool`), and until then it is
+  still found in `build/`.
+
 - **The CLI's version is worked out, not typed.** It is `1.0.<n>`,
   *n* counting the commits that changed what ships, worked out by the
   deploy's first step; a merge that ships nothing keeps the number and publishes

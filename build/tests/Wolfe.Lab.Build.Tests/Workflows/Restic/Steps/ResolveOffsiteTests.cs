@@ -1,6 +1,6 @@
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Build.Clients.Restic;
 using Wolfe.Lab.Build.Workflows.Restic.Steps;
+using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Workflows.Restic.Steps;
 
@@ -15,7 +15,7 @@ public class ResolveOffsiteTests : IDisposable
     {
         // The restic slice's own component reads the slice's files the same way every other
         // component does: by walking up to the checkout.
-        var slice = _checkout.CreateSubdirectory(ResticEnvironment.SliceName);
+        var slice = _checkout.CreateSubdirectory(Slice.Restic.Name);
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(slice.CreateSubdirectory("repositories").FullName));
         _envFile = Path.Combine(slice.FullName, ResolveOffsite.FileName);
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())

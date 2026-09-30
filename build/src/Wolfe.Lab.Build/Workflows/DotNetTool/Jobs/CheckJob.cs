@@ -1,7 +1,6 @@
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.NuGet;
-using Ritten.NuGet.Steps;
 using Ritten.Releases;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.DotNetTool.Models;

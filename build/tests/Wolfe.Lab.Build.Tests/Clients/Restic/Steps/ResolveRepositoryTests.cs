@@ -1,6 +1,6 @@
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Build.Clients.Restic;
 using Wolfe.Lab.Build.Clients.Restic.Steps;
+using Wolfe.Lab.Build.Values;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Restic.Steps;
 
@@ -17,7 +17,7 @@ public class ResolveRepositoryTests : IDisposable
         _checkout.CreateSubdirectory(".git");
         var component = _checkout.CreateSubdirectory("files").CreateSubdirectory("backup");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-        _envFile = Path.Combine(_checkout.CreateSubdirectory(ResticEnvironment.SliceName).FullName, ResolveRepository.FileName);
+        _envFile = Path.Combine(_checkout.CreateSubdirectory(Slice.Restic.Name).FullName, ResolveRepository.FileName);
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<string>().StartsWith("op://", StringComparison.Ordinal) ? $"value-of-{call.Arg<string>()}" : call.Arg<string>());
     }
@@ -99,7 +99,7 @@ public class ResolveRepositoryTests : IDisposable
         File.Delete(_envFile);
         var component = _checkout.CreateSubdirectory("media").CreateSubdirectory("jellyfin").CreateSubdirectory("backup");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-        var slice = _checkout.CreateSubdirectory("platform").CreateSubdirectory(ResticEnvironment.SliceName);
+        var slice = _checkout.CreateSubdirectory("platform").CreateSubdirectory(Slice.Restic.Name);
         await File.WriteAllTextAsync(Path.Combine(slice.FullName, ResolveRepository.FileName),
             "RESTIC_REPOSITORY=sftp:macmini:/Volumes/Data2/restic\nRESTIC_PASSWORD=\"op://Wolfe.Lab/restic-repo/password\"\n",
             TestContext.Current.CancellationToken);
@@ -121,7 +121,7 @@ public class ResolveRepositoryTests : IDisposable
             checkout.CreateSubdirectory(".git");
             var component = checkout.CreateSubdirectory("files").CreateSubdirectory("backup");
             _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-            var stray = outside.CreateSubdirectory("elsewhere").CreateSubdirectory(ResticEnvironment.SliceName);
+            var stray = outside.CreateSubdirectory("elsewhere").CreateSubdirectory(Slice.Restic.Name);
             await File.WriteAllTextAsync(Path.Combine(stray.FullName, ResolveRepository.FileName),
                 "RESTIC_REPOSITORY=sftp:macmini:/Volumes/Data2/restic\n", TestContext.Current.CancellationToken);
 

@@ -8,7 +8,11 @@ public class ResolveEnvironmentTests : IDisposable
     private readonly DirectoryInfo _checkout = Directory.CreateTempSubdirectory("lab-checkout-");
     private readonly DirectoryInfo _root;
 
-    public ResolveEnvironmentTests() => _root = _checkout.CreateSubdirectory("caddy").CreateSubdirectory("tofu");
+    public ResolveEnvironmentTests()
+    {
+        _checkout.CreateSubdirectory(".git");
+        _root = _checkout.CreateSubdirectory("network").CreateSubdirectory("caddy").CreateSubdirectory("tofu");
+    }
 
     public void Dispose() => _checkout.Delete(recursive: true);
 
@@ -19,9 +23,10 @@ public class ResolveEnvironmentTests : IDisposable
         return new ResolveEnvironment(fileSystem, Substitute.For<IWorkflowLog>());
     }
 
-    private string WriteState()
+    // Garage's, in its area, where it lives from now on.
+    private string WriteState(params string[] directory)
     {
-        var path = Path.Combine(_checkout.CreateSubdirectory(ResolveEnvironment.BuildDirectory).FullName, ResolveEnvironment.StateFile);
+        var path = Path.Combine(Directory.CreateDirectory(Path.Combine([_checkout.FullName, .. directory.Length > 0 ? directory : ["platform", "garage"]])).FullName, ResolveEnvironment.StateFile);
         File.WriteAllText(path, "AWS_ACCESS_KEY_ID=\"op://Wolfe.Lab/garage-tofu-state-key/username\"\n");
         return path;
     }
@@ -58,5 +63,22 @@ public class ResolveEnvironmentTests : IDisposable
 
         result.Outcome.IsFailure.ShouldBeTrue();
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain(ResolveEnvironment.StateFile);
+    }
+
+    [Fact]
+    public void Run_StillFindsTheStateFileWhereItWasUntilItMoves()
+    {
+        var state = WriteState("build");
+
+        Step().Run().Value.ShouldNotBeNull().EnvFiles.ShouldHaveSingleItem().AbsolutePath.ShouldBe(state);
+    }
+
+    [Fact]
+    public void Run_PrefersGaragesCopyOverTheOneItReplaces()
+    {
+        WriteState("build");
+        var garage = WriteState();
+
+        Step().Run().Value.ShouldNotBeNull().EnvFiles.ShouldHaveSingleItem().AbsolutePath.ShouldBe(garage);
     }
 }
