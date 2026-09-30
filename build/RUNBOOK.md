@@ -64,9 +64,9 @@ NuGet alone.
 
 ## Releasing a CLI change
 
-Add the lab's next `## [x.y.z]` heading to `CHANGELOG.md` in the same
-pull request, describing the change — the CLI's version is read from it,
-and the check fails a change to what ships without one. The merge
+Describe the change under the day's `## YYYY-MM-DD` heading in
+`CHANGELOG.md`. There is no version to choose: the merge works it out
+(`1.0.<n>`, README.md "Shipping"), tags the commit `lab/v1.0.<n>` and
 publishes it.
 Then move the pin to it in a second pull request — the version in
 `.config/dotnet-tools.json`, which chezmoi and the CI image both read —

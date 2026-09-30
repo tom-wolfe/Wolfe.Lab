@@ -1,5 +1,5 @@
-using Wolfe.Lab.Build.Tests.Clients.Resilience;
 using Wolfe.Lab.Build.Clients.Ollama;
+using Wolfe.Lab.Build.Tests.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Tests.Workflows.Ollama;
 

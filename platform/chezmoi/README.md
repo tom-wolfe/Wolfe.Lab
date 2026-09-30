@@ -82,7 +82,7 @@ artifact to name. Renovate can't help either: its `homebrew` manager matches
 
 So the repo's usual discipline — bump a pin in a PR, let the deploy flow
 act on it — has nothing to bite on, and the alternative once tried here, a
-nightly unattended upgrade job (0.11.0 → 0.18.1), was the
+nightly unattended upgrade job (2026-08-29 → 2026-09-02), was the
 wrong trade for a lone server: it moved every package at once, unreviewed,
 and it failed every night regardless, because `.pkg`-based casks
 (`dotnet-sdk`) install through sudo and a forced-command SSH session has

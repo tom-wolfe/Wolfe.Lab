@@ -73,5 +73,4 @@ Because Renovate cannot move them safely:
 A Renovate pull request is merged like any other, and gets the same
 `CHANGELOG.md` entry any change does — Renovate does not write one. A
 bump to `build/Directory.Packages.props` changes what the CLI ships, so
-`build / check` fails it until the pull request has a new version heading
-(`build/README.md`, "Shipping").
+its merge publishes a new CLI (`build/README.md`, "Shipping").

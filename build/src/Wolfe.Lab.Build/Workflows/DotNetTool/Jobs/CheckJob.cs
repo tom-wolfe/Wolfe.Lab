@@ -20,7 +20,7 @@ internal sealed class CheckJob : LabJob<DotNetToolOptions>
 {
     public override string Name => "check";
 
-    public override string Description => "Restores, verifies formatting, builds and tests the tool, and checks its version moved.";
+    public override string Description => "Restores, verifies formatting, builds and tests the tool.";
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
@@ -28,12 +28,7 @@ internal sealed class CheckJob : LabJob<DotNetToolOptions>
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormatCheck>(),
         Step.FromType<DotnetBuild>(),
-        Step.FromType<DotnetTest>(),
-        Step.FromType<ReadProjects>(),
-        Step.FromType<ResolveRelease>(),
-        Step.FromType<ReadShippedChanges>(),
-        Step.FromType<NugetRead>(),
-        Step.FromType<CheckVersion>()
+        Step.FromType<DotnetTest>()
     ];
 
     public override JobKind Kind => JobKind.Check;

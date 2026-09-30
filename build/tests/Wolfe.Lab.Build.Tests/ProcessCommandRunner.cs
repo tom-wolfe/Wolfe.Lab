@@ -11,6 +11,11 @@ internal sealed class ProcessCommandRunner : ICommandRunner
     public async Task<CommandResult> Run(Command command, CancellationToken cancellationToken = default)
     {
         var info = new ProcessStartInfo(command.Path) { RedirectStandardOutput = true, RedirectStandardError = true };
+        if (command.WorkingDirectory is { } directory)
+        {
+            info.WorkingDirectory = directory;
+        }
+
         foreach (var argument in command.Arguments)
         {
             info.ArgumentList.Add(argument);

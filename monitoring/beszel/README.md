@@ -244,7 +244,7 @@ costs the desk — so set thresholds, and leave status alone.
 
 ## Moving off chezmoi and Homebrew's service
 
-Until 0.44.0 the agent ran under `brew services` on the Macs and a
+Until 2026-09-24 the agent ran under `brew services` on the Macs and a
 chezmoi-written unit on the Pi, reading `~/.config/beszel/beszel-agent.env`.
 The component's agents *supersede* those — Homebrew's service under
 both of its label schemes, `sh.brew.beszel-agent` and the older

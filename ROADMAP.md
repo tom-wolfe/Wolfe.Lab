@@ -198,11 +198,11 @@ the next thing built (#11) should be built where it will stay.
 **In order.**
 
 1. ~~The CLI: root found by walking up, routes gathered recursively.
-   Published, then pinned.~~ Done (0.55.0).
+   Published, then pinned.~~ Done (2026-09-28).
 2. ~~`monitoring/` — Gatus, the heartbeat and Beszel move; #11 builds
-   into it from here.~~ Done (0.57.0).
-3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *Done: `media/` (0.68.0), `personal/` (0.69.0), `ai/` (0.71.0), `network/` (0.72.0).*
-4. ~~`platform/` last — Forgejo and chezmoi.~~ Done (0.74.0), after 0.73.0 taught
+   into it from here.~~ Done (2026-09-29).
+3. `media/`, `personal/`, `ai/`, `network/`, one pull request each. *Done: `media/`, `personal/`, `ai/` and `network/`, 2026-09-30.*
+4. ~~`platform/` last — Forgejo and chezmoi.~~ Done (2026-09-30), after the CLI taught
    the backups to find `restic/` inside an area.
 
 ### 11. Observability — OpenTelemetry into Grafana
@@ -333,12 +333,12 @@ lab's pins.
 
 1. The backend on the mini and the mini's collector; the watchdog
    check; Gatus watching Grafana. Then a look at the mini's memory. *Shipped: the backend,
-   the watchdog and Gatus's check in 0.58.0, the mini's collector in
-   0.62.0.*
+   the watchdog and Gatus's check on 2026-09-29, the mini's collector on
+   2026-09-29.*
 2. The mail watcher instrumented — the bottleneck question answered.
 3. Collectors on the Pi and the Studio, forwarding; container and
-   host-process logs from every node. *The mini's container logs in 0.76.0, labelled by the
-   deploy (0.75.0).*
+   host-process logs from every node. *The mini's container logs on 2026-09-30, labelled by the
+   deploy.*
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
    each need theirs enabled — then labelled for scraping.
@@ -742,7 +742,7 @@ from them rather than relitigating:
   implement Secrets Manager (`bws` is not GPL-licensed), so unattended
   reads are either `bws` against Bitwarden cloud (the official machine
   accounts — check *its* rate limits before trusting it with the lesson
-  of 0.16.0) or `bw`/`rbw` with a local cache — rbw's agent holds the
+  of 2026-09-01) or `bw`/`rbw` with a local cache — rbw's agent holds the
   vault locally, which is the Connect-shaped property: reads cost no
   quota and survive cloud outages. Ritten's `ISecretProvider` is already
   the one door every caller goes through, so the machine half is a second
@@ -1007,7 +1007,7 @@ runtime or orchestrator. The changelog is the argument for looking:
 `network_mode: host` is a silent no-op (dead mDNS/SSDP discovery, no Home
 Assistant on the mini), VirtioFS races on first boot, every container's
 port 53 intercepted by the VM, keychain-bound registry pulls in headless
-sessions, and an update that took the lab down (0.18.1).
+sessions, and an update that took the lab down (2026-09-02).
 
 **Nearly all of it is the VM, not Docker.** macOS cannot run Linux
 containers; every runtime on the mini — Docker Desktop, OrbStack, Colima,

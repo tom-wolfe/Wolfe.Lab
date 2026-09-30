@@ -4,38 +4,25 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## [0.78.0] - 2026-09-30
+## 2026-09-30
 
 ### Added
 
 - **Telemetry attribute names are validated.** Checks run during the pipeline build.
 
-## [0.77.0] - 2026-09-30
-
-### Added
-
 - **Agents publish their log locations.** Launchd agents now writes a file to
   `${LAB_ROOT}/.logs` that the Alloy agent can use to tail the logs.
 - **Component metadata is resolved during jobs.** Including the area and service.
 
-
-## [0.76.0] - 2026-09-30
-
-### Added
-
 - **The mini's container logs are in Loki.** Alloy reads every
   container's logs through the Docker socket, each stream named for its
   container (`service_name`) and labelled with the node and where in the
-  lab the container lives — the labels the deploy puts on it (0.75.0). A
+  lab the container lives — the labels the deploy puts on it. A
   container that sends its own logs over OTLP is labelled
   `lab.logs: otlp` and left out; the mail watcher is, and its
   hand-written `OTEL_RESOURCE_ATTRIBUTES` goes, since the deploy now
   supplies them. Loki indexes the lab's labels on OTLP logs too, so one
   selector finds both kinds.
-
-## [0.75.0] - 2026-09-30
-
-### Added
 
 - **Every container says where in the lab it lives.** A compose deploy
   writes a `compose.override.yaml` into the release, which compose merges
@@ -46,9 +33,20 @@ rather than versioned — the lab is continuous, not released.
   them). The first deploy of each stack after this recreates its
   containers once, for the new labels.
 
-## [0.74.0] - 2026-09-30
+- **Grafana's AI features answer with the lab's own models.** The LLM
+  app (`grafana-llm-app`, pinned and bumped by Renovate) is installed at
+  start and provisioned to use `ai.twolfe.dev` as an OpenAI-compatible
+  provider, both of its sizes on the `lab/interactive` role. Grafana's
+  memory limit rises from 512 MB to 768 MB to make room for its backend.
 
 ### Changed
+
+- **The CLI's version is worked out, not typed.** It is `1.0.<n>`,
+  *n* counting the commits that changed what ships, worked out by the
+  deploy's first step; a merge that ships nothing keeps the number and publishes
+  nothing. Each published CLI tags its commit `lab/v1.0.<n>`. The
+  changelog's headings are dates, each day's entries under one, and the
+  check no longer asks for a version heading.
 
 - **`platform/` is the last area** (ROADMAP #12): Forgejo, Garage,
   restic, chezmoi, the CI image and Renovate moved under it. Every slice
@@ -66,10 +64,6 @@ rather than versioned — the lab is continuous, not released.
   `platform/ci/image/Dockerfile`; Renovate reads
   `platform/renovate/config.json5`.
 
-## [0.73.0] - 2026-09-30
-
-### Changed
-
 - **A backup finds the restic slice inside an area.** Every backup
   component reads its repository from the restic slice's env files, found
   by walking up for `restic/`; it now also looks one level down, in each
@@ -79,10 +73,6 @@ rather than versioned — the lab is continuous, not released.
   `platform/` moves (ROADMAP #12), since the move would otherwise leave
   every backup outside `platform/` without a repository.
 
-## [0.72.0] - 2026-09-30
-
-### Changed
-
 - **`network/` is the fifth area** (ROADMAP #12): caddy, dns and
   tailscale moved under it, as `network/caddy`, `network/dns` and
   `network/tailscale`. Release names, tofu state keys, workflow names and
@@ -90,26 +80,39 @@ rather than versioned — the lab is continuous, not released.
   and no required status changes; caddy's own routes need no rename, as
   the front door has no snippet of its own.
 
-## [0.71.0] - 2026-09-30
-
-### Changed
-
 - **`ai/` is the fourth area** (ROADMAP #12): ollama moved under it, as
   `ai/ollama`. Release names, workflow names and schedules are unchanged,
   so nothing on a node moves and no required status changes; its route is
   now `ai-ollama-server`.
 
-## [0.70.0] - 2026-09-30
+## 2026-09-29
 
 ### Added
 
-- **Grafana's AI features answer with the lab's own models.** The LLM
-  app (`grafana-llm-app`, pinned and bumped by Renovate) is installed at
-  start and provisioned to use `ai.twolfe.dev` as an OpenAI-compatible
-  provider, both of its sizes on the `lab/interactive` role. Grafana's
-  memory limit rises from 512 MB to 768 MB to make room for its backend.
+- **Alloy** (`monitoring/alloy/`, ROADMAP #11) on the mini, as a host
+  agent from its pinned release: OTLP from applications on loopback,
+  labelled with the node and forwarded to Loki, Tempo and Prometheus,
+  with its own health beside it. Its config is the first agent artifact.
 
-## [0.69.0] - 2026-09-29
+- **Packages and tools** (`build/README.md`): the lab installs what it
+  runs from GitHub releases, at pinned versions, checked against each
+  release's own checksums. An agent declares its `package` in
+  `ritten.json` (`${PACKAGE}` is its directory); a job's tools —
+  `tofu`, `restic` — are pinned in `.config/lab-tools.json`, installed
+  before the job runs them, and put first on its path. Renovate moves
+  both. Nothing is pinned yet: agents and tools move over in their own
+  pull requests.
+- **Paths may start from `${LAB_ROOT}`, `${LAB_DATA}` or `${PACKAGE}`**
+  wherever `ritten.json` takes one.
+
+- **Artifacts** (`build/README.md`, "Artifacts"): a component publishes
+  directories of itself to the node, under `${LAB_ROOT}`, and a change to
+  them restarts what reads them.
+- **`LAB_ROOT` and `LAB_DATA`**, set by chezmoi for the host runners and
+  every shell, and expanded in `ritten.json` paths.
+
+- **Grafana** (`monitoring/grafana/`, ROADMAP #11): Loki, Tempo and
+  Prometheus behind Grafana at `grafana.twolfe.dev`, on the mini.
 
 ### Changed
 
@@ -121,30 +124,12 @@ rather than versioned — the lab is continuous, not released.
   their routes are now `personal-<service>-<component>`. The obsidian
   workflow's errors point at the runbook's new path.
 
-## [0.68.0] - 2026-09-29
-
-### Changed
-
 - **`media/` is the second area** (ROADMAP #12): Jellyfin, Radarr,
   Sonarr and qBittorrent moved under it, as `media/jellyfin`,
   `media/radarr`, `media/sonarr` and `media/qbittorrent`. Release names,
   workflow names and schedules are unchanged, so nothing on a node moves
   and no required status changes; their routes are now
   `media-<service>-compose`.
-
-## [0.67.0] - 2026-09-29
-
-### Fixed
-
-- **Restarting an agent that stops gracefully could leave it unloaded.**
-  `launchctl bootout` returns once it has asked the process to stop, not
-  once it has; Alloy, flushing its queues, was still loaded when the new
-  unit was bootstrapped, which launchd refused ("Input/output error") —
-  and the agent stayed down. The deploy now waits for launchd to let go
-  (the agent's exit timeout, or launchd's 20 seconds, and a margin)
-  before loading the new unit, and says so if it does not.
-
-### Changed
 
 - **Waits and retries go through `Microsoft.Extensions.Resilience`.**
   Launchd's unload, Garage's bring-up and ollama's start are one polling
@@ -159,27 +144,12 @@ rather than versioned — the lab is continuous, not released.
   and interval, and each HTTP client's resilience options, rather than
   numbers in code.
 
-## [0.66.0] - 2026-09-29
-
-### Fixed
-
-- **Alloy sent usage statistics to Grafana Labs**, which the rest of the
-  stack already doesn't: it runs with `--disable-reporting` now.
-
-## [0.65.0] - 2026-09-29
-
-### Changed
-
 - **Homebrew's `ollama` is gone from the mini and the Studio**: the
   server runs from its pinned package, and its deploy runs that
   package's client. The laptop keeps its own.
 - **OrbStack replaces Docker Desktop until the Linux node** (ROADMAP,
   "The container runtime"), for memory first: its VM hands memory back
   to macOS, where Docker Desktop's holds about 12.5 GB of the mini's 16.
-
-## [0.64.0] - 2026-09-29
-
-### Changed
 
 - **chezmoi and shellcheck are pinned** in `.config/lab-tools.json`
   (2.72.2 and 0.11.0): the chezmoi check installs both, and a node's
@@ -188,10 +158,6 @@ rather than versioned — the lab is continuous, not released.
 - **A package needs no checksum file.** Without `checksums` the asset is
   checked against the SHA-256 GitHub records for it; `bin` names the
   directory a tool's command is nested in.
-
-## [0.63.0] - 2026-09-29
-
-### Changed
 
 - **OpenTofu and restic are pinned** in `.config/lab-tools.json` (1.12.6
   and 0.19.1, what the nodes already ran): every tofu, backup and restic
@@ -208,17 +174,6 @@ rather than versioned — the lab is continuous, not released.
   longer placed, so moving a service is changing its placement — with a
   staged migration for one that keeps state.
 
-## [0.62.0] - 2026-09-29
-
-### Added
-
-- **Alloy** (`monitoring/alloy/`, ROADMAP #11) on the mini, as a host
-  agent from its pinned release: OTLP from applications on loopback,
-  labelled with the node and forwarded to Loki, Tempo and Prometheus,
-  with its own health beside it. Its config is the first agent artifact.
-
-### Changed
-
 - **The lab installs its agents.** The Beszel agent (every node, at the
   hub's 0.20.0 — the Pi's had drifted to 0.19.0), Ollama (0.34.4 on the
   mini and the Studio) and Alloy declare a `package`, and the deploy
@@ -232,24 +187,28 @@ rather than versioned — the lab is continuous, not released.
   and alerts through Grafana, with healthchecks.io kept for what only an
   outside observer can see.
 
-## [0.61.0] - 2026-09-29
+- **Renovate holds majors of the telemetry stack on the dependency dashboard.**
 
-### Added
-
-- **Packages and tools** (`build/README.md`): the lab installs what it
-  runs from GitHub releases, at pinned versions, checked against each
-  release's own checksums. An agent declares its `package` in
-  `ritten.json` (`${PACKAGE}` is its directory); a job's tools —
-  `tofu`, `restic` — are pinned in `.config/lab-tools.json`, installed
-  before the job runs them, and put first on its path. Renovate moves
-  both. Nothing is pinned yet: agents and tools move over in their own
-  pull requests.
-- **Paths may start from `${LAB_ROOT}`, `${LAB_DATA}` or `${PACKAGE}`**
-  wherever `ritten.json` takes one.
-
-## [0.60.0] - 2026-09-29
+- **`monitoring/` is the first area** (ROADMAP #12): Gatus, the
+  heartbeat and Beszel moved under it, as `monitoring/gatus`,
+  `monitoring/heartbeat` and `monitoring/beszel`. Release names, tofu
+  state keys and workflow names are unchanged, so nothing on a node moves
+  and no required status changes; their routes are now
+  `monitoring-gatus-compose` and `monitoring-beszel-compose`, and caddy's
+  routes deploy fires on a snippet at any depth.
 
 ### Fixed
+
+- **Restarting an agent that stops gracefully could leave it unloaded.**
+  `launchctl bootout` returns once it has asked the process to stop, not
+  once it has; Alloy, flushing its queues, was still loaded when the new
+  unit was bootstrapped, which launchd refused ("Input/output error") —
+  and the agent stayed down. The deploy now waits for launchd to let go
+  (the agent's exit timeout, or launchd's 20 seconds, and a margin)
+  before loading the new unit, and says so if it does not.
+
+- **Alloy sent usage statistics to Grafana Labs**, which the rest of the
+  stack already doesn't: it runs with `--disable-reporting` now.
 
 - **A deploy's report said every artifact "already matched".** rsync
   itemised its changes only on a rehearsal, so a real publish reported
@@ -260,40 +219,7 @@ rather than versioned — the lab is continuous, not released.
   into its release, so the next run saw a change and restarted the stack.
   Both are left behind now, like `ritten.json`.
 
-## [0.59.0] - 2026-09-29
-
-### Added
-
-- **Artifacts** (`build/README.md`, "Artifacts"): a component publishes
-  directories of itself to the node, under `${LAB_ROOT}`, and a change to
-  them restarts what reads them.
-- **`LAB_ROOT` and `LAB_DATA`**, set by chezmoi for the host runners and
-  every shell, and expanded in `ritten.json` paths.
-
-### Changed
-
-- **Renovate holds majors of the telemetry stack on the dependency dashboard.**
-
-## [0.58.0] - 2026-09-29
-
-### Added
-
-- **Grafana** (`monitoring/grafana/`, ROADMAP #11): Loki, Tempo and
-  Prometheus behind Grafana at `grafana.twolfe.dev`, on the mini.
-
-## [0.57.0] - 2026-09-29
-
-### Changed
-
-- **`monitoring/` is the first area** (ROADMAP #12): Gatus, the
-  heartbeat and Beszel moved under it, as `monitoring/gatus`,
-  `monitoring/heartbeat` and `monitoring/beszel`. Release names, tofu
-  state keys and workflow names are unchanged, so nothing on a node moves
-  and no required status changes; their routes are now
-  `monitoring-gatus-compose` and `monitoring-beszel-compose`, and caddy's
-  routes deploy fires on a snippet at any depth.
-
-## [0.56.0] - 2026-09-28
+## 2026-09-28
 
 ### Changed
 
@@ -302,21 +228,17 @@ rather than versioned — the lab is continuous, not released.
   script read it, Renovate moves it natively, and `dotnet lab` runs the
   pinned CLI from anywhere in the repository.
 
-### Removed
-
-- **The `image` workflow's `deploy`**, and its `registry` settings: the
-  CI image is built and pushed by kaniko in its workflow. The check stays,
-  and an image may now name a `dockerfile` outside its context's root.
-
-## [0.55.0] - 2026-09-28
-
-### Changed
-
 - **Both publishes run in the containerised pool, not on the Pi.** The
   CLI's `build` deploy installs the SDK `global.json` names, as its check
   already did, so a Renovate bump moves everything that builds at once.
 - **The Pi's SDK is the one `build/global.json` names**, read when
   chezmoi renders its install script, so the version lives in one place.
+
+### Removed
+
+- **The `image` workflow's `deploy`**, and its `registry` settings: the
+  CI image is built and pushed by kaniko in its workflow. The check stays,
+  and an image may now name a `dockerfile` outside its context's root.
 
 ### Fixed
 
@@ -324,17 +246,7 @@ rather than versioned — the lab is continuous, not released.
   `build/global.json` to SDK 10.0.401, and `latestFeature` never rolls
   back a feature band, so the Pi found no SDK it could use.
 
-## [0.54.0] - 2026-09-25
-
-### Fixed
-
-- **Garage's health check failed after any redeploy that did not recreate
-  the container.** Its config was a single-file bind mount, which keeps
-  the file a deploy replaced; every `garage` command in the container
-  then found no config. The config is now a mounted directory, with
-  `GARAGE_CONFIG_FILE` pointing into it.
-
-## [0.53.0] - 2026-09-25
+## 2026-09-25
 
 ### Added
 
@@ -349,27 +261,6 @@ rather than versioned — the lab is continuous, not released.
   `renovate tofu / check` are required statuses.
 - **Icons.** Added technology icons for the homelab to a new assets/ directory.
 
-## [0.52.0] - 2026-09-25
-
-### Changed
-
-- **The Studio's `interactive` role is `qwen3:30b-a3b-instruct-2507`**,
-  the non-thinking release of the background model, so Paperless's
-  suggestions and chat no longer wait 30–60 seconds on thinking.
-  `background` keeps `qwen3:30b-a3b`; the mini is unchanged.
-
-## [0.51.0] - 2026-09-25
-
-### Changed
-
-- **The mail watcher asks for `lab/background`** rather than naming two
-  models and falling back between them: the role degrades to the mini's
-  model by itself, so the watcher's fallback client is gone.
-
-## [0.50.0] - 2026-09-25
-
-### Added
-
 - **Paperless's AI features**, against the lab's own models: suggested
   titles, tags, correspondents, types and dates, document chat, and a
   nightly embedding index behind both. It asks for `lab/interactive`
@@ -380,27 +271,6 @@ rather than versioned — the lab is continuous, not released.
   identical. Both servers pull it.
 - **ollama components are checked on a pull request**, like every
   compose slice.
-
-## [0.49.0] - 2026-09-25
-
-### Changed
-
-- **The runners run `lab` 0.48.1**: an ollama component can declare
-  model roles, every server must declare every role, and the ollama
-  workflow has a `check` job.
-
-## [0.48.1] - 2026-09-25
-
-### Fixed
-
-- **A role only one server declared passed the check.** The published
-  0.48.0 predates the rule, fixed on main without a version of its own:
-  that role would be "not found" every evening the Studio sleeps. Every
-  server must now declare every role.
-
-## [0.48.0] - 2026-09-25
-
-### Added
 
 - **Model roles.** An ollama component can declare `models.roles`: a
   name such as `background` or `embedding`, and the pulled model that
@@ -414,10 +284,6 @@ rather than versioned — the lab is continuous, not released.
 - **An ollama `check` job**, which judges a component's roles on its own
   file and against the slice's other servers.
 
-## [0.47.0] - 2026-09-25
-
-### Added
-
 - **The mail watcher reads travel and stays.** Flights, trains, coaches,
   ferries, hotels, restaurant tables and hire cars, from schema.org markup
   by type and from prose by the model, each with its booking reference. A
@@ -426,32 +292,46 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The Studio's `interactive` role is `qwen3:30b-a3b-instruct-2507`**,
+  the non-thinking release of the background model, so Paperless's
+  suggestions and chat no longer wait 30–60 seconds on thinking.
+  `background` keeps `qwen3:30b-a3b`; the mini is unchanged.
+
+- **The mail watcher asks for `lab/background`** rather than naming two
+  models and falling back between them: the role degrades to the mini's
+  model by itself, so the watcher's fallback client is gone.
+
+- **The runners run `lab` 0.48.1**: an ollama component can declare
+  model roles, every server must declare every role, and the ollama
+  workflow has a `check` job.
+
 - **The mail watcher uses the Studio's model when available.**
-
-### Fixed
-
-- **An email the model could not be asked about was never scanned.** The
-  detector turned a model failure into "no event", and the watcher moved
-  its watermark past the email.
-
-## [0.46.0] - 2026-09-25
-
-### Changed
 
 - **The runners run `lab` 0.45.1**: an ollama deploy waits for the server
   it converged, a rehearsal changes nothing, and an agent environment
   that starts a value with `~` is refused before it reaches a node.
 
-## [0.45.1] - 2026-09-24
-
 ### Fixed
 
-- **The Studio's ollama never started.** `OLLAMA_MODELS` was
-  `~/.ollama/models`, and an environment value reaches the process as
-  written: ollama tried to create a directory called `~` at the root of
-  a read-only volume.
+- **Garage's health check failed after any redeploy that did not recreate
+  the container.** Its config was a single-file bind mount, which keeps
+  the file a deploy replaced; every `garage` command in the container
+  then found no config. The config is now a mounted directory, with
+  `GARAGE_CONFIG_FILE` pointing into it.
 
-## [0.45.0] - 2026-09-24
+- **A role only one server declared passed the check.** The published
+  0.48.0 predates the rule, fixed on main without a version of its own:
+  that role would be "not found" every evening the Studio sleeps. Every
+  server must now declare every role.
+
+- **An email the model could not be asked about was never scanned.** The
+  detector turned a model failure into "no event", and the watcher moved
+  its watermark past the email.
+
+## 2026-09-24
+
+Nothing shipped: the registration guards this entry listed were left out
+of the merge, and landed in 0.40.0.
 
 ### Added
 
@@ -462,24 +342,21 @@ rather than versioned — the lab is continuous, not released.
   may reach the Studio on 11434 and nothing else; Gatus watches it without
   alerting.
 
-### Fixed
+- **The `agents` workflow.** Host processes declared per node, checked on
+  the pull request and deployed to each node by its own runner with
+  `lab deploy --node <name>` — the shape the node services leaving chezmoi
+  move into.
 
-- **An ollama deploy could fail right after converging.** The supervisor
-  returns once the server is launched, not once it answers, and the next
-  step asked it for its models. A deploy now waits for it, up to 30s.
-- **An ollama rehearsal changed the node.** It created the model store,
-  before the approval gate at that; it only says so now. A rehearsal on a
-  node with no server yet reports every model as one it would pull,
-  rather than failing to ask.
+- **Agents deploy to Linux.** `lab deploy` renders a component's agents
+  to systemd user units on Linux, as it does to launchd agents on a Mac,
+  choosing by the operating system.
 
-## [0.44.1] - 2026-09-24
+- **The Studio has a host runner**, `MacStudio:host`: the mini's launchd
+  agent and converge script, capacity 3, and no privacy grants.
 
-### Fixed
-
-- **The mini ran two Beszel agents.** Homebrew labels a service
-  `sh.brew.<name>` now and `homebrew.mxcl.<name>` before that.
-
-## [0.44.0] - 2026-09-24
+- **`lab` is on every runner, pinned.** chezmoi installs CLI 0.35.0 from
+  the lab's feed on the mini, the Pi and the Studio, and the CI image
+  bakes the same version in as its last layer. Nothing calls it yet.
 
 ### Changed
 
@@ -487,94 +364,22 @@ rather than versioned — the lab is continuous, not released.
   service out of chezmoi. Each node's agent is declared in its
   `ritten.json` and deployed by its own runner.
 
-### Removed
-
-- chezmoi's Beszel env template and the Pi's Beszel units, and
-  `restart_service` on the Homebrew formula.
-
-## [0.43.0] - 2026-09-24
-
-### Changed
-
 - **The runners run `lab` 0.42.0**, so every node can deploy an `agents`
   component.
 
-## [0.42.0] - 2026-09-24
-
-### Added
-
-- **The `agents` workflow.** Host processes declared per node, checked on
-  the pull request and deployed to each node by its own runner with
-  `lab deploy --node <name>` — the shape the node services leaving chezmoi
-  move into.
-
-### Changed
-
 - **An agent deploy with nothing declared fails** rather than succeeding
   at nothing, so a mistyped node is noticed.
-## [0.41.1] - 2026-09-24
-
-### Fixed
-
-- **Moving the `lab` pin failed on every node.** The install script still
-  passed `--add-source` for the lab's feed, which `dotnet tool` refuses
-  once a source mapping is configured.
-
-## [0.41.0] - 2026-09-24
-
-### Changed
 
 - **The runners run `lab` 0.40.1**, up from 0.35.0: the systemd
   supervisor, the registration guards and Ritten 0.20.0's atomic writes
   reach the nodes and the CI image. 0.40.0 is skipped — its dry runs of an
   agent deploy failed to assemble.
 
-## [0.40.1] - 2026-09-24
-
-### Fixed
-
-- **An agent deploy could not be rehearsed.** Fixed the agent DI registration.
-
-## [0.40.0] - 2026-09-24
-
-### Added
-
-- **Agents deploy to Linux.** `lab deploy` renders a component's agents
-  to systemd user units on Linux, as it does to launchd agents on a Mac,
-  choosing by the operating system.
-
-### Changed
-
 - **Ritten 0.20.0.** Files are written through its `WriteAllText`.
-
-### Fixed
-
-- **`lab register` refuses the two mistakes it used to pass to Forgejo**:
-  running where there is no forgejo container, and a vault secret that is
-  not 40 characters — an empty one, stored because the command that minted
-  it failed quietly.
-
-## [0.39.0] - 2026-09-24
-
-Nothing shipped: the registration guards this entry listed were left out
-of the merge, and landed in 0.40.0.
-
-## [0.38.0] - 2026-09-24
-
-### Added
-
-- **The Studio has a host runner**, `MacStudio:host`: the mini's launchd
-  agent and converge script, capacity 3, and no privacy grants.
-
-### Changed
 
 - **A job Forgejo cannot place waits a week, not a day**
   (`ABANDONED_JOB_TIMEOUT`), so a push made while the Studio sleeps runs
   when it wakes.
-
-## [0.37.0] - 2026-09-24
-
-### Changed
 
 - **Every workflow runs the pinned `lab`.** A runner executes the
   published, reviewed CLI rather than compiling the checkout, and the
@@ -591,33 +396,11 @@ of the merge, and landed in 0.40.0.
   tailnet-only, and every other package still comes from nuget.org alone,
   so a restore off the tailnet does not fail on it.
 
-### Fixed
-
-- **A cold start would have stopped at `lab`.** Its install script was
-  `run_onchange_` and failed without a feed — and the feed is on the
-  Forgejo a fresh server has not brought up yet. It now runs on every
-  apply, does nothing when the pin is installed, and warns rather than
-  fails while the feed is unreachable, so the next apply picks it up.
-
-## [0.36.0] - 2026-09-24
-
-### Added
-
-- **`lab` is on every runner, pinned.** chezmoi installs CLI 0.35.0 from
-  the lab's feed on the mini, the Pi and the Studio, and the CI image
-  bakes the same version in as its last layer. Nothing calls it yet.
-
-### Changed
-
 - **The containerised runner pulls its image from Forgejo's registry**
   (`code.twolfe.dev/tom-wolfe/ci`) before every job, rather than using the
   one the node built — so any node's runner runs the same image.
 - **The Pi's host runner sets `DOTNET_ROOT`**, so a global .NET tool
   finds the runtime in `~/.dotnet`.
-
-## [0.35.0] - 2026-09-24
-
-### Changed
 
 - **The CLI's version is the lab's.** `build/Directory.Build.props` reads
   it from the newest heading here, so a pinned `lab` names the release
@@ -629,14 +412,52 @@ of the merge, and landed in 0.40.0.
   A restore deletes the stale package rows and republishes
   (`forgejo/RUNBOOK.md` "Restore").
 
+### Removed
+
+- chezmoi's Beszel env template and the Pi's Beszel units, and
+  `restart_service` on the Homebrew formula.
+
 ### Fixed
+
+- **The Studio's ollama never started.** `OLLAMA_MODELS` was
+  `~/.ollama/models`, and an environment value reaches the process as
+  written: ollama tried to create a directory called `~` at the root of
+  a read-only volume.
+
+- **An ollama deploy could fail right after converging.** The supervisor
+  returns once the server is launched, not once it answers, and the next
+  step asked it for its models. A deploy now waits for it, up to 30s.
+- **An ollama rehearsal changed the node.** It created the model store,
+  before the approval gate at that; it only says so now. A rehearsal on a
+  node with no server yet reports every model as one it would pull,
+  rather than failing to ask.
+
+- **The mini ran two Beszel agents.** Homebrew labels a service
+  `sh.brew.<name>` now and `homebrew.mxcl.<name>` before that.
+
+- **Moving the `lab` pin failed on every node.** The install script still
+  passed `--add-source` for the lab's feed, which `dotnet tool` refuses
+  once a source mapping is configured.
+
+- **An agent deploy could not be rehearsed.** Fixed the agent DI registration.
+
+- **`lab register` refuses the two mistakes it used to pass to Forgejo**:
+  running where there is no forgejo container, and a vault secret that is
+  not 40 characters — an empty one, stored because the command that minted
+  it failed quietly.
+
+- **A cold start would have stopped at `lab`.** Its install script was
+  `run_onchange_` and failed without a feed — and the feed is on the
+  Forgejo a fresh server has not brought up yet. It now runs on every
+  apply, does nothing when the pin is installed, and warns rather than
+  fails while the feed is unreachable, so the next apply picks it up.
 
 - **The CLI's deploy never built it.** Ritten's pack step does not build,
   and the job went straight from the version checks to the pack; it only
   rehearsed cleanly on a machine that already had a Release build. It now
   restores, builds and tests first, as Ritten's own deploy does.
 
-## [0.34.0] - 2026-09-23
+## 2026-09-23
 
 ### Added
 
@@ -646,6 +467,17 @@ of the merge, and landed in 0.40.0.
 - **The CI image is pushed** to Forgejo's container registry as
   `code.twolfe.dev/tom-wolfe/ci`. An image component names a `registry`
   to push; one without keeps its images on the node.
+
+- **`tag:hybrid`, the Studio's own tag.** A workstation that also serves
+  while it is on.
+- **The Studio has a Beszel agent**, with its status alert off: off is
+  its normal state.
+
+- **`paperless/`** — Paperless-ngx as a slice: the document archive at
+  `paperless.twolfe.dev`, SQLite and a Valkey broker, the database on
+  the internal disk and the documents on Data2, both in restic nightly
+  with the restore drilled after. The secret key and the first admin
+  login come from the vault at deploy.
 
 ### Changed
 
@@ -657,37 +489,12 @@ of the merge, and landed in 0.40.0.
   `check` fails a context with no Dockerfile or a pushed tag that names
   no registry.
 
-## [0.33.0] - 2026-09-23
-
-### Added
-
-- **`tag:hybrid`, the Studio's own tag.** A workstation that also serves
-  while it is on.
-- **The Studio has a Beszel agent**, with its status alert off: off is
-  its normal state.
-
-### Changed
-
 - **The `macstudio` profile is checked** by `lab check` like every
   other, and has a node name (`MacStudio`) in the inventory.
 - **chezmoi never applies a working copy.** The `sourceDir` override is
   gone: every machine applies its own clone, so a runner's `chezmoi
   update` can never pull a half-finished branch. To try an unmerged
   change, `chezmoi apply --source` the working copy (RUNBOOK.md).
-
-## [0.32.0] - 2026-09-23
-
-### Added
-
-- **`paperless/`** — Paperless-ngx as a slice: the document archive at
-  `paperless.twolfe.dev`, SQLite and a Valkey broker, the database on
-  the internal disk and the documents on Data2, both in restic nightly
-  with the restore drilled after. The secret key and the first admin
-  login come from the vault at deploy.
-
-## [0.31.0] - 2026-09-23
-
-### Changed
 
 - **`scripts/` is gone.** Every job runs from the CLI: `lab register-runner` on the forgejo workflow and `lab init-layout` on the garage workflow replace the one-off scripts, each with a dispatch workflow; `alert.sh` is the runtime's failure sink and `secrets.sh` is Ritten's provider, with runbooks using `op run` directly; `setup.sh` is the bring-up order as `lab` calls; the finished radarr fold and the repository import are deleted.
 - **The Gatus probe runs from the CLI.** `gatus/` has its own workflow: the deploy, plus `lab health` reading `health.url` from `ritten.json`.
@@ -696,7 +503,8 @@ of the merge, and landed in 0.40.0.
 - **Certificate renewal now runs from the CLI.**
 - **Tofu stacks are deployed from the CLI.**
   
-## [0.30.0] - 2026-09-22
+
+## 2026-09-22
 
 ### Added
 
@@ -715,7 +523,7 @@ of the merge, and landed in 0.40.0.
   node scripts ran before the one that installs the SDK and nvm. The
   package script is now `00-install-packages.sh` and goes first.
 
-## [0.29.0] - 2026-09-20
+## 2026-09-20
 
 ### Added
 
@@ -764,7 +572,7 @@ of the merge, and landed in 0.40.0.
   or Origin it does not recognise. The route rewrites both.
 - **A rehearsed `compose up` no longer claims it converged.**
 
-## [0.28.0] - 2026-09-18
+## 2026-09-18
 
 ### Added
 
@@ -790,22 +598,6 @@ of the merge, and landed in 0.40.0.
   slice's `<slice>-backup.yaml` runs its backup nightly with the restore
   drilled straight after. The central `backup.yaml` matrix is gone.
 
-### Changed
-
-- **The runner's job timeout is 24 hours.** Each workflow's
-  `timeout-minutes` is the limit that applies; the runner's own, which
-  was the one-hour default, no longer cuts a first pass short.
-
-### Removed
-
-- `scripts/backup.sh`, the `flows/backup/backup.conf` files, and the
-  jellyfin `--with-metadata` hand-run option: artwork is excluded, and a
-  "Refresh Metadata" re-downloads it.
-
-## [0.27.0] - 2026-09-18
-
-### Added
-
 - **Immich.** The photo library, on Data2, with the phone app as the
   place a photo lands after it is taken. The Google Takeout goes in
   through immich-go, run as a throwaway container by `lab import`.
@@ -822,7 +614,27 @@ of the merge, and landed in 0.40.0.
   `if: failure()` step. `scripts/alert.sh` remains for the workflows
   still on shell.
 
-## [0.26.0] - 2026-09-17
+### Changed
+
+- **The runner's job timeout is 24 hours.** Each workflow's
+  `timeout-minutes` is the limit that applies; the runner's own, which
+  was the one-hour default, no longer cuts a first pass short.
+
+### Removed
+
+- `scripts/backup.sh`, the `flows/backup/backup.conf` files, and the
+  jellyfin `--with-metadata` hand-run option: artwork is excluded, and a
+  "Refresh Metadata" re-downloads it.
+
+## 2026-09-17
+
+### Added
+
+- **The lab has a CLI.** `build/` is a .NET solution on Ritten; the
+  obsidian workflows are its first callers, one command each.
+
+- **A `runners` group on the status page.** Gatus asks Forgejo for each
+  Actions runner's status.
 
 ### Changed
 
@@ -830,45 +642,15 @@ of the merge, and landed in 0.40.0.
   each vault into `~/Obsidian/Wolfe.<name>` and pushes every change to
   `Obsidian/Wolfe.<name>`.
 
-### Added
-
-- **The lab has a CLI.** `build/` is a .NET solution on Ritten; the
-  obsidian workflows are its first callers, one command each.
-
-## [0.25.0] - 2026-09-17
-
-### Changed
-
 - **The mini's runner is supervised by launchd, not `brew services`.**
   A chezmoi-owned agent with `KeepAlive`, so it can keep retrying if the 
   runner comes up before Forgejo itself.
-
-### Added
-
-- **A `runners` group on the status page.** Gatus asks Forgejo for each
-  Actions runner's status.
 
 ### Removed
 
 - Betterdisplay and Boring Notch, because I don't use them.
 
-## [0.24.0] - 2026-09-14
-
-### Changed
-
-- **Secrets are injected on deploy.** Secrets are now injected during the deployment process, rather than being cached by Chezmoi.
-
-## [0.23.0] - 2026-09-14
-
-### Changed
-
-- **A machine is its profile.** The chezmoi facets (owner, portable,
-  server) are replaced by one value — `macbook`, `work-macbook`,
-  `macmini-node`, `pi-node`
-- **The work MacBook leaves the tailnet.** Its profile does not list
-  Tailscale; the employer's machine no longer has a route into the lab.
-
-## [0.22.0] - 2026-09-14
+## 2026-09-14
 
 ### Added
 
@@ -879,7 +661,17 @@ of the merge, and landed in 0.40.0.
   each other, nothing reaches a workstation. Key expiry and MagicDNS are
   declared rather than clicked.
 
-## [0.21.0] - 2026-09-13
+### Changed
+
+- **Secrets are injected on deploy.** Secrets are now injected during the deployment process, rather than being cached by Chezmoi.
+
+- **A machine is its profile.** The chezmoi facets (owner, portable,
+  server) are replaced by one value — `macbook`, `work-macbook`,
+  `macmini-node`, `pi-node`
+- **The work MacBook leaves the tailnet.** Its profile does not list
+  Tailscale; the employer's machine no longer has a route into the lab.
+
+## 2026-09-13
 
 ### Added
 
@@ -888,6 +680,8 @@ of the merge, and landed in 0.40.0.
 - **Forgejo Actions.** Runs on all server nodes. Managed by chezmoi.
   One host-connected instance for Wolfe.Lab, one isolated container for
   other CI jobs.
+
+- The Pi is now part of the fleet.
 
 ### Changed
 
@@ -901,13 +695,7 @@ of the merge, and landed in 0.40.0.
 - **Kestra.** Its last jobs are cron workflows on the mini's runner over
   the same scripts.
 
-## [0.20.0] - 2026-09-13
-
-### Added
-
-- The Pi is now part of the fleet.
-
-## [0.19.0] - 2026-09-11
+## 2026-09-11
 
 ### Added
 
@@ -919,22 +707,13 @@ of the merge, and landed in 0.40.0.
 - **Jellyfin 10.11.11 → 12.0.** First release under the new `major.minor` 
   versioning; Runbook and rollback in `jellyfin/README.md`.
 
-## [0.18.2] - 2026-09-11
-
 ### Removed
 
 - **The nightly `lab.chezmoi/packages-upgrade` flow.** Unattended
   upgrades of everything on a lone server were both unwise, and requiring of 
   user input, causing them to fail every night.
 
-## [0.18.1] - 2026-09-02
-
-### Fixed
-
-- **Docker Desktop updates are manual again.** After the chezmoi update brought
-  the whole lab down trying to update Docker.
-
-## [0.18.0] - 2026-09-02
+## 2026-09-02
 
 ### Added
 
@@ -944,13 +723,16 @@ of the merge, and landed in 0.40.0.
 
 ### Fixed
 
+- **Docker Desktop updates are manual again.** After the chezmoi update brought
+  the whole lab down trying to update Docker.
+
 - **Caddy reads its Caddyfile through the repo mount, not a file bind.**
 - **`renew-certs` reloads caddy with `--force`.**
 - **Caddy no longer manages certificates itself** (`auto_https
   disable_certs`). It had started its own Let's Encrypt orders for the
   neat names when recreated a minute ahead of the re-issued cert.
 
-## [0.16.0] - 2026-09-01
+## 2026-09-01
 
 ### Added
 
@@ -965,7 +747,7 @@ of the merge, and landed in 0.40.0.
 
 - Kestra now retries Postgres connections for 5 minutes on startup.
 
-## [0.15.0] - 2026-08-31
+## 2026-08-31
 
 ### Added
 
@@ -975,6 +757,14 @@ of the merge, and landed in 0.40.0.
   providers have had real write bugs. The exception: `kestra/tofu` auto-applies 
   — first-party provider, repo-recoverable resources.
 - **The poke.** Push-to-main webhook from Forgejo to the tick.
+
+- Forgejo now gets GitHub-style searching.
+
+- **A second front-door wildcard: `*.ts.twolfe.dev` → the mini's
+  Tailscale address.** Every lab name now has a tailnet twin that works
+  wherever Tailscale is.
+- **The beszel agent goes fleet-wide.** The Brewfile entry moves to the
+  all-machines section.
 
 ### Changed
 
@@ -995,14 +785,6 @@ of the merge, and landed in 0.40.0.
   config gains the compose plugin symlink (the buildx pattern), so the
   plugin form now resolves in bridge sessions.
 
-## [0.14.0] - 2026-08-31
-
-### Added
-
-- Forgejo now gets GitHub-style searching.
-
-### Changed
-
 - **Forgejo gets its own tailnet identity.**
   A `tailscale/tailscale` sidecar (userspace, sharing the forgejo
   container's network namespace) puts the container on the tailnet with
@@ -1012,16 +794,6 @@ of the merge, and landed in 0.40.0.
 
 - Vorssaint's settings are no-longer managed. I keep changing them too much and it's annoying. 
 
-## [0.13.0] - 2026-08-31
-
-### Added
-
-- **A second front-door wildcard: `*.ts.twolfe.dev` → the mini's
-  Tailscale address.** Every lab name now has a tailnet twin that works
-  wherever Tailscale is.
-- **The beszel agent goes fleet-wide.** The Brewfile entry moves to the
-  all-machines section.
-
 ### Fixed
 
 - **Boot race: the media-mounting stacks now refuse to deploy without
@@ -1030,7 +802,7 @@ of the merge, and landed in 0.40.0.
   guard.
 - Make 1Password service mode server-only.
 
-## [0.12.0] - 2026-08-30
+## 2026-08-30
 
 ### Added
 
@@ -1054,31 +826,7 @@ of the merge, and landed in 0.40.0.
   never uninstalls on its own — the at-desk removal steps are in
   qbittorrent/README.md.
 
-## [0.11.3] - 2026-08-29
-
-### Changed
-
-- **Backups moved to `/Volumes/Data2`.** All five backup scripts and their
-  mount guards now target the second physical drive. Data1 held 1.5 TB of
-  media *and* every backup, so a single drive failure took both; they are
-  now decorrelated. Not a second copy — the drives share an enclosure — but
-  a cheap improvement while restic/B2 is still on the roadmap.
-
-## [0.11.2] - 2026-08-29
-
-### Fixed
-
-- Kestra upgrade script can now be run over ssh.
-
-## [0.11.1] - 2026-08-29
-
-### Fixed
-
-- **Healthchecks for kestra and garage**, so every container in the lab now 
-  has one.
-
-
-## [0.11.0] - 2026-08-29
+## 2026-08-29
 
 ### Added
 
@@ -1094,23 +842,17 @@ of the merge, and landed in 0.40.0.
 
 ### Changed
 
+- **Backups moved to `/Volumes/Data2`.** All five backup scripts and their
+  mount guards now target the second physical drive. Data1 held 1.5 TB of
+  media *and* every backup, so a single drive failure took both; they are
+  now decorrelated. Not a second copy — the drives share an enclosure — but
+  a cheap improvement while restic/B2 is still on the roadmap.
+
 - **The Brewfile declares; it no longer installs.** It moves out of
   `.chezmoitemplates` and renders to `~/.Brewfile`.
 - A new `lab.chezmoi/packages` flow is chained on the tick, and installs what's missing.
 - A new `lab.chezmoi/packages-upgrade` flow runs nightly at 04:20, and moves versions forward.
 - Chezmoi apply now installs the brewfile every time on non-server devices.
-
-### Fixed
-
-- **Caddy's healthcheck had never once passed** (`FailingStreak: 3933`).
-  busybox `wget` resolves `localhost` to `::1` first, and caddy's admin API
-  binds `127.0.0.1` only. Caddy was serving fine throughout — nothing in
-  this lab reads Docker healthchecks, which is the gap `lab.beszel/health`
-  closes.
-
-## [0.10.2] - 2026-08-29
-
-### Changed
 
 - **The flow naming convention is enforced**, not just documented. A
   `lifecycle.precondition` on `kestra_flow` asserts that each flow's declared
@@ -1118,34 +860,26 @@ of the merge, and landed in 0.40.0.
   `lab.<slice>/<job>`).
 - Every task now has a timeout.
 
-## [0.10.1] - 2026-08-28
+### Fixed
 
-### Changed
+- Kestra upgrade script can now be run over ssh.
 
-- **The heartbeat is its own flow** (`lab.chezmoi/heartbeat`), chained on the
-  tick's SUCCESS instead of being a task on the tick.
+- **Healthchecks for kestra and garage**, so every container in the lab now 
+  has one.
+
+- **Caddy's healthcheck had never once passed** (`FailingStreak: 3933`).
+  busybox `wget` resolves `localhost` to `::1` first, and caddy's admin API
+  binds `127.0.0.1` only. Caddy was serving fine throughout — nothing in
+  this lab reads Docker healthchecks, which is the gap `lab.beszel/health`
+  closes.
+
+## 2026-08-28
 
 ### Added
 
 - **Task timeouts, where the bound is justifiable.** A hung task is worse
   than a failed one: no logs, no failure, no alert, and with
   `concurrency: QUEUE` another execution stacks up every interval behind it.
-
-### Fixed
-
-- **`lab-job` closes stdin for every job** (`exec bash "$script" </dev/null`).
-  A forced-command job is non-interactive by definition, but the stdin
-  Kestra's SSH task hands it is a channel nobody writes to or closes — so
-  anything that prompts waits forever.
-- **Interactive `chezmoi` on the mini.** `onepassword.mode = "service"` means
-  every `onepasswordRead` needs `OP_SERVICE_ACCOUNT_TOKEN`, but only the
-  tick's job script exported it — so `ssh macmini.local && chezmoi update`,
-  the documented recovery path, failed exactly when you'd reach for it.
-  `.zprofile` now exports it on servers.
-
-## [0.10.0] - 2026-08-28
-
-### Added
 
 - Added a new `amendf` git alias that combines `git amend && git pushf` to 
   amend a commit that's already been pushed.
@@ -1159,7 +893,12 @@ of the merge, and landed in 0.40.0.
 - `ROADMAP.md`: what's next and why, including the items deliberately
   deferred (self-hosted secrets, k8s) and why.
 
+- Added [BetterDisplay](https://formulae.brew.sh/cask/betterdisplay) to Chezmoi, installed on desktops only.
+
 ### Changed
+
+- **The heartbeat is its own flow** (`lab.chezmoi/heartbeat`), chained on the
+  tick's SUCCESS instead of being a task on the tick.
 
 - `obsidian-sync` is now `obsidian`.
 - **Flows are namespaced per slice.** `lab.<slice>/<job>` replaces the
@@ -1172,15 +911,6 @@ of the merge, and landed in 0.40.0.
   outside the prefix the alerter watches, and only the alerter needs that
   exemption.
 
-### Fixed
-
-- The kestra secrets table still called the postgres item `Kestra Postgres`.
-  0.9.2 fixed the templates to `kestra-postgres` but not the doc.
-
-## [0.9.2] - 2026-08-28
-
-### Changed
-
 - **SSL maintenance moved out of caddy**: certificates now come from a nightly `renew-certs` Kestra job.
 - The caddy container no longer carries any secret: `caddy.env` (NETLIFY_TOKEN) is consumed only by the renew-certs job.
 
@@ -1190,19 +920,25 @@ of the merge, and landed in 0.40.0.
 
 ### Fixed
 
+- **`lab-job` closes stdin for every job** (`exec bash "$script" </dev/null`).
+  A forced-command job is non-interactive by definition, but the stdin
+  Kestra's SSH task hands it is a channel nobody writes to or closes — so
+  anything that prompts waits forever.
+- **Interactive `chezmoi` on the mini.** `onepassword.mode = "service"` means
+  every `onepasswordRead` needs `OP_SERVICE_ACCOUNT_TOKEN`, but only the
+  tick's job script exported it — so `ssh macmini.local && chezmoi update`,
+  the documented recovery path, failed exactly when you'd reach for it.
+  `.zprofile` now exports it on servers.
+
+- The kestra secrets table still called the postgres item `Kestra Postgres`.
+  0.9.2 fixed the templates to `kestra-postgres` but not the doc.
+
 - The two kestra env templates disagreed on the postgres item after the kebab-case renames (`Kestra Postgres` vs `kestra-postgres`) — the next rotation or fresh bootstrap would have failed on whichever name no longer existed. Both now read `kestra-postgres`.
 - `forgejo/tofu` and `kestra/tofu` state encryption is now `enforced = true` (migrations done): tofu refuses unencrypted state instead of silently accepting it, and the leftover migration-era `unencrypted` method declarations are gone.
 
-## [0.9.1] - 2026-08-27
+- Installed BetterDisplay to hopefully try and stop monitors moving around every time I plug them into the dock.
 
-### Fixed
-
-- Chezmoi should now use the 1Password service account for fetching credentials.
-- `setup.sh` now converges caddy FIRST (with `--build`) — its compose owns the shared `lab` network, and every other stack's `external: true` reference fails until it exists.
-- The wildcard certificate actually issues now: libdns/netlify v1.2.0 types a DNS zone's `domain` as string (via Netlify's stale open-api models), but for domains REGISTERED THROUGH Netlify the live API returns an object there.
-- Headless builds work through the job bridge — the same macOS-headless trap as 0.5.x/0.6.0, on the build path instead of pull, needing TWO fixes. (1) `~/.docker-headless/cli-plugins/docker-buildx` is now a chezmoi-managed symlink to Docker Desktop's plugin: without buildx, compose falls back to the legacy builder outright. (2) The headless Docker config now declares `credsStore: "headless"`, a chezmoi-managed null helper in `~/.docker-headless/bin` (on lab-job's PATH, first) that answers every lookup with "not found" so registry access proceeds anonymously. WHY the bare `{}` config wasn't enough: with no credsStore, the Docker CLI's platform *default* on macOS is osxkeychain whenever that binary is on PATH — so any not-yet-cached image (like a build's base image) hit the locked login keychain (`error getting credentials … keychain cannot be accessed`). Existing stacks never noticed because their pinned images were already local.
-
-## [0.9.0] - 2026-08-27
+## 2026-08-27
 
 ### Added
 
@@ -1215,31 +951,17 @@ of the merge, and landed in 0.40.0.
 - Forgejo's identity is now `https://forgejo.lab.twolfe.dev/` (ROOT_URL, DOMAIN, SSH_DOMAIN) — links and clone URLs advertise the proxied name; `macmini.local:3000` still works via the published port.
 - The secrets-bootstrap scripts (garage, kestra — and caddy's, which never shipped) collapsed into chezmoi `create_` templates under `chezmoi/home/Docker/`: same semantics (1Password is the origin, the env file is a cache, written only when missing), one declarative layer instead of a script writing a file. Verified: chezmoi never evaluates a `create_` template whose target exists, so `op`/internet stay bootstrap-only dependencies — and the update flow now exports the mini's 1P service account so a headless tick can re-materialize a deleted cache. The kestra script never actually generated anything (the vault-is-origin fix predates this); the stale compose comment claiming it did is gone too.
 
-## [0.8.0]
-
-### Added
-
-- Added [BetterDisplay](https://formulae.brew.sh/cask/betterdisplay) to Chezmoi, installed on desktops only.
-
 ### Fixed
 
-- Installed BetterDisplay to hopefully try and stop monitors moving around every time I plug them into the dock.
-
-## [0.7.2] - 2026-08-27
-
-### Fixed
+- Chezmoi should now use the 1Password service account for fetching credentials.
+- `setup.sh` now converges caddy FIRST (with `--build`) — its compose owns the shared `lab` network, and every other stack's `external: true` reference fails until it exists.
+- The wildcard certificate actually issues now: libdns/netlify v1.2.0 types a DNS zone's `domain` as string (via Netlify's stale open-api models), but for domains REGISTERED THROUGH Netlify the live API returns an object there.
+- Headless builds work through the job bridge — the same macOS-headless trap as 0.5.x/0.6.0, on the build path instead of pull, needing TWO fixes. (1) `~/.docker-headless/cli-plugins/docker-buildx` is now a chezmoi-managed symlink to Docker Desktop's plugin: without buildx, compose falls back to the legacy builder outright. (2) The headless Docker config now declares `credsStore: "headless"`, a chezmoi-managed null helper in `~/.docker-headless/bin` (on lab-job's PATH, first) that answers every lookup with "not found" so registry access proceeds anonymously. WHY the bare `{}` config wasn't enough: with no credsStore, the Docker CLI's platform *default* on macOS is osxkeychain whenever that binary is on PATH — so any not-yet-cached image (like a build's base image) hit the locked login keychain (`error getting credentials … keychain cannot be accessed`). Existing stacks never noticed because their pinned images were already local.
 
 - Pull mirrors no longer trigger Actions runs: every feature unit (actions, issues, PRs, wiki, packages, projects, releases) is now off on all 33 mirrors — mirrors are read-only copies, GitHub owns their features. Declared in `mirrors.tf`; Hamelin needed the change applied via a minimal API PATCH because the provider's full-object PATCH 500s on repos with wikis (empty `wiki_branch` = branch rename to `""` — now documented in the forgejo README with the workaround).
 - Removed `permissions` from `ignore_changes` (computed-only in the current provider; OpenTofu flags it as redundant).
 
-## [0.7.1] - 2026-08-26
-
-### Fixed
-
-- Chezmoi now `init`s before updating.
-- Removed untracked `permissions` attributes causing warnings on the forgejo tofu stack.
-
-## [0.7.0] - 2026-08-26
+## 2026-08-26
 
 ### Added
 
@@ -1251,14 +973,15 @@ of the merge, and landed in 0.40.0.
 - The cold backups guard against the deploy race: if the stack is restarted mid-tar, the archive is discarded and the run fails loudly rather than keeping a suspect copy. 
 - Forgejo's and Jellyfin's backup scripts now live in-repo (`<svc>/flows/backup/script.sh`).
 
+- `setup.sh`: fresh-server bring-up. Imperative bootstrap, since Kestra can't deploy itself into existence.
+- `kestra/scripts/upgrade.sh`: manual, guarded kestra upgrade (kestra deliberately has **no** deploy flow, because it can't safely replace its own executor). Takes a Postgres backup first.
+- Janitor flow (`kestra/flows/purge/flow.yaml`): nightly purge of >30-day execution history — the 15-minute tick fan-out would otherwise grow postgres forever.
+- `kestra/flows/backup/script.sh`: dated `pg_dump` of the kestra DB (husk-proof: dumps to `.partial`, renames on success). Callable by hand or as `kestra/backup` through the bridge — flow-ready for a future scheduled backup; `upgrade.sh` delegates to it with a `pre-<version>` label.
+
 ### Changed
 
 - The tick now runs `chezmoi update --init`: the config file is derived state, so regenerate it when its template changes instead of warning on every apply forever. Headless-safe because the config template only uses `promptChoiceOnce`.
 - Removed the one-time `moved` blocks from `kestra/tofu/flows.tf` now the first post-restructure apply has migrated the state keys.
-
-## [0.6.0] - 2026-08-26
-
-### Changed
 
 - **Vertical slicing**: the repo is now organized by *thing* rather than by *tool*. `compose/<svc>`, `tofu/<svc>` and stray script directories merged into per-thing slices at the repo root.
 - `tofu/kestra` + `jobs/` became one directory per job (`<slice>/flows/<job>/flow.yaml` + `script.sh` side by side.
@@ -1267,112 +990,52 @@ of the merge, and landed in 0.40.0.
 - `lab-job` names are now two-segment `slice/job` paths (e.g. `forgejo/deploy`, `obsidian/main`) resolved to `<slice>/flows/<job>/script.sh` at the repo root. Job names no longer need to be globally unique.
 - Garage cluster layout init moved out of chezmoi (`run_once` deleted) into `garage/scripts/init-layout.sh`, invoked by the new `setup.sh`.
 
-### Added
-
-- `setup.sh`: fresh-server bring-up. Imperative bootstrap, since Kestra can't deploy itself into existence.
-- `kestra/scripts/upgrade.sh`: manual, guarded kestra upgrade (kestra deliberately has **no** deploy flow, because it can't safely replace its own executor). Takes a Postgres backup first.
-- Janitor flow (`kestra/flows/purge/flow.yaml`): nightly purge of >30-day execution history — the 15-minute tick fan-out would otherwise grow postgres forever.
-- `kestra/flows/backup/script.sh`: dated `pg_dump` of the kestra DB (husk-proof: dumps to `.partial`, renames on success). Callable by hand or as `kestra/backup` through the bridge — flow-ready for a future scheduled backup; `upgrade.sh` delegates to it with a `pre-<version>` label.
-
 ### Removed
 
 - `DOCKER_HOST` hack that never fixed anything.
 
 ### Fixed
 
+- Chezmoi now `init`s before updating.
+- Removed untracked `permissions` attributes causing warnings on the forgejo tofu stack.
+
 - Compose stacks actually converge through the Kestra bridge now. `docker compose` is a CLI plugin resolved through `$DOCKER_CONFIG/cli-plugins` (never PATH), and Docker Desktop on macOS ships its plugins only in `~/.docker/cli-plugins`.
 
-## [0.5.1] - 2026-08-25
-
-### Fixed
-
-- `lab-job` now pins `DOCKER_HOST` to Docker Desktop's user-level socket. The headless `DOCKER_CONFIG` has no contexts store, so bridge jobs fell back to the privileged `/var/run/docker.sock` symlink, which isn't guaranteed to exist.
-
-## [0.5.0] - 2026-08-25
+## 2026-08-25
 
 ### Added
 
 - Added new `git aliases` alias for outputting existing aliases.
 - There is a new `forgejo.scripts/import.sh` script used to import some old repositories. Kept for posterity.
 
+- Lots of git aliases: `git undo` unwinds the last commit, `git main` puts you back on latest main, `git sweep` removes merged branches, and `git catchup` applies the latest changes from `main`.
+
 ### Changed
 
 - Forgejo PRs should now default to Squash.
 - Forgejo instance is now named `WolfeForge`.
 
-## [0.4.1] - 2026-08-25
-
-### Fixed
-
-- The Foregejo mirrors had incorrectly configured PATs, so I've recreated them.
-- The OpenTofu stack now correctly ignores driftable config like `internal_tracker` and `permissions` because the provider doesn't keep them stable. 
-
-## [0.4.0] - 2026-08-25
-
-### Added
-
-- Lots of git aliases: `git undo` unwinds the last commit, `git main` puts you back on latest main, `git sweep` removes merged branches, and `git catchup` applies the latest changes from `main`.
-
-### Changes
-
 - Git fetch now automatically prunes.
-
-## [0.3.2] - 2026-08-25
 
 ### Removed
 
 - Removed old launchd `ob sync` scripts now that sync is done through Kestra instead.
 
-## [0.3.1] - 2026-08-25
-
 ### Fixed
+
+- `lab-job` now pins `DOCKER_HOST` to Docker Desktop's user-level socket. The headless `DOCKER_CONFIG` has no contexts store, so bridge jobs fell back to the privileged `/var/run/docker.sock` symlink, which isn't guaranteed to exist.
+
+- The Foregejo mirrors had incorrectly configured PATs, so I've recreated them.
+- The OpenTofu stack now correctly ignores driftable config like `internal_tracker` and `permissions` because the provider doesn't keep them stable. 
 
 - Node LTS is now installed and aliased as nvm's default by chezmoi. The server script also reinstalls global npm tools into the new version.
 - `nvm-run` now warns loudly when it falls back to the default alias instead of hiding it.
 
-
-## [0.3.0] - 2026-08-24
+## 2026-08-24
 
 ### Added
 
 - 1Password Service Account support. 1Password now authenticates using a service account, if the token for one is saved at `~/Docker/1password/service-account-token` (chmod 600). (Service account has also been configured on the server)
-
-### Changed
-
-- The Postgres health check now does `pg_isready` then continues with a `SELECT 1` to test the database is actually reachable. 
-
-### Fixed
-
-- The timezone setting to match to the host didn't work, so just set the timezone literally.
-- Run Postgres as the host user so it works properly.
-
-## [0.2.4] - 2026-08-24
-
-### Fixed
-
-- The timezone setting to match to the host didn't work, so just set the timezone literally.
-
-## [0.2.3] - 2026-08-24
-
-### Fixed
-
-- The bootstrap kestra secrets script had a logic error in it that caused the env file to get written before the SSH key existed, so it was left blank. 
-
-## [0.2.2] - 2026-08-24
-
-### Fixed
-
-- The 1Password secrets should now use the correct field names: `/password` for passwords, `/credential` for keys.
-
-## [0.2.1] - 2026-08-24
-
-### Fixed
-
-- The 1Password secrets now reference the correct vault name of `Wolfe.Lab` instead of `Personal`.
-
-## [0.2.0] - 2026-08-24
-
-### Added
 
 - `compose/kestra`: Kestra job scheduler (+ Postgres) on the mini, replacing launchd's scheduling
 - `tofu/kestra`: every flow as YAML in the repo, applied declaratively
@@ -1382,15 +1045,26 @@ of the merge, and landed in 0.40.0.
 
 ### Changed
 
-- Runtime secrets are now materialized from 1Password, never generated on-machine. (Forgejo and Jellyfin's admin passwords are DB state, not env secrets.)
+- The Postgres health check now does `pg_isready` then continues with a `SELECT 1` to test the database is actually reachable. 
 
-## [0.1.1] - 2026-08-24
+- Runtime secrets are now materialized from 1Password, never generated on-machine. (Forgejo and Jellyfin's admin passwords are DB state, not env secrets.)
 
 ### Fixed
 
+- The timezone setting to match to the host didn't work, so just set the timezone literally.
+- Run Postgres as the host user so it works properly.
+
+- The timezone setting to match to the host didn't work, so just set the timezone literally.
+
+- The bootstrap kestra secrets script had a logic error in it that caused the env file to get written before the SSH key existed, so it was left blank. 
+
+- The 1Password secrets should now use the correct field names: `/password` for passwords, `/credential` for keys.
+
+- The 1Password secrets now reference the correct vault name of `Wolfe.Lab` instead of `Personal`.
+
 - The `TheBoredTeam/boring-notch/boring-notch` is now trusted correctly.
 
-## [0.1.0] - 2026-08-23
+## 2026-08-23
 
 ### Added
 
@@ -1416,7 +1090,7 @@ of the merge, and landed in 0.40.0.
 - Launch agent reload: bootout/bootstrap race, third-party agent scoping, wrong chezmoi script phase
 - Non-interactive SSH PATH gaps (`/usr/local/bin`) in server scripts
 
-## [0.0.1] - 2026-08-22
+## 2026-08-22
 
 ### Added
 

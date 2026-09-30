@@ -1,11 +1,14 @@
+using Microsoft.Extensions.DependencyInjection;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Ritten.Git;
 using Ritten.NuGet;
 using Ritten.NuGet.Steps;
 using Ritten.Releases;
 using Ritten.Releases.Steps;
 using Wolfe.Lab.Build.Clients.Gates.Steps;
 using Wolfe.Lab.Build.Workflows.DotNetTool.Models;
+using Wolfe.Lab.Build.Workflows.DotNetTool.Steps;
 
 namespace Wolfe.Lab.Build.Workflows.DotNetTool.Jobs;
 
@@ -20,20 +23,25 @@ internal sealed class DeployJob : LabJob<DotNetToolOptions>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<ComputeVersion>(),
         Step.FromType<ReadProjects>(),
         Step.FromType<ResolveRelease>(),
-        Step.FromType<ReadShippedChanges>(),
         Step.FromType<NugetRead>(),
-        Step.FromType<CheckVersion>(),
         Step.FromType<ReleasableGate>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetBuild>(),
         Step.FromType<DotnetTest>(),
         Step.FromType<DotnetPack>(),
         Step.FromType<GateApproval>(),
+        Step.FromType<TagRelease>(),
         Step.FromType<NugetAuthenticate>(),
         Step.FromType<NugetPush>()
     ];
+
+    /// <summary>
+    /// A published CLI's tag, before its version: <c>lab/v1.0.214</c>, apart from any other tag.
+    /// </summary>
+    internal const string TagPrefix = "lab/v";
 
     public override JobKind Kind => JobKind.Deploy;
 
@@ -44,9 +52,10 @@ internal sealed class DeployJob : LabJob<DotNetToolOptions>
     protected override void Configure(IWorkflowBuilder builder, DotNetToolOptions options)
     {
         base.Configure(builder, options);
-        builder.AddBuildReporting();
-        if (options.Project is { Length: > 0 } project && options.Feed.Source is { } source)
+        builder.AddBuildReporting().AddGit(TagPrefix);
+        if (options is { Project: { Length: > 0 } project, Feed.Source: { } source })
         {
+            builder.Services.AddSingleton(ShippedInputs.For(project));
             builder.AddDotNet([project], options.Configuration)
                 .AddNuGet(source.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
         }

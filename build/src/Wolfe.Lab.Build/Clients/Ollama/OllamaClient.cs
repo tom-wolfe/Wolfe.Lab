@@ -1,5 +1,5 @@
-using Wolfe.Lab.Build.Clients.Resilience;
 using Polly.Registry;
+using Wolfe.Lab.Build.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Clients.Ollama;
 

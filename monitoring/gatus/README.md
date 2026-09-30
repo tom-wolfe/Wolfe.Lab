@@ -72,7 +72,7 @@ failures push at Pushover priority 0; third parties at -1
 (quiet) — things to know, not things anyone here can fix. Recoveries are
 always quiet. Three consecutive failures before any push, so at the
 2-minute lab interval a service is ~6 minutes down before the phone
-buzzes: the flap control this lab has wanted since 0.10.0.
+buzzes: the flap control this lab has wanted since 2026-08-28.
 
 ## Adding a check
 

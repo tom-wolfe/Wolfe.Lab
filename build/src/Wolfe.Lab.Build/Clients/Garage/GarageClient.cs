@@ -1,6 +1,6 @@
-using Wolfe.Lab.Build.Clients.Resilience;
-using Polly.Registry;
 using System.Text.RegularExpressions;
+using Polly.Registry;
+using Wolfe.Lab.Build.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Clients.Garage;
 

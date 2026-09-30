@@ -122,7 +122,7 @@ sugar for browsers, not plumbing.
 - Headless pulls of uncached images (a bumped caddy or lego pin, through
   the runner) work because of the null credential helper the headless
   Docker config names — without it, macOS defaults to the osxkeychain
-  helper and the locked login keychain kills the pull (CHANGELOG 0.9.1).
+  helper and the locked login keychain kills the pull (CHANGELOG, 2026-08-27).
 - Port 3000/8096 publishes stay for now — automation (tofu providers, the
   Gatus lab checks) targets the mini by address and port and
   keeps working when the front door doesn't.

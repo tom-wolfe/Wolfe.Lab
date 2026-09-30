@@ -317,25 +317,25 @@ catch first.
 
 The CLI is itself a component: `build/ritten.json` is a `dotnet-tool`,
 the package `Wolfe.Lab.Build` whose command is `lab`. **Its version is
-the lab's** — `Directory.Build.props` reads the newest `## [x.y.z]`
-heading of the repository's `CHANGELOG.md` — so there is one number and
-one changelog, and a pin names the lab release whose entry says what that
-CLI contains. The numbers have gaps: a lab release that does not touch the
-CLI publishes nothing.
+worked out, never typed: `1.0.<n>`**, where *n* counts the commits that
+changed what ships — `build/src`, the `Directory.*.props` and
+`global.json`. The deploy's first step, `ComputeVersion`, counts them and
+writes the version to `temp/version.props`, which `Directory.Build.props`
+imports — the deploy runs the checkout's own CLI, so the rule is in C#
+and tested, and the workflow computes nothing. So the number says one
+thing — the CLI's *n*th change — and `git log` over those paths finds
+the commit; the package's informational version carries its hash
+besides. Built anywhere else, it is `1.0.0-local`, which no feed holds.
 
-Its pull request is checked here — restore, format, build, test — and
-one more thing: **a change to what ships must come with a new changelog
-heading.** That is Ritten's continuous release cadence (`Ritten.NuGet`):
-`ReadShippedChanges` diffs the project and the `Directory.*.props`
-against the base, and `CheckVersion` fails a change whose version the
-feed already has; tests and docs do not ship and do not count. The
-merge's `deploy` restores, builds, tests and packs, and publishes that
-version to Forgejo's NuGet feed
-(`https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json`),
-stopping at the releasable gate when the feed already has it, so a
-version is never overwritten and a pin always means what it meant. A
-change under `build/` that ships nothing, after the lab has moved on, is
-published under the new number: a harmless no-op release. The one step
+Its pull request is checked here — restore, format, build, test. The
+merge's `deploy` restores, builds, tests and packs, tags the commit
+`lab/v1.0.<n>`, and publishes that version to Forgejo's NuGet feed
+(`https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json`). A
+merge that changes nothing that ships keeps the number, so the releasable
+gate finds it on the feed and stops: no empty release, and no pin to
+move. A version is never overwritten, so a pin always means what it
+meant. The changelog is dated rather than versioned: what changed, on
+which day, whether or not it shipped a CLI. The one step
 of the lab's own is `AuthenticateFeed`, which reads the feed key from the
 vault where Ritten's would read the environment.
 

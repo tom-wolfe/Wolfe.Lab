@@ -33,7 +33,10 @@ jobs:
       group: build-deploy
       cancel-in-progress: false
     steps:
+      # The whole history: the version is computed based on it.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: build/global.json

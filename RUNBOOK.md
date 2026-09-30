@@ -28,7 +28,7 @@ explicitly, once: `chezmoi apply --source ~/Development/Wolfe/Wolfe.Lab`.
 The next merge puts the machine back on `main`.
 
 **Moving a workstation off the old working-copy source** (the override
-went in 0.33.0): `chezmoi init https://code.twolfe.dev/tom-wolfe/Wolfe.Lab.git`,
+went in on 2026-09-23): `chezmoi init https://code.twolfe.dev/tom-wolfe/Wolfe.Lab.git`,
 then `chezmoi diff` — it should be empty if the working copy was on
 `main`.
 

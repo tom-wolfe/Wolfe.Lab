@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Options;
 using System.Net;
+using Microsoft.Extensions.Options;
 using Wolfe.Lab.Build.Clients.Alerts;
 
 namespace Wolfe.Lab.Build.Tests.Clients.Alerts;

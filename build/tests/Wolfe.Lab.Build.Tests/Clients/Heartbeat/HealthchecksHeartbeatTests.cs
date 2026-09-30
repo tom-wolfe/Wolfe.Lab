@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Options;
 using System.Net;
+using Microsoft.Extensions.Options;
 using Wolfe.Lab.Build.Clients.Heartbeat;
 using Wolfe.Lab.Build.Clients.Secrets;
 

@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Options;
-using Wolfe.Lab.Build.Clients.Resilience;
-using Polly.Registry;
 using System.Globalization;
 using System.Xml.Linq;
+using Microsoft.Extensions.Options;
+using Polly.Registry;
+using Wolfe.Lab.Build.Clients.Resilience;
 
 namespace Wolfe.Lab.Build.Clients.Agents.Launchd;
 
