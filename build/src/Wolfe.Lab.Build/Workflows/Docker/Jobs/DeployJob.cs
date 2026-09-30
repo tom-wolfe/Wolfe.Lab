@@ -28,6 +28,7 @@ internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : Do
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<ResolveRelease>(),
+        Step.FromType<ResolveComponent>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveArtifacts>(),
         Step.FromType<PublishArtifacts>(),

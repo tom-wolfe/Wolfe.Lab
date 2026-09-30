@@ -253,7 +253,14 @@ command runner for every process. The lab adds what Ritten doesn't have:
   `program` and `log` are paths, and `~` in them is expanded; an
   environment value is handed to the process exactly as written, so one
   that starts with `~` is refused — nothing between the declaration and
-  the process would expand it.
+  the process would expand it. After converging, the deploy says which
+  log files the component's agents write: a target file per component in
+  `${LAB_ROOT}/.logs/<area>-<service>-<component>.json`, which the
+  node's collector discovers (monitoring/alloy), each `log` named for its
+  agent and labelled with where the component lives — the placement a
+  compose deploy labels its containers with. The file is rewritten
+  whole, so an agent dropped from the component, or no longer given a
+  `log`, stops being read.
 
 ### Waiting and retrying
 

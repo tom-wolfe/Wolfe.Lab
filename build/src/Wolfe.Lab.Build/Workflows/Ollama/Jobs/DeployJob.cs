@@ -30,6 +30,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<CheckRoles>(),
+        Step.FromType<ResolveComponent>(),
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
@@ -38,6 +39,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
         Step.FromType<EnsureModelStore>(),
         Step.FromType<PublishArtifacts>(),
         Step.FromType<ConvergeAgents>(),
+        Step.FromType<DeclareAgentLogs>(),
         Step.FromType<AwaitServer>(),
         Step.FromType<ResolveModels>(),
         Step.FromType<PullModels>(),

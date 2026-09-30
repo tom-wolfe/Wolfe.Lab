@@ -26,13 +26,15 @@ internal sealed class DeployJob : LabJob<AgentsOptions>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<ResolveComponent>(),
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveArtifacts>(),
         Step.FromType<GateApproval>(),
         Step.FromType<PublishArtifacts>(),
-        Step.FromType<ConvergeAgents>()
+        Step.FromType<ConvergeAgents>(),
+        Step.FromType<DeclareAgentLogs>()
     ];
 
     public override IReadOnlyList<JobArgument> Arguments { get; } = [Node];

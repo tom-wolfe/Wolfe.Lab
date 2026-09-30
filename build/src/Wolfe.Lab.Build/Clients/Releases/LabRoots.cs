@@ -55,4 +55,10 @@ public sealed record LabRoots(string Root, string Data)
     /// Where every compose release's restart stamp is kept.
     /// </summary>
     public string Applied => Path.Combine(Root, ".applied");
+
+    /// <summary>
+    /// Where a component's agents say which log files they write, for the node's collector to
+    /// find (monitoring/alloy): one target file per component, beside the releases.
+    /// </summary>
+    public string Logs => Path.Combine(Root, ".logs");
 }

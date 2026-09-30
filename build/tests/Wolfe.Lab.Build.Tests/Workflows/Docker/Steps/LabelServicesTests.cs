@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Ritten.Engine.FileSystem;
-using Ritten.Git;
 using Wolfe.Lab.Build.Clients.Releases;
+using Wolfe.Lab.Build.Values;
 using Wolfe.Lab.Build.Workflows.Docker.Models;
 using Wolfe.Lab.Build.Workflows.Docker.Steps;
 
@@ -11,7 +11,6 @@ public class LabelServicesTests : IDisposable
 {
     private readonly DirectoryInfo _root = Directory.CreateTempSubdirectory("lab-label-");
     private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
-    private readonly IGit _git = Substitute.For<IGit>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly DirectoryInfo _release;
 
@@ -20,7 +19,6 @@ public class LabelServicesTests : IDisposable
         var checkout = _root.CreateSubdirectory("checkout");
         var component = checkout.CreateSubdirectory("personal").CreateSubdirectory("mail").CreateSubdirectory("watcher");
         _release = _root.CreateSubdirectory("release");
-        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(new PhysicalDirectory(checkout.FullName));
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
         _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "watcher\nbridge\n", ""));
     }
@@ -28,8 +26,8 @@ public class LabelServicesTests : IDisposable
     public void Dispose() => _root.Delete(recursive: true);
 
     private Task<StepResult> Run(bool dryRun = false) =>
-        new LabelServices(_commands, _git, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
+        new LabelServices(_commands, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
+            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), new Component("personal", "mail", "watcher"), ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
 
     private string Override => Path.Combine(_release.FullName, LabelServices.OverrideFile);
 
@@ -66,18 +64,6 @@ public class LabelServicesTests : IDisposable
 
         File.Exists(Override).ShouldBeFalse();
     }
-
-    [Fact]
-    public async Task Run_RefusesAComponentThatIsNotAreaServiceComponent()
-    {
-        var shallow = _root.GetDirectories("checkout")[0].CreateSubdirectory("loose").CreateSubdirectory("compose");
-        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(shallow.FullName));
-
-        var result = await Run();
-
-        result.IsFailure.ShouldBeTrue();
-        File.Exists(Override).ShouldBeFalse();
-    }
 }
 
 // Against the real compose: that it merges the override by itself when handed no file, and that
@@ -99,7 +85,7 @@ public class LabelServicesComposeTests : IDisposable
                   - TZ=Europe/London
             """, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_project.FullName, LabelServices.OverrideFile),
-            LabelServices.Render(new Placement("personal", "mail", "watcher"), ["watcher"]), TestContext.Current.CancellationToken);
+            LabelServices.Render(new Component("personal", "mail", "watcher"), ["watcher"]), TestContext.Current.CancellationToken);
 
         var result = await new ProcessCommandRunner().Run(
             Command.Create("docker").WithArguments("compose", "--project-directory", _project.FullName, "config", "--format", "json").ThrowOnError(),
