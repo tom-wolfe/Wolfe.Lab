@@ -55,7 +55,7 @@ internal sealed class DeployJob : LabJob<DotNetToolOptions>
         builder.AddBuildReporting().AddGit(TagPrefix);
         if (options is { Project: { Length: > 0 } project, Feed.Source: { } source })
         {
-            builder.Services.AddSingleton(ShippedInputs.For(project, options.Formerly));
+            builder.Services.AddSingleton(ShippedInputs.For(project));
             builder.AddDotNet([project], options.Configuration)
                 .AddNuGet(source.ToString(), ReleaseLine.Major, ReleaseCadence.Continuous);
         }

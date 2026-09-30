@@ -319,16 +319,19 @@ catch first.
 
 The CLI is itself a component: `tool/ritten.json` is a `dotnet-tool`,
 the package `Wolfe.Lab` whose command is `lab`. **Its version is
-worked out, never typed: `1.0.<n>`**, where *n* counts the commits that
-changed what ships — the project, the `Directory.*.props` and
-`global.json`, and where those lived before the move to `platform/lab/tool`
-(`ritten.json`'s `formerly`), so the count carries on across it. The deploy's first step, `ComputeVersion`, counts them and
-writes the version to `temp/version.props`, which `Directory.Build.props`
-imports — the deploy runs the checkout's own CLI, so the rule is in C#
-and tested, and the workflow computes nothing. So the number says one
-thing — the CLI's *n*th change — and `git log` over those paths finds
-the commit; the package's informational version carries its hash
-besides. Built anywhere else, it is `1.0.0-local`, which no feed holds.
+worked out, never typed: one more than the last release, when what ships
+has changed since it.** The releases are the tags, `lab/v1.0.<n>`, and
+what ships is the project, the `Directory.*.props` and the SDK the
+repository pins in its root `global.json`; the deploy's first step,
+`ComputeVersion`, diffs those against the last release's tag and writes
+the version to `temp/version.props`, which `Directory.Build.props`
+imports. A merge that changes none of them keeps the last release's
+version, so the gate below finds it on the feed. The deploy runs the
+checkout's own CLI, so the rule is in C# and tested, and the workflow
+computes nothing. The number says one thing — the CLI's *n*th release —
+and its tag names the commit; a move is one change like any other, so
+nothing has to remember where the CLI used to live. Built anywhere else,
+it is `1.0.0-local`, which no feed holds.
 
 Its pull request is checked here — restore, format, build, test. The
 merge's `deploy` restores, builds, tests and packs, tags the commit
@@ -383,7 +386,8 @@ and push are kaniko's, in `ci-image.yaml`, to Forgejo's registry as
 `code.twolfe.dev/tom-wolfe/ci`, where every containerised runner pulls it.
 
 Both publishes run in the containerised pool and touch no node. The CLI's
-runs in the CI image, with the SDK `global.json` names. The CI image's
+runs in the CI image, with the SDK the root `global.json` names — the one SDK pin, which
+chezmoi installs on the nodes and every .NET project here builds with. The CI image's
 runs in kaniko's own image, not the one it builds — so a broken CI image
 never blocks its fix — and kaniko builds a Dockerfile unprivileged with
 no daemon, where the pool hands no job a socket. Both push with one

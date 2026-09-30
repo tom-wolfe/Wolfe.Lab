@@ -19,10 +19,4 @@ public sealed record DotNetToolOptions : WorkflowSettings
     /// Where the package is published.
     /// </summary>
     public FeedOptions Feed { get; init; } = new();
-
-    /// <summary>
-    /// Where what ships used to live, as paths from the checkout's root: counted with the
-    /// component's own, so the version goes on counting across a move rather than starting again.
-    /// </summary>
-    public IReadOnlyList<string> Formerly { get; init; } = [];
 }

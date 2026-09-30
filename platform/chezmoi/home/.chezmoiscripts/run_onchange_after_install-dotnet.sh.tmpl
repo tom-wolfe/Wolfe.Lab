@@ -7,7 +7,7 @@
 # ~/.local/bin, and this is a 200 MB tree.
 set -euo pipefail
 
-version="{{ (include (joinPath .chezmoi.workingTree "platform/lab/tool/global.json") | fromJson).sdk.version }}"
+version="{{ (include (joinPath .chezmoi.workingTree "global.json") | fromJson).sdk.version }}"
 root="$HOME/.dotnet"
 
 # Side-by-side by design: the tarball extracts into sdk/<version>, so an

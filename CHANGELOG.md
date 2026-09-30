@@ -41,6 +41,21 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The CLI is `platform/lab/tool`, and `Wolfe.Lab`.** `build/` held a
+  general CLI in a project called `Wolfe.Lab.Build`, about to become an
+  agent too; it is now the `lab` service in `platform/`, its README and
+  runbook at `platform/lab/`, the component that builds and publishes it
+  at `platform/lab/tool` (#6's agent will be `platform/lab/agent`), and
+  the project, package and namespaces are `Wolfe.Lab`. Its workflow is
+  `lab tool`. The version is now one more than the last release tag when
+  what ships has changed since it — so a move is one change, with no
+  record of old paths to keep — and this publishes `Wolfe.Lab 1.0.53`;
+  the pin moves to the new package next.
+  The tofu state backend, `tofu-state.env`, moved to `platform/garage/`,
+  whose it is, and the .NET SDK pin, `global.json`, to the repository's
+  root — one pin for the nodes, the CLI and the mail watcher, which had a
+  copy of its own.
+
 - **Branch protection accepts the CLI's check under either name**,
   `build` or `lab tool`, so the pull request that moves the CLI to
   `platform/lab/tool` — renaming its workflow to match — can satisfy it.

@@ -1,6 +1,6 @@
 {
   "workflow": "dotnet-tool",
-  "project": "src/Wolfe.Lab.Build/Wolfe.Lab.Build.csproj",
+  "project": "src/Wolfe.Lab/Wolfe.Lab.csproj",
   "feed": {
     "source": "https://code.twolfe.dev/api/packages/tom-wolfe/nuget/index.json"
   }

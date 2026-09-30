@@ -21,7 +21,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v6
         with:
-          global-json-file: platform/lab/tool/global.json
+          global-json-file: global.json
       - working-directory: platform/lab/tool
         run: lab check
 
@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-dotnet@v6
         with:
-          global-json-file: platform/lab/tool/global.json
+          global-json-file: global.json
       - working-directory: platform/lab/tool
         env:
           RITTEN_NUGET_API_KEY: ${{ secrets.PACKAGES_TOKEN }}
