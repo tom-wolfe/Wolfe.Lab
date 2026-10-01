@@ -34,6 +34,6 @@ provider "restapi" {
   }
 
   id_attribute         = "id"
-  write_returns_object = true  
-  update_method = "PATCH"
+  write_returns_object = true
+  update_method        = "PATCH"
 }
