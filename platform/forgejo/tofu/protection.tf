@@ -25,6 +25,7 @@ resource "forgejo_branch_protection" "main" {
     "dns tofu / check*",
     "forgejo tofu / check*",
     "gatus tofu / check*",
+    "paperless tofu / check*",
     "restic tofu / check*",
     "tailscale tofu / check*",
     "alloy agent / check*",

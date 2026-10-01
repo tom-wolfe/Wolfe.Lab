@@ -1,0 +1,32 @@
+name: paperless tofu
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [personal/paperless/tofu/**, .forgejo/workflows/paperless-tofu.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: MacMini
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - working-directory: personal/paperless/tofu
+        run: lab check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: MacMini
+    timeout-minutes: 30
+    concurrency:
+      group: MacMini
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - working-directory: personal/paperless/tofu
+        run: lab deploy --auto-approve

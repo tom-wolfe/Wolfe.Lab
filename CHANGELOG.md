@@ -8,6 +8,11 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
+- **Paperless reads mail.** A new `personal/paperless/tofu` slice
+  creates a mail account against Proton Bridge, and one rule, through
+  Paperless's API: attachments of anything filed into the Proton folder
+  `Paperless` are consumed, and the mail is moved to Archive.
+
 - **The mini's host-process logs are in Loki.** Alloy reads the files
   declared in `${LAB_ROOT}/.logs` — each agent deploy writes its agents'
   (Alloy's, Beszel's, ollama's), and chezmoi writes the runner's on a Mac

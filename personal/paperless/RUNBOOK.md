@@ -19,6 +19,13 @@ reasons are in `README.md`.
    `backup/ritten.json` once it has something in it.
 5. **The phone**: install Paperless Mobile or Swift Paperless, server
    `https://paperless.twolfe.dev`, sign in.
+6. **Mail**: in Proton, create a folder named `Paperless` (top level).
+   In the Paperless UI, Profile → API Auth Token → generate, and store it
+   as `paperless-api-token` (`credential`). Then run the `paperless tofu`
+   workflow from the Actions tab: its first run on merge fails without
+   the token. Afterwards Mail in the UI shows the account and rule. To
+   test, file a mail with a PDF attached into the folder. It appears
+   within ten minutes, and the mail moves to Archive.
 
 ## Upgrading
 
