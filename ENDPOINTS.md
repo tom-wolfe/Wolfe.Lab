@@ -67,6 +67,16 @@ fallback when the front door is down.
 | `:4317`, `:4318` | Alloy — OTLP gRPC, HTTP, from applications (**loopback only**) | none | `monitoring/alloy` |
 | `:12345` | Alloy — UI and API (**loopback only**) | none | `monitoring/alloy` |
 
+## macstudio.local
+
+The desk machine, and a hybrid node: nothing waits on it.
+
+| Address | Service | Auth | Defined in |
+| --- | --- | --- | --- |
+| `:11434` | ollama — the model endpoint while awake | none | `ai/ollama/studio` |
+| `:4317`, `:4318` | Alloy — OTLP gRPC, HTTP, from applications (**loopback only**) | none | `monitoring/alloy` |
+| `:12345` | Alloy — UI and API (**loopback only**) | none | `monitoring/alloy` |
+
 ## git.twolfe.dev (tailnet-routed)
 
 Forgejo's own seat on the tailnet — a tailscale sidecar sharing the

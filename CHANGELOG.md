@@ -8,6 +8,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
+- **The Studio has a collector.** Alloy runs on the Studio under launchd.
+
 - **The Pi has a collector, and the mini's is the gateway.** Alloy runs on the 
   Pi as a systemd user unit that forwards over the tailnet to the mini.
 
@@ -18,6 +20,11 @@ rather than versioned — the lab is continuous, not released.
   `Paperless` are consumed, and the mail is moved to Archive.
 
 - **Agent logs are in Loki.** Alloy ingests log files from launchd/systemd agents.
+
+### Changed
+
+- **Gatus logs only warnings.** At `INFO` it logged every check of every
+  endpoint, taking most of the Pi's log volume.
 
 ### Fixed
 
