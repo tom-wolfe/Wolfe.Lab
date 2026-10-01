@@ -19,6 +19,10 @@ rather than versioned — the lab is continuous, not released.
 
 - **Agent logs are in Loki.** Alloy ingests log files from launchd/systemd agents.
 
+### Fixed
+
+- **Improved event timezone handling.** The event detector now detects timezones.
+
 ## 2026-09-30
 
 ### Added
