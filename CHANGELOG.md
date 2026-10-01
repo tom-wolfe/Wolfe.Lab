@@ -4,6 +4,17 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-02
+
+### Added
+
+- **The Studio has a collector.** Alloy runs on the Studio under launchd.
+
+### Changed
+
+- **Gatus logs only warnings.** At `INFO` it logged every check of every
+  endpoint, taking most of the Pi's log volume.
+
 ## 2026-10-01
 
 ### Added

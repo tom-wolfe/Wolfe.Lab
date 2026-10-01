@@ -8,6 +8,7 @@ services:
     environment:
       TZ: Europe/London
       GATUS_CONFIG_PATH: /config
+      GATUS_LOG_LEVEL: WARN
       LAB_HOST: macmini.tailf823b8.ts.net
       PUSHOVER_APP_TOKEN:
       PUSHOVER_USER_KEY:

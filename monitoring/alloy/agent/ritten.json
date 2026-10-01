@@ -36,6 +36,34 @@
         }
       }
     },
+    "MacStudio": {
+      "agents": {
+        "alloy": {
+          "package": {
+            "github": "grafana/alloy",
+            "version": "1.20.1",
+            "asset": "alloy-darwin-arm64.zip",
+            "checksums": "SHA256SUMS"
+          },
+          "program": "${PACKAGE}/alloy-darwin-arm64",
+          "arguments": [
+            "run",
+            "${LAB_ROOT}/alloy/forwarder.alloy",
+            "--storage.path=${LAB_DATA}/alloy",
+            "--server.http.listen-addr=127.0.0.1:12345",
+            "--disable-reporting"
+          ],
+          "environment": {
+            "LAB_HOST": "studio",
+            "LAB_ROLE": "hybrid",
+            "LAB_ROOT": "${LAB_ROOT}",
+            "LAB_GATEWAY": "macmini.tailf823b8.ts.net",
+            "DOCKER_HOST": "unix:///Users/tomwolfe/.docker/run/docker.sock"
+          },
+          "log": "~/.cache/alloy/alloy.log"
+        }
+      }
+    },
     "wolfe-pi5": {
       "agents": {
         "alloy": {

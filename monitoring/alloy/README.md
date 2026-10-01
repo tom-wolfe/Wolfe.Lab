@@ -3,8 +3,8 @@
 The lab's collector (ROADMAP.md #11): Grafana Alloy, a host process on
 every node. Each gathers what its own node has; the mini's is also the
 **gateway**, the only thing that writes to the telemetry stores
-(`monitoring/grafana`), and every other node's forwards to it. The mini's
-and the Pi's today; the Studio's next.
+(`monitoring/grafana`), and every other node's forwards to it: the Pi's
+and the Studio's.
 
 | Concern | Handled by |
 | --- | --- |
@@ -34,11 +34,6 @@ collector rather than letting each node write to the stores:
 - **One place to relabel, drop or move.** When the backend moves to the
   Linux node, the gateway moves with it, and the other nodes follow one
   name (`LAB_GATEWAY`).
-
-The gateway shares the mini's fate, but so do the stores; what a node
-reads while it cannot reach the gateway is retried — for about eight and
-a half minutes for logs, Alloy's default — so a restart of either loses
-nothing.
 
 ## The config
 
@@ -125,8 +120,3 @@ curl -s 127.0.0.1:12345/-/ready
 tail ~/.cache/alloy/alloy.log            # a Mac
 journalctl --user -u dev.twolfe.alloy -n 50   # the Pi
 ```
-
-Every component should read *healthy* in the UI. In Grafana,
-`alloy_build_info` has one series per node — `host_name="mini"`, `"pi"` —
-when every node's self-report arrives, and `{host_name="pi"}` in Loki
-shows the Pi's logs.
