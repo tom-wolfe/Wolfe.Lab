@@ -8,36 +8,24 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
-- **The last five containers without a health check have one.** Loki and Tempo,
-  whose images have no shell or HTTP client, ask their own binaries
-  (`-health`) for `/ready`; Prometheus fetches its `/-/ready`;
-  qBittorrent fetches its web UI's login page; and Forgejo's Tailscale
-  sidecar turns on containerboot's `/healthz`, healthy once the node has a
-  tailnet address, on loopback in the server's namespace.
+- **The Pi has a collector, and the mini's is the gateway.** Alloy runs on the 
+  Pi as a systemd user unit that forwards over the tailnet to the mini.
 
-- **Paperless reads mail.** A new `personal/paperless/tofu` slice
-  creates a mail account against Proton Bridge, and one rule, through
-  Paperless's API: attachments of anything filed into the Proton folder
+- **The last five containers without a health check have one.** Loki, Tempo, 
+  Prometheus, qBittorrent and Forgejo's Tailscale sidecar.
+
+- **Paperless reads mail.** Attachments of anything filed into the Proton folder
   `Paperless` are consumed, and the mail is moved to Archive.
 
-- **The mini's host-process logs are in Loki.** Alloy reads the files
-  declared in `${LAB_ROOT}/.logs` — each agent deploy writes its agents'
-  (Alloy's, Beszel's, ollama's), and chezmoi writes the runner's on a Mac
-  that has one — from where each file ends when first seen, each stream
-  named and placed by its target. Container logs now carry every `lab.*`
-  label the deploy set, mapped as a set rather than one rule each, and
-  both kinds get the node's `host_name` and `lab_role` where they are
-  written. The telemetry-name check reads discovery targets too, chezmoi's
-  source included.
+- **Agent logs are in Loki.** Alloy ingests log files from launchd/systemd agents.
 
 ## 2026-09-30
 
 ### Added
 
-- **Telemetry attribute names are validated.** Checks run during the pipeline build.
+- **Telemetry attribute names are validated.** Checks are run during the pipeline build.
 
-- **Agents publish their log locations.** Launchd agents now writes a file to
-  `${LAB_ROOT}/.logs` that the Alloy agent can use to tail the logs.
+- **Agents publish their log locations.** Agents publish a file that Alloy can use to tail the logs.
 - **Component metadata is resolved during jobs.** Including the area and service.
 
 - **The mini's container logs are in Loki.** Alloy reads every

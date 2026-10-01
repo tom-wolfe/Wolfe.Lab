@@ -1,0 +1,47 @@
+// Every node's collector but the mini's (monitoring/alloy/README.md): what
+// the node gathers, labelled with the node (node.alloy), forwarded to the
+// gateway on the mini (gateway.alloy) over the tailnet — never through
+// caddy, so a broken front door cannot hide the evidence of its own failure.
+// The gateway's address is the agent's (LAB_GATEWAY, in ritten.json).
+
+import.file "node" {
+	filename = sys.env("LAB_ROOT") + "/alloy/node.alloy"
+}
+
+node.collect "node" {
+	otlp_to    = [otelcol.processor.batch.gateway.input]
+	logs_to    = [loki.write.gateway.receiver]
+	metrics_to = [prometheus.remote_write.gateway.receiver]
+}
+
+// ── The gateway ────────────────────────────────────────────────────────────
+
+otelcol.processor.batch "gateway" {
+	output {
+		metrics = [otelcol.exporter.otlp.gateway.input]
+		logs    = [otelcol.exporter.otlp.gateway.input]
+		traces  = [otelcol.exporter.otlp.gateway.input]
+	}
+}
+
+otelcol.exporter.otlp "gateway" {
+	client {
+		endpoint = sys.env("LAB_GATEWAY") + ":4417"
+
+		tls {
+			insecure = true
+		}
+	}
+}
+
+loki.write "gateway" {
+	endpoint {
+		url = "http://" + sys.env("LAB_GATEWAY") + ":4418/loki/api/v1/push"
+	}
+}
+
+prometheus.remote_write "gateway" {
+	endpoint {
+		url = "http://" + sys.env("LAB_GATEWAY") + ":4419/api/v1/metrics/write"
+	}
+}

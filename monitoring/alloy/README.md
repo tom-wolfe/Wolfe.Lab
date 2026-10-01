@@ -1,17 +1,18 @@
 # Alloy
 
 The lab's collector (ROADMAP.md #11): Grafana Alloy, a host process on
-every node, and the only thing that writes to the telemetry stores
-(`monitoring/grafana`). The mini's today; the other nodes forward to it in
-step 3.
+every node. Each gathers what its own node has; the mini's is also the
+**gateway**, the only thing that writes to the telemetry stores
+(`monitoring/grafana`), and every other node's forwards to it. The mini's
+and the Pi's today; the Studio's next.
 
 | Concern | Handled by |
 | --- | --- |
-| Binary | the agent's `package` in `agent/ritten.json`: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
-| Process | `agent/`, the `agents` workflow: a launchd unit per node, `.forgejo/workflows/alloy-agent.yaml` |
-| Config | `agent/config/config.alloy`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts the agent (platform/lab/README.md, "Artifacts") |
+| Binary | the agent's `package` in `agent/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
+| Process | `agent/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml` |
+| Config | `agent/config/`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts every node's agent (platform/lab/README.md, "Artifacts") |
 | State | `${LAB_DATA}/alloy` — its write-ahead log; disposable |
-| UI | `127.0.0.1:12345` on the node — component health and a live view of each pipeline |
+| UI | `127.0.0.1:12345` on each node — component health and a live view of each pipeline |
 
 ## Why a host process
 
@@ -20,51 +21,112 @@ memory and disks rather than `/Volumes/Data1`, and none of the host
 processes' logs. So Alloy runs on the host, like the Beszel agent, and
 reaches containers through the Docker socket.
 
-## What it does today
+## Why a gateway
 
-- **Receives OTLP** on `127.0.0.1:4317` (gRPC) and `:4318` (HTTP). A
-  container sends to `host.docker.internal`, which Docker Desktop forwards
-  to the host's loopback; nothing listens beyond the node until other
-  nodes forward here.
-- **Labels it** with the node: `host.name` and `lab.role`, from the
-  agent's environment, set only where the sender did not — an application
-  that names its own host keeps it.
+Every node needs a collector of its own, because most of what it reads is
+only reachable there: the Docker socket, the journal, launchd's log files.
+Where it all goes is a separate choice, and the lab sends it through one
+collector rather than letting each node write to the stores:
+
+- **The stores stay on the mini's loopback.** None of Loki, Tempo or
+  Prometheus has auth; the gateway's three ports, which only accept
+  writes, are all the network sees of them.
+- **One place to relabel, drop or move.** When the backend moves to the
+  Linux node, the gateway moves with it, and the other nodes follow one
+  name (`LAB_GATEWAY`).
+
+The gateway shares the mini's fate, but so do the stores; what a node
+reads while it cannot reach the gateway is retried — for about eight and
+a half minutes for logs, Alloy's default — so a restart of either loses
+nothing.
+
+## The config
+
+Three files, one component:
+
+- **`node.alloy`** — what every node gathers from itself, as one
+  component (`collect`) that its root places. Everything it reads it
+  labels with the node, here and nowhere else.
+- **`gateway.alloy`** — the mini's root: the node's own, plus what other
+  nodes forward, to the stores.
+- **`forwarder.alloy`** — every other node's root: the node's own, to the
+  gateway.
+
+The gateway passes what it receives through as it arrived. Each node has
+already labelled its own; a label the gateway set would only ever say
+`mini`.
+
+The node's identity is the agent's — `LAB_HOST`, `LAB_ROLE`, `LAB_ROOT`
+for where the targets are, `LAB_GATEWAY` on a forwarder, and
+`DOCKER_HOST` where the Docker socket is not the standard one, all in
+`agent/ritten.json` — so one config serves any node of its kind.
+
+## What every node does
+
+- **Receives OTLP** from its applications on `127.0.0.1:4317` (gRPC) and
+  `:4318` (HTTP). A container sends to `host.docker.internal`, which
+  Docker Desktop forwards to the host's loopback.
+- **Labels it** with the node: `host.name` and `lab.role`, set only where
+  the sender did not — an application that names its own host keeps it.
 - **Reads every container's logs** through the Docker socket
-  (`/var/run/docker.sock`; on a Mac they live inside the VM, out of reach
-  as files), each stream named `service_name` for its container and
-  carrying every `lab.*` label the deploy put on it — `lab.area`,
-  `lab.service`, `lab.component` (platform/lab/README.md) — mapped as a
-  set, so a new one needs no change here. A container that sends its own logs over OTLP is
-  labelled `lab.logs: otlp` in its compose file and left out, rather than
-  stored twice; the mail watcher is the one today. The first start reads
-  each container's whole history — Loki refuses what is older than its
-  seven days — and tails from then on.
-- **Reads the node's host-process logs**: the files declared in
+  (`/var/run/docker.sock` unless the agent sets `DOCKER_HOST`; on a Mac
+  they live inside the VM, out of reach as files), each stream named
+  `service_name` for its container and carrying every `lab.*` label the
+  deploy put on it — `lab.area`, `lab.service`, `lab.component`
+  (platform/lab/README.md) — mapped as a set, so a new one needs no change
+  here. A container that sends its own logs over OTLP is labelled
+  `lab.logs: otlp` in its compose file and left out, rather than stored
+  twice; the mail watcher is the one today. The first start reads each
+  container's whole history — Loki refuses what is older than its seven
+  days — and tails from then on. Containers are found once a minute, so
+  one that comes and goes between two looks is never read.
+- **Reads the node's host-process logs from files**: those declared in
   `${LAB_ROOT}/.logs` — each agent deploy's for its agents (Alloy's own,
   Beszel's, ollama's), and chezmoi's for the runner on a Mac that has one
   — each stream named and placed by its target. A file is read from where
   it ended when first seen: a launchd log has been appended to for as long
   as its agent has existed, and that history is a burst, not a record. A
   new target is found within five minutes.
+- **Reads the journal**, on a Linux node: the system's and its agents'
+  alike, each stream named for its unit (a user unit by its own name, a
+  lab agent's as on a Mac: `alloy`, not `dev.twolfe.alloy`), or
+  for what it logged as where it has none. A no-op on a Mac.
 - **Labels every log stream it reads** with the node — `host_name` and
-  `lab_role` — once, where they are written, rather than per source.
-- **Forwards it** to the stores on their loopback ports: logs to Loki's
-  `/otlp` (container logs to its push API), traces to Tempo, metrics to
-  Prometheus's OTLP receiver.
+  `lab_role` — once, where they are read, rather than per source.
 - **Reports on itself**: its own metrics, under the same labels with
-  `service_name="alloy"`, by remote write — so a pipeline that is failing
-  shows up in Grafana beside what it carries.
+  `service_name="alloy"` — so a pipeline that is failing shows up in
+  Grafana beside what it carries.
 
-The node's identity is the agent's (`LAB_HOST`, `LAB_ROLE` in
-`agent/ritten.json`, and `LAB_ROOT` for where the targets are), so one
-config serves any node it is placed on.
+## What the gateway does
+
+- **Receives from the other nodes**, on every interface — the LAN's and
+  the tailnet's, like the mini's other services. A node reaches them over
+  the tailnet, never through caddy: a broken front door must not hide the
+  evidence of its own failure.
+
+  | Port | What | From a forwarder's |
+  | --- | --- | --- |
+  | `:4417` | OTLP gRPC | applications' telemetry |
+  | `:4418` | Loki push | container, file and journal logs |
+  | `:4419` | Prometheus remote write | its own metrics |
+
+  Logs keep the time they were read, not the time they arrived, so a
+  node catching up after an outage lands where it happened.
+- **Writes to the stores** on their loopback ports: OTLP logs to Loki's
+  `/otlp`, traces to Tempo, metrics to Prometheus's OTLP receiver; the
+  read logs to Loki's push API and Alloy's metrics by remote write.
 
 ## Checking it
 
+On any node:
+
 ```
 curl -s 127.0.0.1:12345/-/ready
-tail ~/.cache/alloy/alloy.log
+tail ~/.cache/alloy/alloy.log            # a Mac
+journalctl --user -u dev.twolfe.alloy -n 50   # the Pi
 ```
 
 Every component should read *healthy* in the UI. In Grafana,
-`alloy_build_info{host_name="mini"}` proves the self-report arrives.
+`alloy_build_info` has one series per node — `host_name="mini"`, `"pi"` —
+when every node's self-report arrives, and `{host_name="pi"}` in Loki
+shows the Pi's logs.
