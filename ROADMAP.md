@@ -279,8 +279,7 @@ lab's pins.
 2. The mail watcher instrumented — the bottleneck question answered.
    *Shipped on 2026-09-29.*
 3. Collectors on the Pi and the Studio, forwarding; container and
-   host-process logs from every node. *The mini's container logs on 2026-09-30, labelled by the
-   deploy; its host-process logs on 2026-10-01.*
+   host-process logs from every node. *Shipped 2026-10-02.*
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
    each need theirs enabled — then labelled for scraping.
