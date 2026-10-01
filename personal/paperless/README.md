@@ -53,7 +53,7 @@ back with contents.
 
 ## Getting documents in
 
-Three doors, all to the same consumer:
+Four doors, all to the same consumer:
 
 - **The web UI**, drag and drop — the ordinary case.
 - **The inbox**, `/Volumes/Data2/paperless/consume` on the mini: a file
@@ -65,9 +65,34 @@ Three doors, all to the same consumer:
   `https://paperless.twolfe.dev`, which is what turns a phone camera
   into the scanner.
 
-Mail is a fourth door Paperless has and this slice does not open:
-`personal/mail/` runs Proton Bridge, so a mail rule polling an IMAP folder is a
-configuration in the UI rather than anything here. Not configured.
+- **Mail** — file a message into the Proton folder `Paperless` and its
+  attachments are consumed at the next poll (every ten minutes), then
+  the message is moved to Archive. Below.
+
+## Mail
+
+Paperless reads the Proton mailbox through Bridge (`personal/mail/`),
+on the `lab` network as the watcher does. The account and its one rule
+are rows in Paperless's database, so they are not `compose.yaml`
+settings; `tofu/` creates them through the API instead, and a deploy
+puts back anything changed in the UI's Mail settings. Edit `tofu/mail.tf`,
+not the UI.
+
+**One folder, no filters.** The rule reads `Folders/Paperless` and
+nothing else, so choosing what goes into the archive is filing a mail,
+from any client. It takes attachments only, at any age, and moves each
+mail to Archive afterwards, so the folder empties itself. A mail's own
+body is not consumed: that needs Tika and Gotenberg ("Deliberately not
+configured").
+
+**Plain IMAP, on purpose.** Bridge's certificate is self-signed and
+issued to `127.0.0.1` only, and Paperless checks hostnames, so STARTTLS
+to `proton-bridge` cannot validate even with a trusted CA file. The
+connection is unencrypted and never leaves the Docker network. Bridge
+is not published on the host.
+
+With Bridge down, or logged out, the poll fails and is logged; nothing
+is lost, because the mail stays in the folder until a poll succeeds.
 
 ## AI
 
@@ -103,8 +128,9 @@ the task queue while the model answers.
 
 ## Secrets
 
-Two vault items, resolved at deploy into the one `compose up` that
-creates the container (`README.md` at the root, "How deployment works"):
+Two vault items for the stack, resolved at deploy into the one `compose up` that
+creates the container (`README.md` at the root, "How deployment works"),
+and one for `tofu/` (below):
 
 - **`paperless-secret-key`** — Django's signing key. Any long random
   string; Paperless refuses to start without one, and changing it logs
@@ -113,6 +139,11 @@ creates the container (`README.md` at the root, "How deployment works"):
   create the superuser on the stack's first start and are ignored
   from then on, so a later password change in the UI does not drift
   from the vault by itself: mirror it.
+- **`paperless-api-token`** — the admin's API token, which `tofu/`
+  drives the API with. It can only be made in the UI once the stack is
+  up (`RUNBOOK.md`, "Bootstrap"). Regenerating it there invalidates the
+  old one. The mail account's credentials are the watcher's
+  `proton-bridge` item, not a copy.
 
 ## Deliberately not configured
 
