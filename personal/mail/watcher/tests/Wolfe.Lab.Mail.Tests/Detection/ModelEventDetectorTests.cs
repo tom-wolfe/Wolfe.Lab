@@ -12,7 +12,9 @@ public class ModelEventDetectorTests
 {
     private static readonly DateTimeOffset Received = DateTimeOffset.Parse("2026-09-20T09:00:00Z");
 
-    private static IReadOnlyList<DetectedEvent> Read(params Entry[] entries) => ModelEventDetector.Read(new Answer(entries), Received);
+    private static readonly TimeZoneInfo London = TimeZoneInfo.FindSystemTimeZoneById("Europe/London");
+
+    private static IReadOnlyList<DetectedEvent> Read(params Entry[] entries) => ModelEventDetector.Read(new Answer(entries), Received, London);
 
     private static DetectedEvent? ReadOne(Entry entry) => Read(entry).SingleOrDefault();
 
@@ -32,8 +34,8 @@ public class ModelEventDetectorTests
     [Fact]
     public void Read_AcceptsTheModelSayingThereIsNoEvent()
     {
-        ModelEventDetector.Read(new Answer([]), Received).ShouldBeEmpty();
-        ModelEventDetector.Read(new Answer(null), Received).ShouldBeEmpty();
+        ModelEventDetector.Read(new Answer([]), Received, London).ShouldBeEmpty();
+        ModelEventDetector.Read(new Answer(null), Received, London).ShouldBeEmpty();
     }
 
     [Fact]
@@ -95,6 +97,64 @@ public class ModelEventDetectorTests
         var found = ReadOne(new Entry("Barber", "2026-09-24T14:30:00Z", "2026-09-24T14:30:00Z", null, null));
 
         found.ShouldNotBeNull().End.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Read_UsesTheOffsetOnTheDayNotTheOffsetToday()
+    {
+        // Booked on 1 October (BST) for a stay after the clocks go back on the 25th. The model
+        // wrote today's +01:00 and the invite came out an hour early.
+        var found = ReadOne(new Entry("Stay: Malmaison Manchester", "2026-10-31T15:00:00+01:00", "2026-11-04T11:00:00+01:00",
+            "Manchester", null, "Europe/London"));
+
+        found.ShouldNotBeNull();
+        found.Start.ShouldBe(DateTimeOffset.Parse("2026-10-31T15:00:00+00:00"));
+        found.End.ShouldBe(DateTimeOffset.Parse("2026-11-04T11:00:00+00:00"));
+    }
+
+    [Fact]
+    public void Read_PinsEachEndOfAJourneyToItsOwnZone()
+    {
+        // New York is still on daylight time on 2 November 2026, a week after London is not.
+        var found = ReadOne(new Entry("Flight BA117 London Heathrow to New York JFK", "2026-11-02T09:10:00", "2026-11-02T12:05:00",
+            "London Heathrow", null, "Europe/London", "America/New_York"));
+
+        found.ShouldNotBeNull();
+        found.Start.ShouldBe(DateTimeOffset.Parse("2026-11-02T09:10:00+00:00"));
+        found.End.ShouldBe(DateTimeOffset.Parse("2026-11-02T12:05:00-05:00"));
+    }
+
+    [Fact]
+    public void Read_EndsInTheStartsZoneWhenOnlyOneIsNamed()
+    {
+        var found = ReadOne(new Entry("Dinner", "2026-11-02T19:00:00", "2026-11-02T21:00:00", "Paris", null, "Europe/Paris"));
+
+        found.ShouldNotBeNull().End.ShouldBe(DateTimeOffset.Parse("2026-11-02T21:00:00+01:00"));
+    }
+
+    [Fact]
+    public void Read_ReadsATimeWithNoZoneOrOffsetAtHomeOnThatDay()
+    {
+        var found = ReadOne(new Entry("Barber", "2026-10-31T14:30:00", null, null, null));
+
+        found.ShouldNotBeNull().Start.ShouldBe(DateTimeOffset.Parse("2026-10-31T14:30:00+00:00"));
+    }
+
+    [Fact]
+    public void Read_KeepsAnOffsetWhenNoZoneIsNamed()
+    {
+        // Nothing better to go on, and a foreign offset is more likely right than home's.
+        var found = ReadOne(new Entry("Call", "2026-10-31T09:00:00-04:00", null, null, null));
+
+        found.ShouldNotBeNull().Start.ShouldBe(DateTimeOffset.Parse("2026-10-31T09:00:00-04:00"));
+    }
+
+    [Fact]
+    public void Read_FallsBackToHomeForAZoneThatDoesNotExist()
+    {
+        var found = ReadOne(new Entry("Barber", "2026-10-31T14:30:00", null, null, null, "Europe/Narnia"));
+
+        found.ShouldNotBeNull().Start.ShouldBe(DateTimeOffset.Parse("2026-10-31T14:30:00+00:00"));
     }
 
     [Theory]
