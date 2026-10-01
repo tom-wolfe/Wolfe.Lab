@@ -8,6 +8,13 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
+- **The last five containers without a health check have one.** Loki and Tempo,
+  whose images have no shell or HTTP client, ask their own binaries
+  (`-health`) for `/ready`; Prometheus fetches its `/-/ready`;
+  qBittorrent fetches its web UI's login page; and Forgejo's Tailscale
+  sidecar turns on containerboot's `/healthz`, healthy once the node has a
+  tailnet address, on loopback in the server's namespace.
+
 - **Paperless reads mail.** A new `personal/paperless/tofu` slice
   creates a mail account against Proton Bridge, and one rule, through
   Paperless's API: attachments of anything filed into the Proton folder
