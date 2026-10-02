@@ -3,6 +3,7 @@ using Wolfe.Lab.Domain.Components;
 using Wolfe.Lab.Domain.Telemetry;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Releases;
+using Wolfe.Lab.Infrastructure.Telemetry;
 
 namespace Wolfe.Lab.Application.Agents;
 
@@ -20,11 +21,6 @@ namespace Wolfe.Lab.Application.Agents;
 [Step("declare agent logs", StepKind.Publish)]
 internal sealed class DeclareAgentLogs(WorkflowEnvironment environment, WorkflowJob job, IWorkflowLog log)
 {
-    /// <summary>
-    /// The label the collector reads a target's file from — its own name, not the lab's.
-    /// </summary>
-    internal const string PathLabel = "__path__";
-
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
     public async Task<StepResult> Run(AgentPlan plan, Component component, CancellationToken ct = default)
@@ -35,7 +31,7 @@ internal sealed class DeclareAgentLogs(WorkflowEnvironment environment, Workflow
         {
             log.Skipped(targets.Count == 0
                 ? $"Would declare no log files for {component}."
-                : $"Would declare {Files(targets.Count)} for {component}: {string.Join(", ", targets.Select(t => t.Labels[PathLabel]))}.");
+                : $"Would declare {Files(targets.Count)} for {component}: {string.Join(", ", targets.Select(t => t.Labels[LogTargetFile.PathLabel]))}.");
             return StepResult.Successful;
         }
 
@@ -56,25 +52,17 @@ internal sealed class DeclareAgentLogs(WorkflowEnvironment environment, Workflow
     /// One target per agent that keeps a log: its path, its name and where the component lives,
     /// each attribute spelled as the store's labels are (<see cref="TelemetryAttribute.Label"/>).
     /// </summary>
-    internal static IReadOnlyList<LogTarget> Targets(AgentPlan plan, Component component) =>
+    private static IReadOnlyList<LogTarget> Targets(AgentPlan plan, Component component) =>
     [
         .. plan.Agents
             .Where(agent => agent.Log is not null)
             .OrderBy(agent => agent.Label.Name, StringComparer.Ordinal)
             .Select(agent => new LogTarget(["localhost"], new Dictionary<string, string>([
-                new(PathLabel, agent.Log?.Value ?? ""),
-                new(TelemetryAttribute.ServiceName.Label, agent.Label.Name),
+                new KeyValuePair<string, string>(LogTargetFile.PathLabel, agent.Log?.Value ?? ""),
+                new KeyValuePair<string, string>(TelemetryAttribute.ServiceName.Label, agent.Label.Name),
                 .. component.Attributes.Select(attribute => KeyValuePair.Create(attribute.Key.Label, attribute.Value))
             ])))
     ];
 
     private static string Files(int count) => $"{count} log file{(count == 1 ? "" : "s")}";
-
-    /// <summary>
-    /// One entry of a file discovery target file: the collector reads <c>__path__</c> and keeps
-    /// the rest as the stream's labels.
-    /// </summary>
-    internal sealed record LogTarget(
-        [property: System.Text.Json.Serialization.JsonPropertyName("targets")] IReadOnlyList<string> Targets,
-        [property: System.Text.Json.Serialization.JsonPropertyName("labels")] IReadOnlyDictionary<string, string> Labels);
 }

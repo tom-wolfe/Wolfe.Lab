@@ -48,14 +48,22 @@ public sealed record TelemetryAttribute(string Name)
     public const string ResourceAttributesVariable = "OTEL_RESOURCE_ATTRIBUTES";
 
     /// <summary>
-    /// Whether <paramref name="label"/> is one of the attributes in a store's spelling.
+    /// The attribute OpenTelemetry spells <paramref name="name"/> — <c>lab.area</c> — or why the
+    /// lab has none.
     /// </summary>
-    public static bool IsLabel(string label) => All.Any(attribute => attribute.Label == label);
+    public static Result<TelemetryAttribute> Named(string name) =>
+        All.FirstOrDefault(attribute => attribute.Name == name) is { } found
+            ? found
+            : new Error($"'{name}' is not an attribute the lab knows ({string.Join(", ", All.Select(attribute => attribute.Name))}).");
 
     /// <summary>
-    /// Whether <paramref name="name"/> is one of the attributes in OpenTelemetry's spelling.
+    /// The attribute a store spells <paramref name="label"/> — <c>lab_area</c> — or why the lab
+    /// has none.
     /// </summary>
-    public static bool IsName(string name) => All.Any(attribute => attribute.Name == name);
+    public static Result<TelemetryAttribute> Labelled(string label) =>
+        All.FirstOrDefault(attribute => attribute.Label == label) is { } found
+            ? found
+            : new Error($"'{label}' is not an attribute the lab knows ({string.Join(", ", All.Select(attribute => attribute.Label))}).");
 
     /// <summary>
     /// How a store whose label names cannot hold a dot spells it — Loki's and Prometheus's own

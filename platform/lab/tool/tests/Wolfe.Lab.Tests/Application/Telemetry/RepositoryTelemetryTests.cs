@@ -1,6 +1,6 @@
 using Wolfe.Lab.Application.Telemetry;
 
-namespace Wolfe.Lab.Tests.Infrastructure.Telemetry;
+namespace Wolfe.Lab.Tests.Application.Telemetry;
 
 // Every component in the repository, held to the list the CLI holds. A component's own check runs
 // only when that component changes; this runs whenever the CLI does, so a new attribute fails
@@ -38,6 +38,7 @@ public class RepositoryTelemetryTests
 
     [Theory]
     [MemberData(nameof(Components))]
-    public void EveryTelemetryNameIsOneTheLabKnows(string component) =>
-        CheckTelemetryNames.Check(Path.Combine(Checkout(), component)).ShouldBeEmpty();
+    public async Task EveryTelemetryNameIsOneTheLabKnows(string component) =>
+        (await CheckTelemetryNames.Check(new ProcessCommandRunner(), Path.Combine(Checkout(), component), TestContext.Current.CancellationToken))
+            .Select(error => error.Message).ShouldBeEmpty();
 }

@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-03
+
+### Changed
+
+- **The telemetry checks are typed.** Each kind of file is read into what it says
+  about the lab's telemetry, compose's through compose itself; problems are `Result` errors.
+
 ## 2026-10-02
 
 ### Added

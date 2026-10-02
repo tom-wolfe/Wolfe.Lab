@@ -1,25 +1,21 @@
+using Wolfe.Lab.Infrastructure.Compose;
 using Wolfe.Lab.Infrastructure.Telemetry;
 
 namespace Wolfe.Lab.Application.Telemetry;
 
 /// <summary>
-/// Holds the component's configuration to the lab's one list of telemetry attributes.
+/// Holds every file of the component that names the lab's telemetry to the lab's one list of it:
+/// its compose file, its collector's configuration, its stores' and its log targets.
 /// </summary>
 [Step("check telemetry names", StepKind.Check)]
-internal sealed class CheckTelemetryNames(IFileSystem fileSystem, IWorkflowLog log)
+internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem fileSystem, IWorkflowLog log)
 {
-    internal const string ComposeFile = "compose.yaml";
-
-    // Scratch and output, the CLI's and the tools', which are nobody's configuration.
-    private static readonly HashSet<string> Skipped = new(StringComparer.Ordinal) { "temp", "artifacts", "bin", "obj", "node_modules" };
-
-    public StepResult Run()
+    public async Task<StepResult> Run(CancellationToken ct = default)
     {
-        var component = fileSystem.ProjectRoot;
-        var problems = Check(component.AbsolutePath);
+        var problems = await Check(commands, fileSystem.ProjectRoot.AbsolutePath, ct);
         if (problems.Count > 0)
         {
-            return StepResult.Failed([.. problems.Select(problem => new Error(problem))]);
+            return StepResult.Failed(problems);
         }
 
         log.Detail("Every telemetry name is one the lab knows.");
@@ -27,51 +23,63 @@ internal sealed class CheckTelemetryNames(IFileSystem fileSystem, IWorkflowLog l
     }
 
     /// <summary>
-    /// What is wrong with the component's configuration, each problem prefixed with its file.
+    /// What is wrong with the component's files, each problem prefixed with its file. Only what
+    /// git tracks is read: the component as it is committed, not whatever lies beside it — a
+    /// run's report, a tool's scratch, a build's output.
     /// </summary>
-    internal static IReadOnlyList<string> Check(string component)
+    internal static async Task<IReadOnlyList<Error>> Check(ICommandRunner commands, string component, CancellationToken ct = default)
     {
-        var problems = new List<string>();
-        foreach (var file in Files(component))
+        var problems = new List<Error>();
+        foreach (var file in await Tracked(commands, component, ct))
         {
-            var text = File.ReadAllText(file);
-            var name = Path.GetFileName(file);
-            // A log file declared to the collector is JSON, and chezmoi's copy is a template of it.
-            var found = name.EndsWith(".json", StringComparison.Ordinal) || name.EndsWith(".json.tmpl", StringComparison.Ordinal)
-                ? TelemetryNames.Targets(text)
-                : Path.GetExtension(file) switch
-                {
-                    ".alloy" => TelemetryNames.Alloy(text),
-                    ".yaml" or ".yml" when name == ComposeFile => TelemetryNames.Compose(text).Concat(TelemetryNames.Yaml(text)),
-                    ".yaml" or ".yml" => TelemetryNames.Yaml(text),
-                    _ => []
-                };
-
-            problems.AddRange(found.Select(problem => $"{Path.GetRelativePath(component, file)}: {problem}"));
+            var errors = await Read(commands, component, file, ct);
+            problems.AddRange(errors.Select(error => new Error($"{file}: {error.Message}")));
         }
 
         return problems;
     }
 
-    private static IEnumerable<string> Files(string directory)
+    /// <summary>
+    /// What one file names wrongly, read as the kind of file it is.
+    /// </summary>
+    private static async Task<IReadOnlyList<Error>> Read(ICommandRunner commands, string component, string file, CancellationToken ct)
     {
-        foreach (var file in Directory.EnumerateFiles(directory).Order(StringComparer.Ordinal))
+        var name = Path.GetFileName(file);
+        var extension = Path.GetExtension(file);
+        var isTargets = name.EndsWith(".json", StringComparison.Ordinal) || name.EndsWith(".json.tmpl", StringComparison.Ordinal);
+        if (!isTargets && extension is not (".alloy" or ".yaml" or ".yml"))
         {
-            yield return file;
+            return [];
         }
 
-        foreach (var child in Directory.EnumerateDirectories(directory).Order(StringComparer.Ordinal))
+        var text = await File.ReadAllTextAsync(Path.Combine(component, file), ct);
+        if (isTargets)
         {
-            var name = Path.GetFileName(child);
-            if (name.StartsWith('.') || Skipped.Contains(name))
-            {
-                continue;
-            }
-
-            foreach (var file in Files(child))
-            {
-                yield return file;
-            }
+            // chezmoi's copy is a template of one, which reads as one once it is JSON.
+            return LogTargetFile.Read(text).Errors ?? [];
         }
+
+        if (extension == ".alloy")
+        {
+            return AlloyConfig.Read(text).Errors ?? [];
+        }
+
+        var errors = new List<Error>([.. StoreConfig.Read(text).Errors ?? [], .. LabelMentions.In(text).Errors ?? []]);
+        if (file == ComposeProject.FileName)
+        {
+            var project = await ComposeProject.Read(commands, component, ct);
+            errors.AddRange(project.Value is { } read ? ComposeTelemetry.From(read).Errors ?? [] : project.Errors ?? []);
+        }
+
+        return errors;
+    }
+
+    /// <summary>
+    /// The files git tracks in the component, relative to it.
+    /// </summary>
+    private static async Task<IReadOnlyList<string>> Tracked(ICommandRunner commands, string component, CancellationToken ct)
+    {
+        var result = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z").InDirectory(component).QuietOutput().ThrowOnError(), ct);
+        return [.. result.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal)];
     }
 }
