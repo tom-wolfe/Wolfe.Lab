@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Forgejo;
 using Ritten.Reporting.Sinks;
-using Wolfe.Lab.Clients.Alerts;
+using Wolfe.Lab.Infrastructure.Alerts;
 
 namespace Wolfe.Lab;
 

@@ -1,20 +1,21 @@
 using Ritten.OnePassword;
-using Wolfe.Lab.Workflows.Agents;
-using Wolfe.Lab.Workflows.Backup;
-using Wolfe.Lab.Workflows.CaddyCertificates;
-using Wolfe.Lab.Workflows.CaddyRoutes;
-using Wolfe.Lab.Workflows.Chezmoi;
-using Wolfe.Lab.Workflows.Docker;
-using Wolfe.Lab.Workflows.DotNetTool;
-using Wolfe.Lab.Workflows.ForgejoRunners;
-using Wolfe.Lab.Workflows.GarageLayout;
-using Wolfe.Lab.Workflows.GatusHealth;
-using Wolfe.Lab.Workflows.Heartbeat;
-using Wolfe.Lab.Workflows.ImmichImport;
-using Wolfe.Lab.Workflows.Obsidian;
-using Wolfe.Lab.Workflows.Ollama;
-using Wolfe.Lab.Workflows.Restic;
-using Wolfe.Lab.Workflows.Tofu;
+using Wolfe.Lab.Application.Workflows.Agents;
+using Wolfe.Lab.Application.Workflows.Backup;
+using Wolfe.Lab.Application.Workflows.CaddyCertificates;
+using Wolfe.Lab.Application.Workflows.CaddyRoutes;
+using Wolfe.Lab.Application.Workflows.Chezmoi;
+using Wolfe.Lab.Application.Workflows.Docker;
+using Wolfe.Lab.Application.Workflows.DotNetTool;
+using Wolfe.Lab.Application.Workflows.ForgejoRunners;
+using Wolfe.Lab.Application.Workflows.GarageLayout;
+using Wolfe.Lab.Application.Workflows.GatusHealth;
+using Wolfe.Lab.Application.Workflows.Heartbeat;
+using Wolfe.Lab.Application.Workflows.ImmichImport;
+using Wolfe.Lab.Application.Workflows.Obsidian;
+using Wolfe.Lab.Application.Workflows.Ollama;
+using Wolfe.Lab.Application.Workflows.Restic;
+using Wolfe.Lab.Application.Workflows.Tofu;
+using Wolfe.Lab.Infrastructure;
 
 namespace Wolfe.Lab;
 

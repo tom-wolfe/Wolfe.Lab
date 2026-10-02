@@ -12,6 +12,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The CLI is four projects, in layers.** `Wolfe.Lab.Domain`, `.Infrastructure`
+  and `.Application` split out of `Wolfe.Lab`, which stays the tool (ROADMAP #14).
+
 - **Gatus logs only warnings.** At `INFO` it logged every check of every
   endpoint, taking most of the Pi's log volume.
 

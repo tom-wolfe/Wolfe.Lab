@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- What the lab does: its Ritten workflows, their jobs and steps, and the steps several
+       workflows share, each module beside the workflows under Workflows/. -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wolfe.Lab.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wolfe.Lab.Infrastructure\Wolfe.Lab.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ritten.Docker" />
+    <PackageReference Include="Ritten.DotNet" />
+    <PackageReference Include="Ritten.Forgejo" />
+    <PackageReference Include="Ritten.Git" />
+    <PackageReference Include="Ritten.NuGet" />
+    <PackageReference Include="Ritten.OpenTofu" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Ritten.Commands" />
+    <Using Include="Ritten.Contracts" />
+    <Using Include="Ritten.Contracts.FileSystem" />
+    <Using Include="Ritten.Engine" />
+    <Using Include="Ritten.Engine.Workflows" />
+    <Using Include="Ritten.Reporting" />
+  </ItemGroup>
+
+</Project>

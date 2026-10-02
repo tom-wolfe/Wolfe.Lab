@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The outside world: the clients for Docker, launchd, systemd, restic, the vault and the
+       services' APIs, and the readers of what the repository declares. -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wolfe.Lab.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wolfe.Lab.Domain\Wolfe.Lab.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Resilience" />
+    <PackageReference Include="Ritten.Core" />
+    <PackageReference Include="Ritten.Docker" />
+    <PackageReference Include="Ritten.Forgejo" />
+    <PackageReference Include="Ritten.Git" />
+    <PackageReference Include="Scriban" />
+    <PackageReference Include="Vogen" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Agents\Systemd\systemd.service.sbn" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Ritten.Commands" />
+    <Using Include="Ritten.Contracts" />
+    <Using Include="Ritten.Contracts.FileSystem" />
+    <Using Include="Ritten.Engine" />
+    <Using Include="Ritten.Engine.Workflows" />
+    <Using Include="Ritten.Reporting" />
+  </ItemGroup>
+
+</Project>
