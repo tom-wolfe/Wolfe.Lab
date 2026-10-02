@@ -2,7 +2,7 @@
   "tools": {
     "tofu": {
       "github": "opentofu/opentofu",
-      "version": "1.13.0",
+      "version": "1.13.1",
       "checksums": "tofu_{version}_SHA256SUMS",
       "assets": {
         "darwin-arm64": "tofu_{version}_darwin_arm64.tar.gz",
