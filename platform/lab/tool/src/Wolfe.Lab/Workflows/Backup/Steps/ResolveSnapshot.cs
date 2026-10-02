@@ -5,7 +5,7 @@ using Wolfe.Lab.Workflows.Backup.Models;
 namespace Wolfe.Lab.Workflows.Backup.Steps;
 
 /// <summary>
-/// Finds the snapshot to bring back: the one asked for, or the slice's latest.
+/// Finds the snapshot to bring back: the one asked for, or the service's latest.
 /// </summary>
 [Step("resolve snapshot", StepKind.Work)]
 internal sealed class ResolveSnapshot(IRestic restic, RestoreRequest request, IWorkflowLog log)

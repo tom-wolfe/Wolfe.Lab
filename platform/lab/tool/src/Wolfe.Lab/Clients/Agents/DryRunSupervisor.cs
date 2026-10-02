@@ -32,7 +32,7 @@ internal sealed class DryRunSupervisor(IWorkflowLog log, IServiceSupervisor inne
         var outcome = await _inner.Plan(agent, ct);
         var what = outcome switch
         {
-            AgentOutcome.Unchanged => $"{agent.Label.Value} is already what the slice declares.",
+            AgentOutcome.Unchanged => $"{agent.Label.Value} is already what the service declares.",
             AgentOutcome.Installed => $"Would install and start {agent.Label.Value}.",
             AgentOutcome.Restarted => $"Would rewrite {agent.Label.Value}'s unit and restart it.",
             _ => $"Would converge {agent.Label.Value}."

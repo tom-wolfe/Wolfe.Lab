@@ -16,9 +16,9 @@ internal sealed class ResolveEnvironment(IFileSystem fileSystem, IWorkflowLog lo
     public StepResult<TofuEnvironment> Run()
     {
         var root = fileSystem.ProjectRoot;
-        if (Slice.Garage.FindFile(root, StateFile) is not { } state)
+        if (Service.Garage.FindFile(root, StateFile) is not { } state)
         {
-            return new Error($"No {Slice.Garage}/{StateFile} above {root.AbsolutePath}: the state backend every root shares is declared there.");
+            return new Error($"No {Service.Garage}/{StateFile} above {root.AbsolutePath}: the state backend every root shares is declared there.");
         }
 
         var files = new List<IFile> { state };

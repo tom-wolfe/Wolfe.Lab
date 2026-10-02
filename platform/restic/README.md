@@ -10,7 +10,7 @@ contorted (dropping gzip) so restic could undo their duplication. When
 layer B has to reshape layer A's output to deduplicate it, layer B should
 just replace layer A.
 
-Not a service: no compose stack, nothing to deploy. Like `network/dns/`, the slice
+Nothing runs: no compose stack, nothing to deploy. Like `network/dns/`, the service
 is a tofu root (the offsite bucket, key and dead man's switch) plus flows.
 
 ## The design
@@ -37,8 +37,8 @@ of pounds a month.
 load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared
 pipeline: `lab backup` in `platform/lab/` (stop → `restic backup` → start, with
-the mount, repo and mid-backup restart guards). Per-slice variation is
-data — the `backup` section of the slice's `ritten.json` — declaring
+the mount, repo and mid-backup restart guards). Per-service variation is
+data — the `backup` section of the service's `ritten.json` — declaring
 what to snapshot: the paths, the excludes, the container to stop (or
 none for a warm snapshot), and the container whose image tags it. No job keeps or prunes anything, because —
 
@@ -61,19 +61,19 @@ offsite job's last step pings healthchecks.io (`lab-restic-offsite`,
 declared in `tofu/`) after a green copy — that silence is the only backup
 signal that leaves the building. And the verify workflow (Sundays) runs
 `restic check` on both repos, reading a 5% pack sample back from B2 — an
-unverified backup is a hope, not a backup. Each slice's own `restore-drill`
+unverified backup is a hope, not a backup. Each service's own `restore-drill`
 job runs every night, straight after its backup: the
-slice's `backup.verify` paths — the files it needs to boot — come back
+service's `backup.verify` paths — the files it needs to boot — come back
 from the snapshot just taken into a scratch directory and are asserted
 non-empty, so a snapshot that cannot be restored from is found the
-same night. This slice checks the repositories; what a slice's snapshot
-must hold is that slice's to say.
+same night. This service checks the repositories; what a service's snapshot
+must hold is that service's to say.
 
 ## From a secondary node
 
 The backups drive hangs off the mini, and the pipeline does not change
 shape for a node that doesn't have it: `lab backup` runs on the
-node the slice lives on (`runs-on` is placement, as for deploys), stops
+node the service lives on (`runs-on` is placement, as for deploys), stops
 the stack there, and writes into the **same** repository — over SFTP to
 the mini, which is restic's `sftp:` backend: restic runs `ssh`, and
 `sftp-server` on the far side speaks the repository's file protocol.
@@ -104,15 +104,15 @@ behind the VM boundary that every macOS container fault in the changelog
 comes from. sshd is native and the drive is native; when the platform
 layer moves to Linux (ROADMAP.md) and the drive's host changes, revisit.
 
-A Linux slice's backup is its own `<slice>-backup.yaml` running on its node;
-until the first stateful slice lands on the Pi, the path is proven by
+A Linux service's backup is its own `<service>-backup.yaml` running on its node;
+until the first stateful service lands on the Pi, the path is proven by
 hand (`RUNBOOK.md` "A Linux node").
 
 ## Workflows
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `<slice>-backup.yaml` | nightly, 02:20 to 03:30, one slice each | `lab backup` then `lab restore-drill`: stop → snapshot → start, then the snapshot restored to scratch and asserted |
+| `<service>-backup.yaml` | nightly, 02:20 to 03:30, one service each | `lab backup` then `lab restore-drill`: stop → snapshot → start, then the snapshot restored to scratch and asserted |
 | `restic-offsite.yaml` | 04:35 nightly | `lab offsite`: copy to B2, forget+prune both repos, then ping `lab-restic-offsite` |
 | `restic-verify.yaml` | Sun 05:05 | `lab verify` here: `restic check` both repos, 5% data sample from B2 |
 | `restic-tofu.yaml` | push / daily | the tofu root, standard OpenTofu CD |

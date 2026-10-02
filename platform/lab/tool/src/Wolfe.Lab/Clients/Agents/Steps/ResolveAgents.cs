@@ -7,7 +7,7 @@ using Wolfe.Lab.Values;
 namespace Wolfe.Lab.Clients.Agents.Steps;
 
 /// <summary>
-/// Turns what the slice declared into what this node can run.
+/// Turns what the service declared into what this node can run.
 /// </summary>
 /// <remarks>
 /// An environment value that is a vault reference — <c>op://vault/item/field</c> — is resolved

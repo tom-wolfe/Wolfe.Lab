@@ -21,7 +21,7 @@ structure only, and pings nothing.
 1. Create a Backblaze B2 account. Account → Application Keys → note the
    **master** key into 1P item `b2-master-key`; create the `restic-repo`
    Password item (generated, letters+digits).
-2. Merge this slice. The jobs install the restic they run, pinned in
+2. Merge this service. The jobs install the restic they run, pinned in
    `.config/lab-tools.json`.
 3. Apply the tofu root (via `tofu-restic.yaml`, or `lab deploy` from
    `platform/restic/tofu`, which installs the pinned `tofu` first): creates the bucket, the scoped key, the check. Then fill
@@ -89,7 +89,7 @@ apply` on both machines — render both halves again.
 
 ## Restore
 
-One command, from the slice's directory, with `--dry-run` first:
+One command, from the service's directory, with `--dry-run` first:
 
 ```sh
 cd platform/forgejo/backup
@@ -97,7 +97,7 @@ lab restore --dry-run
 lab restore
 ```
 
-It takes the slice's latest snapshot (`--snapshot <id>` for another —
+It takes the service's latest snapshot (`--snapshot <id>` for another —
 `restic snapshots --tag service:forgejo` lists them), refuses unless the
 stack runs the image the snapshot was taken under (schema migrates
 forward only; pin `compose.yaml` and converge first, or `--any-image`),
@@ -106,9 +106,9 @@ asks, then stops the stack, sets the live state aside as
 restore that fails puts the live state back before the start. Delete
 the `.bak` once the service has proved itself.
 
-Each slice's own `restore-drill` job runs nightly, straight after
+Each service's own `restore-drill` job runs nightly, straight after
 its backup: its `backup.verify` paths come back from the latest snapshot
-into a scratch directory and are asserted non-empty. A slice whose
+into a scratch directory and are asserted non-empty. A service whose
 `backup` names no `verify` paths cannot run it.
 
 From a secondary node, the same command; the state lands on the node.

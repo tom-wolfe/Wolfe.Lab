@@ -1,15 +1,15 @@
 # mail
 
-Proton Bridge as a slice: an IMAP and SMTP door onto the Proton mailbox,
+Proton Bridge as a service: an IMAP and SMTP door onto the Proton mailbox,
 on the `lab` network, for the lab's own use. Nothing else in the lab
 could read or send mail before this.
 
 What it is for is the event scanner — detecting events in incoming mail
 and putting them in Proton Calendar, which Proton itself only does for an
 attached invitation. That is `watcher/`, and it is the other half of this
-slice.
+service.
 
-## Why Bridge can be a slice now
+## Why Bridge can be a service now
 
 Proton offers SMTP submission only on business plans, so a personal plan
 reaches its own mailbox through Bridge or not at all. Bridge was once
@@ -28,7 +28,7 @@ upstream is on 3.27.0 — and **Proton cuts off Bridge versions that fall
 far enough behind**, so a stale image is not merely old, it eventually
 stops being able to log in at all.
 
-This slice pins the maintained fork instead. It tracks upstream closely,
+This service pins the maintained fork instead. It tracks upstream closely,
 and it disables the bridge's own auto-updater — which on arm64 downloaded
 an amd64 build and crashed, so the mini is exactly the machine that bug
 was about. Version management is the image tag, which is how the rest of
@@ -56,7 +56,7 @@ a restore of the mini is not complete until somebody logs in again.
 
 Its own solution under `watcher/`, with its own dependencies and its own
 tests, built into `lab/mail-watcher` by the compose component's deploy, which
-declares it, and run beside bridge. It is the mail slice's artefact rather than part of the lab's
+declares it, and run beside bridge. It is the mail service's artefact rather than part of the lab's
 CLI: the CLI runs jobs and exits, and this is a process that stays up.
 
 **It holds the connection open rather than polling.** IMAP IDLE means an

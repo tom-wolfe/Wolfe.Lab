@@ -8,8 +8,8 @@ namespace Wolfe.Lab.Workflows.Ollama.Steps;
 /// <remarks>
 /// A container gets its bind-mounted state directory made for it by the runtime; a host
 /// process gets nothing, and ollama did not create the OLLAMA_MODELS it was handed. Declaring
-/// the directory and making it is the slice's job, the same way a compose slice declares the
-/// volume it binds.
+/// the directory and making it is the service's job, the same way a service with a compose stack
+/// declares the volume it binds.
 /// </remarks>
 [Step("ensure model store", StepKind.Work)]
 internal sealed class EnsureModelStore(ModelStore store, WorkflowJob job, IWorkflowLog log)

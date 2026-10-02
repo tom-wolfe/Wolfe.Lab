@@ -23,7 +23,7 @@ and every episode file — in `sonarr.db`, and the rename it exists to do
 is only meaningful if Sonarr and Jellyfin agree on what a path *is*. So
 the media drives are bind-mounted at their host paths (`/Volumes/Data1`
 → `/Volumes/Data1`), not at the `/tv` the linuxserver docs suggest. The
-config directory follows the ordinary `~/Docker/<slice>` convention.
+config directory follows the ordinary `~/Docker/<service>` convention.
 
 ## The renaming, honestly scoped
 

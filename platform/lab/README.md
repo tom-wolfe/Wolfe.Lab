@@ -10,7 +10,7 @@ it can be typed, rehearsed and tested.
 
 A directory the CLI serves carries a `ritten.json` naming its workflow
 — `"workflow": "docker"` — plus that workflow's options. That directory
-is a *component*: a slice is the folder that groups a service's
+is a *component*: a service is the folder that groups its
 components (`media/sonarr/compose/`, `media/sonarr/backup/`, `platform/forgejo/tofu/`,
 `platform/forgejo/runners/`), and never carries a declaration of its own. Run
 from a component's directory, `lab` offers exactly that workflow's jobs
@@ -29,11 +29,11 @@ request, apply on the merge), `backup` (what a snapshot holds, what has
 to be quiet while it is taken, and what a restore must bring back),
 `image`, `dotnet-service` and `agents` (host processes declared per node —
 the node services that used to live in chezmoi — deployed to each node by
-its own runner with `lab deploy --node <name>`). Two slices with the same shape share a
-workflow and differ only in what they declare. What only one slice does
+its own runner with `lab deploy --node <name>`). Two services with the same shape share a
+workflow and differ only in what they declare. What only one service does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
 `network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`, `personal/immich/import`,
-`monitoring/gatus/health` — named for the slice and the thing, so a `ritten.json`
+`monitoring/gatus/health` — named for the service and the thing, so a `ritten.json`
 reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each
 workflow lists it for itself.
@@ -78,7 +78,7 @@ A backup component snapshots a release's state. Its `ritten.json` names
 the release (the snapshot's tag and, when a container is named in
 `stop`, the installed stack that is stopped for the duration), the
 paths, the excludes, and the `verify` paths a restore must bring back.
-The repositories themselves are the restic slice's to define: every
+The repositories themselves are the restic service's to define: every
 backup component reads `platform/restic/restic.env` (or `sftp.env` on a Linux
 node) by walking up to the checkout — the one file a component reads
 outside its own directory, because a copy in every component would be a
@@ -357,7 +357,7 @@ anywhere, and `--version` matches what the runners are pinned to.
 Publishing moves nothing. What runs on a runner is the version its pin
 names, which is the point: **runners execute reviewed, merged code, never
 a pull request's CLI.** A pull request that changes the CLI is built and
-tested here and runs nowhere else. The cost is ordering — a slice change
+tested here and runs nowhere else. The cost is ordering — a service change
 that needs a new CLI behaviour lands after the CLI change has shipped and
 its pin has moved, as two pull requests.
 

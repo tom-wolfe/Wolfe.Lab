@@ -29,6 +29,6 @@ public class CheckImageTests
         Step(anyImage: true).Run(Taken("forgejo:13"), new SnapshotImage("forgejo:14")).IsFailure.ShouldBeFalse();
 
     [Fact]
-    public void Run_HasNothingToHoldAWarmSliceTo() =>
+    public void Run_HasNothingToHoldAWarmServiceTo() =>
         Step().Run(Taken(null), SnapshotImage.None).IsFailure.ShouldBeFalse();
 }

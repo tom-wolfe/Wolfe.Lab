@@ -29,7 +29,7 @@ services:
     volumes:
       # Sonarr's own state: sonarr.db (the series list, root folders,
       # naming settings), config.xml (API key, auth). State is data —
-      # lives outside the repo like every slice.
+      # lives outside the repo like every service.
       - /Users/tomwolfe/Docker/sonarr/config:/config
       # Media drives at their HOST paths — jellyfin's ONE RULE, for the
       # same reason: Sonarr stores absolute paths (root folders, every
@@ -41,7 +41,7 @@ services:
 
     ports:
       # Web UI fallback (macmini.local:8989), same convention as every
-      # other slice.
+      # other service.
       - "8989:8989"
 
     networks:
@@ -66,7 +66,7 @@ services:
       start_period: 60s
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
+  # The shared edge network — owned and created by the caddy service, which
   # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

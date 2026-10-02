@@ -3,7 +3,7 @@
 [Renovate](https://docs.renovatebot.com) reads every pin in the repo and
 opens a pull request for each one that is behind. It merges nothing: a
 pull request is a proposal, checked like any other, and a bump still goes
-through the pin-first-via-a-normal-PR ritual the slice READMEs ask for —
+through the pin-first-via-a-normal-PR ritual the service READMEs ask for —
 Renovate only saves remembering to look.
 
 ## How it runs

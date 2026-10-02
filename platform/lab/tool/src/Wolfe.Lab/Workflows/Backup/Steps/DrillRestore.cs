@@ -6,7 +6,7 @@ using Wolfe.Lab.Workflows.Backup.Models;
 namespace Wolfe.Lab.Workflows.Backup.Steps;
 
 /// <summary>
-/// A backup nobody has restored from has not shipped. The slice's latest snapshot comes back
+/// A backup nobody has restored from has not shipped. The service's latest snapshot comes back
 /// into a scratch directory, only the paths that prove it, and each is asserted non-empty.
 /// </summary>
 [Step("drill restore", StepKind.Check)]

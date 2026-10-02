@@ -12,7 +12,7 @@ secret-free).
 | Secrets | `secrets.env` names the vault items (`garage-rpc-secret`, `garage-s3-admin-token`); the deploy resolves them into the environment of the `up` that creates the container. Never generated: the vault is the origin, so a recreated container gets the same values back. Nothing is on disk — bring the stack up with `lab deploy`, never a bare `compose up` |
 | Container | `.forgejo/workflows/garage-compose.yaml` on every push that touches `compose/` (the mini's host runner); first bring-up via `setup.sh` |
 | Cluster layout (one-time) | `lab init` from `layout/` (its `ritten.json` names the zone and capacity), invoked by `setup.sh`; a no-op once a layout exists |
-| Buckets, keys, grants | OpenTofu — this slice's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |
+| Buckets, keys, grants | OpenTofu — this service's `tofu/` seeds the state store (below); everything else is ordinary tofu resources |
 
 **Adding a bucket** = a `garage_bucket` (+ `garage_key` + `garage_bucket_key`)
 resource in the relevant tofu project. Storage configuration lives in tofu;

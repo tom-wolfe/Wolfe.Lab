@@ -105,7 +105,7 @@ Mechanics worth knowing (the rest is comments in `compose.yaml`):
   address is macOS Remote Login — the very conflict that created :2222.
   (`code.twolfe.dev` has the same trap: the `*.ts` wildcard is
   also the mini.) So SSH gets its own name — the per-service "neat
-  public name in the owning slice's tofu, pointing at a Tailscale IP"
+  public name in the owning service's tofu, pointing at a Tailscale IP"
   pattern from `network/caddy/README.md`, here in its first instance. The cost:
   resolution rides Netlify DNS, like every `.lab` name. The sidecar's
   MagicDNS name, `forgejo.tailf823b8.ts.net`, is the same endpoint with
@@ -287,7 +287,7 @@ job's steps execute:
 
 | Runner | Label | Steps run | Scope | Environment | For |
 |---|---|---|---|---|---|
-| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`); `LAB_ROOT`, where deploys install slices | chezmoi, deploys, backups — anything that mutates the node |
+| host | `<hostname>:host` | in a shell on the node, as the login user | **the lab repo only** | the lab's vault token (`env_file`); `LAB_ROOT`, where deploys install services | chezmoi, deploys, backups — anything that mutates the node |
 | containerized | `docker:docker://<image>` | in a fresh container per job, no host socket | **instance-wide** | none | the lab's CI (lint, plan-on-PR) and every other project: Ritten, NSchema, … |
 
 Both are built (below); the containerized one runs on the Pi today: a
@@ -335,7 +335,7 @@ only workflow files in *this* repo can obtain that — including, still, a
 workflow on a pull-request branch of this repo (the trust note in
 ROADMAP.md). Other projects never see a shell on a node: they *build and
 publish* (an image, a package) on the containerized runner, and the lab
-*deploys* what they published through the slice's own workflow, the way it deploys any
+*deploys* what they published through the service's own workflow, the way it deploys any
 other pinned image.
 
 **Node half — chezmoi, the `pi-node` profile:**
@@ -355,16 +355,16 @@ UUID from the secret (`gouuid.FromBytes(secret[:16])` — the first sixteen
 characters as raw bytes), so the template does the same arithmetic and the
 node never needs `forgejo-runner register`. It is a `create_` file: `op` is
 a bootstrap dependency, not a tick dependency, exactly like the env files.
-The instance address is read from this slice's `compose.yaml` (`ROOT_URL`),
+The instance address is read from this service's `compose.yaml` (`ROOT_URL`),
 not typed again.
 
 How a deploy job gets the repo: `actions/checkout`, like any pipeline,
 into the job's workspace, which the runner disposes of afterwards. What
 containers need to keep reading — config directories, route snippets —
-is not read from the checkout: the deploy installs the slice into
-`$LAB_ROOT/<slice>` (`~/.local/share/Wolfe.Lab`, rsync so nothing a
+is not read from the checkout: the deploy installs the service into
+`$LAB_ROOT/<service>` (`~/.local/share/Wolfe.Lab`, rsync so nothing a
 running container has open vanishes) and runs compose there. The front
-door's hook gathers every slice's `caddy.caddyfile` into that tree, so
+door's hook gathers every service's `caddy.caddyfile` into that tree, so
 caddy's import glob is complete whatever runs on which node. Host runners
 have node on the PATH only because `actions/checkout` is a JavaScript
 action: on the mini a shim in `~/.local/share/forgejo-runner/bin` that
@@ -390,7 +390,7 @@ Brewfile), but launchd supervises it through a plist.
 Bring-up is in `RUNBOOK.md` "The mini's runner".
 
 Everything scheduled on the mini is a cron workflow on this runner:
-each slice's `<slice>-backup.yaml`, `restic-offsite.yaml`,
+each service's `<service>-backup.yaml`, `restic-offsite.yaml`,
 `restic-verify.yaml`, the two `obsidian-*.yaml`, `caddy-certs.yaml`,
 `heartbeat.yaml` and `gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
 probe never queue behind a long job; stateful jobs serialise through the

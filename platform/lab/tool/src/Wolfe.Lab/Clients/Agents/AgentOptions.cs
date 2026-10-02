@@ -4,7 +4,7 @@ using Wolfe.Lab.Values;
 namespace Wolfe.Lab.Clients.Agents;
 
 /// <summary>
-/// One entry of the <c>agents</c> section of a slice's <c>ritten.json</c>.
+/// One entry of the <c>agents</c> section of a service's <c>ritten.json</c>.
 /// </summary>
 public sealed record AgentOptions
 {

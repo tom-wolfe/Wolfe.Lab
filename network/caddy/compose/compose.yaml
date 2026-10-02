@@ -62,8 +62,8 @@ services:
       start_period: 30s
 
 networks:
-  # THIS slice owns the shared edge network; every proxied slice joins it
+  # THIS service owns the shared edge network; every proxied service joins it
   # with `external: true`. Consequence: caddy must be deployed once before
-  # any slice that references the network — see README.md deploy order.
+  # any service that references the network — see README.md deploy order.
   lab:
     name: lab

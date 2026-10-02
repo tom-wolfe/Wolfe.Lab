@@ -22,7 +22,7 @@ services:
     volumes:
       # Radarr's own state: radarr.db (the movie list, root folders,
       # naming settings), config.xml (API key, auth). State is data —
-      # lives outside the repo like every slice.
+      # lives outside the repo like every service.
       - /Users/tomwolfe/Docker/radarr/config:/config
       # Media drives at their HOST paths — jellyfin's ONE RULE; see
       # media/sonarr/compose/compose.yaml. Both drives even though only Data2 holds
@@ -46,7 +46,7 @@ services:
       start_period: 60s
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
+  # The shared edge network — owned and created by the caddy service, which
   # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

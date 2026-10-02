@@ -3,7 +3,7 @@ using Wolfe.Lab.Workflows.Agents.Jobs;
 namespace Wolfe.Lab.Workflows.Agents;
 
 /// <summary>
-/// Host processes a slice runs on its nodes.
+/// Host processes a service runs on its nodes.
 /// </summary>
 /// <remarks>
 /// The node services that used to live in chezmoi — a monitoring agent, a runner — as a component

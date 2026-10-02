@@ -48,7 +48,7 @@ route.
 categories, and BT_backup/ (.torrent files + fastresume); the parts
 configured in the UI rather than declared here. Mount-guarded,
 integrity-guarded — the shared `lab backup` pipeline, with this
-slice's paths declared in `ritten.json`; retention and the
+service's paths declared in `ritten.json`; retention and the
 offsite copy belong to `restic-offsite.yaml` (`platform/restic/README.md`).
 `gluetun/` is deliberately excluded: a disposable server-list cache.
 
@@ -56,7 +56,7 @@ offsite copy belong to `restic-offsite.yaml` (`platform/restic/README.md`).
 
 Bump the pins in `compose.yaml` via a PR like everywhere else. gluetun in
 particular: read its release notes — env var names and defaults genuinely
-change between minor versions, and this container is the slice's security
+change between minor versions, and this container is the service's security
 boundary. The qbittorrent tag encodes both the app and libtorrent
 versions (`5.2.3_v2.0.14`); stay on the libtorrent-2.x line unless
 seeding behaviour gives a concrete reason for the `libtorrentv1`

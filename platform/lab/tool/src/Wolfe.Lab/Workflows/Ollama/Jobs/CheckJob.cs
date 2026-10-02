@@ -12,7 +12,7 @@ internal sealed class CheckJob : LabJob<OllamaOptions>
 {
     public override string Name => "check";
 
-    public override string Description => "Checks the component's model roles, alone and against the slice's other servers.";
+    public override string Description => "Checks the component's model roles, alone and against the service's other servers.";
 
     public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<CheckRoles>()];
 

@@ -2,7 +2,7 @@ name: qbittorrent
 
 services:
   gluetun:
-    # Pinned. Bump deliberately — this container is the slice's security
+    # Pinned. Bump deliberately — this container is the service's security
     # boundary, and gluetun's env var names and defaults genuinely change
     # between minor versions; read the release notes first.
     image: qmcgaw/gluetun:v3.41.3
@@ -51,7 +51,7 @@ services:
 
     ports:
       # Web UI fallback (macmini.local:8080), same convention as every
-      # other slice. Published on gluetun because it owns the namespace.
+      # other service. Published on gluetun because it owns the namespace.
       - "8080:8080"
 
     networks:
@@ -72,7 +72,7 @@ services:
     restart: unless-stopped
 
     # No network identity of its own — every packet goes through gluetun
-    # or nowhere. That is the point of the slice; do not "fix" it by
+    # or nowhere. That is the point of the service; do not "fix" it by
     # giving qbittorrent its own networks, ports or aliases.
     network_mode: "service:gluetun"
 
@@ -106,7 +106,7 @@ services:
     volumes:
       # qBittorrent's own state: qBittorrent.conf, categories, and
       # BT_backup/ (.torrent files + fastresume). State is data — lives
-      # outside the repo like every slice.
+      # outside the repo like every service.
       - /Users/tomwolfe/Docker/qbittorrent/config:/config
       # Media drives at their HOST paths (jellyfin's ONE RULE, for the
       # same reason): qbittorrent stores absolute save paths in its
@@ -125,7 +125,7 @@ services:
       start_period: 60s
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
+  # The shared edge network — owned and created by the caddy service, which
   # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

@@ -3,7 +3,7 @@
 Host monitoring for the lab: CPU, memory, disk, network and temperature,
 with history and threshold alerts. [Beszel](https://beszel.dev) is two
 pieces — a **hub** (the dashboard and alerting engine, a container in this
-slice) and an **agent** (the thing that actually reads the metrics, a
+service) and an **agent** (the thing that actually reads the metrics, a
 native process on each monitored machine).
 
 | Concern | Handled by |
@@ -137,7 +137,7 @@ a row in total silence. The check that alerts is the one that asks.
 
 ## The configuration that isn't code
 
-Every other slice declares its API resources in tofu — buckets in
+Every other service declares its API resources in tofu — buckets in
 `platform/garage/tofu`, repositories in `platform/forgejo/tofu`, checks in `monitoring/gatus/tofu`. This
 one can't: Beszel has no Terraform/OpenTofu provider. Registered systems,
 alert thresholds and notification URLs are clicked into the UI and live only

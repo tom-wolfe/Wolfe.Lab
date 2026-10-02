@@ -128,7 +128,7 @@ public class ResolveAgentsTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_ReportsEverySlicesProblemAtOnce()
+    public async Task Run_ReportsEveryServicesProblemAtOnce()
     {
         var result = await Resolve(
             ("ollama", new AgentOptions()),

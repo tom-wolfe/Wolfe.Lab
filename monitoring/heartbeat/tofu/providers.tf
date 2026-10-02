@@ -3,7 +3,7 @@ terraform {
 
   backend "s3" {
     bucket = "tofu-state"
-    # The slice was carved out of chezmoi/; the key stays, because moving state is not a rename.
+    # The service was carved out of chezmoi/; the key stays, because moving state is not a rename.
     key                         = "chezmoi/terraform.tfstate"
     endpoints                   = { s3 = "http://macmini.local:3900" }
     region                      = "garage"
@@ -18,10 +18,10 @@ terraform {
   }
 
   required_providers {
-    # healthchecks.io is a PROVIDER, not a slice — same call as netlify
-    # (see network/caddy/tofu/providers.tf). A check belongs to the slice that owns
+    # healthchecks.io is a PROVIDER, not a lab service — same call as netlify
+    # (see network/caddy/tofu/providers.tf). A check belongs to the service that owns
     # the thing being checked, so the tick's check lives here rather than in
-    # a monitoring/ slice that would collect other slices' concerns.
+    # a monitoring/ service that would collect other services' concerns.
     healthchecksio = {
       # Fully-qualified: OpenTofu defaults to registry.opentofu.org.
       source  = "registry.terraform.io/kristofferahl/healthchecksio"

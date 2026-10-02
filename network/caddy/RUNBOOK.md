@@ -20,9 +20,9 @@ reasons are in `README.md`.
    setup.sh encodes this ordering.
 4. **First deploy**: run the `caddy compose` workflow, then `caddy routes` (or
    `docker compose up -d` in this directory on the mini). Must happen
-   ONCE before redeploying any proxied slice — this compose creates the
+   ONCE before redeploying any proxied service — this compose creates the
    `lab` network the others reference as external.
-5. **Re-up the proxied slices** (forgejo, jellyfin, garage) so
+5. **Re-up the proxied services** (forgejo, jellyfin, garage) so
    their containers join the network. Compose recreates them — brief
    downtime each.
 
@@ -102,7 +102,7 @@ workflow:
    by name until step 3. Go straight on.
 
 3. **Merge.** caddy redeploys onto the new Caddyfile and the certificate
-   from step 1; chezmoi installs ollama on the mini; the ollama slice
+   from step 1; chezmoi installs ollama on the mini; the ollama service
    converges; Gatus redeploys on the Pi against names that now resolve.
 
    The mini's workflows share one concurrency group and run in an

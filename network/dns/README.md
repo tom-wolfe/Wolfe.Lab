@@ -4,7 +4,7 @@ Zone-level records for `twolfe.dev` — the records that belong to the
 *domain*, not to any service. Today that means the Proton Mail set (MX,
 SPF, DKIM, DMARC, verification), created by hand during the mail
 migration (2026-08) and imported here so the zone is recoverable from
-this repo. Not a slice: no container, no flows, nothing deployed — one
+this repo. Nothing runs: no container, no flows, nothing deployed — one
 tofu root and this file.
 
 ## The boundary: which records live where
@@ -18,7 +18,7 @@ service:
   in `network/caddy/tofu` — they point at the front door, so the front door owns
   them (`network/caddy/tofu/records.tf` records the decision).
 - **Per-service public names** (`git.twolfe.dev`) stay in the owning
-  slice's tofu root — the contract in `network/caddy/README.md`, untouched.
+  service's tofu root — the contract in `network/caddy/README.md`, untouched.
 - **Apex and `www`** are deliberately absent: they are Netlify's own
   site-attachment records (type `NETLIFY`), managed by the site, not
   declarable by the provider — its type list has no `NETLIFY` — and not
@@ -27,7 +27,7 @@ service:
 ## On the name
 
 `netlify/` would be wrong twice over: `network/caddy/README.md` already
-establishes Netlify as a provider, not a slice; and the zone outlives
+establishes Netlify as a provider, not a lab service; and the zone outlives
 its host — move it to another DNS service and every record here
 survives while a `netlify/` path lies. Nor is `network/dns/` a departure from
 the technology-named directories elsewhere: those are named for the

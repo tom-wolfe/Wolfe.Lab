@@ -29,7 +29,7 @@ Uptime Kuma was the original plan. Gatus won on two grounds:
 
 1. **The checks are code.** Kuma's configuration is UI-only — its write
    API is Socket.IO with no REST and no OpenTofu provider — and the
-   roadmap had already named that as the cost: a second slice after
+   roadmap had already named that as the cost: a second service after
    beszel whose config isn't declarable. Gatus is a YAML file. That is
    the whole repo's shape, and with a few dozen checks it is also the
    difference between a merge and an afternoon of clicking.
@@ -94,7 +94,7 @@ Two consequences of that convenience, both loud rather than silent:
 - **Environment changes do NOT reload** — only files do. Rotating the
   Pushover credentials means recreating the container (below).
 
-Conditions worth knowing, all used in this slice: `[STATUS] == 200`,
+Conditions worth knowing, all used in this service: `[STATUS] == 200`,
 `[BODY].status.indicator == none` (JSONPath), `[BODY] == Healthy` (plain
 text), `has([BODY].incidents) == false`, `[CONNECTED] == true` for
 `tcp://` / `tls://` / `starttls://`, `[CERTIFICATE_EXPIRATION] > 336h`,
@@ -140,7 +140,7 @@ environment is a changed container, so compose recreates it.
 
 `~/Docker/gatus/data/gatus.db` holds check history: the uptime bars and
 response-time graphs. The *configuration* is `config/` and lives in git,
-so this is the first stateful slice with no backup flow — deliberately.
+so this is the first stateful service with no backup flow — deliberately.
 Losing the file costs a week of green bars and nothing else, and adding a
 nightly stop/snapshot/start for that would be backup surface for its own
 sake. If Gatus ever grows state that isn't reproducible from the repo,
@@ -163,7 +163,7 @@ It lives on the Pi, and everything the move changed is in files:
   below it is red, it is the machine, which is the whole point of the move.
 - `compose.yaml` — no `lab` network; paths under `${HOME}` (the runner's
   job environment carries the login user's `HOME`). The project directory
-  is the slice's install, `~/.local/share/Wolfe.Lab/gatus`, which
+  is the service's install, `~/.local/share/Wolfe.Lab/gatus`, which
   the deploy refreshes it from the checkout every time.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).

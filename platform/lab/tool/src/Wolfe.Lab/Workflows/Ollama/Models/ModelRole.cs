@@ -14,7 +14,7 @@ public sealed record ModelRole
     public OllamaModel? Model { get; init; }
 
     /// <summary>
-    /// Whether every component of the slice must declare this role with this same model.
+    /// Whether every component of the service must declare this role with this same model.
     /// </summary>
     /// <remarks>
     /// Most roles are best-fit on purpose — the Studio's <c>background</c> is a bigger model

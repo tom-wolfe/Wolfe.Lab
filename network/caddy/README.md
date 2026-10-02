@@ -5,13 +5,13 @@ by hostname to containers on the shared `lab` Docker network. Exists so
 addresses are names (`https://jellyfin.twolfe.dev`), not ports
 (`macmini.local:8096`).
 
-This slice deliberately owns ONLY the shared edge concerns:
+This service deliberately owns ONLY the shared edge concerns:
 
 - the Caddy container — the STOCK image, a pure proxy: it terminates TLS
   and routes, and does nothing else;
 - the `lab` Docker network every proxied service joins;
 - the wildcard DNS record (`tofu/`): `*.twolfe.dev` → the mini's
-  Tailscale address, plus `lab.twolfe.dev` for the door itself, which is what a slice CNAMEs to when it wants a name of its own.
+  Tailscale address, plus `lab.twolfe.dev` for the door itself, which is what a service CNAMEs to when it wants a name of its own.
 - the wildcard certificate — ONE cert for `*.twolfe.dev` —
   obtained and renewed OUTSIDE caddy by the `certs/` component
   (`lab renew`, declared in its `ritten.json`): lego solves DNS-01
@@ -21,20 +21,20 @@ This slice deliberately owns ONLY the shared edge concerns:
   imports, so the stack in `compose/` knows nothing of them.
 
 Routes and public DNS names do NOT live here — see the contract below.
-Netlify is a *provider*, not a slice: any slice needing a DNS record
+Netlify is a *provider*, not a lab service: any service needing a DNS record
 configures it in its own tofu root. Records that belong to the domain
-itself rather than to any slice (mail, verification) live in `network/dns/` —
+itself rather than to any service (mail, verification) live in `network/dns/` —
 its README records the boundary.
 
 ## The contract: how a service gets a hostname
 
-Everything happens in the service's own slice; this one is never edited.
+Everything happens in the service's own directory; this one is never edited.
 
 1. Join the `lab` network in the component's compose file
    (`networks: [lab]`, declared `external: true` — multi-service stacks
    list `default` too, or they lose their internal network).
 2. Drop a `caddy.caddyfile` next to the compose file, in the same
-   component (`<slice>/compose/caddy.caddyfile`):
+   component (`<service>/compose/caddy.caddyfile`):
 
    ```
    @myservice host myservice.twolfe.dev
@@ -46,7 +46,7 @@ Everything happens in the service's own slice; this one is never edited.
    ONE hostname. The component picks it and nothing else has to agree: the
    wildcard record and the wildcard certificate already cover whatever
    it chose, so there is no DNS to write, no SAN to add and no edit to
-   this slice. Pick the name a person would say — `code`, not
+   this service. Pick the name a person would say — `code`, not
    `forgejo` — because it is the only one there will be. A service whose
    app validates the Host header (qbittorrent) must be told it.
 
@@ -67,11 +67,11 @@ Everything happens in the service's own slice; this one is never edited.
 `git.twolfe.dev` is an A record at the forgejo sidecar's own tailnet IP,
 not a route through this door, because SSH needs a machine where port 22
 is free. It lives in `platform/forgejo/tofu` and has nothing to do with this
-slice.
+service.
 
 Everything else is just a name under the wildcard. There used to be a
 second shape here — a "neat name" at the apex, which matched no wildcard
-and so needed a CNAME, a line in this slice's `Caddyfile`, its own
+and so needed a CNAME, a line in this service's `Caddyfile`, its own
 `--domains` SAN and a forced re-issue. That whole procedure is gone: the
 wildcard moved up a label and swallowed it.
 

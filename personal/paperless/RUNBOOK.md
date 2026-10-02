@@ -51,7 +51,7 @@ curl -s "https://api.github.com/repos/paperless-ngx/paperless-ngx/releases/lates
 ## Backup
 
 Runs itself: `.forgejo/workflows/paperless-backup.yaml` snapshots this
-slice nightly at 02:55 and drills the restore straight after. Manual
+service nightly at 02:55 and drills the restore straight after. Manual
 snapshot — run the backup workflow from the Actions tab, or:
 
 ```sh

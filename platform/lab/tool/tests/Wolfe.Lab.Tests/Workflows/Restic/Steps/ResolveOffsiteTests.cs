@@ -1,6 +1,6 @@
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Workflows.Restic.Steps;
 using Wolfe.Lab.Values;
+using Wolfe.Lab.Workflows.Restic.Steps;
 
 namespace Wolfe.Lab.Tests.Workflows.Restic.Steps;
 
@@ -13,11 +13,11 @@ public class ResolveOffsiteTests : IDisposable
 
     public ResolveOffsiteTests()
     {
-        // The restic slice's own component reads the slice's files the same way every other
+        // The restic service's own component reads the service's files the same way every other
         // component does: by walking up to the checkout.
-        var slice = _checkout.CreateSubdirectory(Slice.Restic.Name);
-        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(slice.CreateSubdirectory("repositories").FullName));
-        _envFile = Path.Combine(slice.FullName, ResolveOffsite.FileName);
+        var service = _checkout.CreateSubdirectory(Service.Restic.Name);
+        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(service.CreateSubdirectory("repositories").FullName));
+        _envFile = Path.Combine(service.FullName, ResolveOffsite.FileName);
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<string>().StartsWith("op://", StringComparison.Ordinal) ? $"value-of-{call.Arg<string>()}" : call.Arg<string>());
     }

@@ -8,7 +8,7 @@ reasons are in `README.md`.
 1. **Mint the Forgejo token** ("The runners group" below) — the deploy
    resolves it and stays red until the vault item exists.
 2. **Bring the container up**: the `gatus compose` workflow on the merge, or
-   `lab deploy` from the slice in a checkout on the Pi.
+   `lab deploy` from the service in a checkout on the Pi.
 3. **Re-issue the certificate** so it carries `status.twolfe.dev` (and
    `code.twolfe.dev`, added in the same change) — `network/caddy/README.md`
    "Neat names", step 4. At the desk. Until then the `.lab` and `.ts`

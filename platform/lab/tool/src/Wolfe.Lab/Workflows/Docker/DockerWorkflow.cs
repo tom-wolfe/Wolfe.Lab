@@ -8,9 +8,9 @@ namespace Wolfe.Lab.Workflows.Docker;
 /// A compose project: <c>"workflow": "docker"</c>.
 /// </summary>
 /// <remarks>
-/// Written once, for a shape that repeats. Every slice that runs containers has one of these
-/// and they differ only in what they declare — which is the point of splitting a slice into
-/// components: the regular part gets one workflow, and what is genuinely the slice's own gets a
+/// Written once, for a shape that repeats. Every service that runs containers has one of these
+/// and they differ only in what they declare — which is the point of splitting a service into
+/// components: the regular part gets one workflow, and what is genuinely the service's own gets a
 /// component and a workflow of its own beside it.
 /// </remarks>
 public sealed class DockerWorkflow : IWorkflow

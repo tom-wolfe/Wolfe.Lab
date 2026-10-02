@@ -42,7 +42,7 @@ curl -s "https://api.github.com/repos/jellyfin/jellyfin/releases/latest" | grep 
 ## Backup
 
 Runs itself: `.forgejo/workflows/jellyfin-backup.yaml` snapshots this
-slice nightly at 02:35 and drills the restore straight after (the `backup` section of
+service nightly at 02:35 and drills the restore straight after (the `backup` section of
 `ritten.json` declares what: config, database, library roots and
 plugins; `metadata/` is ~670 MB of artwork a "Refresh Metadata"
 re-downloads, so it is excluded). Manual snapshot — run the backup

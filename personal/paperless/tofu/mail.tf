@@ -50,7 +50,7 @@ resource "restapi_object" "paperless_folder" {
     maximum_age = 0
 
     # 1 = attachments only, for both. Consuming the mail itself needs Tika
-    # and Gotenberg, which this slice deliberately does not run (README.md).
+    # and Gotenberg, which this service deliberately does not run (README.md).
     # Attachments Paperless cannot read are skipped and logged.
     attachment_type   = 1
     consumption_scope = 1

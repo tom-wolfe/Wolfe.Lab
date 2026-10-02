@@ -45,7 +45,7 @@ public class GatherRoutesTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_GathersAtAnyDepthSoSlicesCanMoveOneAreaAtATime()
+    public async Task Run_GathersAtAnyDepthSoServicesCanMoveOneAreaAtATime()
     {
         Route("jellyfin/compose");
         Route("monitoring/gatus/compose");

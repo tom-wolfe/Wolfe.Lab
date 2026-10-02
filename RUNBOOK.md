@@ -59,7 +59,7 @@ and no GUI, so it is the same idea with different mechanics. In order:
    git@git.twolfe.dev:tom-wolfe/Wolfe.Lab.git` — answer `pi-node`. That
    profile gets no Homebrew and no macOS scripts; binaries arrive as
    pinned externals under `~/.local/bin`.
-7. Then, per slice: the runners (`platform/forgejo/RUNBOOK.md` "Bringing up the
+7. Then, per service: the runners (`platform/forgejo/RUNBOOK.md` "Bringing up the
    Pi"), the Beszel agent's hub-side setup (`monitoring/beszel/RUNBOOK.md`), the
    backup path (`platform/restic/RUNBOOK.md` "A Linux node").
 

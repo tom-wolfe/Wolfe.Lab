@@ -7,7 +7,7 @@ name: immich
 # network. The DB password reaches compose from secrets.env at deploy.
 #
 # Immich fixes its container paths (/data, /cache, /var/lib/postgresql),
-# so the host-equals-container rule the media slices live by does not
+# so the host-equals-container rule the media services live by does not
 # apply here: nothing else reads these trees.
 
 services:

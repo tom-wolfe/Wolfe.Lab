@@ -7,16 +7,16 @@ namespace Wolfe.Lab.Tests.Workflows.Ollama.Steps;
 
 public class CheckRolesTests : IDisposable
 {
-    private readonly DirectoryInfo _slice = Directory.CreateTempSubdirectory("lab-ollama-");
+    private readonly DirectoryInfo _service = Directory.CreateTempSubdirectory("lab-ollama-");
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
 
     public CheckRolesTests() =>
-        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(Path.Combine(_slice.FullName, "server")));
+        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(Path.Combine(_service.FullName, "server")));
 
-    public void Dispose() => _slice.Delete(recursive: true);
+    public void Dispose() => _service.Delete(recursive: true);
 
     private void Component(string name, string json) =>
-        File.WriteAllText(Path.Combine(_slice.CreateSubdirectory(name).FullName, "ritten.json"), json);
+        File.WriteAllText(Path.Combine(_service.CreateSubdirectory(name).FullName, "ritten.json"), json);
 
     private static string Ollama(string embedding) => $$"""
         {

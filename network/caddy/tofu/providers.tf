@@ -18,7 +18,7 @@ terraform {
 
   required_providers {
     # Netlify's own current provider (the archived hashicorp/netlify one is
-    # dead). This is a PROVIDER, not a slice: any slice that needs a DNS
+    # dead). This is a PROVIDER, not a lab service: any service that needs a DNS
     # record configures it and declares its own records — this root owns
     # only the front door's wildcard. See README.md.
     netlify = {

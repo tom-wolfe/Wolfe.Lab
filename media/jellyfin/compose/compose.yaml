@@ -66,7 +66,7 @@ services:
     # so there is deliberately no healthcheck block here.
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
+  # The shared edge network — owned and created by the caddy service, which
   # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

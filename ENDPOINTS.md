@@ -11,8 +11,8 @@ is exposed to the internet: the address these names resolve to is a
 ## Hostnames (via the Caddy front door)
 
 TLS terminates at Caddy on `:443` with one `*.twolfe.dev` certificate;
-each name routes to the container named in the owning slice's
-`caddy.caddyfile`, and the slice picks the name. Prefer these in
+each name routes to the container named in the owning service's
+`caddy.caddyfile`, and the service picks the name. Prefer these in
 browsers; the port addresses below remain the automation path and the
 fallback when the front door is down.
 

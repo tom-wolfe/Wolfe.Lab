@@ -3,12 +3,12 @@
 The lab's model endpoint: one host process on the mini, behind the front
 door at `ai.twolfe.dev`.
 
-## Why this slice has no compose file
+## Why this service has no compose file
 
 A container on macOS gets no access to the Apple GPU, so a containerised
 model runs on CPU and is uselessly slow for anything but the smallest
 work. The model server is therefore the one thing in the lab that has to
-be a host process, and this slice is the first of a second kind: a slice
+be a host process, and this service is the first of a second kind: a service
 whose stack is a supervised agent rather than a container.
 
 What that means concretely — `ritten.json` declares an `agents` section
@@ -16,9 +16,9 @@ instead of naming a compose file, `lab deploy` renders it to a launchd
 unit and bootstraps it, and there is nothing to install into the release
 directory because nothing on the node reads from there. The declaration
 is platform-neutral, so when the primary node stops being a Mac this
-slice does not change; only which renderer the CLI registers does.
+service does not change; only which renderer the CLI registers does.
 
-It still contributes a `caddy.caddyfile` like any other slice, which the
+It still contributes a `caddy.caddyfile` like any other service, which the
 caddy deploy gathers from the repo.
 
 ## Reachability, and the honest cost of it
@@ -45,7 +45,7 @@ with the tailnet.
 
 Nothing may depend on it. It is the optional tier of the mail event
 scanner: an email with an attached invitation or structured data is
-handled without a model at all, and only prose needs one. If this slice
+handled without a model at all, and only prose needs one. If this service
 is down, the watcher stops at the first email that needs a model and
 reads on from it when the model is back; nothing is skipped, and a stall
 past 15 minutes pages through the watcher's health check.
@@ -131,7 +131,7 @@ They live on Data2, not where ollama would put them. The mini has a
 4–10 GB of that — so the default `~/.ollama/models` would put the lab one
 careless `ollama pull` away from a full boot drive, which macOS handles
 badly. `OLLAMA_MODELS` points at `/Volumes/Data2/ollama/models` and the
-slice declares the volume, so `lab deploy` refuses to run while the
+service declares the volume, so `lab deploy` refuses to run while the
 drive is unmounted rather than converging onto a shadow path.
 
 They are not backed up: a model is a re-pullable artefact, not state.
@@ -151,7 +151,7 @@ tens of seconds — which is the thing to change first if the scanner feels
 slow. `OLLAMA_KEEP_ALIVE=-1` in the `environment` block pins it resident
 at the cost of holding the RAM.
 
-Which model fills a role is this slice's decision; which role to ask
+Which model fills a role is this service's decision; which role to ask
 for is the caller's.
 
 ## Order of operations
