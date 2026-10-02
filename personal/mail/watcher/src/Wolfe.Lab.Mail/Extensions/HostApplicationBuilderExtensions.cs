@@ -32,6 +32,7 @@ internal static class HostApplicationBuilderExtensions
                         MailKit.Telemetry.ImapClient.ActivitySourceName,
                         MailKit.Telemetry.SmtpClient.ActivitySourceName)
                     .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
                 )
                 .WithMetrics(metrics => metrics
                     .AddMeter(
@@ -40,6 +41,7 @@ internal static class HostApplicationBuilderExtensions
                         MailKit.Telemetry.SmtpClient.MeterName,
                         "System.Runtime")
                     .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
                 )
                 .WithLogging(configureBuilder: null, configureOptions: logging =>
                 {
