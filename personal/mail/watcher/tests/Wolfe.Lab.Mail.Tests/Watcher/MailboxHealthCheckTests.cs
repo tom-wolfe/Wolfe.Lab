@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net.Sockets;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Wolfe.Lab.Mail.Services.Watcher;
 
@@ -46,16 +48,49 @@ public class MailboxHealthCheckTests
     {
         // What the endpoint is for: the reader learns why without opening the container's logs.
         var state = new MailboxState(_time);
-        state.Lost("SocketException: Name or service not known");
+        state.Lost(NotKnown, default);
 
         (await Check(state)).Description.ShouldNotBeNull().ShouldContain("Name or service not known");
+    }
+
+    [Fact]
+    public async Task Unhealthy_CarriesTheExceptionItself()
+    {
+        // The failed check's log is written from the result, so without the exception it has the
+        // message and no stack trace.
+        var state = new MailboxState(_time);
+        state.Lost(NotKnown, default);
+
+        (await Check(state)).Exception.ShouldBeSameAs(NotKnown);
+    }
+
+    [Fact]
+    public async Task Unhealthy_LeadsToTheTraceTheSessionEndedIn()
+    {
+        using var source = new ActivitySource(nameof(Unhealthy_LeadsToTheTraceTheSessionEndedIn));
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = candidate => candidate == source,
+            Sample = (ref _) => ActivitySamplingResult.AllDataAndRecorded
+        };
+        ActivitySource.AddActivityListener(listener);
+
+        var ended = new ActivityContext(ActivityTraceId.CreateRandom(), ActivitySpanId.CreateRandom(), ActivityTraceFlags.Recorded);
+        var state = new MailboxState(_time);
+        state.Lost(NotKnown, ended);
+
+        using var probe = source.StartActivity("probe").ShouldNotBeNull();
+        var result = await Check(state);
+
+        result.Description.ShouldNotBeNull().ShouldContain(ended.TraceId.ToString());
+        probe.Links.ShouldContain(link => link.Context == ended);
     }
 
     [Fact]
     public async Task Healthy_AgainOnceItReconnects()
     {
         var state = new MailboxState(_time);
-        state.Lost("SocketException: Name or service not known");
+        state.Lost(NotKnown, default);
         state.Cycled();
 
         var result = await Check(state);
@@ -63,6 +98,8 @@ public class MailboxHealthCheckTests
         result.Status.ShouldBe(HealthStatus.Healthy);
         result.Description.ShouldNotBeNull().ShouldNotContain("Name or service not known");
     }
+
+    private static readonly SocketException NotKnown = new((int)SocketError.HostNotFound, "Name or service not known");
 
     private static Task<HealthCheckResult> Check(MailboxState state) =>
         new MailboxHealthCheck(state).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);

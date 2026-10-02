@@ -26,6 +26,10 @@ public class TelemetryTests
 
         using var smtp = new ActivitySource(MailKit.Telemetry.SmtpClient.ActivitySourceName).StartActivity("probe");
         smtp.ShouldNotBeNull("MailKit's SMTP spans are not being recorded.");
+
+        // A health probe's log carries its request's trace ID, which leads nowhere unless recorded.
+        using var request = new ActivitySource("Microsoft.AspNetCore").StartActivity("probe");
+        request.ShouldNotBeNull("health requests are not being recorded, so a failed check's trace ID leads nowhere.");
     }
 
     [Fact]
