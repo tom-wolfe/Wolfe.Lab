@@ -15,7 +15,7 @@ a failure visible outranks anything that adds a new thing to fail.
 A backup nobody has restored from has not shipped, so this is the first
 item by the ordering principle: it makes the one failure that is silent
 until it is total — an unrestorable backup — visible. The weekly half is
-in place: each slice's `lab restore-drill` restores its `backup.verify` paths
+in place: each service's `lab restore-drill` restores its `backup.verify` paths
 from its latest snapshot and asserts them, and `lab restore` is the
 restore itself. Honest scope: that proves the files come back, not that
 the service boots on them.
@@ -111,7 +111,7 @@ step is safe to stop at, and the lab keeps running on the mini throughout:
 2. Make it a node that does nothing: chezmoi profile, Tailscale, host
    runner, Beszel agent, Gatus check. The mini is untouched and still
    primary; this proves the machine before anything depends on it.
-3. With the 990 Pro in, migrate slices one at a time, Forgejo last because
+3. With the 990 Pro in, migrate services one at a time, Forgejo last because
    it runs the deploys. Each keeps its `backup` section and takes the
    node's own restic path (`restic/README.md`, "From a Linux node").
 4. Media onto the 990 Pro. Then the HDDs, one at a time: wipe the emptied
@@ -120,7 +120,7 @@ step is safe to stop at, and the lab keeps running on the mini throughout:
    that window B2 is the only other copy.
 5. The mini stops being primary.
 
-Step 3 restores each slice's state onto new hardware and boots the service
+Step 3 restores each service's state onto new hardware and boots the service
 on it. That **is** the boot-on-restore drill #1 asks for, provided it goes
 through `lab restore` rather than by hand, so the migration retires that
 half of #1 instead of deferring it.
@@ -186,11 +186,11 @@ is `monitoring/grafana`, the collectors `monitoring/alloy`.
   a broken front door must not hide the evidence of its own failure
   (the same reason the Beszel agents dial the hub on `:8090`). The
   Tailscale policy lets every node reach that port.
-- **A slice declares its own collection, in Docker labels.** Alloy
+- **A service declares its own collection, in Docker labels.** Alloy
   discovers containers through the socket; a compose file that wants
   its metrics scraped says so on the service (`lab.metrics.port`,
   `lab.metrics.path`), so no central list of targets exists to drift —
-  the "a slice owns everything about itself" shape from #6, before the
+  the "a service owns everything about itself" shape from #6, before the
   agent. Logs need no label: every container's are collected.
 - **The backend on the mini, on its own disk.** Loki and Tempo as single
   binaries on the filesystem, Prometheus in its own TSDB, all on the
@@ -345,7 +345,7 @@ formats, each read by code of its own:
     directory, with no declaration of its own;
   - a **service** is the unit the catalog lists: a `kind: service`
     document in its directory, reversing platform/lab/README.md's "a
-    slice never carries a declaration of its own", since its name, what
+    service never carries a declaration of its own", since its name, what
     it is and its links belong to the service, not to any one of its
     components;
   - a **component** is a part of a service that the lab operates: a
@@ -698,11 +698,11 @@ It works, and it has four costs:
   pull request code, planned on the mini, with every secret.
 - **Pushing is the only way anything converges.** Nothing notices drift;
   a node that missed a deploy stays behind until the next push.
-- **Slices deploy one at a time, but some config belongs to the whole
-  repo.** Every slice carries a `caddy.caddyfile`, and the front door's
+- **Services deploy one at a time, but some config belongs to the whole
+  repo.** Every service carries a `caddy.caddyfile`, and the front door's
   hook has to gather them; Gatus checks, the collectors' scrape targets
   (#11) and backup schedules are the same shape.
-- **A slice does not own its own deployment.** Where a component runs is
+- **A service does not own its own deployment.** Where a component runs is
   a `runs-on` in a workflow file under `.forgejo/`, not a fact of the
   component, and a node is onboarded by hand.
 
@@ -723,22 +723,22 @@ repo.**
 
 **`lab` as an agent.** A daemon on every node — the mail watcher's
 .NET hosting pattern, installed by the kernel — that deploys *the repo
-at a commit*, not a slice at a time, with the deploy code the CLI
+at a commit*, not a service at a time, with the deploy code the CLI
 already has:
 
 - **A component declares where it runs**, in its own declaration (#14), so
-  "what runs on this node" is a question the repo answers; the per-slice
-  deploy workflows go, and each slice owns everything about itself.
+  "what runs on this node" is a question the repo answers; the per-service
+  deploy workflows go, and each service owns everything about itself.
 - **What is no longer placed is torn down.** The agent remembers what it
   deployed on its node; a component placed elsewhere, or deleted, is
   stopped, its unit retired, its artifacts removed and its unused
   package versions pruned. Its state under `${LAB_DATA}` is kept — the
   old copy is the safety net until the new node's first backup lands.
-- **Cross-slice config is published, not gathered**: each component
+- **Cross-service config is published, not gathered**: each component
   publishes its routes, checks and scrape targets to the config plane
   (#8) as it deploys, and caddy, Gatus and Alloy render from what is
   published — reloading only when it changed. No consumer reads another
-  slice's files.
+  service's files.
 - **A merge is the desired state, a revert the rollback**, and drift is
   noticed because the agent keeps looking.
 - **What changed is decided the way CI decides it.** The agent keeps,
@@ -876,7 +876,7 @@ other than Tom, a changed provider or lock file, a new `external` or
 is left is checking: one workflow in the containerised pool that finds
 the components a pull request changed and runs each one's `lab check`
 (the path filter gate already does half of this). The next best thing
-to pipeline files living in their slices.
+to pipeline files living in their services.
 
 **The agent is the lab's own** (#14). A host of its own beside the
 run-once CLI — the Generic Host, over the lab's domain — driven by
@@ -938,14 +938,14 @@ every node and so the first that needs configuration to change under
 it; the secrets half once the restore drills (#1) have passed — the
 offsite copy exists first and is proven, then the origin moves.
 
-**The config half.** The first cross-slice values are already here,
+**The config half.** The first cross-service values are already here,
 homed nowhere: the runner registration template reads Forgejo's
 `ROOT_URL` out of `platform/forgejo/compose/compose.yaml` with a cross-tree `include`, seven tofu roots carry the Garage
 endpoint as a `macmini.local` literal, the tailnet suffix is typed into
 fourteen files, and the mini's LAN address appears as two different IPs
 (`network/caddy/tofu/variables.tf`, `platform/forgejo/README.md`). Every one is retyped
-by the Linux move (#13). Hardcoding one slice's fact into another is the
-thing to refuse; a consumer deriving it from the owning slice's files
+by the Linux move (#13). Hardcoding one service's fact into another is the
+thing to refuse; a consumer deriving it from the owning service's files
 is only a consumer's guess at a format that isn't its own.
 
 **What it is for: configuration that changes without a restart.** The
@@ -995,9 +995,9 @@ every consumer sees only `IConfiguration`, so the swap is one provider.
 **Consul KV**, a stateful cluster for one feature, whose blocking
 queries are the push the bus already gives.
 
-**One owner per key.** Keys are namespaced by the slice that owns them
+**One owner per key.** Keys are namespaced by the service that owns them
 (`media/jellyfin/…`, by area), and two writers publish, never
-into another slice's namespace:
+into another service's namespace:
 
 - **Tofu publishes what only exists after an apply** — endpoints,
   connection strings, addresses — as S3 objects on its apply, so the
@@ -1030,7 +1030,7 @@ and Alloy's scrape targets are the same pattern. Placement comes free:
 keys are published where a component deploys and removed when it is
 torn down, so the page shows what runs, wherever it runs. The
 well-known keys — endpoint, health, route, scrape — have a small typed
-schema: a contract between slices, not free text. And the inverted
+schema: a contract between services, not free text. And the inverted
 failure mode matters most here, since a check that was never published
 is a status page that says nothing is wrong: a failed deploy leaves its
 keys in place, only teardown removes them, and each renderer reports
@@ -1139,7 +1139,7 @@ restart.
 Two halves with different costs, in that order.
 
 **The docs half: runbooks readable from a phone.** The READMEs are the
-runbooks — each slice's `RUNBOOK.md` — and the
+runbooks — each service's `RUNBOOK.md` — and the
 drills (#1) are what prove them. What is missing is a way to *follow*
 one without a checked-out repo and a text editor. Cheapest stopgap,
 available today: Forgejo renders every README in the browser, so
@@ -1148,7 +1148,7 @@ docs site built from the repo's markdown — MkDocs Material or similar,
 built by a workflow on push on the containerised runner (#6), served by a static container behind caddy at
 `docs.twolfe.dev`. One convention decides the rest: procedures
 meant to be followed live in a `runbooks/` tree (or a "Runbook" section
-per slice README) so the site can put them on a page of their own, apart
+per service README) so the site can put them on a page of their own, apart
 from the design prose nobody reads at 2 a.m.
 
 **The UI half: a window into the lab and its agent.** Which one —
@@ -1227,7 +1227,7 @@ path, on the same machine: `media/jellyfin/compose/compose.yaml` bind-mounts
 `~/Library/Application Support/jellyfin` at the same absolute path
 inside the container and overrides every `JELLYFIN_*_DIR` to match,
 because the database stores absolute paths and item IDs derive from
-them. Every other slice keeps state under `~/Docker/<slice>`; this is
+them. Every other service keeps state under `~/Docker/<service>`; this is
 the one mount rooted in a macOS user directory, and the reason its
 restore lands under `Users/tomwolfe/Library/…`. The gain is small —
 one convention, one less exception in the restore steps — and the cost
@@ -1237,7 +1237,7 @@ change the four variables. Only worth doing after the restore drills
 (#1), and only if the exception bothers you more than the rewrite does.
 
 #13 removes the choice. `~/Library/Application Support` does not exist on
-Linux, so the path moves when the slice migrates and the rewrite becomes
+Linux, so the path moves when the service migrates and the rewrite becomes
 part of that step rather than optional cleanup.
 
 #14 brings it forward: a backup's paths are relative to its service's
@@ -1427,7 +1427,7 @@ writes constantly, precisely the workload that wears SD cards out.
 **HA Container, not HA OS.** HA OS is an appliance: it cannot be a chezmoi
 machine, and its config lives inside Supervisor. HA Container on Raspberry
 Pi OS makes the Pi an ordinary managed machine and HA an ordinary compose
-slice. The cost is losing the add-on ecosystem (Zigbee2MQTT, Node-RED),
+service. The cost is losing the add-on ecosystem (Zigbee2MQTT, Node-RED),
 which is only a loss if those are wanted.
 
 **On declaring it.** There is no usable OpenTofu provider — the only one
@@ -1444,7 +1444,7 @@ the credentials aren't. That makes HA *better* on this axis than beszel,
 whose alert thresholds have no file representation at all.
 
 **The structural cost is paid.** The Pi is a managed node with its own
-runner; what is left here is one compose slice, and the Pi's backup path for
+runner; what is left here is one service run as a compose stack, and the Pi's backup path for
 its state.
 
 **The bigger reason is events, not the devices.** Presence from the
@@ -1521,7 +1521,7 @@ watcher is already the plan.
 
 **RabbitMQ**, because it speaks AMQP to the lab's own services *and*
 MQTT, through its plugin, to Home Assistant, so one broker covers both
-and HA is a participant rather than a second bus. A compose slice on the
+and HA is a participant rather than a second bus. A compose stack on the
 mini, tailnet-only.
 
 The shape, roughly:

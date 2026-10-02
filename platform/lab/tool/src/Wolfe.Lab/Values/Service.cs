@@ -3,36 +3,36 @@ using Ritten.Engine.FileSystem;
 namespace Wolfe.Lab.Values;
 
 /// <summary>
-/// A slice whose files other components read: the one place a component looks outside its own
-/// directory, on purpose, because the slice owns what those files declare.
+/// A service whose files other components read: the one place a component looks outside its own
+/// directory, on purpose, because the service owns what those files declare.
 /// </summary>
 /// <remarks>
-/// Found by walking up from the component, looking at each level for the slice itself or inside
+/// Found by walking up from the component, looking at each level for the service itself or inside
 /// one of that level's areas (<c>platform/restic</c>), so which area holds it is the layout's
 /// business. The walk stops at the checkout's root: past it, looking inside every sibling would
 /// be looking through the node's home directory.
 /// </remarks>
-public sealed record Slice(string Name)
+public sealed record Service(string Name)
 {
     /// <summary>
     /// The repositories every backup snapshots into.
     /// </summary>
-    public static Slice Restic { get; } = new("restic");
+    public static Service Restic { get; } = new("restic");
 
     /// <summary>
     /// The object store, and the tofu state backend every root shares.
     /// </summary>
-    public static Slice Garage { get; } = new("garage");
+    public static Service Garage { get; } = new("garage");
 
     /// <summary>
-    /// The nearest copy of <paramref name="fileName"/> in this slice above <paramref name="from"/>,
+    /// The nearest copy of <paramref name="fileName"/> in this service above <paramref name="from"/>,
     /// or null when the checkout has none.
     /// </summary>
     public IFile? FindFile(IDirectory from, string fileName)
     {
         for (var directory = from; directory is not null; directory = Parent(directory))
         {
-            if (Candidates(directory).Select(slice => slice.GetFile(fileName)).FirstOrDefault(file => file.Exists) is { } found)
+            if (Candidates(directory).Select(service => service.GetFile(fileName)).FirstOrDefault(file => file.Exists) is { } found)
             {
                 return found;
             }

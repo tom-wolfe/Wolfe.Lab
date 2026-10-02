@@ -3,7 +3,7 @@ using Wolfe.Lab.Workflows.Ollama.Models;
 namespace Wolfe.Lab.Workflows.Ollama.Steps;
 
 /// <summary>
-/// Judges the component's roles on its own file, and against every other server of the slice.
+/// Judges the component's roles on its own file, and against every other server of the service.
 /// </summary>
 /// <remarks>
 /// Either side of a disagreement fails its own check, so a pull request that changes only one
@@ -14,7 +14,7 @@ internal sealed class CheckRoles(DeclaredRoles declared, IFileSystem fileSystem,
 {
     public StepResult Run()
     {
-        var siblings = SliceComponents.Read(fileSystem.ProjectRoot);
+        var siblings = ServiceComponents.Read(fileSystem.ProjectRoot);
         var errors = RoleRules.Local(declared.Models)
             .Concat(RoleRules.Across(siblings))
             .Select(message => new Error(message))

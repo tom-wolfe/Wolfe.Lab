@@ -3,10 +3,10 @@
 The torrent client, containerized behind a NordVPN tunnel — and the reason
 the mini itself is no longer on NordVPN.
 
-## Why this slice exists
+## Why this service exists
 
 This is the Tailscale precondition from `ROADMAP.md`, built as its own
-slice. The native Transmission.app relied on the host NordVPN app, and a
+service. The native Transmission.app relied on the host NordVPN app, and a
 host VPN on macOS is all-or-nothing: Nord offers no app-level split
 tunnelling there (Apple's Big Sur networking changes; the browser
 extension is their only option), so *every* outbound connection the lab

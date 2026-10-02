@@ -40,7 +40,7 @@ Proton account's, and they are what the watcher authenticates with.
 
     op item create --vault Wolfe.Lab --category login --title proton-bridge username=<the username> password=<the password>
 
-Then deploy the slice — merge, or `lab deploy` from `personal/mail/bridge/` in a checkout
+Then deploy the service — merge, or `lab deploy` from `personal/mail/bridge/` in a checkout
 on the mini.
 
 ## Check it is serving

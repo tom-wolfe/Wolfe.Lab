@@ -21,7 +21,7 @@ services:
       # State is data — lives outside the repo, like every other stack.
       # This one directory is the WHOLE hub: the SQLite database holding
       # metrics history, registered systems, alert thresholds and the
-      # notification URLs. Unlike every other slice, none of that is
+      # notification URLs. Unlike every other service, none of that is
       # declarable in tofu (there is no Beszel provider) — see README.md.
       - /Users/tomwolfe/Docker/beszel/data:/beszel_data
 
@@ -52,7 +52,7 @@ services:
       start_period: 15s
 
 networks:
-  # The shared edge network — owned and created by the caddy slice, which
+  # The shared edge network — owned and created by the caddy service, which
   # must be deployed once before this stack. See network/caddy/README.md.
   lab:
     external: true

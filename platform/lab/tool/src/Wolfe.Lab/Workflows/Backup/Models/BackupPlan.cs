@@ -1,7 +1,7 @@
 namespace Wolfe.Lab.Workflows.Backup.Models;
 
 /// <summary>
-/// What one slice's snapshot holds, and what has to be quiet while it is taken.
+/// What one service's snapshot holds, and what has to be quiet while it is taken.
 /// </summary>
 /// <param name="Paths">The directories to snapshot.</param>
 /// <param name="Excludes">Absolute paths restic leaves out.</param>

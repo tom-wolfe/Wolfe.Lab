@@ -31,7 +31,7 @@ public static class LabApplication
         var builder = WorkflowApplication.CreateBuilder();
 
         // One workflow per component shape.
-        // The regular shapes — a compose stack, a tofu root, a backup — carry most of the lab; the rest are the components only one slice has.
+        // The regular shapes — a compose stack, a tofu root, a backup — carry most of the lab; the rest are the components only one service has.
         builder.Workflows
             .Add<DockerWorkflow>()
             .Add<DotNetServiceWorkflow>()

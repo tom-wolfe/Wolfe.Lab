@@ -18,9 +18,9 @@ document whether or not any desktop is awake.
 
 ## SQLite, not Postgres
 
-Paperless supports three databases and defaults to SQLite. This slice
+Paperless supports three databases and defaults to SQLite. This service
 keeps the default: one user, a database that stays small, and a backup
-that is the same stop-snapshot-verify pipeline every SQLite slice runs
+that is the same stop-snapshot-verify pipeline every SQLite service runs
 (`backup/ritten.json`). Postgres would mean a third container and a dump job
 of its own, as immich has, for a concurrency the archive will not see.
 The document exporter is the migration path if that ever changes.
@@ -32,7 +32,7 @@ durable — a lost queue is a document consumed again.
 ## Where the documents live
 
 Split the way immich is: the database, index and classifier on the
-internal disk beside the other slices' state, where SQLite wants an
+internal disk beside the other services' state, where SQLite wants an
 SSD and the whole of it stays small; the documents, the inbox and the
 export directory on Data2 with the rest of the media, because the
 internal disk has no room for an archive that only grows. Everything
@@ -166,7 +166,7 @@ UI's trash holds them for thirty days first.
   door; that is what alerts.
 - The container starts as root and drops to `USERMAP_UID`, chowning its
   directories on the way — so the four bind mounts end up owned by the
-  host user, as every slice's do.
+  host user, as every service's do.
 - The restore sets `media/` aside as `/Volumes/Data2/paperless/media.bak-<timestamp>`
   beside it; delete that once the restored archive has been looked at.
 - Nothing here is exposed to the internet; the name resolves to the

@@ -17,6 +17,9 @@ rather than versioned — the lab is continuous, not released.
 
 - **Enhanced Mail Watcher telemetry.** The mail watcher now includes ASP.NET traces.
 
+- **"Slice" is retired; a service is a service.** The repository's word for a
+  service's directory is gone, prose and code alike (ROADMAP #14).
+
 ### Fixed
   
 - Mail watcher no longer crashes on inbox 0.

@@ -13,7 +13,7 @@
 {{- $secret := onepasswordRead (printf "op://Wolfe.Lab/forgejo-runner-%s/credential" .name) | trim -}}
 {{- $hex := hexEncode (substr 0 16 $secret) -}}
 {{- $uuid := printf "%s-%s-%s-%s-%s" (substr 0 8 $hex) (substr 8 12 $hex) (substr 12 16 $hex) (substr 16 20 $hex) (substr 20 32 $hex) -}}
-{{- /* Instance address = Forgejo's ROOT_URL from the slice's own compose
+{{- /* Instance address = Forgejo's ROOT_URL from the service's own compose
        file (the filesystem is the stack reference — as platform/forgejo/tofu/webhook.tf). */ -}}
 {{- $compose := include "../../forgejo/compose/compose.yaml" | fromYaml -}}
 {{- $address := $compose.services.server.environment.FORGEJO__server__ROOT_URL | trimSuffix "/" -}}

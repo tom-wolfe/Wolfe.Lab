@@ -3,7 +3,7 @@ using Ritten.Engine.FileSystem;
 namespace Wolfe.Lab.Clients.Restic.Steps;
 
 /// <summary>
-/// Reads the local repository from the restic slice's env file, and checks it is really there.
+/// Reads the local repository from the restic service's env file, and checks it is really there.
 /// </summary>
 [Step("resolve repository", StepKind.Work)]
 internal sealed class ResolveRepository(ISecretProvider secrets, IFileSystem fileSystem, IWorkflowLog log)

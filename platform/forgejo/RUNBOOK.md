@@ -80,7 +80,7 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 ## Backup
 
 Runs itself: `.forgejo/workflows/forgejo-backup.yaml` snapshots this
-slice nightly at 02:25 and drills the restore straight after
+service nightly at 02:25 and drills the restore straight after
 (`backup/ritten.json` declares what). Manual snapshot — run the backup workflow
 from the Actions tab, or:
 
@@ -216,7 +216,7 @@ Then lock it down, since this is a LAN server that doesn't need public signups:
 2. Set `FORGEJO__service__DISABLE_REGISTRATION: "true"` in `compose.yaml`
    (this one *is* safe to manage via env — it's ordinary config, and setting it
    is idempotent)
-3. Redeploy — merge, or `lab deploy` from the slice in a checkout.
+3. Redeploy — merge, or `lab deploy` from the service in a checkout.
 
 ## After a reboot
 

@@ -10,7 +10,7 @@ namespace Wolfe.Lab.Workflows.Chezmoi.Steps;
 /// fails here instead of on that machine's next update.
 /// </summary>
 /// <remarks>
-/// The source handed to chezmoi is the checkout, not the slice: the checkout's
+/// The source handed to chezmoi is the checkout, not the service: the checkout's
 /// <c>.chezmoiroot</c> names <c>platform/chezmoi/home</c>, which is how chezmoi itself finds the tree on a
 /// node. The listing is the review aid — what each machine gets — and goes to the detailed log.
 /// </remarks>

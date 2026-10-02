@@ -14,7 +14,7 @@ public sealed record OllamaOptions : WorkflowSettings
     public IReadOnlyList<HostPath> Volumes { get; init; } = [];
 
     /// <summary>
-    /// The agents the node keeps running for this slice, by name.
+    /// The agents the node keeps running for this service, by name.
     /// </summary>
     public IReadOnlyDictionary<string, AgentOptions> Agents { get; init; } = new Dictionary<string, AgentOptions>();
 

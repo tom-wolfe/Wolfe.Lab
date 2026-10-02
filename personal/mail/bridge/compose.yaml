@@ -23,7 +23,7 @@ services:
       TZ: Europe/London
 
     volumes:
-      # A NAMED volume, unlike every other slice's bind mount, and on
+      # A NAMED volume, unlike every other service's bind mount, and on
       # purpose: /root holds a GPG home and a `pass` store, and GPG refuses
       # to run unless its directory is 0700 — which a VirtioFS bind mount
       # from macOS does not reliably present. Inside the VM the question

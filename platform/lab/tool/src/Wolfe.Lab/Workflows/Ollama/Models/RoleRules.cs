@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Wolfe.Lab.Workflows.Ollama.Models;
 
 /// <summary>
-/// What a component's roles must satisfy, alone and against the other components of the slice.
+/// What a component's roles must satisfy, alone and against the other components of the service.
 /// </summary>
 internal static partial class RoleRules
 {
@@ -37,7 +37,7 @@ internal static partial class RoleRules
     /// "not found" every evening, where the point of a role is to degrade to the mini's best
     /// instead. A role marked identical must also name the same model everywhere.
     /// </summary>
-    /// <param name="components">Every component of the slice, by name.</param>
+    /// <param name="components">Every component of the service, by name.</param>
     public static IEnumerable<string> Across(IReadOnlyDictionary<string, ModelOptions> components)
     {
         var names = components.Values

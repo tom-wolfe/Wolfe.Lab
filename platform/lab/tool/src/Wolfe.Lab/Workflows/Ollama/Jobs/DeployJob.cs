@@ -25,7 +25,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
 
     public override string Name => "deploy";
 
-    public override string Description => "Converges the model server's agent, pulls the models the slice declares and points its roles at them.";
+    public override string Description => "Converges the model server's agent, pulls the models the service declares and points its roles at them.";
 
     public override IReadOnlyList<Step> Steps { get; } =
     [

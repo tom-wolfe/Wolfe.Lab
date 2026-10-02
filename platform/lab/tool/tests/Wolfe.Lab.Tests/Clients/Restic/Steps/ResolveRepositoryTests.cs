@@ -17,7 +17,7 @@ public class ResolveRepositoryTests : IDisposable
         _checkout.CreateSubdirectory(".git");
         var component = _checkout.CreateSubdirectory("files").CreateSubdirectory("backup");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-        _envFile = Path.Combine(_checkout.CreateSubdirectory(Slice.Restic.Name).FullName, ResolveRepository.FileName);
+        _envFile = Path.Combine(_checkout.CreateSubdirectory(Service.Restic.Name).FullName, ResolveRepository.FileName);
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(call => call.Arg<string>().StartsWith("op://", StringComparison.Ordinal) ? $"value-of-{call.Arg<string>()}" : call.Arg<string>());
     }
@@ -85,7 +85,7 @@ public class ResolveRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_FailsWhenTheCheckoutHasNoResticSlice()
+    public async Task Run_FailsWhenTheCheckoutHasNoResticService()
     {
         var result = await Step().Run(TestContext.Current.CancellationToken);
 
@@ -93,14 +93,14 @@ public class ResolveRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Run_FindsTheSliceInsideAnArea()
+    public async Task Run_FindsTheServiceInsideAnArea()
     {
-        // The layout areas give it: the slice under platform/, the component under another area.
+        // The layout areas give it: the service under platform/, the component under another area.
         File.Delete(_envFile);
         var component = _checkout.CreateSubdirectory("media").CreateSubdirectory("jellyfin").CreateSubdirectory("backup");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-        var slice = _checkout.CreateSubdirectory("platform").CreateSubdirectory(Slice.Restic.Name);
-        await File.WriteAllTextAsync(Path.Combine(slice.FullName, ResolveRepository.FileName),
+        var service = _checkout.CreateSubdirectory("platform").CreateSubdirectory(Service.Restic.Name);
+        await File.WriteAllTextAsync(Path.Combine(service.FullName, ResolveRepository.FileName),
             "RESTIC_REPOSITORY=sftp:macmini:/Volumes/Data2/restic\nRESTIC_PASSWORD=\"op://Wolfe.Lab/restic-repo/password\"\n",
             TestContext.Current.CancellationToken);
 
@@ -112,7 +112,7 @@ public class ResolveRepositoryTests : IDisposable
     [Fact]
     public async Task Run_LooksNoFurtherThanTheCheckout()
     {
-        // A slice beside the checkout, not in it: finding it would mean the walk had gone on
+        // A service beside the checkout, not in it: finding it would mean the walk had gone on
         // through whatever holds the checkout — on a node, its home directory.
         var outside = Directory.CreateTempSubdirectory("lab-outside-");
         try
@@ -121,7 +121,7 @@ public class ResolveRepositoryTests : IDisposable
             checkout.CreateSubdirectory(".git");
             var component = checkout.CreateSubdirectory("files").CreateSubdirectory("backup");
             _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-            var stray = outside.CreateSubdirectory("elsewhere").CreateSubdirectory(Slice.Restic.Name);
+            var stray = outside.CreateSubdirectory("elsewhere").CreateSubdirectory(Service.Restic.Name);
             await File.WriteAllTextAsync(Path.Combine(stray.FullName, ResolveRepository.FileName),
                 "RESTIC_REPOSITORY=sftp:macmini:/Volumes/Data2/restic\n", TestContext.Current.CancellationToken);
 

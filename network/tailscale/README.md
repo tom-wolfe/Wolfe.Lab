@@ -2,7 +2,7 @@
 
 The lab's overlay network: a WireGuard mesh between the machines, run as
 a host-level client on all three Macs. There is no compose stack and no
-flow here — like chezmoi, this slice's artifact is host configuration
+flow here — like chezmoi, this service's artifact is host configuration
 (one Brewfile line) plus the decisions recorded in this file.
 
 ## Why
@@ -35,7 +35,7 @@ Three things already written down wait on it:
   mini would only add an indirection whose failure looks like the
   network's. And the tailnet is *reachability*, not privacy — the one
   workload that wants a commercial VPN egress is the torrent client,
-  handled inside the qbittorrent slice.
+  handled inside the qbittorrent service.
 - **Tailscale's coordination server is an accepted cloud dependency.**
   Headscale is rejected for the bootstrap circularity: if the lab is
   down, you can't reach the lab to fix the thing you reach the lab
@@ -106,7 +106,7 @@ the LAN and the API over the internet, none of them through the tailnet.
    watched on an Apple TV that IS on the tailnet. Nothing left in the
    house needs the LAN path, so every service went down to one name.
    At home this costs nothing — Tailscale connects directly over the LAN
-   rather than relaying. The mechanics live in the caddy slice
+   rather than relaying. The mechanics live in the caddy service
    (`tofu/records.tf` records the decision). Consequence: the router's
    DHCP-DNS workaround is probably retired with it, since the names now
    resolve to 100.x rather than RFC1918 — verify before removing it,
