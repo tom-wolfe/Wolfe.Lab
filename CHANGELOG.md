@@ -15,6 +15,12 @@ rather than versioned — the lab is continuous, not released.
 - **Gatus logs only warnings.** At `INFO` it logged every check of every
   endpoint, taking most of the Pi's log volume.
 
+- **Enhanced Mail Watcher telemetry.** The mail watcher now includes ASP.NET traces.
+
+### Fixed
+  
+- Mail watcher no longer crashes on inbox 0.
+
 ## 2026-10-01
 
 ### Added

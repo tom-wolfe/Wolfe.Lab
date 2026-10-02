@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Wolfe.Lab.Mail.Services.Watcher;
 
 /// <summary>
@@ -6,7 +8,6 @@ namespace Wolfe.Lab.Mail.Services.Watcher;
 internal sealed class MailboxState(TimeProvider time)
 {
     private DateTimeOffset? _cycled;
-    private string? _lost;
 
     /// <summary>
     /// The session completed another pass round the idle loop.
@@ -14,13 +15,18 @@ internal sealed class MailboxState(TimeProvider time)
     public void Cycled()
     {
         _cycled = time.GetUtcNow();
-        _lost = null;
+        Failure = null;
+        FailedIn = default;
     }
 
     /// <summary>
-    /// The session ended, and why.
+    /// The session ended, why, and the span it ended in.
     /// </summary>
-    public void Lost(string reason) => _lost = reason;
+    public void Lost(Exception failure, ActivityContext span)
+    {
+        Failure = failure;
+        FailedIn = span;
+    }
 
     /// <summary>
     /// How long since the session last turned over, or null if it never has.
@@ -30,5 +36,10 @@ internal sealed class MailboxState(TimeProvider time)
     /// <summary>
     /// Why the session ended, when it has and has not since recovered.
     /// </summary>
-    public string? Failure => _lost;
+    public Exception? Failure { get; private set; }
+
+    /// <summary>
+    /// The span <see cref="Failure"/> was recorded on, or default if none was being recorded.
+    /// </summary>
+    public ActivityContext FailedIn { get; private set; }
 }

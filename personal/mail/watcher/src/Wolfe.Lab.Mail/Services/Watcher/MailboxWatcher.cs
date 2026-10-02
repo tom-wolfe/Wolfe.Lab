@@ -50,11 +50,10 @@ internal sealed class MailboxWatcher(
             {
                 return;
             }
-            catch (Exception failure)
+            catch (Exception)
             {
-                state.Lost($"{failure.GetType().Name}: {failure.Message}");
-                log.LogWarning(failure, "The session with {Host}:{Port} ended; resuming from the watermark in {Backoff}.",
-                    options.Value.BridgeHost, options.Value.ImapPort, backoff);
+                // The phase the session ended in has already recorded why, inside its own trace.
+                log.LogInformation("Resuming from the watermark in {Backoff}.", backoff);
                 await Task.Delay(backoff, ct);
                 backoff = TimeSpan.FromSeconds(Math.Min(backoff.TotalSeconds * 2, 300));
             }
@@ -69,25 +68,60 @@ internal sealed class MailboxWatcher(
         client.ServerCertificateValidationCallback = (_, _, _, _) => true;
         client.CheckCertificateRevocation = false;
 
-        await client.ConnectAsync(options.Value.BridgeHost, options.Value.ImapPort, SecureSocketOptions.StartTls, ct);
-        await client.AuthenticateAsync(options.Value.Username, options.Value.Password, ct);
+        var (inbox, watermark) = await Phase("mail.connect", async () =>
+        {
+            await client.ConnectAsync(options.Value.BridgeHost, options.Value.ImapPort, SecureSocketOptions.StartTls, ct);
+            await client.AuthenticateAsync(options.Value.Username, options.Value.Password, ct);
 
-        var inbox = client.Inbox;
-        await inbox.OpenAsync(FolderAccess.ReadOnly, ct);
-        log.LogInformation("Watching {Host}:{Port} as {User}.", options.Value.BridgeHost, options.Value.ImapPort, options.Value.Username);
+            var inbox = client.Inbox;
+            await inbox.OpenAsync(FolderAccess.ReadOnly, ct);
+            log.LogInformation("Watching {Host}:{Port} as {User}.", options.Value.BridgeHost, options.Value.ImapPort, options.Value.Username);
 
-        var watermark = await Resume(inbox, ct);
+            return (inbox, await Resume(inbox, ct));
+        }, ct);
 
         while (!ct.IsCancellationRequested)
         {
             // After the drain, not before.
             // IDLE caps each pass at IdleLimit, so a stale one means the session has stopped
             // turning over, whatever the process is doing.
-            watermark = await Drain(inbox, watermark, ct);
+            watermark = await Phase("mail.drain", () => Drain(inbox, watermark, ct), ct);
             state.Cycled();
-            await WaitForMail(client, inbox, ct);
+            await Phase("mail.idle", () => WaitForMail(client, inbox, ct), ct);
         }
     }
+
+    /// <summary>
+    /// Runs one phase of the session as a trace of its own, and if the session ends there, records
+    /// why inside that trace — so the warning, and the health check after it, lead somewhere.
+    /// </summary>
+    /// <remarks>
+    /// One span per phase rather than one for the session: a session lasts for hours, and a span
+    /// reaches Tempo only when it ends, leaving everything beneath it orphaned until then.
+    /// </remarks>
+    private async Task<T> Phase<T>(string name, Func<Task<T>> work, CancellationToken ct)
+    {
+        // A root: nothing is current between phases.
+        using var activity = MailTelemetry.Source.StartActivity(name);
+        try
+        {
+            return await work();
+        }
+        catch (Exception failure) when (!ct.IsCancellationRequested)
+        {
+            activity?.AddException(failure).SetStatus(ActivityStatusCode.Error, failure.Message);
+            state.Lost(failure, activity?.Context ?? default);
+            log.LogWarning(failure, "The session with {Host}:{Port} ended in {Phase}.", options.Value.BridgeHost, options.Value.ImapPort, name);
+            throw;
+        }
+    }
+
+    private Task Phase(string name, Func<Task> work, CancellationToken ct) =>
+        Phase(name, async () =>
+        {
+            await work();
+            return true;
+        }, ct);
 
     /// <summary>
     /// Where to start. A first run — or a mailbox the server has renumbered — starts at the
@@ -119,12 +153,22 @@ internal sealed class MailboxWatcher(
 
     private async Task<Watermark> Drain(IMailFolder inbox, Watermark watermark, CancellationToken ct)
     {
-        var range = new UniqueIdRange(new UniqueId(watermark.LastUid + 1), UniqueId.MaxValue);
+        // Bridge refuses a UID search of an empty mailbox outright ("NO no such message"), and there
+        // is nothing to drain from one anyway. The server's EXISTS and EXPUNGE keep Count current.
+        if (inbox.Count == 0)
+        {
+            return watermark;
+        }
+
+        var after = watermark.LastUid;
+        var range = new UniqueIdRange(new UniqueId(after + 1), UniqueId.MaxValue);
         var arrived = await inbox.SearchAsync(SearchQuery.Uids(range), ct);
 
-        foreach (var uid in arrived.OrderBy(id => id.Id))
+        // "n:*" still matches the highest UID when that is below n (RFC 3501 §6.4.8). Bridge does
+        // not do this, but a server held to the letter would hand back a message already read.
+        foreach (var uid in arrived.Where(id => id.Id > after).OrderBy(id => id.Id))
         {
-            // One trace per message: where its time went, and what came of it.
+            // One span per message, beneath the drain: where its time went, and what came of it.
             using var activity = MailTelemetry.Source.StartActivity("mail.message");
             activity?.SetTag("mail.uid", uid.Id);
             try
