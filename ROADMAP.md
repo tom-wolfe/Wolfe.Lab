@@ -279,7 +279,9 @@ lab's pins.
 2. The mail watcher instrumented — the bottleneck question answered.
    *Shipped on 2026-09-29.*
 3. Collectors on the Pi and the Studio, forwarding; container and
-   host-process logs from every node. *Shipped 2026-10-02.*
+   host-process logs from every node. *Shipped 2026-10-02.* The
+   gateway later moves into Grafana's stack and the mini gets a
+   forwarder like every node (#14).
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
    each need theirs enabled — then declared for scraping. *Waits on
@@ -324,7 +326,7 @@ formats, each read by code of its own:
 - **The domain is a project of its own**, not a namespace, so the
   dependency direction is the compiler's to hold: it does no I/O and
   depends on nothing but Ritten's `Result` and `Error`. It holds the
-  model — areas, slices, components, nodes and their roles — the value
+  model — areas, services, components, nodes and their roles — the value
   objects, now foundational rather than helpers, and the rules between
   them ("a scraped service is one its compose project has"). The
   infrastructure reads files and talks to Docker, launchd, systemd and
@@ -332,14 +334,27 @@ formats, each read by code of its own:
   (#6) becomes a project of its own over the same domain, and the CLI
   stays intact beside it.
 - **The lab describes itself in files of its own**, YAML, beside what
-  they describe, rather than in `ritten.json`, which is Ritten's: one file
-  per building block — `slice.yaml`, `component.yaml`, `agent.yaml`, and
-  whatever else the design settles on — each a typed document the domain
-  reads, small because each says one thing. A slice gets a declaration
-  of its own too, reversing platform/lab/README.md's "a slice never
-  carries a declaration of its own": its name, what it is and its links
-  are the service catalog's, and belong to the slice, not to any one of
-  its components.
+  they describe, rather than in `ritten.json`, which is Ritten's: each a
+  typed document the domain reads, small because each says one thing.
+  Datadog's service catalog is the model — a service as the unit people
+  think in, with what it is, who to read about it and where its
+  dashboards and runbooks are — rather than a deployment tool's manifest.
+- **Area, service, component** is the vocabulary, the label schema's
+  already (`lab.area`, `lab.service`, `lab.component`):
+  - an **area** classifies — `media`, `monitoring` — and is the top
+    directory, with no declaration of its own;
+  - a **service** is the unit the catalog lists: a `kind: service`
+    document in its directory, reversing platform/lab/README.md's "a
+    slice never carries a declaration of its own", since its name, what
+    it is and its links belong to the service, not to any one of its
+    components;
+  - a **component** is a part of a service that the lab operates: a
+    document whose `kind:` says what it is in general and `type:` in
+    particular — `kind: workload, type: compose`.
+
+  *Slice* retires: it was the repository's word for a service's
+  directory, beside the telemetry's `lab.service` for the same thing,
+  and two names for one idea is one too many.
 - **Native files stay native.** `compose.yaml`, the Caddyfile and the
   collectors' configs are what Docker, Caddy and Alloy read, and say only
   what those need. The domain reads them only to hold a declaration to
@@ -347,38 +362,306 @@ formats, each read by code of its own:
   rather than its YAML — and never scrapes the lab's facts out of them.
 - **The end state** is a lab described as a set of metadata files, a
   portal (#9) that shows them, and an agent (#6) that operates from them.
+- **The agent is the lab's, not Ritten's — at first.** Built bespoke,
+  over the lab's own domain, until it is clear what works; only then is
+  it worth asking whether any of it generalises. Ritten stays what it was
+  started as — CI/CD for simple linear workflows, for work and for open
+  source builds — and a kit for building one's own pull-based deployment
+  agent has no use outside a homelab. This reverses #6's "agent mode is a
+  Ritten feature".
+- **Ritten runs workflows; the agent orchestrates them.** Ritten stays
+  the runner of a workflow's steps, with their rules and reports; the
+  agent decides what runs, where and when, and automates Ritten to do it.
+  `ritten.json` goes: a lab job declares `RequiresProject => false` and
+  takes its component from the lab's declarations rather than from a
+  project file, so a component is described once.
 
-**Undecided — the design work, before any code.**
+**Decided: the documents.**
 
-- **The building blocks and how they compose.** Which documents exist
-  (a component's kind — compose stack, agents, tofu root, backup — and
-  the facets any kind may carry: placement, volumes, artifacts, packages,
-  logs, metrics, routes, checks, heartbeats, backups), how a file names
-  its type (its file name, or a `kind:` inside it), and what a slice's
-  declaration passes down to its components. #8's well-known keys —
-  endpoint, health, route, scrape — are the same facets, published, so
-  they share one schema rather than having one each.
-- **Per-node differences without per-node copies.** #6's "placement is
-  configuration, not structure" in the declarations: one definition, a
-  list of nodes or a rule, and an override only for what really differs.
-- **One word for a slice.** The repository says *slice* for the folder
-  that groups a service's components, and the telemetry says `lab.service`
-  for the same thing; `slice.yaml` beside `lab.service` would be two
-  names for one idea, and `service.yaml` would collide with a compose
-  service. Settle the vocabulary once, here, before files carry it.
-- **Ritten's part.** #6 decided agent mode is a Ritten feature: the agent
-  runs Ritten's workflows on triggers. With the lab describing itself,
-  that is reopened: either the agent runs Ritten's workflows directly,
-  fed from the declarations, or Ritten shrinks to CI duty and the agent
-  operates the domain itself. What remains of `ritten.json` either way —
-  the workflow's name alone, or nothing once a component's kind selects
-  it — follows from that answer.
-- **Editing them.** A JSON Schema generated from the domain's types and
-  named in each file (`# yaml-language-server: $schema=…`) would put the
-  model's rules in the editor as well as in the check.
-- **Where the application layer lives** once there are two hosts: shared
-  by the CLI and the agent as a library of its own, or each host keeping
-  its own.
+Every document says what it is with `kind`: `service`, `node`, or one of
+the kinds of component below. By convention a service's is
+`service.yaml` and a component's `component.yaml`, but the file's name
+decides nothing (see "found by its schema").
+
+- **A service** is its catalog entry: `name`, an
+  optional `displayName`, `description`, `lifecycle`, `links` (the app,
+  its runbook, upstream docs, dashboards) and `dependsOn`, other
+  services. It passes nothing operational down to its components:
+  explicit beats inherited.
+- **A component** has the same `name`, `displayName`
+  and `description`, its `kind` and `type`, `dependsOn` (other components
+  of its own service) and its **facets**: sections that any kind may
+  carry and that mean the same in each — `runsOn`, `requiresVolumes`,
+  `artifacts`, `packages`, `logs`, `metrics`, `route`, `check`,
+  `heartbeat`, and the rest the migration finds.
+- **`name` is the identity**, a slug unique within its service, defaulting
+  to the directory's name where there is one. A file may hold several
+  documents, split by `---`, so a directory is needed only where native
+  files live: three vault backups, or a dozen once the D&D vault is one
+  per campaign, are documents in one file rather than directories.
+- **Like depends on like, and never across a service's boundary to a
+  component.** A service depends on services, a component on components
+  of its own service. What one service needs of another is published
+  through #8's config plane, a contract both sides can see — not a
+  reference into its components, which the depended-on side cannot know
+  it has and would break by changing.
+- **Telemetry attributes are derived, never declared.** `lab.area`,
+  `lab.service` and `lab.component` come from where a document sits and
+  its `name`; `host.name` and `lab.role` from the node. No attribute has
+  come to mind that is neither derivable nor better placed as a fact of
+  its own, so a service declares none.
+
+A sketch, to be held to as the schemas firm up:
+
+```yaml
+# personal/immich/service.yaml
+kind: service
+name: immich
+displayName: Immich
+description: The photo library, and the phone app's server.
+lifecycle: production
+links:
+  - { title: Immich, type: app, url: https://immich.twolfe.dev }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }
+```
+
+```yaml
+# personal/immich/compose/component.yaml
+name: compose
+description: The four containers of Immich's reference compose.
+kind: workload
+type: compose
+runsOn: [mini]
+requiresVolumes: [/Volumes/Data2]
+route: { host: immich.twolfe.dev, to: immich-server:2283 }
+check:
+  url: https://immich.twolfe.dev/api/server/ping
+  every: 2m
+  expect: { status: 200, body: { res: pong } }
+metrics:
+  immich-server: { port: 8081 }
+```
+
+```yaml
+# personal/obsidian/vaults.yaml
+name: main-vault
+kind: backup
+type: git
+path: ~/Obsidian/main
+repository: http://macmini.local:3000/Obsidian/Wolfe.Main.git
+---
+name: dnd-vault
+kind: backup
+type: git
+path: ~/Obsidian/dnd
+repository: http://macmini.local:3000/Obsidian/Wolfe.Dnd.git
+```
+
+**Decided: the kinds.** A short list the agent is built around — what
+the lab operates, not how each one-off happens to run today:
+
+| Today's workflow | `kind` / `type` | |
+| --- | --- | --- |
+| `docker`, `dotnet-service` | `workload` / `compose` | building from source is an `images` facet |
+| `agents`, `ollama` | `workload` / `agent` | ollama's pulls are a `models` facet |
+| `forgejo-runners` | `runner` / `host`, `docker` | declarative, so the agent can bootstrap a new node's runner |
+| `backup` | `backup` / `snapshot` | |
+| `obsidian` | `backup` / `git` | a component per vault |
+| `restic` | `repository` / `restic` | where backups go: retention, verification, the offsite copy |
+| `tofu` | `infrastructure` / `tofu` | |
+| `caddy-certificates` | `certificate` / `acme` | a certificate for `*.twolfe.dev`, kept renewed |
+| `image`, `dotnet-tool` | `package` / `image`, `nuget` | |
+| `chezmoi` | `machine` / `chezmoi` | the nodes' profiles: the kernel's |
+| `garage-layout` | a facet | `layout:` on Garage's workload |
+| `heartbeat`, `gatus-health` | facets | a `heartbeat:` or `check:` on what they watch |
+| `caddy-routes` | gone | Caddy renders the published `route` facets |
+| `immich-import` | not a component | a one-off operation, and a CLI command |
+
+There are no jobs: what looked like one is a declarative kind (a runner,
+a certificate, a repository), a facet of something else, or an operation
+rather than a component.
+
+**Decided: a workload's backup is a section of it.** A `backup:` in the
+workload's own `component.yaml` rather than a component of its own, so
+nothing is inherited or referred to — it is part of what it backs up,
+its release, volumes and containers already its own — and it says
+structurally what is held: a directory, a database. `kind: backup`
+remains for what is only a backup, as the vaults are. The cost is an
+agent that tells which part of a component changed, so new backup paths
+re-register a schedule rather than restart the stack, which routes and
+checks need of it anyway.
+
+**Decided: a backup is a list of what it holds, each entry typed.** So a
+component holding a database and a directory — Paperless's SQLite and
+its media — composes two entries, and a new mechanism is one new type:
+
+```yaml
+backup:
+  - type: sqlite
+    path: config/sonarr.db
+    stopContainer: sonarr
+  - type: directory
+    path: config
+    excludes: [Backups, MediaCover, logs, "logs.db*"]
+```
+
+- **Every type has the same shape — prepare, then verify — and only its
+  implementation differs.** Preparing stops what must be stopped
+  (`stopContainer`: a SQLite file copied while it is written can come
+  back corrupt) or nothing; verifying is what the type knows how to check
+  after a restore — an integrity check for SQLite, a recent dump for a
+  database that dumps itself (Immich's Postgres), the named files for a
+  directory. Garage's LMDB store is one more type, not a special case.
+- **`type`, not `kind`**, by the rule above: `sqlite` is a particular
+  backup, as `compose` is a particular workload.
+- **Paths are relative to where the component is deployed.** What it
+  ships — config, artifacts — to its release, which mirrors its
+  directory in the repository, so in the checkout such a path reads as
+  relative to the YAML file itself. What it keeps — state, and so what a
+  backup holds — to its state directory, `${LAB_DATA}/<service>` (the
+  convention already: `~/Docker/sonarr`). An absolute path is for an
+  external drive alone, and must fall under one of the component's
+  `requiresVolumes`. Jellyfin, the one service still keeping state
+  outside its state directory, moves into it first (see "Debt" below).
+
+**Decided: per-node differences are facts of the node, not copies of
+the component.** Tested on the hardest case, Alloy — one package on three
+nodes, two roles, a socket path only the Studio has, Linux on the Pi —
+every difference has a home that is not a per-node entry:
+
+- **What differs by role is two components.** The gateway and the
+  forwarders differ in everything placement cares about — responsibility,
+  where they run, what they depend on, what they expose, when they move —
+  and share only a binary and `node.alloy`. So a **forwarder** runs on
+  every node, the mini included, and forwards to the gateway as every
+  other node does; and the **gateway**, which needs none of the host's
+  visibility that made Alloy a host process, becomes a container in
+  Grafana's own stack (`monitoring/grafana`), writing to the stores over
+  its `telemetry` network and publishing only `:4417`–`:4419` — so it
+  moves with the backend because it is part of it. The mini runs one more
+  Alloy, for a forwarder identical everywhere.
+- **What differs by platform is a placeholder**: `alloy-{platform}.zip`,
+  as a package's names already expand `{version}`.
+- **What differs by supervisor is the host's to interpret.** launchd or
+  systemd is already the host's choice of unit; so is where an agent's
+  log goes — a file the host names and declares to the collector, or the
+  journal — so `log` stops being declared.
+- **What differs by node is the node's**, declared once (below) rather
+  than in every component that needs it: its role, its platform, its
+  Docker socket, its drives, its address. `LAB_HOST` and `LAB_ROLE` are
+  injected into every agent by the host, never written.
+- **What one component needs of another is a reference** — within its
+  service, by the rule above, or through #8 across services: the
+  forwarders' gateway address is the gateway's published endpoint.
+
+The Beszel agent passes the same test — its socket the same fact, its
+`HUB_URL` the hub's placement, its `EXTRA_FILESYSTEMS` the mini's drives —
+so the design has **no per-node overrides** until something needs one.
+
+```yaml
+# monitoring/alloy/forwarder/component.yaml
+name: forwarder
+description: Each node's collector, forwarding to the gateway.
+kind: workload
+type: agent
+runsOn: every node
+package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
+program: "alloy-{platform}"
+arguments: [run, forwarder.alloy, "--storage.path={state}", --disable-reporting]
+environment:
+  LAB_GATEWAY: "{gateway.address}"
+  DOCKER_HOST: "{node.docker}"
+```
+
+**Decided: nodes are declared, in one file.** `platform/nodes.yaml`, a
+document per node — few enough that one file holds them all, and the one
+declaration that is not a service's:
+
+```yaml
+# platform/nodes.yaml
+kind: node
+name: studio
+role: hybrid
+platform: darwin-arm64
+address: macstudio.tailf823b8.ts.net
+docker: unix:///Users/tomwolfe/.docker/run/docker.sock
+---
+kind: node
+name: mini
+role: server
+# …
+```
+
+They are what placement matches on — `runsOn: every node`, `every
+server`, `[mini]` — and what `lab init` (#6) onboards.
+
+**Decided: one placeholder syntax, `{dotted.lower}`.** Everything a
+declaration expands — `{platform}`, `{version}`, `{state}`,
+`{node.docker}`, `{gateway.address}` — is written one way; `${LAB_ROOT}`
+and its kin retire from declarations.
+
+**Decided: any document in any lab file, found by its schema.** A file's
+name says nothing: every YAML file git tracks, three directories deep at
+most, is read, and the lab's are those naming its schema in their first
+line — which is also what gives an editor the model's rules:
+
+```yaml
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: immich
+```
+
+- **Only what git tracks.** The agent (#6) deploys the repository at a
+  commit — a tree, not a working directory — so an untracked file is
+  never a declaration, and `.gitignore` already leaves out build output;
+  the schema line leaves out every other tool's YAML (`compose.yaml`,
+  Loki's, Gatus's). No ignore file of the lab's own until something needs
+  one; if it does, gitignore's syntax.
+- **Every document has a `kind`**, and the schema a branch per kind.
+- **Where a document sits says what it belongs to**, whatever the file is
+  called: a component to the service whose directory holds it, a service
+  in its own directory, nodes in `platform/`. Any object may live in any
+  file, but not in any place — which is what keeps `lab.area`,
+  `lab.service` and `lab.component` derived.
+- **One pipeline, four stages, each with its own errors**: YAML read as a
+  JSON document; validated against the schema, for its shape, with the
+  path of each problem; deserialized into the domain's types, whose value
+  objects judge each value; and held to the domain's rules across
+  documents — references, like-to-like `dependsOn`, unique names — as a
+  `Result`.
+- **The schema is generated from the domain's types**, so there is one
+  truth, and committed, so the relative path in each file works offline
+  and in any editor; a test fails when the committed schema is stale.
+
+**Decided: five projects, in the classic layers.**
+
+| Project | Holds | References |
+| --- | --- | --- |
+| `Wolfe.Lab.Domain` | the model, its value objects and rules; no I/O | Ritten's `Result` and `Error` |
+| `Wolfe.Lab.Infrastructure` | the readers — declarations, compose — and the clients: Docker, launchd, systemd, the vault | Domain |
+| `Wolfe.Lab.Application` | the Ritten workflows, jobs and steps | Domain, Infrastructure |
+| `Wolfe.Lab` | the CLI, a thin host | Application |
+| `Wolfe.Lab.Agent` | the reconcile loop, schedules and triggers | Domain, Infrastructure |
+
+The agent references no application code: it orchestrates runs of the
+CLI rather than running workflows itself.
+
+**Decided: the agent runs each workflow as a process.** A run of the
+pinned CLI, as a child process — through Ritten's own command runner —
+so a run is pinned to the version it was planned with, a crash ends the
+run and not the agent, and each run's environment carries only its own
+secrets (#8's narrowing). Not a container, at least to begin with: a
+workload agent writes launchd units, a machine applies chezmoi and a
+runner registers on the host, and on a Mac a container is a Linux VM
+that can reach none of it — the reason the lab has host runners today.
+Containers can come later, as hardening, for the kinds that need no host.
+
+**Undecided.**
+
+- **Each facet's schema.** Sketched above, settled as each one moves.
+  #8's well-known keys — endpoint, health, route, scrape — are the same
+  facets, published, so they share one schema rather than having one
+  each.
 
 **Migration is incremental.** The loader reads a fact from its new file
 or its old place, never both — the check refuses one declared twice —
@@ -387,14 +670,18 @@ and each fact moves once.
 **In order.**
 
 1. The design: this item's undecided list, settled and written here.
-2. `Wolfe.Lab.Domain`, with the value objects and the component's
-   placement moved into it.
-3. The pilot: the declaration loader and its first facets, `logs` and
+2. *Slice* retired from the repository in one mechanical sweep — prose
+   and code alike — so the new files are written in one vocabulary.
+3. The projects: `Wolfe.Lab.Domain`, `Wolfe.Lab.Infrastructure` and
+   `Wolfe.Lab.Application` split out of today's one, with the value
+   objects and the component's placement moved into the domain.
+4. The pilot: the declaration loader and its first facets, `logs` and
    `metrics`, with typed readers in place of the telemetry checks'
    key-walking. #11's service metrics (step 4) ship on it.
-4. Agents, the largest declarations, with placement — #6's step 4 in the
-   new files.
-5. The rest, one facet at a time, routes and checks last, where they stop
+5. Agents, the largest declarations, with placement and the nodes —
+   #6's step 4 in the new files — and the Alloy gateway into Grafana's
+   stack, leaving a forwarder on every node.
+6. The rest, one facet at a time, routes and checks last, where they stop
    being gathered and start being published (#6, #8).
 
 ### 6. CI/CD — a kernel, and an agent that deploys the repo
@@ -591,12 +878,13 @@ the components a pull request changed and runs each one's `lab check`
 (the path filter gate already does half of this). The next best thing
 to pipeline files living in their slices.
 
-**Agent mode is a Ritten feature.** A second host beside today's
-run-once CLI: the Generic Host, with workflows linked to **triggers**
-rather than to commands — a timer, a webhook, a call on the API — each
-producing a request to run a workflow's job with its arguments, which
-the same engine runs, with the same steps, rules and reports. A Ritten
-release before the lab's agent can exist.
+**The agent is the lab's own** (#14). A host of its own beside the
+run-once CLI — the Generic Host, over the lab's domain — driven by
+**triggers** rather than commands: a timer, a webhook, a call on the API.
+*Revisited:* this was once "agent mode is a Ritten feature", a second
+Ritten host that would have needed a Ritten release before the lab's
+agent could exist. Built bespoke instead, until it is clear what works;
+whether any of it belongs in Ritten is a question for afterwards.
 
 **`lab init` onboards a node.** `dotnet tool install -g
 Wolfe.Lab`, then `lab init`: apply chezmoi for the machine's
@@ -631,7 +919,7 @@ one. A learning item, not the plan.
 3. `lab init`, and the runners out of chezmoi.
 4. Placement in the components' declarations — `runs-on` read from the
    component, while the workflows still deploy.
-5. Ritten's agent mode, then the lab's agent: one low-stakes service
+5. The lab's agent: one low-stakes service
    first, then the rest, then caddy's assembled routes.
 6. Schedules move from Actions cron into the agent's Hangfire, with
    Grafana rules for failed and missed runs first — backups last, once
@@ -951,6 +1239,10 @@ change the four variables. Only worth doing after the restore drills
 #13 removes the choice. `~/Library/Application Support` does not exist on
 Linux, so the path moves when the slice migrates and the rewrite becomes
 part of that step rather than optional cleanup.
+
+#14 brings it forward: a backup's paths are relative to its service's
+state directory, and Jellyfin is the one service outside its own.
+Nothing blocks the move: Tom is its only viewer.
 
 ### The mini's runner loses Full Disk Access on every Homebrew upgrade
 
