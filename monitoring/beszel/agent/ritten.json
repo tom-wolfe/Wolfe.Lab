@@ -6,7 +6,7 @@
         "beszel-agent": {
           "package": {
             "github": "henrygd/beszel",
-            "version": "0.20.0",
+            "version": "0.21.0",
             "asset": "beszel-agent_darwin_arm64.tar.gz",
             "checksums": "beszel_{version}_checksums.txt"
           },
@@ -29,7 +29,7 @@
         "beszel-agent": {
           "package": {
             "github": "henrygd/beszel",
-            "version": "0.20.0",
+            "version": "0.21.0",
             "asset": "beszel-agent_darwin_arm64.tar.gz",
             "checksums": "beszel_{version}_checksums.txt"
           },
@@ -50,7 +50,7 @@
         "beszel-agent": {
           "package": {
             "github": "henrygd/beszel",
-            "version": "0.20.0",
+            "version": "0.21.0",
             "asset": "beszel-agent_linux_arm64.tar.gz",
             "checksums": "beszel_{version}_checksums.txt"
           },
