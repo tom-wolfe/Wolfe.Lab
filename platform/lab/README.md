@@ -177,27 +177,39 @@ nothing else is, so every other value reaches its process as written.
 
 ## Layout
 
-A folder under `tool/src/Wolfe.Lab` is one of three things, and the
-tree says which:
+`tool/src/` holds four projects, in layers (ROADMAP.md #14), and the
+references between them are the only direction a dependency can point:
 
-- `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name,
-  the folder named for the workflow (`CaddyRoutes/` for
-  `caddy-routes`): the workflow class, its options record under
-  `Models/`, and the jobs and steps only it lists under `Jobs/` and
-  `Steps/`. Where several names are one family (`docker`, `image`,
-  `dotnet-service`) they share a folder.
-- `Clients/<domain>/` — a domain module: what more than one workflow
-  reaches through. A client, its dry-run twin and the `AddX()` that
-  registers the pair, and under `Steps/` the steps that consume it.
+- `Wolfe.Lab.Domain` — the lab's model: the value types the rest is typed
+  in (`HostPath`, `ServiceUrl`), where a component sits (`Component`), the
+  telemetry attributes, a backup's retention — by concept, one folder
+  each (`Paths/`, `Components/`, `Telemetry/`, `Backups/`). No I/O, and no
+  reference beyond Ritten's `Result` and `Error`.
+- `Wolfe.Lab.Infrastructure` — the outside world, one folder per module:
+  a client, its dry-run twin and the `AddX()` that registers the pair.
   `Releases` (the installer and where a component is released to),
-  `Volumes` (the mounted-drive guard), `Gates`, `Restic`, `Secrets`,
-  `Heartbeat`, `Alerts`, `Agents`, `Caddy`, and the rest.
-- `Values/` — the value types the rest is typed in (`HostPath`,
-  `ServiceUrl`). `LabJob`, `LabRuntime` and `Program` sit at the root.
+  `Volumes` (the mounted-drive guard), `Restic`, `Secrets`, `Heartbeat`,
+  `Alerts`, `Agents`, `Caddy`, and the rest. A domain type the file
+  system opens is opened here (`HostPaths`), never in the domain.
+- `Wolfe.Lab.Application` — what the lab does:
+  - `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name,
+    the folder named for the workflow (`CaddyRoutes/` for
+    `caddy-routes`): the workflow class, its options record under
+    `Models/`, and the jobs and steps only it lists under `Jobs/` and
+    `Steps/`. Where several names are one family (`docker`, `image`,
+    `dotnet-service`) they share a folder.
+  - `<Module>/` — the steps more than one workflow lists, named for the
+    infrastructure module they consume (`Agents/`, `Releases/`), or for
+    what they do when they consume none (`Gates/`).
 
-Dependencies point one way: workflows use domain modules, everything
-uses values. Nothing under `Clients/` knows a workflow exists, and no
-workflow knows another.
+  `LabJob`, the base every job shares, sits at its root.
+- `Wolfe.Lab` — the CLI, a thin host: `Program`, the workflows it
+  registers (`LabApplication`), its runtime and `appsettings.json`. It is
+  the package the runners install, and carries the other three inside it.
+
+Nothing in Infrastructure knows a workflow exists, the domain knows
+neither, and no workflow knows another. The agent (#6) will be a fifth
+project beside the CLI, over the domain and the infrastructure.
 
 A bound shape is an *options* type, whichever file it comes from — a
 workflow's `ritten.json` (`ResticOptions`) or a client's section of

@@ -5,6 +5,9 @@
     <File Path="../../../global.json" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/Wolfe.Lab.Domain/Wolfe.Lab.Domain.csproj" />
+    <Project Path="src/Wolfe.Lab.Infrastructure/Wolfe.Lab.Infrastructure.csproj" />
+    <Project Path="src/Wolfe.Lab.Application/Wolfe.Lab.Application.csproj" />
     <Project Path="src/Wolfe.Lab/Wolfe.Lab.csproj" />
   </Folder>
   <Folder Name="/tests/">
