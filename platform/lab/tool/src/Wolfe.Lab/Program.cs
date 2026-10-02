@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Ritten.CommandLine;
 using Wolfe.Lab;
-
 var app = LabApplication.Create().Build();
 if (app.IsError)
 {
