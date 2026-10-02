@@ -282,7 +282,8 @@ lab's pins.
    host-process logs from every node. *Shipped 2026-10-02.*
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
-   each need theirs enabled — then labelled for scraping.
+   each need theirs enabled — then declared for scraping. *Waits on
+   #14's pilot, which it ships on.*
 5. Host metrics, cAdvisor on the Macs, and the alert rules that replace
    Beszel's; then Beszel removed.
 6. Ritten's traces — before the agent, so it is observable from its
@@ -290,6 +291,111 @@ lab's pins.
 
 Grafana is the metrics and alerting half of the lab's UI; the portal
 (#9) is the rest, and links into it rather than rebuilding it.
+
+### 14. A domain model, and the lab described in its own files
+
+Groundwork for the agent (#6), the config plane (#8) and the portal (#9),
+all three of which assume something the lab does not have yet: a typed
+description of what it is. Today what a component *is* is spread across
+formats, each read by code of its own:
+
+- **`ritten.json` binds per workflow.** Eighteen workflows over about fifty
+  components, each with an options type of its own, so the same idea is
+  declared again in each: `volumes` in four of them, `release` in four,
+  `image` and `images` in five, `heartbeat` in two and again in tofu.
+  Nothing knows they are the same thing.
+- **Cross-cutting facts are gathered, in whatever format they were
+  written in.** Routes are `caddy.caddyfile` snippets that another
+  component collects, health checks live in Gatus's central YAML, a log's
+  location is an agent's `log` or a compose label, and service metrics
+  were about to be a fourth shape. Each needs a scraper of its own, and
+  the telemetry checks show where that leads: untyped YAML walked key by
+  key, and problems returned as bare strings.
+- **Declarations repeat rather than compose.** The Alloy agent is the
+  same package, program and arguments once per node — 94 lines for one
+  agent.
+- **There is no domain layer.** `Clients/` is roughly infrastructure and
+  the workflows, jobs and steps roughly the application, but the model
+  between them is `Values/`, a folder of helpers rather than the
+  foundation the rest stands on.
+
+**Decided: a `Wolfe.Lab.Domain` project, and lab-owned YAML declarations.**
+
+- **The domain is a project of its own**, not a namespace, so the
+  dependency direction is the compiler's to hold: it does no I/O and
+  depends on nothing but Ritten's `Result` and `Error`. It holds the
+  model — areas, slices, components, nodes and their roles — the value
+  objects, now foundational rather than helpers, and the rules between
+  them ("a scraped service is one its compose project has"). The
+  infrastructure reads files and talks to Docker, launchd, systemd and
+  the vault; the application orchestrates. A second benefit: the agent
+  (#6) becomes a project of its own over the same domain, and the CLI
+  stays intact beside it.
+- **The lab describes itself in files of its own**, YAML, beside what
+  they describe, rather than in `ritten.json`, which is Ritten's: one file
+  per building block — `slice.yaml`, `component.yaml`, `agent.yaml`, and
+  whatever else the design settles on — each a typed document the domain
+  reads, small because each says one thing. A slice gets a declaration
+  of its own too, reversing platform/lab/README.md's "a slice never
+  carries a declaration of its own": its name, what it is and its links
+  are the service catalog's, and belong to the slice, not to any one of
+  its components.
+- **Native files stay native.** `compose.yaml`, the Caddyfile and the
+  collectors' configs are what Docker, Caddy and Alloy read, and say only
+  what those need. The domain reads them only to hold a declaration to
+  them — compose's normalised form, `docker compose config --format json`,
+  rather than its YAML — and never scrapes the lab's facts out of them.
+- **The end state** is a lab described as a set of metadata files, a
+  portal (#9) that shows them, and an agent (#6) that operates from them.
+
+**Undecided — the design work, before any code.**
+
+- **The building blocks and how they compose.** Which documents exist
+  (a component's kind — compose stack, agents, tofu root, backup — and
+  the facets any kind may carry: placement, volumes, artifacts, packages,
+  logs, metrics, routes, checks, heartbeats, backups), how a file names
+  its type (its file name, or a `kind:` inside it), and what a slice's
+  declaration passes down to its components. #8's well-known keys —
+  endpoint, health, route, scrape — are the same facets, published, so
+  they share one schema rather than having one each.
+- **Per-node differences without per-node copies.** #6's "placement is
+  configuration, not structure" in the declarations: one definition, a
+  list of nodes or a rule, and an override only for what really differs.
+- **One word for a slice.** The repository says *slice* for the folder
+  that groups a service's components, and the telemetry says `lab.service`
+  for the same thing; `slice.yaml` beside `lab.service` would be two
+  names for one idea, and `service.yaml` would collide with a compose
+  service. Settle the vocabulary once, here, before files carry it.
+- **Ritten's part.** #6 decided agent mode is a Ritten feature: the agent
+  runs Ritten's workflows on triggers. With the lab describing itself,
+  that is reopened: either the agent runs Ritten's workflows directly,
+  fed from the declarations, or Ritten shrinks to CI duty and the agent
+  operates the domain itself. What remains of `ritten.json` either way —
+  the workflow's name alone, or nothing once a component's kind selects
+  it — follows from that answer.
+- **Editing them.** A JSON Schema generated from the domain's types and
+  named in each file (`# yaml-language-server: $schema=…`) would put the
+  model's rules in the editor as well as in the check.
+- **Where the application layer lives** once there are two hosts: shared
+  by the CLI and the agent as a library of its own, or each host keeping
+  its own.
+
+**Migration is incremental.** The loader reads a fact from its new file
+or its old place, never both — the check refuses one declared twice —
+and each fact moves once.
+
+**In order.**
+
+1. The design: this item's undecided list, settled and written here.
+2. `Wolfe.Lab.Domain`, with the value objects and the component's
+   placement moved into it.
+3. The pilot: the declaration loader and its first facets, `logs` and
+   `metrics`, with typed readers in place of the telemetry checks'
+   key-walking. #11's service metrics (step 4) ship on it.
+4. Agents, the largest declarations, with placement — #6's step 4 in the
+   new files.
+5. The rest, one facet at a time, routes and checks last, where they stop
+   being gathered and start being published (#6, #8).
 
 ### 6. CI/CD — a kernel, and an agent that deploys the repo
 
@@ -333,7 +439,7 @@ repo.**
 at a commit*, not a slice at a time, with the deploy code the CLI
 already has:
 
-- **A component declares where it runs**, in its own `ritten.json`, so
+- **A component declares where it runs**, in its own declaration (#14), so
   "what runs on this node" is a question the repo answers; the per-slice
   deploy workflows go, and each slice owns everything about itself.
 - **What is no longer placed is torn down.** The agent remembers what it
@@ -352,7 +458,7 @@ already has:
   per component on its node, the last commit it deployed successfully;
   on a new commit it diffs the two and deploys the components whose
   paths changed — `GatePathFilter`'s rule, with the paths a component
-  reads outside its directory declared in its `ritten.json` rather than
+  reads outside its directory declared in its declaration (#14) rather than
   in a workflow's `paths:`. So a check that runs in CI means a deploy
   that runs in CD. A failed deploy does not advance its commit, so the
   next pass retries it; an occasional full pass catches drift that did
@@ -610,7 +716,7 @@ into another slice's namespace:
   publisher is never staler than the last push. The agent that ran the
   apply sends the nudge, since tofu speaks no AMQP.
 - **The agent publishes what a component declares** in its
-  `ritten.json`, on deploy, and removes it on teardown.
+  declaration (#14), on deploy, and removes it on teardown.
 
 The repository stays the truth: a hand edit in the store is for a value
 deliberately not in it, never a shortcut past a merge.
@@ -628,7 +734,7 @@ liveness — proving someone answers is monitoring's job (`gatus/`), not
 this one's.
 
 **Operational config the same way: owners publish, consumers render.**
-Jellyfin's `ritten.json` declares its endpoint and health check; its
+Jellyfin's declaration (#14) says its endpoint and health check; its
 deploy publishes them as well-known keys; Gatus renders its
 configuration from every published check and reloads, with no change to
 Gatus per service — a status page built declaratively. Caddy's routes
