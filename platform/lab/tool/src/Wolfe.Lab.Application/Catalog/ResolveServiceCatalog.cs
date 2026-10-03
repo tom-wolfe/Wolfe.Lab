@@ -1,0 +1,69 @@
+using Ritten.Git;
+using Wolfe.Lab.Domain;
+using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Paths;
+using Wolfe.Lab.Infrastructure.Checkout;
+using Wolfe.Lab.Infrastructure.Declarations;
+
+namespace Wolfe.Lab.Application.Catalog;
+
+/// <summary>
+/// Resolves and verifies the component's catalog definition against the rest of the lab.
+/// </summary>
+[Step("resolve service catalog", StepKind.Check)]
+internal sealed class ResolveServiceCatalog(ICommandRunner commands, IGit git, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+{
+    public async Task<StepResult<ServiceCatalog>> Run(CancellationToken ct = default)
+    {
+        if (await git.RepositoryRoot(ct) is not { } repository)
+        {
+            return RepositoryErrors.NotInARepository(fileSystem.ProjectRoot);
+        }
+
+        var directory = fileSystem.ProjectRoot;
+        if (!(await Check(commands, repository, directory, job.Workflow, ct)).TryGetValue(out var catalog, out var errors))
+        {
+            return StepResult.Failed(errors);
+        }
+
+        log.Detail(Placed(repository, directory) is { } placement && catalog.DeploymentUnitAt(placement) is { } unit
+            ? $"{unit} declares {string.Join(", ", unit.Components.Select(component => $"{component.Name} ({component.Kind}, {component.Workflow})"))}, and each holds."
+            : "The directory declares no components yet.");
+        return catalog;
+    }
+
+    /// <summary>
+    /// The catalog, when every declaration holds and the directory's are those of its workflow, or
+    /// every problem: one anywhere fails every check, as it would fail every deploy.
+    /// </summary>
+    /// <param name="commands">What runs git.</param>
+    /// <param name="root">The checkout's root.</param>
+    /// <param name="directory">The directory the workflow runs in.</param>
+    /// <param name="workflow">The workflow its <c>ritten.json</c> names, which is running this check.</param>
+    /// <param name="ct">A token to monitor for cancellation.</param>
+    internal static async Task<Result<ServiceCatalog>> Check(ICommandRunner commands, IDirectory root, IDirectory directory, string workflow, CancellationToken ct = default)
+    {
+        if (!(await ServiceCatalogReader.Read(commands, root, ct)).TryGetValue(out var catalog, out var errors))
+        {
+            return errors;
+        }
+
+        // A directory outside the checkout has no declaration this check could find.
+        if (Placed(root, directory) is not { } placement)
+        {
+            return catalog;
+        }
+
+        // While ritten.json names the directory's workflow too, each component must declare it; a
+        // part of another — anything partOf one — names its own.
+        var others = catalog.DeploymentUnitAt(placement)?.Components
+            .Where(component => component.PartOf is null && component.Workflow.Value != workflow)
+            .ToList() ?? [];
+        return others.Count == 0
+            ? catalog
+            : others.Select(Error (component) => CatalogError.In(component.Source, WorkflowErrors.NotOwnedByTheDirectory(component.Workflow, workflow))).ToList();
+    }
+
+    private static RepositoryPath? Placed(IDirectory root, IDirectory directory) =>
+        RepositoryPath.TryFrom(root.RelativePath(directory)) is { IsSuccess: true } path ? path.ValueObject : null;
+}

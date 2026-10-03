@@ -1,4 +1,5 @@
-using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Paths;
+
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 

@@ -19,7 +19,7 @@ internal sealed class CheckScripts(ICommandRunner commands, IWorkflowLog log)
         var scripts = rendered.Profiles
             .SelectMany(profile => profile.Files
                 .Where(file => file.StartsWith(ScriptsDirectory + Path.DirectorySeparatorChar, StringComparison.Ordinal))
-                .Select(file => Path.Combine(profile.Directory.AbsolutePath, file)))
+                .Select(file => profile.Directory.GetFile(file).AbsolutePath))
             .ToList();
         if (scripts.Count == 0)
         {

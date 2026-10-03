@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
-using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Infrastructure.Packages;
@@ -15,7 +14,7 @@ namespace Wolfe.Lab.Infrastructure.Packages;
 /// nothing the next one would trust. Versions sit side by side: an upgrade adds a directory, and
 /// rolling back is naming the old version again.
 /// </remarks>
-public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<GithubOptions> options, ICommandRunner commands, WorkflowEnvironment environment, IWorkflowLog log) : IPackageInstaller
+public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<GithubOptions> options, ICommandRunner commands, IOptions<LabDirectories> roots, IWorkflowLog log) : IPackageInstaller
 {
     /// <summary>
     /// The HTTP client every package request goes through, with its resilience.
@@ -30,53 +29,54 @@ public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<
     /// <inheritdoc />
     public async Task<InstalledPackage> Install(Package package, CancellationToken ct = default)
     {
-        var directory = Location(package, LabRoots.From(environment));
-        if (File.Exists(Path.Combine(directory, Complete)))
+        var directory = Location(package, roots.Value);
+        if (directory.GetFile(Complete).Exists)
         {
-            return new InstalledPackage(package, new PhysicalDirectory(directory), PackageOutcome.Present);
+            return new InstalledPackage(package, directory, PackageOutcome.Present);
         }
 
-        var parent = Versions(package, LabRoots.From(environment));
-        Directory.CreateDirectory(parent);
-        var staging = Path.Combine(parent, $".{package.Version}.{Guid.NewGuid():N}");
-        var download = staging + ".download";
+        var versions = Versions(package, roots.Value);
+        versions.Create();
+        var staging = versions.GetDirectory($".{package.Version}.{Guid.NewGuid():N}");
+        var download = versions.GetFile($"{staging.Name}.download");
         try
         {
             log.Detail($"Downloading {package.Download(_sources.RequiredReleases, package.Asset)}.");
             using (var response = await Get(package, package.Asset, ct))
-            await using (var file = File.Create(download))
+            await using (var file = download.OpenWrite())
             await using (var body = await response.Content.ReadAsStreamAsync(ct))
             {
                 await body.CopyToAsync(file, ct);
             }
 
             var expected = await Expected(package, ct);
-            var actual = Convert.ToHexStringLower(await SHA256.HashDataAsync(File.OpenRead(download), ct));
+            string actual;
+            await using (var downloaded = download.OpenRead())
+            {
+                actual = Convert.ToHexStringLower(await SHA256.HashDataAsync(downloaded, ct));
+            }
+
+
             if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"{package.Asset} does not match {package.Verification}: expected {expected}, got {actual}.");
             }
 
-            Directory.CreateDirectory(staging);
+            staging.Create();
             await Unpack(package, download, staging, ct);
-            await File.WriteAllTextAsync(Path.Combine(staging, Complete), $"{package.Repository} {package.Tag} {package.Asset} sha256:{actual}\n", ct);
+            await staging.GetFile(Complete).WriteAllText($"{package.Repository} {package.Tag} {package.Asset} sha256:{actual}\n", cancellationToken: ct);
 
             // A directory without the marker is a previous attempt that never finished.
-            if (Directory.Exists(directory))
-            {
-                Directory.Delete(directory, recursive: true);
-            }
+            directory.Delete();
 
-            Directory.Move(staging, directory);
-            return new InstalledPackage(package, new PhysicalDirectory(directory), PackageOutcome.Installed);
+            // IDirectory has no move: the rename that makes a version appear whole is the disk's.
+            Directory.Move(staging.AbsolutePath, directory.AbsolutePath);
+            return new InstalledPackage(package, directory, PackageOutcome.Installed);
         }
         finally
         {
-            File.Delete(download);
-            if (Directory.Exists(staging))
-            {
-                Directory.Delete(staging, recursive: true);
-            }
+            download.Delete();
+            staging.Delete();
         }
     }
 
@@ -139,14 +139,14 @@ public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<
     /// <summary>
     /// Where a version of a package lives: <c>${LAB_ROOT}/packages/&lt;name&gt;/&lt;version&gt;</c>.
     /// </summary>
-    internal static string Location(Package package, LabRoots roots) =>
-        Path.Combine(Versions(package, roots), package.Version);
+    internal static IDirectory Location(Package package, LabDirectories directories) =>
+        Versions(package, directories).GetDirectory(package.Version);
 
     /// <summary>
     /// Where every version of a package sits: <c>${LAB_ROOT}/packages/&lt;name&gt;</c>.
     /// </summary>
-    private static string Versions(Package package, LabRoots roots) =>
-        Path.Combine(roots.Root, "packages", package.Name);
+    private static IDirectory Versions(Package package, LabDirectories directories) =>
+        directories.Root.GetDirectory("packages").GetDirectory(package.Name);
 
     /// <summary>
     /// The checksum a <c>sha256sum</c>-style file lists for the asset: <c>&lt;hex&gt;  &lt;name&gt;</c>,
@@ -163,28 +163,36 @@ public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<
     /// An archive unpacked as it was packed; a single file — compressed or bare — saved under the
     /// package's name and made executable, which is what a tool on <c>PATH</c> needs to be called.
     /// </summary>
-    private async Task Unpack(Package package, string download, string staging, CancellationToken ct)
+    private async Task Unpack(Package package, IFile download, IDirectory staging, CancellationToken ct)
     {
         if (package.Asset.EndsWith(".zip", StringComparison.Ordinal))
         {
-            System.IO.Compression.ZipFile.ExtractToDirectory(download, staging);
+            await using var archive = download.OpenRead();
+            await System.IO.Compression.ZipFile.ExtractToDirectoryAsync(archive, staging.AbsolutePath, ct);
         }
         else if (package.Asset.EndsWith(".tar.gz", StringComparison.Ordinal) || package.Asset.EndsWith(".tgz", StringComparison.Ordinal))
         {
-            await commands.Run(Command.Create("tar").WithArguments("-xzf", download, "-C", staging).ThrowOnError(), ct);
+            await commands.Run(Command.Create("tar").WithArguments("-xzf", download.AbsolutePath, "-C", staging.AbsolutePath).ThrowOnError(), ct);
         }
         else if (package.Asset.EndsWith(".bz2", StringComparison.Ordinal))
         {
-            var compressed = Path.Combine(staging, package.Name + ".bz2");
-            File.Copy(download, compressed);
-            await commands.Run(Command.Create("bzip2").WithArguments("-d", compressed).ThrowOnError(), ct);
-            Executable(Path.Combine(staging, package.Name));
+            var compressed = staging.GetFile(package.Name + ".bz2");
+            await Copy(download, compressed, ct);
+            await commands.Run(Command.Create("bzip2").WithArguments("-d", compressed.AbsolutePath).ThrowOnError(), ct);
+            Executable(staging.GetFile(package.Name));
         }
         else
         {
-            File.Copy(download, Path.Combine(staging, package.Name));
-            Executable(Path.Combine(staging, package.Name));
+            await Copy(download, staging.GetFile(package.Name), ct);
+            Executable(staging.GetFile(package.Name));
         }
+    }
+
+    private static async Task Copy(IFile from, IFile to, CancellationToken ct)
+    {
+        await using var source = from.OpenRead();
+        await using var destination = to.OpenWrite();
+        await source.CopyToAsync(destination, ct);
     }
 
     /// <summary>
@@ -192,11 +200,11 @@ public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<
     /// stores it <c>rw-r--r--</c> — so what the lab runs out of a package is made runnable by
     /// whatever names it: an agent's <c>program</c>, a tool's command.
     /// </summary>
-    public static void Executable(string path)
+    public static void Executable(IFile file)
     {
-        if (!OperatingSystem.IsWindows())
+        if (file.GetUnixFileMode() is { } mode)
         {
-            File.SetUnixFileMode(path, File.GetUnixFileMode(path) | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute);
+            file.SetUnixFileMode(mode | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute);
         }
     }
 }

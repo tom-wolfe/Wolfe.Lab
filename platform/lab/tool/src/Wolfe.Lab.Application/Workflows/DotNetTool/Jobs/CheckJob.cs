@@ -25,7 +25,7 @@ internal sealed class CheckJob : LabJob<DotNetToolOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
-        Step.FromType<CheckServiceCatalog>(),
+        Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormatCheck>(),
         Step.FromType<DotnetBuild>(),

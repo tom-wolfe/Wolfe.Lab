@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The lab's model: what it is made of and the rules between them. No I/O, and no reference
-       beyond Ritten's Result and Error (ROADMAP.md #14). -->
-
   <ItemGroup>
     <InternalsVisibleTo Include="Wolfe.Lab.Tests" />
   </ItemGroup>
@@ -14,6 +11,7 @@
 
   <ItemGroup>
     <Using Include="Ritten.Engine" />
+    <Using Include="Vogen" />
   </ItemGroup>
 
 </Project>

@@ -1,10 +1,12 @@
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
-using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
+using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Infrastructure.Releases;
+using Wolfe.Lab.Tests.Domain.Catalog;
 using YamlDotNet.Serialization;
-using Component = Wolfe.Lab.Domain.Components.Component;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Docker.Steps;
 
@@ -21,19 +23,32 @@ public class LabelServicesTests : IDisposable
         var component = checkout.CreateSubdirectory("personal").CreateSubdirectory("mail").CreateSubdirectory("watcher");
         _release = _root.CreateSubdirectory("release");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "watcher\nbridge\n", ""));
+        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, """
+            { "services": { "watcher": { "image": "watcher" }, "bridge": { "image": "bridge", "ports": [{ "target": 8080, "published": "8080" }] } } }
+            """, ""));
     }
 
     public void Dispose() => _root.Delete(recursive: true);
 
-    private Task<StepResult> Run(bool dryRun = false) =>
+    // The stack's two services, each its own component; the bridge's named apart from its service.
+    private static readonly Catalogs.Declaration[] Plain =
+        [Catalogs.Compose("watcher", "watcher", ComponentKind.Backend), Catalogs.Compose("proton", "bridge", ComponentKind.Backend)];
+
+    private static readonly Catalogs.Declaration[] Declaring =
+    [
+        Catalogs.Compose("watcher", "watcher", ComponentKind.Backend, logs: LogTransport.Otlp),
+        Catalogs.Compose("proton", "bridge", ComponentKind.Backend, metrics: new MetricsEndpoint(Port.From(9090), HttpPath.From("/stats")))
+    ];
+
+    private Task<StepResult> Run(bool dryRun = false, Catalogs.Declaration[]? components = null) =>
         new LabelServices(_commands, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), new Component(AreaName.From("personal"), ServiceName.From("mail"), ComponentName.From("watcher")), ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
+            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), Catalogs.Unit("personal/mail/watcher", components ?? Plain),
+                ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
 
     private string Override => Path.Combine(_release.FullName, LabelServices.OverrideFile);
 
     [Fact]
-    public async Task Run_LabelsEveryServiceWithWhereTheComponentSits()
+    public async Task Run_LabelsEachServiceWithWhereItsOwnComponentLives()
     {
         (await Run()).IsFailure.ShouldBeFalse();
 
@@ -43,28 +58,52 @@ public class LabelServicesTests : IDisposable
             .Deserialize<Dictionary<string, Dictionary<string, Dictionary<string, Dictionary<string, string>>>>>(text);
         var services = written["services"];
         services.Keys.ShouldBe(["bridge", "watcher"], ignoreOrder: true);
-        foreach (var service in services.Values)
+        foreach (var (service, component) in new[] { ("watcher", "watcher"), ("bridge", "proton") })
         {
-            service["labels"].ShouldBe(new Dictionary<string, string>
+            services[service]["labels"].ShouldBe(new Dictionary<string, string>
             {
                 ["lab.area"] = "personal",
                 ["lab.service"] = "mail",
-                ["lab.component"] = "watcher"
+                ["lab.component"] = component
             });
-            service["environment"]["OTEL_RESOURCE_ATTRIBUTES"].ShouldBe("lab.area=personal,lab.service=mail,lab.component=watcher");
+            services[service]["environment"]["OTEL_RESOURCE_ATTRIBUTES"].ShouldBe($"lab.area=personal,lab.service=mail,lab.component={component}");
         }
     }
 
     [Fact]
-    public async Task Run_AsksComposeForTheServicesOfTheComponentsOwnFileAlone()
+    public async Task Run_AsksComposeForTheStackInTheCheckout_FoundAsComposeFindsIt()
     {
         await Run();
 
-        // The file named outright: a stale override in the release must not be read as services.
+        // The checkout's directory, never the release's, and no file named: compose finds its own.
         await _commands.Received().Run(
-            Arg.Is<Command>(c => c.Path == "docker" && c.Arguments.Contains("-f") && c.Arguments.Contains("--services")
-                && c.Arguments.Any(a => a.EndsWith(Path.Combine("watcher", LabelServices.ComposeFile), StringComparison.Ordinal))),
+            Arg.Is<Command>(c => c.Path == "docker" && c.Arguments.Contains("config") && !c.Arguments.Contains("-f")
+                && c.Arguments.Any(a => a.EndsWith("watcher", StringComparison.Ordinal))),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Run_WritesWhatEachComponentAsksOfItsService()
+    {
+        (await Run(components: Declaring)).IsFailure.ShouldBeFalse();
+
+        var written = new DeserializerBuilder().IgnoreUnmatchedProperties().Build()
+            .Deserialize<Dictionary<string, Dictionary<string, Written>>>(await File.ReadAllTextAsync(Override, TestContext.Current.CancellationToken))["services"];
+        written["watcher"].Labels["lab.logs"].ShouldBe("otlp");
+        written["watcher"].Ports.ShouldBeNull();
+        written["bridge"].Labels["lab.metrics.port"].ShouldBe("9090");
+        written["bridge"].Labels["lab.metrics.path"].ShouldBe("/stats");
+        written["bridge"].Labels["lab.area"].ShouldBe("personal");
+        written["bridge"].Ports.ShouldBe(["127.0.0.1:9090:9090"]);
+    }
+
+    [Fact]
+    public async Task Run_RefusesAStackItsComponentsDoNotBind()
+    {
+        var result = await Run(components: [Catalogs.Compose("watcher", "watcher")]);
+
+        result.IsFailure.ShouldBeTrue();
+        File.Exists(Override).ShouldBeFalse();
     }
 
     [Fact]
@@ -73,6 +112,15 @@ public class LabelServicesTests : IDisposable
         (await Run(dryRun: true)).IsFailure.ShouldBeFalse();
 
         File.Exists(Override).ShouldBeFalse();
+    }
+
+    private sealed class Written
+    {
+        [YamlMember(Alias = "labels")]
+        public Dictionary<string, string> Labels { get; set; } = [];
+
+        [YamlMember(Alias = "ports")]
+        public List<string>? Ports { get; set; }
     }
 }
 

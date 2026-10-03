@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
@@ -27,7 +28,7 @@ public class ConvergeReleaseTests : IDisposable
     private string Marker => Path.Combine(_root.FullName, ".applied", "grafana");
 
     private Task<StepResult> Converge(DateTimeOffset? stamp, bool dryRun = false) =>
-        new ConvergeRelease(_docker, new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null),
+        new ConvergeRelease(_docker, Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) }),
                 _report, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(_release, new ComposeEnvironment(new Dictionary<string, string>()), new PublishedArtifacts([], stamp), TestContext.Current.CancellationToken);
 

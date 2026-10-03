@@ -48,8 +48,9 @@ internal sealed class EnsureTools(RequiredTools required, IGit git, IPackageInst
                 continue;
             }
 
-            var bin = package.Bin is { } nested ? Path.Combine(installed.Directory.AbsolutePath, nested) : installed.Directory.AbsolutePath;
-            if (!File.Exists(Path.Combine(bin, name)))
+            var bin = package.Bin is { } nested ? installed.Directory.GetDirectory(nested) : installed.Directory;
+            var tool = bin.GetFile(name);
+            if (!tool.Exists)
             {
                 errors.Add(new Error($"{package.Repository} {package.Tag} ({package.Asset}) has no '{name}' in {package.Bin ?? "its top level"} to run."));
                 continue;
@@ -57,11 +58,11 @@ internal sealed class EnsureTools(RequiredTools required, IGit git, IPackageInst
 
             if (!job.DryRun)
             {
-                GithubPackageInstaller.Executable(Path.Combine(bin, name));
+                GithubPackageInstaller.Executable(tool);
             }
 
             Environment.SetEnvironmentVariable(PathVariable,
-                $"{bin}{Path.PathSeparator}{Environment.GetEnvironmentVariable(PathVariable)}");
+                $"{bin.AbsolutePath}{Path.PathSeparator}{Environment.GetEnvironmentVariable(PathVariable)}");
         }
 
         return errors.Count > 0 ? StepResult.Failed(errors) : StepResult.Successful;

@@ -13,6 +13,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **A deploy needs its component declared.** Compose, agent and Ollama deploys find the
+  component in the catalog, as one of its service's, rather than placing it by its path.
+
 - **The telemetry checks are typed.** Each kind of file is read into what it says
   about the lab's telemetry, compose's through compose itself; problems are `Result` errors.
 

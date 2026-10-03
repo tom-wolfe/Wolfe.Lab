@@ -1,6 +1,5 @@
 using Vogen;
 using Wolfe.Lab.Domain.Paths;
-using Wolfe.Lab.Infrastructure.Paths;
 
 namespace Wolfe.Lab.Tests.Domain.Paths;
 
@@ -47,5 +46,5 @@ public class HostPathTests
     [InlineData("${HOME}/elsewhere")]
     [InlineData("relative/path")]
     public void From_StillRefusesAPathThatIsNotAbsolute(string path) =>
-        Should.Throw<Vogen.ValueObjectValidationException>(() => HostPath.From(path));
+        Should.Throw<ValueObjectValidationException>(() => HostPath.From(path));
 }

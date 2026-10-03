@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Xml.Linq;
-using Microsoft.Extensions.Options;
 using NuGet.Versioning;
 using Ritten.Git;
+using Wolfe.Lab.Application.Workflows.DotNetTool.Models;
 
 namespace Wolfe.Lab.Application.Workflows.DotNetTool.Steps;
 
@@ -10,7 +10,7 @@ namespace Wolfe.Lab.Application.Workflows.DotNetTool.Steps;
 /// Works out the version this merge publishes.
 /// </summary>
 [Step("compute version", StepKind.Work)]
-internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSystem fileSystem, ShippedInputs shipped, IOptions<GitOptions> options, IWorkflowLog log)
+internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSystem fileSystem, PackageContents shipped, IOptions<GitOptions> options, IWorkflowLog log)
 {
     /// <summary>
     /// Where the version is written, under the component; <c>Directory.Build.props</c> names it too.
@@ -24,10 +24,10 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
 
     public async Task<StepResult> Run(CancellationToken ct = default)
     {
-        var component = fileSystem.ProjectRoot.AbsolutePath;
+        var component = fileSystem.ProjectRoot;
         if (await git.RepositoryRoot(ct) is not { } checkout)
         {
-            return new Error($"{component} is not in a git checkout, and its releases are its tags.");
+            return new Error($"{component.AbsolutePath} is not in a git checkout, and its releases are its tags.");
         }
 
         var root = checkout.AbsolutePath;
@@ -50,7 +50,7 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
         else
         {
             var diff = await commands.Run(
-                Command.Create("git").WithArguments(["diff", "--quiet", $"{prefix}{last}", "HEAD", "--", .. shipped.FromRoot(root, component)])
+                Command.Create("git").WithArguments(["diff", "--quiet", $"{prefix}{last}", "HEAD", "--", .. shipped.FromRoot(checkout, component)])
                     .InDirectory(root).QuietOutput(),
                 ct);
             var changed = diff.ExitCode.Value switch
@@ -66,16 +66,15 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
                 : $"Version {version}: nothing that ships has changed since it was released.");
         }
 
-        var file = Path.Combine(component, VersionFile);
-        Directory.CreateDirectory(Path.GetDirectoryName(file) ?? component);
-        new XDocument(new XElement("Project", new XElement("PropertyGroup", new XElement(VersionProperty, version)))).Save(file);
+        var props = new XDocument(new XElement("Project", new XElement("PropertyGroup", new XElement(VersionProperty, version))));
+        await component.GetFile(VersionFile).WriteAllText(props.ToString(), cancellationToken: ct);
         return StepResult.Successful;
     }
 
     /// <summary>
     /// The highest version among the release tags, or null when there are none.
     /// </summary>
-    internal static NuGetVersion? LastRelease(string tags, string prefix) =>
+    private static NuGetVersion? LastRelease(string tags, string prefix) =>
         tags.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(tag => tag.StartsWith(prefix, StringComparison.Ordinal))
             .Select(tag => NuGetVersion.TryParse(tag[prefix.Length..], out var version) ? version : null)
@@ -85,7 +84,7 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
     /// <summary>
     /// The release after <paramref name="last"/>: <c>1.0.&lt;n+1&gt;</c>.
     /// </summary>
-    internal static string Next(NuGetVersion? last) =>
+    private static string Next(NuGetVersion? last) =>
         string.Create(CultureInfo.InvariantCulture, $"1.0.{(last?.Patch ?? 0) + 1}");
 
     private static Command Git(string directory, params string[] arguments) =>

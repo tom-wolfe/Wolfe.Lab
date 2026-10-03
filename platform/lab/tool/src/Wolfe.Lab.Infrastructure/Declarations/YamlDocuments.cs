@@ -29,7 +29,7 @@ public sealed partial record YamlDocuments(IReadOnlyList<YamlDocuments.Document>
         }
         catch (YamlException e)
         {
-            return new Error($"line {e.Start.Line}: not YAML: {e.InnerException?.Message ?? e.Message}");
+            return DeclarationErrors.NotYaml(e.Start.Line, e.InnerException?.Message ?? e.Message);
         }
 
         return new YamlDocuments([

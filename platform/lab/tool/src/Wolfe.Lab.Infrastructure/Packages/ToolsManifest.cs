@@ -33,13 +33,13 @@ public sealed record ToolsManifest
     /// </summary>
     public static async Task<ToolsManifest> Read(IDirectory checkout, CancellationToken ct)
     {
-        var path = Path.Combine(checkout.AbsolutePath, ".config", FileName);
-        if (!File.Exists(path))
+        var file = checkout.GetDirectory(".config").GetFile(FileName);
+        if (!file.Exists)
         {
             return new ToolsManifest();
         }
 
-        await using var stream = File.OpenRead(path);
+        await using var stream = file.OpenRead();
         return await JsonSerializer.DeserializeAsync<ToolsManifest>(stream, Options, ct) ?? new ToolsManifest();
     }
 }

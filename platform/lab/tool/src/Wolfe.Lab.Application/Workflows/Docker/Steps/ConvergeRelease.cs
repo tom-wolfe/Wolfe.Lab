@@ -15,7 +15,7 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 /// its secrets from the environment of this one invocation.
 /// </remarks>
 [Step("converge release", StepKind.Publish)]
-internal sealed class ConvergeRelease(IDocker docker, WorkflowEnvironment environment, IWorkflowReport report, WorkflowJob job, IWorkflowLog log)
+internal sealed class ConvergeRelease(IDocker docker, IOptions<LabDirectories> options, IWorkflowReport report, WorkflowJob job, IWorkflowLog log)
 {
     public async Task<StepResult> Run(Release release, ComposeEnvironment composeEnvironment, PublishedArtifacts artifacts, CancellationToken ct = default)
     {
@@ -46,10 +46,10 @@ internal sealed class ConvergeRelease(IDocker docker, WorkflowEnvironment enviro
             return;
         }
 
-        var roots = LabRoots.From(environment);
+        var roots = options.Value;
         var file = roots.AppliedStamp(release.Name);
         var current = stamp.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
-        var applied = File.Exists(file) ? (await File.ReadAllTextAsync(file, ct)).Trim() : null;
+        var applied = (await file.ReadAllTextIfExists(ct))?.Trim();
         if (applied == current)
         {
             return;
@@ -76,7 +76,6 @@ internal sealed class ConvergeRelease(IDocker docker, WorkflowEnvironment enviro
             report.Section(PublishArtifacts.Section).Success($"Restarted `{release.Name}` for its changed files.");
         }
 
-        Directory.CreateDirectory(roots.Applied);
-        await File.WriteAllTextAsync(file, current, ct);
+        await file.WriteAllText(current, cancellationToken: ct);
     }
 }

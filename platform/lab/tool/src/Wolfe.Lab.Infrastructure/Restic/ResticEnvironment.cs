@@ -24,13 +24,12 @@ public static class ResticEnvironment
     /// <param name="ct">A token to monitor for cancellation.</param>
     public static async Task<Result<ResticRepository>> Load(IDirectory component, string fileName, ISecretProvider secrets, CancellationToken ct = default)
     {
-        if (Service.Restic.FindFile(component, fileName) is not { } file)
+        if (Service.Restic.FindFile(component, fileName) is not { } file || await file.ReadAllTextIfExists(ct) is not { } text)
         {
             return new Error($"No {Service.Restic}/{fileName} above {component.AbsolutePath}: the checkout has no restic service.");
         }
 
-        using var reader = new StreamReader(file.OpenRead());
-        if (!EnvironmentFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath).TryGetValue(out var entries, out var errors))
+        if (!EnvironmentFile.Parse(text, file.AbsolutePath).TryGetValue(out var entries, out var errors))
         {
             return errors;
         }

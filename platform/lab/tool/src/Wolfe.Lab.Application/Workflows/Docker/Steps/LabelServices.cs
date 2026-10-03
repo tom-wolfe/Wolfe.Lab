@@ -1,7 +1,10 @@
 using Wolfe.Lab.Application.Workflows.Docker.Models;
-using Wolfe.Lab.Domain.Components;
+using Wolfe.Lab.Domain;
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Telemetry;
+using Wolfe.Lab.Infrastructure.Compose;
 using Wolfe.Lab.Infrastructure.Releases;
+using Wolfe.Lab.Infrastructure.Telemetry;
 using YamlDotNet.Serialization;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
@@ -12,58 +15,58 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 [Step("label services", StepKind.Publish)]
 internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
 {
-    internal const string ComposeFile = "compose.yaml";
     internal const string OverrideFile = "compose.override.yaml";
 
-    public async Task<StepResult> Run(Release release, Component component, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
+    public async Task<StepResult> Run(Release release, DeploymentUnit unit, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
     {
-        var services = await Services(fileSystem.ProjectRoot, composeEnvironment, ct);
-        var content = Render(component, services);
+        if (!(await ComposeProject.Read(commands, fileSystem.ProjectRoot, composeEnvironment.Variables, ct)).TryGetValue(out var project, out var unreadable))
+        {
+            return StepResult.Failed(unreadable);
+        }
+
+        if (!ComposeBindings.Of(unit, project).TryGetValue(out var bindings, out var unfit))
+        {
+            return StepResult.Failed(unfit);
+        }
+
+        var content = Render(bindings);
         if (job.DryRun)
         {
-            log.Skipped($"Would label {Count(services.Count)} of {release.Name} as {component}.");
+            log.Skipped($"Would label {Labelled(bindings)} of {release.Name}{Asked(bindings)}.");
             return StepResult.Successful;
         }
 
-        await File.WriteAllTextAsync(Path.Combine(release.Directory.AbsolutePath, OverrideFile), content, ct);
-        log.Status($"Labelled {Count(services.Count)} of {release.Name} as {component}.");
+        await release.Directory.GetFile(OverrideFile).WriteAllText(content, cancellationToken: ct);
+        log.Status($"Labelled {Labelled(bindings)} of {release.Name}{Asked(bindings)}.");
         return StepResult.Successful;
     }
 
     /// <summary>
-    /// The services compose reads out of the component's own file — the checkout's copy, which
-    /// the release was just published from, so a rehearsal of a first deploy can read it too.
+    /// Renders the compose.override.yaml: for each service.
     /// </summary>
-    /// <remarks>
-    /// Named with <c>-f</c>, never left to compose to find: an override from an earlier deploy
-    /// naming a service the file has since dropped would read as a service with no image.
-    /// </remarks>
-    private async Task<IReadOnlyList<string>> Services(IDirectory component, ComposeEnvironment composeEnvironment, CancellationToken ct)
+    internal static string Render(ComposeBindings bindings)
     {
-        var command = Command.Create("docker")
-            .WithArguments("compose", "--project-directory", component.AbsolutePath,
-                "-f", component.GetFile(ComposeFile).AbsolutePath, "config", "--services")
-            .WithEnvironmentVariables(composeEnvironment.Variables)
-            .QuietOutput()
-            .ThrowOnError();
-
-        var result = await commands.Run(command, ct);
-        return [.. result.StandardOutput.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)];
-    }
-
-    /// <summary>
-    /// Renders the compose.override.yaml
-    /// </summary>
-    internal static string Render(Component component, IReadOnlyList<string> services)
-    {
-        var labels = component.Attributes.ToDictionary(attribute => attribute.Key.Name, attribute => attribute.Value);
-        var environment = new Dictionary<string, string> { [TelemetryAttribute.ResourceAttributesVariable] = component.ResourceAttributes };
         var document = new Dictionary<string, object>
         {
-            ["services"] = services.ToDictionary(service => service, _ => new Dictionary<string, object>
+            ["services"] = bindings.Bindings.ToDictionary(binding => binding.Service.Name, object (binding) =>
             {
-                ["labels"] = labels,
-                ["environment"] = environment
+                var labels = binding.Component.Attributes.ToDictionary(attribute => attribute.Key.Name, attribute => attribute.Value);
+                foreach (var (label, value) in binding.Labels)
+                {
+                    labels[label.Name] = value;
+                }
+
+                var definition = new Dictionary<string, object>
+                {
+                    ["labels"] = labels,
+                    ["environment"] = new Dictionary<string, string> { [TelemetryAttribute.ResourceAttributesVariable] = binding.Component.ResourceAttributes }
+                };
+                if (binding.Publishes.Count > 0)
+                {
+                    definition["ports"] = binding.Publishes;
+                }
+
+                return definition;
             })
         };
 
@@ -72,12 +75,30 @@ internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSys
 
     // A comment is the one thing a serializer does not write.
     private const string Header = """
-        # Written by `lab deploy` from where the component sits in the repository: the lab's
-        # labels on every service (platform/lab/README.md). Rewritten on every deploy.
+        # Written by `lab deploy` from the components declared beside this stack: on each service,
+        # where its component lives, and what the component declares — the collector's labels,
+        # and the ports it scrapes on (platform/lab/README.md). Rewritten on every deploy.
 
         """;
 
     private static readonly ISerializer Yaml = new SerializerBuilder().WithQuotingNecessaryStrings().DisableAliases().Build();
 
-    private static string Count(int services) => $"{services} service{(services == 1 ? "" : "s")}";
+    /// <summary>
+    /// What the components ask of their services, for the log: <c>; logs over OTLP from watcher;
+    /// metrics from bridge on loopback's 9090, at /metrics</c>.
+    /// </summary>
+    private static string Asked(ComposeBindings bindings)
+    {
+        var logs = bindings.Bindings.Where(binding => binding.Labels.ContainsKey(ContainerLabel.Logs)).Select(binding => binding.Component.Name.Value).ToList();
+        var metrics = bindings.Bindings
+            .Where(binding => binding.Labels.ContainsKey(ContainerLabel.MetricsPort))
+            .Select(binding => $"{binding.Component.Name} on loopback's {binding.Labels[ContainerLabel.MetricsPort]}, at {binding.Labels[ContainerLabel.MetricsPath]}")
+            .ToList();
+        return (logs.Count > 0 ? $"; logs over OTLP from {string.Join(", ", logs)}" : "")
+               + (metrics.Count > 0 ? $"; metrics from {string.Join(", ", metrics)}" : "");
+    }
+
+    private static string Labelled(ComposeBindings bindings) =>
+        $"{bindings.Bindings.Count} service{(bindings.Bindings.Count == 1 ? "" : "s")} as "
+        + string.Join(", ", bindings.Bindings.Select(binding => binding.Component.ToString()));
 }

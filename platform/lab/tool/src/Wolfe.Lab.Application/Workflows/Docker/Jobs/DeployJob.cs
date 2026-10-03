@@ -1,5 +1,6 @@
 using Ritten.Docker;
 using Ritten.Docker.Steps;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Volumes;
@@ -28,7 +29,8 @@ internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : Do
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<ResolveRelease>(),
-        Step.FromType<ResolveComponent>(),
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveArtifacts>(),
         Step.FromType<PublishArtifacts>(),
@@ -53,7 +55,7 @@ internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : Do
         {
             // The release is the first artifact: the component, where the stack runs from.
             builder.AddReleases(release).AddArtifacts([
-                new ArtifactOptions { Source = ".", Output = $"${{{LabRoots.RootVariable}}}/{release}" },
+                new ArtifactOptions { Source = ".", Output = $"${{{LabDirectories.RootVariable}}}/{release}" },
                 .. options.Artifacts
             ]);
         }

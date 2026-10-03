@@ -1,5 +1,6 @@
 using System.Text.Json;
-using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Services;
 
 namespace Wolfe.Lab.Tests.Domain.Catalog;
 
@@ -20,9 +21,9 @@ public class ClosedSetTests
     [Fact]
     public void From_TakesOnlyAValueOfTheSet()
     {
-        ComponentKind.From("workload").ShouldBe(ComponentKind.Workload);
+        ComponentKind.From("app").ShouldBe(ComponentKind.App);
         ComponentKind.TryFrom("daemon").Error.ErrorMessage
-            .ShouldBe("'daemon' is not a kind of component (workload, backup, runner, repository, infrastructure, certificate, package, machine).");
+            .ShouldBe(ComponentErrors.NotAKind("daemon").Message);
     }
 
     private sealed record Holder(LinkType Type);

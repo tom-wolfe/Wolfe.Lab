@@ -32,18 +32,19 @@ internal static class ServiceComponents
     /// <param name="component">The component being checked.</param>
     public static IReadOnlyDictionary<string, ModelOptions> Read(IDirectory component)
     {
-        var service = Path.GetFullPath(Path.Combine(component.AbsolutePath, ".."));
+        var service = component.GetDirectory("..");
         var found = new Dictionary<string, ModelOptions>(StringComparer.Ordinal);
 
-        foreach (var directory in Directory.GetDirectories(service).OrderBy(Path.GetFileName, StringComparer.Ordinal))
+        foreach (var directory in service.GetDirectories().OrderBy(directory => directory.Name, StringComparer.Ordinal))
         {
-            var file = Path.Combine(directory, "ritten.json");
-            if (!File.Exists(file))
+            var file = directory.GetFile("ritten.json");
+            if (!file.Exists)
             {
                 continue;
             }
 
-            using var document = JsonDocument.Parse(File.ReadAllText(file), new JsonDocumentOptions
+            using var stream = file.OpenRead();
+            using var document = JsonDocument.Parse(stream, new JsonDocumentOptions
             {
                 CommentHandling = JsonCommentHandling.Skip,
                 AllowTrailingCommas = true
@@ -55,7 +56,7 @@ internal static class ServiceComponents
             }
 
             var options = document.RootElement.Deserialize<OllamaOptions>(Options);
-            found[Path.GetFileName(directory)] = options?.Models ?? new ModelOptions();
+            found[directory.Name] = options?.Models ?? new ModelOptions();
         }
 
         return found;

@@ -21,12 +21,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="Microsoft.Extensions.Options" />
     <Using Include="Ritten.Commands" />
     <Using Include="Ritten.Contracts" />
     <Using Include="Ritten.Contracts.FileSystem" />
     <Using Include="Ritten.Engine" />
     <Using Include="Ritten.Engine.Workflows" />
     <Using Include="Ritten.Reporting" />
+    <Using Include="Wolfe.Lab.Domain.Extensions" />
   </ItemGroup>
 
 </Project>

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Infrastructure.Releases;
@@ -8,7 +9,7 @@ public class ResolveArtifactsTests : IDisposable
 {
     private readonly DirectoryInfo _component = Directory.CreateTempSubdirectory("lab-component-");
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly WorkflowEnvironment _environment = new(name => name == "LAB_ROOT" ? "/lab/root" : null);
+    private readonly IOptions<LabDirectories> _roots = Options.Create(new LabDirectories { Root = new PhysicalDirectory("/lab/root") });
 
     public ResolveArtifactsTests()
     {
@@ -19,7 +20,7 @@ public class ResolveArtifactsTests : IDisposable
     public void Dispose() => _component.Delete(recursive: true);
 
     private StepResult<Artifacts> Resolve(params ArtifactOptions[] artifacts) =>
-        new ResolveArtifacts(new ArtifactDeclarations(artifacts), _fileSystem, _environment, Substitute.For<IWorkflowLog>()).Run();
+        new ResolveArtifacts(new ArtifactDeclarations(artifacts), _fileSystem, _roots, Substitute.For<IWorkflowLog>()).Run();
 
     private static string Message(StepResult<Artifacts> result) =>
         string.Join(" ", result.Outcome.Errors.ShouldNotBeNull().Select(error => error.Message));

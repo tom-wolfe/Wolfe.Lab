@@ -15,7 +15,7 @@ internal sealed class ImageCheckJob : LabJob<DockerComponentOptions>
 
     public override string Description => "Checks the component's images each have a Dockerfile and a tag naming their registry.";
 
-    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<CheckServiceCatalog>(), Step.FromType<CheckImages>()];
+    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<ResolveServiceCatalog>(), Step.FromType<CheckImages>()];
 
     public override JobKind Kind => JobKind.Check;
 

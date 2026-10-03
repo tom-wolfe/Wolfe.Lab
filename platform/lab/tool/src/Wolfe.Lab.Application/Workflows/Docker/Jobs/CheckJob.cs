@@ -2,8 +2,10 @@ using Ritten.Docker;
 using Ritten.Docker.Steps;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Telemetry;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
+using Wolfe.Lab.Application.Workflows.Docker.Steps;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Jobs;
 
@@ -19,8 +21,10 @@ internal sealed class CheckJob<TOptions> : LabJob<TOptions> where TOptions : Doc
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
-        Step.FromType<CheckServiceCatalog>(),
+        Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ComposeCheck>(),
+        Step.FromType<ResolveDeploymentUnit>(),
+        Step.FromType<CheckComposeBindings>(),
         Step.FromType<CheckTelemetryNames>()
     ];
 

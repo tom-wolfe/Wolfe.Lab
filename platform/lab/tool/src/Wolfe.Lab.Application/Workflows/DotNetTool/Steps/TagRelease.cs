@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Ritten.DotNet;
 using Ritten.Git;
 

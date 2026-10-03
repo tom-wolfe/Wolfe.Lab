@@ -12,7 +12,7 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
 {
     public async Task<StepResult> Run(CancellationToken ct = default)
     {
-        var problems = await Check(commands, fileSystem.ProjectRoot.AbsolutePath, ct);
+        var problems = await Check(commands, fileSystem.ProjectRoot, ct);
         if (problems.Count > 0)
         {
             return StepResult.Failed(problems);
@@ -27,13 +27,22 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
     /// git tracks is read: the component as it is committed, not whatever lies beside it — a
     /// run's report, a tool's scratch, a build's output.
     /// </summary>
-    internal static async Task<IReadOnlyList<Error>> Check(ICommandRunner commands, string component, CancellationToken ct = default)
+    internal static async Task<IReadOnlyList<Error>> Check(ICommandRunner commands, IDirectory component, CancellationToken ct = default)
     {
         var problems = new List<Error>();
-        foreach (var file in await Tracked(commands, component, ct))
+        var tracked = await Tracked(commands, component, ct);
+        foreach (var file in tracked)
         {
-            var errors = await Read(commands, component, file, ct);
+            var errors = await Read(component, file, ct);
             problems.AddRange(errors.Select(error => new Error($"{file}: {error.Message}")));
+        }
+
+        // A stack is read once, as compose resolves it, whichever of its files it is spread over.
+        if (ComposeProject.DefaultFiles.FirstOrDefault(tracked.Contains) is { } stack)
+        {
+            var project = await ComposeProject.Read(commands, component, ct: ct);
+            problems.AddRange((project.Value is { } read ? ComposeTelemetry.From(read).Errors ?? [] : project.Errors ?? [])
+                .Select(error => new Error($"{stack}: {error.Message}")));
         }
 
         return problems;
@@ -42,17 +51,23 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
     /// <summary>
     /// What one file names wrongly, read as the kind of file it is.
     /// </summary>
-    private static async Task<IReadOnlyList<Error>> Read(ICommandRunner commands, string component, string file, CancellationToken ct)
+    private static async Task<IReadOnlyList<Error>> Read(IDirectory component, string file, CancellationToken ct)
     {
-        var name = Path.GetFileName(file);
-        var extension = Path.GetExtension(file);
+        var target = component.GetFile(file);
+        var name = target.Name;
+        var extension = target.Extension;
         var isTargets = name.EndsWith(".json", StringComparison.Ordinal) || name.EndsWith(".json.tmpl", StringComparison.Ordinal);
         if (!isTargets && extension is not (".alloy" or ".yaml" or ".yml"))
         {
             return [];
         }
 
-        var text = await File.ReadAllTextAsync(Path.Combine(component, file), ct);
+        // Tracked, but deleted in the working directory: nothing to name anything.
+        if (await target.ReadAllTextIfExists(ct) is not { } text)
+        {
+            return [];
+        }
+
         if (isTargets)
         {
             // chezmoi's copy is a template of one, which reads as one once it is JSON.
@@ -64,22 +79,15 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
             return AlloyConfig.Read(text).Errors ?? [];
         }
 
-        var errors = new List<Error>([.. StoreConfig.Read(text).Errors ?? [], .. LabelMentions.In(text).Errors ?? []]);
-        if (file == ComposeProject.FileName)
-        {
-            var project = await ComposeProject.Read(commands, component, ct);
-            errors.AddRange(project.Value is { } read ? ComposeTelemetry.From(read).Errors ?? [] : project.Errors ?? []);
-        }
-
-        return errors;
+        return [.. StoreConfig.Read(text).Errors ?? [], .. LabelMentions.In(text).Errors ?? []];
     }
 
     /// <summary>
     /// The files git tracks in the component, relative to it.
     /// </summary>
-    private static async Task<IReadOnlyList<string>> Tracked(ICommandRunner commands, string component, CancellationToken ct)
+    private static async Task<IReadOnlyList<string>> Tracked(ICommandRunner commands, IDirectory component, CancellationToken ct)
     {
-        var result = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z").InDirectory(component).QuietOutput().ThrowOnError(), ct);
+        var result = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z").InDirectory(component.AbsolutePath).QuietOutput().ThrowOnError(), ct);
         // Ritten's runner ends what it captures with a newline, which is no file's name.
         return [.. result.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)];
     }

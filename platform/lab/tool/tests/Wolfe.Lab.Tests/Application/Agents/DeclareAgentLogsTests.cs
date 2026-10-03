@@ -1,20 +1,24 @@
 using System.Text.Json;
+using Microsoft.Extensions.Options;
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
-using Component = Wolfe.Lab.Domain.Components.Component;
+using Wolfe.Lab.Infrastructure.Releases;
+using Wolfe.Lab.Tests.Domain.Catalog;
 
 namespace Wolfe.Lab.Tests.Application.Agents;
 
 public class DeclareAgentLogsTests : IDisposable
 {
-    private static readonly Component Server = new(AreaName.From("ai"), ServiceName.From("ollama"), ComponentName.From("server"));
+    private static readonly DeploymentUnit Server = Catalogs.Unit("ai/ollama/server", Catalogs.Definition("server", ComponentKind.Model, WorkflowName.Ollama));
 
     private readonly DirectoryInfo _root = Directory.CreateTempSubdirectory("lab-logs-");
-    private readonly WorkflowEnvironment _environment;
+    private readonly IOptions<LabDirectories> _roots;
 
-    public DeclareAgentLogsTests() => _environment = new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null);
+    public DeclareAgentLogsTests() => _roots = Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) });
 
     public void Dispose() => _root.Delete(recursive: true);
 
@@ -24,7 +28,7 @@ public class DeclareAgentLogsTests : IDisposable
         log is null ? null : HostPath.From(log), KeepAlive: true, ExitTimeout: null, AgentRestart.Reload, DateTimeOffset.UnixEpoch);
 
     private Task<StepResult> Declare(bool dryRun = false, params AgentDefinition[] agents) =>
-        new DeclareAgentLogs(_environment, new WorkflowJob("ollama", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
+        new DeclareAgentLogs(_roots, new WorkflowJob("ollama", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(new AgentPlan(agents), Server, TestContext.Current.CancellationToken);
 
     private string TargetFile => Path.Combine(_root.FullName, ".logs", "ai-ollama-server.json");

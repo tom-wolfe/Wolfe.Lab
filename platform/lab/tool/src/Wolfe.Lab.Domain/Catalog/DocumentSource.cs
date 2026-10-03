@@ -1,3 +1,5 @@
+using Wolfe.Lab.Domain.Paths;
+
 namespace Wolfe.Lab.Domain.Catalog;
 
 /// <summary>

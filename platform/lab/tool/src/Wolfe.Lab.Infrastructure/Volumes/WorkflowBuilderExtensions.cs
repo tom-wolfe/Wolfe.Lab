@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Domain.Paths;
-using Wolfe.Lab.Infrastructure.Paths;
 
 namespace Wolfe.Lab.Infrastructure.Volumes;
 

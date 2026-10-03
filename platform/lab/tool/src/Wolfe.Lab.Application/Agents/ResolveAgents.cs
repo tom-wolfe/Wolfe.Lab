@@ -18,7 +18,7 @@ namespace Wolfe.Lab.Application.Agents;
 /// and variable first, so an agent can name its artifacts and its program wherever this node keeps them.
 /// </remarks>
 [Step("resolve agents", StepKind.Work)]
-internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvider secrets, WorkflowEnvironment environment, IWorkflowLog log)
+internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvider secrets, IOptions<LabDirectories> options, IWorkflowLog log)
 {
     public async Task<StepResult<AgentPlan>> Run(AgentPackages packages, CancellationToken ct = default)
     {
@@ -27,7 +27,7 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
             return new Error("No agents are declared here: a deploy that converges nothing is a mistake, not a success.");
         }
 
-        var roots = LabRoots.From(environment);
+        var roots = options.Value;
         var resolved = new List<AgentDefinition>();
         var errors = new List<Error>();
 
@@ -49,7 +49,7 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
 
             // A rehearsal installs nothing, so a package it would install is not there to find.
             var rehearsed = package?.Outcome == PackageOutcome.WouldInstall;
-            if (!rehearsed && !File.Exists(program.Value))
+            if (!rehearsed && !program.File.Exists)
             {
                 errors.Add(new Error(package is null
                     ? $"Agent '{name}' runs {program.Value}, which is not on this node."
@@ -64,7 +64,7 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
                 continue;
             }
 
-            if (options.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : File.GetLastWriteTimeUtc(program.Value)) is not { } definition)
+            if (options.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : System.IO.File.GetLastWriteTimeUtc(program.File.AbsolutePath)) is not { } definition)
             {
                 errors.Add(new Error($"Agent '{name}' is incomplete."));
                 continue;
@@ -85,9 +85,9 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
     /// <summary>
     /// The options with the lab's roots written in.
     /// </summary>
-    internal static AgentOptions Expand(AgentOptions options, LabRoots roots, string? package = null)
+    internal static AgentOptions Expand(AgentOptions options, LabDirectories directories, string? package = null)
     {
-        string Value(string value) => roots.Expand(package is null ? value : value.Replace(PackageVariable, package, StringComparison.Ordinal));
+        string Value(string value) => directories.Expand(package is null ? value : value.Replace(PackageVariable, package, StringComparison.Ordinal));
         HostPath? Path(HostPath? path) => path is { } value ? HostPath.From(Value(value.Value)) : null;
 
         return options with

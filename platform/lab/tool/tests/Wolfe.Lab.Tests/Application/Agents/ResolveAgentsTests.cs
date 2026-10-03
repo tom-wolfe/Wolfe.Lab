@@ -1,8 +1,11 @@
+using Microsoft.Extensions.Options;
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Packages;
+using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Tests.Application.Agents;
 
@@ -10,12 +13,7 @@ public class ResolveAgentsTests : IDisposable
 {
     private readonly DirectoryInfo _node = Directory.CreateTempSubdirectory("lab-node-");
     private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
-    private readonly WorkflowEnvironment _environment = new(name => name switch
-    {
-        "LAB_ROOT" => "/lab/root",
-        "LAB_DATA" => "/lab/data",
-        _ => null
-    });
+    private readonly IOptions<LabDirectories> _roots = Options.Create(new LabDirectories { Root = new PhysicalDirectory("/lab/root"), Data = new PhysicalDirectory("/lab/data") });
 
     public ResolveAgentsTests() =>
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(call => $"secret-of-{call.Arg<string>()}");
@@ -33,7 +31,7 @@ public class ResolveAgentsTests : IDisposable
         Resolve(new Dictionary<string, InstalledPackage>(), agents);
 
     private Task<StepResult<AgentPlan>> Resolve(Dictionary<string, InstalledPackage> packages, params (string Name, AgentOptions Options)[] agents) =>
-        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Options)), _secrets, _environment, Substitute.For<IWorkflowLog>())
+        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Options)), _secrets, _roots, Substitute.For<IWorkflowLog>())
             .Run(new AgentPackages(packages), TestContext.Current.CancellationToken);
 
     private static InstalledPackage Alloy(string directory, PackageOutcome outcome) =>

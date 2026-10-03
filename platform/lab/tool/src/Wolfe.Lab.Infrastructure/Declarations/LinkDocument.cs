@@ -1,5 +1,5 @@
 using Json.Schema.Generation;
-using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Services;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 

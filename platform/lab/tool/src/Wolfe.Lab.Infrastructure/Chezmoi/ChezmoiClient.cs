@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Ritten.Engine.FileSystem;
 
 namespace Wolfe.Lab.Infrastructure.Chezmoi;
 
@@ -16,52 +17,46 @@ internal sealed class ChezmoiClient(ICommandRunner commands) : IChezmoi
     /// <inheritdoc />
     public async Task<IReadOnlyList<string>> Render(IDirectory source, string profile, IDirectory destination, CancellationToken ct = default)
     {
-        var scratch = Directory.CreateTempSubdirectory("lab-chezmoi-");
+        // Only the disk makes a directory of a name no other run has.
+        var scratch = new PhysicalDirectory(Directory.CreateTempSubdirectory("lab-chezmoi-").FullName);
         try
         {
-            var op = Path.Combine(scratch.FullName, "op");
-            await File.WriteAllTextAsync(op, OpStub, ct);
-            if (!OperatingSystem.IsWindows())
-            {
-                File.SetUnixFileMode(op, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-            }
+            var op = scratch.GetFile("op");
+            await op.WriteAllText(OpStub, mode: UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute, cancellationToken: ct);
 
-            var config = Path.Combine(scratch.FullName, "chezmoi.json");
-            await File.WriteAllTextAsync(config, JsonSerializer.Serialize(new
+            var config = scratch.GetFile("chezmoi.json");
+            await config.WriteAllText(JsonSerializer.Serialize(new
             {
                 data = new { profile },
-                onepassword = new { command = op, mode = "service" }
-            }), ct);
+                onepassword = new { command = op.AbsolutePath, mode = "service" }
+            }), cancellationToken: ct);
 
-            var archive = Path.Combine(scratch.FullName, "render.tar");
+            var archive = scratch.GetFile("render.tar");
             await commands.Run(
                 Command.Create("chezmoi")
                     .WithArguments(
                         "--source", source.AbsolutePath,
                         "--destination", destination.AbsolutePath,
-                        "--config", config,
-                        "--cache", Path.Combine(scratch.FullName, "cache"),
-                        "archive", "--exclude", "externals", "--output", archive)
+                        "--config", config.AbsolutePath,
+                        "--cache", scratch.GetDirectory("cache").AbsolutePath,
+                        "archive", "--exclude", "externals", "--output", archive.AbsolutePath)
                     .WithEnvironmentVariables(new Dictionary<string, string> { [TokenVariable] = StubToken })
                     .ThrowOnError(),
                 ct);
 
             // The system tar, not .NET's reader: chezmoi writes headers the latter cannot parse.
             destination.Create();
-            await commands.Run(Command.Create("tar").WithArguments("-x", "-C", destination.AbsolutePath, "-f", archive).ThrowOnError(), ct);
+            await commands.Run(Command.Create("tar").WithArguments("-x", "-C", destination.AbsolutePath, "-f", archive.AbsolutePath).ThrowOnError(), ct);
         }
         finally
         {
             // rm, not Directory.Delete: chezmoi's HTTP cache files a download under a path
             // longer than .NET will traverse, and the scratch must go whatever it holds.
-            await commands.Run(Command.Create("rm").WithArguments("-rf", scratch.FullName), CancellationToken.None);
+            await commands.Run(Command.Create("rm").WithArguments("-rf", scratch.AbsolutePath), CancellationToken.None);
         }
 
-        // Everything in a home tree is a dotfile, which .NET counts as hidden and skips by default.
-        var everything = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.None };
-        return [.. Directory.EnumerateFiles(destination.AbsolutePath, "*", everything)
-            .Select(file => Path.GetRelativePath(destination.AbsolutePath, file))
-            .Order(StringComparer.Ordinal)];
+        // Everything in a home tree is a dotfile, which the glob matches as any other name.
+        return [.. destination.GetFiles("**/*").Select(destination.RelativePath).Order(StringComparer.Ordinal)];
     }
 
     /// <inheritdoc />
