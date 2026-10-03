@@ -2,6 +2,7 @@ using Ritten.Docker;
 using Ritten.Docker.Steps;
 using Ritten.DotNet;
 using Ritten.DotNet.Steps;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 
@@ -19,6 +20,7 @@ internal sealed class DotNetCheckJob : LabJob<DotNetServiceOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<CheckServiceCatalog>(),
         Step.FromType<ComposeCheck>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormatCheck>(),

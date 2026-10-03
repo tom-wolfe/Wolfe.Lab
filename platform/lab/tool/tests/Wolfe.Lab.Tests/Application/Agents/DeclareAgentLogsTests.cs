@@ -1,14 +1,15 @@
 using System.Text.Json;
 using Wolfe.Lab.Application.Agents;
-using Wolfe.Lab.Domain.Components;
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
+using Component = Wolfe.Lab.Domain.Components.Component;
 
 namespace Wolfe.Lab.Tests.Application.Agents;
 
 public class DeclareAgentLogsTests : IDisposable
 {
-    private static readonly Component Server = new("ai", "ollama", "server");
+    private static readonly Component Server = new(AreaName.From("ai"), ServiceName.From("ollama"), ComponentName.From("server"));
 
     private readonly DirectoryInfo _root = Directory.CreateTempSubdirectory("lab-logs-");
     private readonly WorkflowEnvironment _environment;

@@ -2,6 +2,7 @@ using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Ritten.NuGet;
 using Ritten.Releases;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Workflows.DotNetTool.Models;
 
@@ -24,6 +25,7 @@ internal sealed class CheckJob : LabJob<DotNetToolOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<CheckServiceCatalog>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormatCheck>(),
         Step.FromType<DotnetBuild>(),

@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Telemetry;
 
 namespace Wolfe.Lab.Domain.Components;
@@ -5,16 +6,19 @@ namespace Wolfe.Lab.Domain.Components;
 /// <summary>
 /// Encapsulates the metadata for a given component.
 /// </summary>
-public sealed record Component(string Area, string Service, string Name)
+/// <param name="Area">The area its service is classified under.</param>
+/// <param name="Service">The service it belongs to.</param>
+/// <param name="Name">Its own name, which is its directory's.</param>
+public sealed record Component(AreaName Area, ServiceName Service, ComponentName Name)
 {
     /// <summary>
     /// Where the component lives, as the attributes its telemetry is labelled with.
     /// </summary>
     public IReadOnlyList<KeyValuePair<TelemetryAttribute, string>> Attributes =>
     [
-        new(TelemetryAttribute.Area, Area),
-        new(TelemetryAttribute.Service, Service),
-        new(TelemetryAttribute.Component, Name)
+        new(TelemetryAttribute.Area, Area.Value),
+        new(TelemetryAttribute.Service, Service.Value),
+        new(TelemetryAttribute.Component, Name.Value)
     ];
 
     /// <summary>
@@ -28,16 +32,37 @@ public sealed record Component(string Area, string Service, string Name)
     public string QualifiedName => $"{Area}-{Service}-{Name}";
 
     /// <summary>
-    /// The component a directory is, from its path below the checkout's root —
-    /// <c>area/service/component</c> — or null when it is not three levels down.
+    /// Its directory in the repository: <c>area/service/component</c>.
+    /// </summary>
+    public RepositoryPath Directory => RepositoryPath.From($"{Area}/{Service}/{Name}");
+
+    /// <summary>
+    /// Loads a component from a directory.
     /// </summary>
     /// <param name="root">The checkout's root, as an absolute path.</param>
     /// <param name="component">The component's directory, as an absolute path.</param>
-    public static Component? From(string root, string component) =>
-        Path.GetRelativePath(root, component).Split(Path.DirectorySeparatorChar) is [var area, var service, var name]
-        && area is not ".." and not "."
-            ? new Component(area, service, name)
-            : null;
+    public static Result<Component> From(string root, string component)
+    {
+        if (RepositoryPath.TryFrom(Path.GetRelativePath(root, component)) is not { IsSuccess: true } path
+            || path.ValueObject.Segments is not [var area, var service, var name])
+        {
+            return new Error($"{component} is not a component: one sits three directories below the checkout's root, area/service/component.");
+        }
+
+        var (placedArea, placedService, placedName) = (AreaName.TryFrom(area), ServiceName.TryFrom(service), ComponentName.TryFrom(name));
+        // Vogen's error on a success is Validation.Ok, not null: whether each one holds is asked.
+        var errors = new[]
+            {
+                placedArea.IsSuccess ? null : placedArea.Error.ErrorMessage,
+                placedService.IsSuccess ? null : placedService.Error.ErrorMessage,
+                placedName.IsSuccess ? null : placedName.Error.ErrorMessage
+            }
+            .OfType<string>()
+            .Select(message => new Error($"{path.ValueObject}: {message}"))
+            .ToList();
+
+        return errors.Count > 0 ? errors : new Component(placedArea.ValueObject, placedService.ValueObject, placedName.ValueObject);
+    }
 
     /// <inheritdoc />
     public override string ToString() => $"{Area}/{Service}/{Name}";

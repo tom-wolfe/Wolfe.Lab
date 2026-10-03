@@ -80,6 +80,7 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
     private static async Task<IReadOnlyList<string>> Tracked(ICommandRunner commands, string component, CancellationToken ct)
     {
         var result = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z").InDirectory(component).QuietOutput().ThrowOnError(), ct);
-        return [.. result.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries).Order(StringComparer.Ordinal)];
+        // Ritten's runner ends what it captures with a newline, which is no file's name.
+        return [.. result.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)];
     }
 }
