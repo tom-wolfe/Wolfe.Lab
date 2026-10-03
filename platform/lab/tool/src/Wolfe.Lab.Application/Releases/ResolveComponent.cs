@@ -1,4 +1,5 @@
 using Ritten.Git;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Components;
 
 namespace Wolfe.Lab.Application.Releases;
@@ -17,9 +18,10 @@ internal sealed class ResolveComponent(IGit git, IFileSystem fileSystem, IWorkfl
             return new Error($"{dir.AbsolutePath} is not in a git checkout, and where a component lives is its path in one.");
         }
 
-        if (Component.From(checkout.AbsolutePath, dir.AbsolutePath) is not { } component)
+        // What it runs is labelled with where it lives, so a directory that cannot say is refused.
+        if (!Component.From(checkout.AbsolutePath, dir.AbsolutePath).TryGetValue(out var component, out var errors))
         {
-            return new Error($"{Path.GetRelativePath(checkout.AbsolutePath, dir.AbsolutePath)} is not <area>/<service>/<component>, so what it runs cannot say where it lives.");
+            return StepResult.Failed(errors);
         }
 
         log.Detail($"{component.Name} lives at {component}.");

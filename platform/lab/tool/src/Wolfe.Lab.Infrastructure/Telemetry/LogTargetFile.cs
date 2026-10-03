@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Wolfe.Lab.Domain.Telemetry;
 
 namespace Wolfe.Lab.Infrastructure.Telemetry;
@@ -44,13 +43,3 @@ public sealed record LogTargetFile(IReadOnlyList<LogTarget> Targets)
         return errors.Count > 0 ? errors : new LogTargetFile(targets ?? []);
     }
 }
-
-/// <summary>
-/// One entry of a discovery target file: the collector reads <see cref="LogTargetFile.PathLabel"/>
-/// and keeps the rest as the stream's labels.
-/// </summary>
-/// <param name="Targets">The hosts it is read on: <c>localhost</c>.</param>
-/// <param name="Labels">The stream's labels, and the file's path.</param>
-public sealed record LogTarget(
-    [property: JsonPropertyName("targets")] IReadOnlyList<string> Targets,
-    [property: JsonPropertyName("labels")] IReadOnlyDictionary<string, string> Labels);

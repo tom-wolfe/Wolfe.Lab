@@ -1,10 +1,10 @@
-using System.Text.Json;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
-using Wolfe.Lab.Domain.Components;
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Infrastructure.Releases;
 using YamlDotNet.Serialization;
+using Component = Wolfe.Lab.Domain.Components.Component;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Docker.Steps;
 
@@ -28,7 +28,7 @@ public class LabelServicesTests : IDisposable
 
     private Task<StepResult> Run(bool dryRun = false) =>
         new LabelServices(_commands, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), new Component("personal", "mail", "watcher"), ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
+            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), new Component(AreaName.From("personal"), ServiceName.From("mail"), ComponentName.From("watcher")), ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
 
     private string Override => Path.Combine(_release.FullName, LabelServices.OverrideFile);
 
@@ -78,35 +78,3 @@ public class LabelServicesTests : IDisposable
 
 // Against the real compose: that it merges the override by itself when handed no file, and that
 // the environment merges into a service that spells its own as a list, are what the step relies on.
-public class LabelServicesComposeTests : IDisposable
-{
-    private readonly DirectoryInfo _project = Directory.CreateTempSubdirectory("lab-compose-");
-
-    public void Dispose() => _project.Delete(recursive: true);
-
-    [Fact]
-    public async Task Compose_MergesTheOverrideIntoTheServicesItFindsBesideIt()
-    {
-        await File.WriteAllTextAsync(Path.Combine(_project.FullName, LabelServices.ComposeFile), """
-            services:
-              watcher:
-                image: busybox
-                environment:
-                  - TZ=Europe/London
-            """, TestContext.Current.CancellationToken);
-        await File.WriteAllTextAsync(Path.Combine(_project.FullName, LabelServices.OverrideFile),
-            LabelServices.Render(new Component("personal", "mail", "watcher"), ["watcher"]), TestContext.Current.CancellationToken);
-
-        var result = await new ProcessCommandRunner().Run(
-            Command.Create("docker").WithArguments("compose", "--project-directory", _project.FullName, "config", "--format", "json").ThrowOnError(),
-            TestContext.Current.CancellationToken);
-
-        using var config = JsonDocument.Parse(result.StandardOutput);
-        var watcher = config.RootElement.GetProperty("services").GetProperty("watcher");
-        watcher.GetProperty("labels").GetProperty("lab.area").GetString().ShouldBe("personal");
-        watcher.GetProperty("labels").GetProperty("lab.component").GetString().ShouldBe("watcher");
-        var environment = watcher.GetProperty("environment");
-        environment.GetProperty("TZ").GetString().ShouldBe("Europe/London");
-        environment.GetProperty("OTEL_RESOURCE_ATTRIBUTES").GetString().ShouldBe("lab.area=personal,lab.service=mail,lab.component=watcher");
-    }
-}

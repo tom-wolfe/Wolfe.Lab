@@ -175,6 +175,46 @@ services keep their state (`~/Docker`). A `ritten.json` path names them —
 agent's program, arguments, variables, working directory and log, and
 nothing else is, so every other value reaches its process as written.
 
+### Declarations
+
+The lab is moving from `ritten.json` to describing itself in YAML files
+of its own (ROADMAP.md #14): a `kind: service` document in each service's
+directory — its catalog entry — and a document per component, `kind:`
+saying what it is in general and `type:` in particular
+(`kind: workload`, `type: compose`). By convention they are
+`service.yaml` and `component.yaml`, but a file's name decides nothing,
+and one file may hold several documents split by `---`. A file is the
+lab's when its first line names the schema, relative to itself:
+
+```yaml
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: immich
+description: The photo library, and the phone app's server.
+```
+
+That line is also what gives an editor the rules: completion, and a
+description of every key. The schema is generated from the declaration
+types in `Wolfe.Lab.Infrastructure/Declarations`, never written by hand;
+a test fails when the committed copy is stale, and `LAB_WRITE_SCHEMA=1
+dotnet test` rewrites it. Only files git tracks are read, three
+directories deep at most.
+
+Each component's check job holds its own declaration (`CheckDeclaration`,
+straight after the path filter), so a problem with it is reported in that
+component's check, on the pull request that made it. Every declaration in
+the repository is read — in four stages: the YAML, its shape against the
+schema, each value as the domain's types take it, and the documents
+together against the catalog's rules — so what it names can be found
+whoever declares it, but only the component's own problems are its
+check's — and its service entry's, since every component of the service
+is declared in that context and nothing else judges it — each pointed at
+its file and line. While a component has a
+`ritten.json` as well, the workflow running the check must be what the
+declaration says: a `workload/compose` beside a `"workflow": "docker"`.
+The CLI's own tests hold the whole repository's declarations, a service's
+entry included.
+
 ## Layout
 
 `tool/src/` holds four projects, in layers (ROADMAP.md #14), and the

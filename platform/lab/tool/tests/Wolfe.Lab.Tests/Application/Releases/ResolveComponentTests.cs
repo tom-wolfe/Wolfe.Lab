@@ -26,9 +26,9 @@ public class ResolveComponentTests : IDisposable
     {
         var placement = (await Resolve("ai", "ollama", "server")).Value.ShouldNotBeNull();
 
-        placement.Area.ShouldBe("ai");
-        placement.Service.ShouldBe("ollama");
-        placement.Name.ShouldBe("server");
+        placement.Area.Value.ShouldBe("ai");
+        placement.Service.Value.ShouldBe("ollama");
+        placement.Name.Value.ShouldBe("server");
         placement.QualifiedName.ShouldBe("ai-ollama-server");
         placement.ResourceAttributes.ShouldBe("lab.area=ai,lab.service=ollama,lab.component=server");
     }

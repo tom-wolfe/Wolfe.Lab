@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lab.twolfe.dev/schema",
+  "title": "Wolfe.Lab declaration",
+  "description": "A service or a component of the lab (ROADMAP.md #14). Name this schema in a file's first line to make it one of the lab's.",
+  "type": "object",
+  "required": [
+    "kind"
+  ],
+  "properties": {
+    "kind": {
+      "description": "What the document declares: a service, or a kind of component.",
+      "enum": [
+        "service",
+        "workload",
+        "backup",
+        "runner",
+        "repository",
+        "infrastructure",
+        "certificate",
+        "package",
+        "machine"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "service"
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/service",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "service",
+            "description": "A service: the unit the catalog lists, declared in its own directory."
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The service's name, which is its directory's."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the service is, in a sentence."
+          },
+          "lifecycle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "enum": [
+              "production",
+              "experimental",
+              "deprecated",
+              null
+            ],
+            "description": "Where the service is in its life; production unless it says otherwise."
+          },
+          "links": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "What the link is called on the page."
+                },
+                "type": {
+                  "description": "What the link points at.",
+                  "type": "string",
+                  "enum": [
+                    "app",
+                    "runbook",
+                    "docs",
+                    "dashboard",
+                    "repository"
+                  ]
+                },
+                "url": {
+                  "type": [
+                    "null",
+                    "string"
+                  ],
+                  "description": "An absolute URL. A link has a url or a path."
+                },
+                "path": {
+                  "type": [
+                    "null",
+                    "string"
+                  ],
+                  "description": "A path relative to this file, for a file in the repository. A link has a url or a path."
+                }
+              },
+              "required": [
+                "title",
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Where to use the service, read about it and watch it."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The services this one needs, by name."
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "description"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "workload",
+              "backup",
+              "runner",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is in general.",
+            "type": "string",
+            "enum": [
+              "workload",
+              "backup",
+              "runner",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "What the component is in particular: one of its kind's types."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name. One in a directory of its own is named for it and needs none; one beside its service's declaration must say it."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          }
+        },
+        "required": [
+          "kind",
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "workload"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "compose",
+              "agent"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "backup"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "snapshot",
+              "git"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "runner"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "host",
+              "docker"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "repository"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "restic"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "infrastructure"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "tofu"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "certificate"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "acme"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "package"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "image",
+              "nuget"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "machine"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "type": {
+            "enum": [
+              "chezmoi"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

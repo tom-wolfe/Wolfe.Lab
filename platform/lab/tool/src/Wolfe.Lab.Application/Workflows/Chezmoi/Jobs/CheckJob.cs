@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
@@ -20,6 +21,7 @@ internal sealed class CheckJob : LabJob<ChezmoiOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<CheckServiceCatalog>(),
         Step.FromType<EnsureTools>(),
         Step.FromType<RenderProfiles>(),
         Step.FromType<CheckScripts>()

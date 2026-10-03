@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Telemetry;
 using Wolfe.Lab.Application.Workflows.Agents.Models;
@@ -17,6 +18,7 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
 
     public override IReadOnlyList<Step> Steps { get; } = [
         Step.FromType<GatePathFilter>(),
+        Step.FromType<CheckServiceCatalog>(),
         Step.FromType<CheckAgentDeclarations>(),
         Step.FromType<CheckTelemetryNames>()
     ];

@@ -6,6 +6,11 @@ rather than versioned — the lab is continuous, not released.
 
 ## 2026-10-03
 
+### Added
+
+- **The lab can describe itself.** `kind: service` and component declarations in YAML,
+  a generated schema, and each component's check holding its own (ROADMAP #14).
+
 ### Changed
 
 - **The telemetry checks are typed.** Each kind of file is read into what it says
