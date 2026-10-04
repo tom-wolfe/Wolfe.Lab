@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: proxy
+kind: proxy
+workflow: docker
+service: caddy
+description: "Caddy itself."

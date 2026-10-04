@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: beszel
+displayName: Beszel
+description: "Monitors the nodes directly: CPU, memory, disks and containers."
+links:
+  - { title: Beszel, type: app, url: https://beszel.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

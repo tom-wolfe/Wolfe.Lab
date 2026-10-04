@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: ollama
+displayName: Ollama
+description: "The lab's model endpoint, at ai.twolfe.dev."
+links:
+  - { title: Model endpoint, type: app, url: https://ai.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

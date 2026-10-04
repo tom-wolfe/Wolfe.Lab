@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: garage
+displayName: Garage
+description: "S3-compatible object storage."
+links:
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

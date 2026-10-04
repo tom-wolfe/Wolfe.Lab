@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: sonarr
+displayName: Sonarr
+description: "Maintains TV show files for Jellyfin."
+links:
+  - { title: Sonarr, type: app, url: https://sonarr.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

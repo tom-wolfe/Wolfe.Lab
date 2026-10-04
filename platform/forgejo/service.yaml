@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: forgejo
+displayName: Forgejo
+description: "The lab's git server."
+links:
+  - { title: Forgejo, type: app, url: https://code.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

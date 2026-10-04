@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: agent
+kind: collector
+workflow: agents
+description: "Alloy OTEL collector deployed to every node."

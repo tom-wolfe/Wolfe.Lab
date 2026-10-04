@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: broker
+kind: queue
+workflow: docker
+service: paperless-broker
+description: "Valkey, carrying Paperless's work to its workers."
+---
+name: server
+kind: app
+workflow: docker
+service: paperless
+description: "Paperless-ngx itself."
+dependsOn: [broker]
