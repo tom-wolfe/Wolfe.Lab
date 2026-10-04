@@ -8,7 +8,7 @@ namespace Wolfe.Lab.Domain.Extensions;
 /// </summary>
 public static class WorkflowJobExtensions
 {
-    extension (WorkflowJob job)
+    extension(WorkflowJob job)
     {
         /// <summary>
         /// Gets the domain-safe name of the workflow.
