@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: hub
+kind: app
+workflow: docker
+service: beszel
+description: "Beszel itself."

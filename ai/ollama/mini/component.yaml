@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: mini
+kind: model
+workflow: ollama
+description: "Ollama on the mini: the endpoint whenever the Studio sleeps."

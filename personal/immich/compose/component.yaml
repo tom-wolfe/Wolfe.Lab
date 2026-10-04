@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: postgres
+kind: database
+workflow: docker
+service: immich-database
+description: "Postgres, with the vector extensions Immich searches by."
+---
+name: cache
+kind: cache
+workflow: docker
+service: immich-redis
+description: "Valkey, for Immich's jobs and sessions."
+---
+name: machine-learning
+kind: model
+workflow: docker
+service: immich-machine-learning
+description: "Faces, objects and search, for the server."
+---
+name: server
+kind: app
+workflow: docker
+service: immich-server
+description: "The web app, the API and the phone app's server."
+dependsOn: [postgres, cache]

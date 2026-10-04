@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: grafana
+displayName: Grafana
+description: "Monitoring and alerting for the lab."
+links:
+  - { title: Grafana, type: app, url: https://grafana.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

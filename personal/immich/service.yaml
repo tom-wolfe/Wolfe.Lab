@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: immich
+displayName: Immich
+description: "The photo library, and the phone app's server."
+links:
+  - { title: Immich, type: app, url: https://immich.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

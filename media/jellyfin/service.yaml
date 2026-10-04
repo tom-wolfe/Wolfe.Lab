@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: jellyfin
+displayName: Jellyfin
+description: "Movies and TV shows."
+links:
+  - { title: Jellyfin, type: app, url: https://jellyfin.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

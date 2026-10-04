@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: studio
+kind: model
+workflow: ollama
+description: "Ollama on the Studio: the endpoint while it is awake."

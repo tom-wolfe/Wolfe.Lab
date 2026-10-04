@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: server
+kind: app
+workflow: docker
+service: server
+description: "Forgejo itself."
+---
+name: tailscale
+kind: network
+workflow: docker
+service: tailscale
+description: "Forgejo's own node on the tailnet, git.twolfe.dev."
+dependsOn: [server]

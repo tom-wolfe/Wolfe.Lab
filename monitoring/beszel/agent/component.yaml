@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: agent
+kind: collector
+workflow: agents
+description: "The monitoring agent that runs on each node."
