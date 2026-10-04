@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    paths: [ai/ollama/server/**, .forgejo/workflows/ollama.yaml]
+    paths: [ai/ollama/mini/**, .forgejo/workflows/ollama.yaml]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - working-directory: ai/ollama/server
+      - working-directory: ai/ollama/mini
         run: lab check
 
   deploy:
@@ -28,5 +28,5 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
-      - working-directory: ai/ollama/server
+      - working-directory: ai/ollama/mini
         run: lab deploy --auto-approve
