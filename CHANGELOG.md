@@ -4,12 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
-## 2026-10-03
+## 2026-10-04
 
 ### Added
 
-- **The lab can describe itself.** `kind: service` and component declarations in YAML,
-  a generated schema, and each component's check holding its own (ROADMAP #14).
+- **Service Catalog.** Services and components describe themselves in YAML instead of `ritten.json`.
+
+## 2026-10-03
 
 ### Changed
 
