@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: vpn
+kind: network
+workflow: docker
+service: gluetun
+displayName: gluetun
+description: "VPN tunnel for the download client."
+---
+name: client
+kind: app
+workflow: docker
+service: qbittorrent
+description: "Client for handling larger downloads that need supervising."
+dependsOn: [vpn]

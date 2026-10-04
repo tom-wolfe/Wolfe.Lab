@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: loki
+kind: database
+workflow: docker
+service: loki
+displayName: Loki
+description: "The log store."
+---
+name: prometheus
+kind: database
+workflow: docker
+service: prometheus
+displayName: Prometheus
+description: "The metrics store."
+---
+name: tempo
+kind: database
+workflow: docker
+service: tempo
+displayName: Tempo
+description: "The trace store."
+---
+name: grafana
+kind: app
+workflow: docker
+service: grafana
+displayName: Grafana
+description: "Grafana, in front of the three stores."
+dependsOn: [loki, prometheus, tempo]

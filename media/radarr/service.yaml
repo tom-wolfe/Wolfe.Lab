@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: radarr
+displayName: Radarr
+description: "Maintains movie files for Jellyfin."
+links:
+  - { title: Radarr, type: app, url: https://radarr.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

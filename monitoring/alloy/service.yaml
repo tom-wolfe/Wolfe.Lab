@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: alloy
+displayName: Alloy
+description: "Alloy itself."
+links:
+  - { title: README, type: docs, path: README.md }
+dependsOn: [grafana]

@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: watcher
+kind: backend
+workflow: dotnet-service
+service: watcher
+description: "The lab's own watcher of the mailbox, through the bridge."

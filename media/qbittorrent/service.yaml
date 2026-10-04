@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: qbittorrent
+displayName: qBittorrent
+description: "Multipurpose download client."
+links:
+  - { title: qBittorrent, type: app, url: https://qbittorrent.twolfe.dev }
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: server
+kind: storage
+workflow: docker
+service: garage
+description: "Garage itself."

@@ -10,6 +10,8 @@ rather than versioned — the lab is continuous, not released.
 
 - **Service Catalog.** Services and components describe themselves in YAML instead of `ritten.json`.
 
+- **The catalog's first entries.** All service and component metadata.
+
 ## 2026-10-03
 
 ### Changed
