@@ -12,7 +12,7 @@ rather than versioned — the lab is continuous, not released.
 
 - **The catalog's first entries.** All service and component metadata.
 
-### Changed
+### Changed
 
 - **Mail watcher logs.** Logs are now managed through the component metadata instead of the compose.
 
