@@ -16,8 +16,6 @@ services:
       Model__Name: lab/background
       OTEL_EXPORTER_OTLP_ENDPOINT: http://host.docker.internal:4317
       TZ: Europe/London
-    labels:
-      lab.logs: otlp
     healthcheck:
       test: ["CMD", "curl", "-sS", "--fail-with-body", "http://127.0.0.1:8080/health"]
       interval: 60s

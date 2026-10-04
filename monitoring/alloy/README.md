@@ -69,9 +69,9 @@ for where the targets are, `LAB_GATEWAY` on a forwarder, and
   `service_name` for its container and carrying every `lab.*` label the
   deploy put on it — `lab.area`, `lab.service`, `lab.component`
   (platform/lab/README.md) — mapped as a set, so a new one needs no change
-  here. A container that sends its own logs over OTLP is labelled
-  `lab.logs: otlp` in its compose file and left out, rather than stored
-  twice; the mail watcher is the one today. The first start reads each
+  here. A container that sends its own logs over OTLP declares
+  `logs: otlp` on its component, which the deploy labels it with, and is
+  left out rather than stored twice; the mail watcher is the one today. The first start reads each
   container's whole history — Loki refuses what is older than its seven
   days — and tails from then on. Containers are found once a minute, so
   one that comes and goes between two looks is never read.
