@@ -15,7 +15,7 @@ internal sealed class CheckJob : LabJob<OllamaOptions>
 
     public override string Description => "Checks the component's model roles, alone and against the service's other servers.";
 
-    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<CheckServiceCatalog>(), Step.FromType<CheckRoles>()];
+    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<ResolveServiceCatalog>(), Step.FromType<CheckRoles>()];
 
     public override JobKind Kind => JobKind.Check;
 

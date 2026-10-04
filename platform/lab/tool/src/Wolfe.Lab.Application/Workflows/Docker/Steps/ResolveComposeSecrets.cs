@@ -20,14 +20,13 @@ internal sealed class ResolveComposeSecrets(ISecretProvider secrets, IFileSystem
     public async Task<StepResult<ComposeEnvironment>> Run(CancellationToken ct = default)
     {
         var file = fileSystem.ProjectRoot.GetFile(FileName);
-        if (!file.Exists)
+        if (await file.ReadAllTextIfExists(ct) is not { } text)
         {
             log.Detail($"{fileSystem.ProjectRoot.Name} names no secrets.");
             return ComposeEnvironment.Empty;
         }
 
-        using var reader = new StreamReader(file.OpenRead());
-        if (!EnvironmentFile.Parse(await reader.ReadToEndAsync(ct), file.AbsolutePath).TryGetValue(out var entries, out var errors))
+        if (!EnvironmentFile.Parse(text, file.AbsolutePath).TryGetValue(out var entries, out var errors))
         {
             return StepResult.Failed(errors);
         }

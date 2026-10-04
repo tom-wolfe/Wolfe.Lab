@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Ritten.Engine.FileSystem;
 using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.DotNetTool.Jobs;
+using Wolfe.Lab.Application.Workflows.DotNetTool.Models;
 using Wolfe.Lab.Application.Workflows.DotNetTool.Steps;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.DotNetTool.Steps;
@@ -44,7 +45,7 @@ public class ComputeVersionTests : IDisposable
     private void Release(string version) => Git("tag", DeployJob.TagPrefix + version);
 
     private ComputeVersion Step(ICommandRunner? commands = null) =>
-        new(commands ?? new ProcessCommandRunner(), _git, _fileSystem, ShippedInputs.For("src/Tool/Tool.csproj"),
+        new(commands ?? new ProcessCommandRunner(), _git, _fileSystem, PackageContents.For("src/Tool/Tool.csproj"),
             Options.Create(new GitOptions { TagPrefix = DeployJob.TagPrefix }), Substitute.For<IWorkflowLog>());
 
     private async Task<string> Compute()

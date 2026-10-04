@@ -34,7 +34,7 @@ internal sealed class DrillRestore(IRestic restic, BackupPlan plan, WorkflowJob 
             var errors = new List<Error>();
             foreach (var path in plan.Verify)
             {
-                if (Describe(Path.Join(scratch.AbsolutePath, path)) is { } size)
+                if (Describe(scratch, path) is { } size)
                 {
                     log.Detail($"{path} came back from {snapshot.Id} ({size}).");
                 }
@@ -64,17 +64,22 @@ internal sealed class DrillRestore(IRestic restic, BackupPlan plan, WorkflowJob 
     /// <summary>
     /// What came back, or null for nothing: a non-empty file's size, or a directory with contents.
     /// </summary>
-    private static string? Describe(string restored)
+    /// <remarks>
+    /// A path is the node's, absolute, and restic restores it beneath the scratch as written.
+    /// </remarks>
+    private static string? Describe(IDirectory scratch, string path)
     {
-        if (File.Exists(restored))
+        var restored = path.TrimStart('/');
+        if (scratch.GetFile(restored) is { Exists: true } file)
         {
-            var length = new FileInfo(restored).Length;
+            using var stream = file.OpenRead();
+            var length = stream.Length;
             return length > 0 ? $"{length / 1024.0 / 1024.0:F1} MiB" : null;
         }
 
-        if (Directory.Exists(restored))
+        if (scratch.GetDirectory(restored) is { Exists: true } directory)
         {
-            var entries = Directory.EnumerateFileSystemEntries(restored).Count();
+            var entries = directory.GetFiles().Count() + directory.GetDirectories().Count();
             return entries > 0 ? $"{entries} entr{(entries == 1 ? "y" : "ies")}" : null;
         }
 

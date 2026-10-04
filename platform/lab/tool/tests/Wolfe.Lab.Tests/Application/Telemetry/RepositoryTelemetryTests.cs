@@ -1,3 +1,4 @@
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Telemetry;
 
 namespace Wolfe.Lab.Tests.Application.Telemetry;
@@ -39,6 +40,6 @@ public class RepositoryTelemetryTests
     [Theory]
     [MemberData(nameof(Components))]
     public async Task EveryTelemetryNameIsOneTheLabKnows(string component) =>
-        (await CheckTelemetryNames.Check(new ProcessCommandRunner(), Path.Combine(Checkout(), component), TestContext.Current.CancellationToken))
+        (await CheckTelemetryNames.Check(new ProcessCommandRunner(), new PhysicalDirectory(Path.Combine(Checkout(), component)), TestContext.Current.CancellationToken))
             .Select(error => error.Message).ShouldBeEmpty();
 }

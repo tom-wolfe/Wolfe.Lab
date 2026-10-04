@@ -1,5 +1,6 @@
 using System.Text.Json;
-using Wolfe.Lab.Domain.Components;
+using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Telemetry;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Releases;
@@ -8,25 +9,23 @@ using Wolfe.Lab.Infrastructure.Telemetry;
 namespace Wolfe.Lab.Application.Agents;
 
 /// <summary>
-/// Tells the node's collector which log files the component's agents write, and where in the
-/// lab they live.
+/// Tells the node's collector which log files the component's agents write, and where in the lab they live.
 /// </summary>
-/// <remarks>
-/// A target file per component in <c>${LAB_ROOT}/.logs</c>, in the file discovery format the
-/// collector watches (monitoring/alloy): each agent's <c>log</c>, named for the agent and
-/// labelled with the component's placement. The whole file is rewritten on every deploy, so an
-/// agent the component no longer declares, or no longer gives a log, stops being read; one
-/// whose logs go to the journal instead — a Linux agent with no <c>log</c> — needs no file.
-/// </remarks>
 [Step("declare agent logs", StepKind.Publish)]
-internal sealed class DeclareAgentLogs(WorkflowEnvironment environment, WorkflowJob job, IWorkflowLog log)
+internal sealed class DeclareAgentLogs(IOptions<LabDirectories> roots, WorkflowJob job, IWorkflowLog log)
 {
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 
-    public async Task<StepResult> Run(AgentPlan plan, Component component, CancellationToken ct = default)
+    public async Task<StepResult> Run(AgentPlan plan, DeploymentUnit unit, CancellationToken ct = default)
     {
-        var file = Path.Combine(LabRoots.From(environment).Logs, component.QualifiedName + ".json");
-        var targets = Targets(plan, component);
+        var component = unit.ByWorkflow(job.WorkflowName);
+        if (component.IsError)
+        {
+            return StepResult.Failed(component.Errors);
+        }
+
+        var targetsFile = roots.Value.Logs.GetFile(component.Value.QualifiedName + ".json");
+        var targets = Targets(plan, component.Value);
         if (job.DryRun)
         {
             log.Skipped(targets.Count == 0
@@ -37,13 +36,12 @@ internal sealed class DeclareAgentLogs(WorkflowEnvironment environment, Workflow
 
         if (targets.Count == 0)
         {
-            File.Delete(file);
+            targetsFile.Delete();
             log.Detail($"{component} writes no log files.");
             return StepResult.Successful;
         }
 
-        Directory.CreateDirectory(Path.GetDirectoryName(file) ?? LabRoots.From(environment).Logs);
-        await File.WriteAllTextAsync(file, JsonSerializer.Serialize(targets, Indented), ct);
+        await targetsFile.WriteAllText(JsonSerializer.Serialize(targets, Indented), cancellationToken: ct);
         log.Status($"Declared {Files(targets.Count)} for {component}.");
         return StepResult.Successful;
     }

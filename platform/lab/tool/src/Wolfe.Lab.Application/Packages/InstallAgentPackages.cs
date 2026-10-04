@@ -16,7 +16,7 @@ namespace Wolfe.Lab.Application.Packages;
 /// the agent's version.
 /// </remarks>
 [Step("install agent packages", StepKind.Work)]
-internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPackageInstaller installer, WorkflowEnvironment environment, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
+internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPackageInstaller installer, IOptions<LabDirectories> roots, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
 {
     public async Task<StepResult<AgentPackages>> Run(CancellationToken ct = default)
     {
@@ -41,13 +41,13 @@ internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPack
 
             // The program the agent runs out of its package, which the release may not have
             // marked executable.
-            var directory = result.Directory.AbsolutePath;
+            var directory = result.Directory;
             if (!job.DryRun
-                && ResolveAgents.Expand(agent, LabRoots.From(environment), directory).Program is { } program
-                && program.Value.StartsWith(directory + Path.DirectorySeparatorChar, StringComparison.Ordinal)
-                && File.Exists(program.Value))
+                && ResolveAgents.Expand(agent, roots.Value, directory.AbsolutePath).Program is { File: var program }
+                && directory.RelativePath(program) is var relative && !relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(relative)
+                && program.Exists)
             {
-                GithubPackageInstaller.Executable(program.Value);
+                GithubPackageInstaller.Executable(program);
             }
 
             // What the job runs of the agent's own — ollama's `pull` against ollama's server —
@@ -55,7 +55,7 @@ internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPack
             if (!job.DryRun)
             {
                 Environment.SetEnvironmentVariable(EnsureTools.PathVariable,
-                    $"{directory}{Path.PathSeparator}{Environment.GetEnvironmentVariable(EnsureTools.PathVariable)}");
+                    $"{directory.AbsolutePath}{Path.PathSeparator}{Environment.GetEnvironmentVariable(EnsureTools.PathVariable)}");
             }
         }
 

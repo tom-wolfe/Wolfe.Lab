@@ -1,6 +1,6 @@
 using Ritten.Git;
-
 using Wolfe.Lab.Infrastructure;
+using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Application;
 
@@ -16,5 +16,6 @@ public abstract class LabJob<TOptions> : Job<TOptions> where TOptions : Workflow
         builder.AddCommandRunner();
         builder.AddGit();
         builder.AddLabConfiguration();
+        builder.AddLabRoots();
     }
 }

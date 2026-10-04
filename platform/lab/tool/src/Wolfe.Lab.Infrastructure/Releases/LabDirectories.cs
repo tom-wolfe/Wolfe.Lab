@@ -1,0 +1,78 @@
+using Microsoft.Extensions.Configuration;
+using Ritten.Engine.FileSystem;
+
+namespace Wolfe.Lab.Infrastructure.Releases;
+
+/// <summary>
+/// Exposes well known directories in the lab.
+/// </summary>
+public sealed class LabDirectories
+{
+    private static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+    /// <summary>
+    /// The variable naming where components are installed.
+    /// </summary>
+    public const string RootVariable = "LAB_ROOT";
+    internal const string DataVariable = "LAB_DATA";
+
+    /// <summary>
+    /// Where components and their artifacts are installed: <c>LAB_ROOT</c>.
+    /// </summary>
+    public IDirectory Root { get; set; } = new PhysicalDirectory(Path.Combine(Home, ".local", "share", "Wolfe.Lab"));
+
+    /// <summary>
+    /// Where services keep their state: <c>LAB_DATA</c>.
+    /// </summary>
+    public IDirectory Data { get; set; } = new PhysicalDirectory(Path.Combine(Home, "Docker"));
+
+    /// <summary>
+    /// Takes each root <paramref name="configuration"/> sets over its default; one it leaves
+    /// empty keeps it. The configuration reads the environment with its prefix stripped, so
+    /// <c>LAB_ROOT</c> is <c>ROOT</c> there.
+    /// </summary>
+    internal void Configure(IConfiguration configuration)
+    {
+        if (configuration[RootVariable[LabConfiguration.EnvironmentPrefix.Length..]] is { Length: > 0 } root)
+        {
+            Root = new PhysicalDirectory(root);
+        }
+
+        if (configuration[DataVariable[LabConfiguration.EnvironmentPrefix.Length..]] is { Length: > 0 } data)
+        {
+            Data = new PhysicalDirectory(data);
+        }
+    }
+
+    /// <summary>
+    /// The value with <c>${LAB_ROOT}</c> and <c>${LAB_DATA}</c> replaced. Nothing else is
+    /// expanded: a value is otherwise passed on exactly as written.
+    /// </summary>
+    public string Expand(string value) => value
+        .Replace($"${{{RootVariable}}}", Root.AbsolutePath, StringComparison.Ordinal)
+        .Replace($"${{{DataVariable}}}", Data.AbsolutePath, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Whether the directory lies strictly inside the install root — the one place an artifact may
+    /// be mirrored into, since a mirror deletes whatever its source does not have.
+    /// </summary>
+    public bool Contains(IDirectory directory) =>
+        Root.RelativePath(directory) is var relative && relative != "." && relative != ".." && !relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(relative);
+
+    /// <summary>
+    /// Where a compose release records the artifact stamp its stack was last restarted for:
+    /// beside the releases, never inside one, so writing it changes no release.
+    /// </summary>
+    public IFile AppliedStamp(string release) => Applied.GetFile(release);
+
+    /// <summary>
+    /// Where every compose release's restart stamp is kept.
+    /// </summary>
+    public IDirectory Applied => Root.GetDirectory(".applied");
+
+    /// <summary>
+    /// Where a component's agents say which log files they write, for the node's collector to
+    /// find (monitoring/alloy): one target file per component, beside the releases.
+    /// </summary>
+    public IDirectory Logs => Root.GetDirectory(".logs");
+}

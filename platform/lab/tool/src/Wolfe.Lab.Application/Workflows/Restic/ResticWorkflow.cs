@@ -15,5 +15,5 @@ public sealed class ResticWorkflow : IWorkflow
     public string Label => "restic";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new OffsiteJob(), new Jobs.VerifyJob()];
+    public IReadOnlyList<IJob> Jobs { get; } = [new OffsiteJob(), new VerifyJob()];
 }

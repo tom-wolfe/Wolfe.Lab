@@ -4,6 +4,10 @@ using System.Text.Json.Nodes;
 using Json.Schema;
 using Json.Schema.Generation;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
+using Wolfe.Lab.Domain.Catalog.Services;
+using Wolfe.Lab.Domain.Paths;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
@@ -51,7 +55,7 @@ public static class LabSchema
     /// <summary>
     /// What is wrong with a document's shape, each problem with the line it is on, or nothing.
     /// </summary>
-    public static IReadOnlyList<(int Line, string Problem)> Judge(YamlDocuments.Document document)
+    public static IReadOnlyList<(int Line, Error Problem)> Judge(YamlDocuments.Document document)
     {
         var element = JsonSerializer.SerializeToElement(document.Root);
         var results = Schema.Evaluate(element, new EvaluationOptions { OutputFormat = OutputFormat.List });
@@ -60,7 +64,7 @@ public static class LabSchema
             return [];
         }
 
-        var problems = new List<(int, string)>();
+        var problems = new List<(int, Error)>();
         foreach (var detail in results.Details ?? [])
         {
             var pointer = detail.InstanceLocation.ToString();
@@ -90,43 +94,53 @@ public static class LabSchema
     /// A problem in the words of the field it is in: the schema's own message, but for the two
     /// that say only that a value failed — a pattern, and a key nothing declares.
     /// </summary>
-    private static string Describe(string pointer, string keyword, string message, JsonNode? root)
+    private static Error Describe(string pointer, string keyword, string message, JsonNode? root)
     {
         var segments = pointer.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var at = segments.Length == 0 ? "the document" : string.Join('.', segments);
         var value = segments.Aggregate(root, (node, segment) => node is JsonArray array && int.TryParse(segment, out var index)
             ? array.ElementAtOrDefault(index)
             : node?[segment]);
-        return keyword switch
+        var problem = keyword switch
         {
-            "pattern" => $"{at}: '{value}' is not a name: lower case, a letter first, then letters, digits and hyphens.",
-            "" or "false" => $"{at}: '{segments.LastOrDefault()}' is not something {Kind(root)} declares.",
-            "enum" => $"{at}: {OneOf(segments, value, root) ?? message}",
-            _ => $"{at}: {message}"
+            "pattern" => DeclarationErrors.NotAName(value?.ToString()),
+            "" or "false" => DeclarationErrors.NotDeclarable(segments.LastOrDefault(), Kind(root)),
+            "enum" => OneOf(segments, value, root) ?? DeclarationErrors.Schema(message),
+            _ => DeclarationErrors.Schema(message)
         };
+        return segments.Length == 0 ? problem : new FieldError(string.Join('.', segments), problem);
     }
 
     /// <summary>
-    /// What an enumerated field could have been, in the domain's words: a type is one of its
-    /// kind's, a kind one of the lab's, a lifecycle or a link's type one of theirs.
+    /// What an enumerated field could have been, in the domain's words: a kind, a workflow, a
+    /// lifecycle, a link's type or a log's delivery, each one of its own closed set.
     /// </summary>
-    private static string? OneOf(string[] segments, JsonNode? value, JsonNode? root)
+    private static Error? OneOf(string[] segments, JsonNode? value, JsonNode? root)
     {
         var given = value?.ToString() ?? "";
         return segments switch
         {
-            ["type"] when ComponentKind.TryFrom(root?["kind"]?.ToString() ?? "") is { IsSuccess: true } kind
-                => ComponentType.Of(kind.ValueObject, given).Errors?.FirstOrDefault()?.Message,
-            ["kind"] => $"'{given}' is not a kind of declaration (service, {Listed<ComponentKind>()}).",
-            ["lifecycle"] => $"'{given}' is not a lifecycle ({Listed<Lifecycle>()}).",
-            ["links", _, "type"] => $"'{given}' is not a type of link ({Listed<LinkType>()}).",
+            ["workflow"] => DeclarationErrors.NotOneOf(given, "a workflow that operates components", Listed<WorkflowName>()),
+            ["kind"] => DeclarationErrors.NotOneOf(given, "a kind of declaration", ["service", .. Listed<ComponentKind>()]),
+            ["lifecycle"] => DeclarationErrors.NotOneOf(given, "a lifecycle", Listed<Lifecycle>()),
+            ["links", _, "type"] => DeclarationErrors.NotOneOf(given, "a type of link", Listed<LinkType>()),
+            ["logs"] => DeclarationErrors.NotOneOf(given, "a way logs are delivered", Listed<LogTransport>()),
             _ => null
         };
     }
 
-    private static string Listed<T>() where T : IClosedSet<T> => string.Join(", ", T.All);
+    private static IEnumerable<string> Listed<T>() where T : IClosedSet<T> => T.All.Select(value => value?.ToString() ?? "");
 
-    private static string Kind(JsonNode? root) => root?["kind"]?.GetValue<string>() is { } kind ? $"a {kind}" : "a declaration";
+    // A component's shape is its workflow's, so what it may declare is too.
+    private static string Kind(JsonNode? root) => (root?["kind"]?.ToString(), root?["workflow"]?.ToString()) switch
+    {
+        ("service", _) => "a service",
+        (not null, { } workflow) => $"a {workflow} component",
+        _ => "a declaration"
+    };
+
+    // The shape's name in its branch's identity: compose for ComposeDocument, the shared one common.
+    private static string Shape(Type document) =>
+        document == typeof(ComponentDocument) ? "common" : document.Name.Replace("Document", "", StringComparison.Ordinal).ToLowerInvariant();
 
     private static JsonSchema Build()
     {
@@ -137,11 +151,21 @@ public static class LabSchema
         };
         configuration.Generators.Add(ClosedSetSchemas.Instance);
         var service = new JsonSchemaBuilder().Id($"{Id}/service").FromType<ServiceDocument>(configuration);
-        var component = new JsonSchemaBuilder().Id($"{Id}/component").FromType<ComponentDocument>(configuration);
-        var kinds = ComponentKind.All;
+        var kinds = ComponentKind.All.Select(kind => kind.Value).ToList();
 
-        static JsonSchemaBuilder KindIs(params string[] kinds) => new JsonSchemaBuilder()
-            .Properties(("kind", kinds.Length == 1 ? new JsonSchemaBuilder().Const(kinds[0]) : new JsonSchemaBuilder().Enum(kinds)));
+        // A branch per document shape, each taking the workflows written as it: the workflow is
+        // the discriminator, so only the branch a component's workflow selects reports.
+        var shapes = WorkflowName.All
+            .GroupBy(ComponentDocuments.For)
+            .Select(shape => new JsonSchemaBuilder()
+                .If(new JsonSchemaBuilder()
+                    .Required("kind", "workflow")
+                    .Properties(
+                        ("kind", new JsonSchemaBuilder().Enum(kinds)),
+                        ("workflow", new JsonSchemaBuilder().Enum(shape.Select(workflow => workflow.Value)))))
+                .Then(new JsonSchemaBuilder()
+                    .Id($"{Id}/component/{Shape(shape.Key)}")
+                    .FromType(shape.Key, configuration)));
 
         return new JsonSchemaBuilder()
             .Schema(MetaSchemas.Draft202012Id)
@@ -151,15 +175,14 @@ public static class LabSchema
             .Type(SchemaValueType.Object)
             .Required("kind")
             .Properties(("kind", new JsonSchemaBuilder()
-                .Description("What the document declares: a service, or a kind of component.")
-                .Enum(["service", .. kinds.Select(kind => kind.Value)])))
+                .Description("What the document declares: a service, or what a component is used for.")
+                .Enum(["service", .. kinds])))
             .AllOf([
-                new JsonSchemaBuilder().If(KindIs("service")).Then(service),
-                new JsonSchemaBuilder().If(KindIs([.. kinds.Select(kind => kind.Value)])).Then(component),
-                .. kinds.Select(kind => new JsonSchemaBuilder()
-                    .If(KindIs(kind.Value))
-                    .Then(new JsonSchemaBuilder().Properties(("type", new JsonSchemaBuilder()
-                        .Enum(ComponentType.All.Where(type => type.Kind == kind).Select(type => type.Name.Value))))))
+                new JsonSchemaBuilder().If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Const("service")))).Then(service),
+                new JsonSchemaBuilder()
+                    .If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Enum(kinds))))
+                    .Then(new JsonSchemaBuilder().Required("workflow").Properties(("workflow", new JsonSchemaBuilder().Enum(WorkflowName.All.Select(workflow => workflow.Value))))),
+                .. shapes
             ])
             .Build();
     }

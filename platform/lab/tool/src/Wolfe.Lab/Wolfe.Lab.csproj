@@ -36,4 +36,8 @@
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <Target Name="WriteLabSchema" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug' And '$(CI)' != 'true'">
+    <Exec Command="dotnet &quot;$(TargetPath)&quot; schema &quot;$(MSBuildThisFileDirectory)../../../schema/lab.schema.json&quot;" />
+  </Target>
+
 </Project>

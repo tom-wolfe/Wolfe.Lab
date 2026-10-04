@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Agents;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
@@ -10,7 +11,6 @@ using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Ollama;
 using Wolfe.Lab.Infrastructure.Packages;
-using Wolfe.Lab.Infrastructure.Paths;
 using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Volumes;
 
@@ -31,7 +31,8 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<CheckRoles>(),
-        Step.FromType<ResolveComponent>(),
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),

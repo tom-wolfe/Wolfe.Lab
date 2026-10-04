@@ -4,36 +4,41 @@ using System.Text.Json.Serialization;
 namespace Wolfe.Lab.Infrastructure.Compose;
 
 /// <summary>
-/// A component's compose file as compose itself resolves it: labels and environment read as maps
-/// whichever way the file spells them.
+/// A component's compose stack as compose itself resolves it.
 /// </summary>
 /// <param name="Services">Every service, by name.</param>
 public sealed record ComposeProject(IReadOnlyList<ComposeService> Services)
 {
     /// <summary>
-    /// The compose file in <paramref name="directory"/>, through <c>docker compose config</c>.
+    /// The stack in <paramref name="directory"/>, through <c>docker compose config</c>.
     /// </summary>
     /// <remarks>
-    /// Named with <c>-f</c>, never left to compose to find: an override beside it — the deploy's,
-    /// in a release — is the deploy's to merge, not the component's to declare.
+    /// Its files are compose's to find (<see cref="DefaultFiles"/>), as <c>compose up</c> finds
+    /// them, so what is read is what runs. Only ever a checkout's directory: there, an override
+    /// is one committed, and part of the stack; the one the deploy writes is in the release.
     /// </remarks>
     /// <param name="commands">What runs compose.</param>
-    /// <param name="directory">The component's directory, which holds <c>compose.yaml</c>.</param>
+    /// <param name="directory">The component's directory, which holds its compose files.</param>
+    /// <param name="environment">What the file interpolates: a deploy's secrets, resolved; none, to a check, which leaves them unset.</param>
     /// <param name="ct">A token to monitor for cancellation.</param>
-    public static async Task<Result<ComposeProject>> Read(ICommandRunner commands, string directory, CancellationToken ct = default)
+    public static async Task<Result<ComposeProject>> Read(ICommandRunner commands, IDirectory directory, IReadOnlyDictionary<string, string>? environment = null,
+        CancellationToken ct = default)
     {
         var result = await commands.Run(Command.Create("docker")
-            .WithArguments("compose", "--project-directory", directory, "-f", Path.Combine(directory, FileName), "config", "--format", "json")
+            .WithArguments("compose", "--project-directory", directory.AbsolutePath, "config", "--format", "json")
+            .WithEnvironmentVariables(environment ?? new Dictionary<string, string>())
             .QuietOutput(), ct);
         return result.ExitCode.Value == 0
             ? Parse(result.StandardOutput)
-            : new Error($"compose cannot read {FileName}: {result.StandardError.Trim()}");
+            : ComposeErrors.Unreadable(directory, result.StandardError.Trim());
     }
 
     /// <summary>
-    /// The file a compose component's stack is declared in.
+    /// The files compose looks for when none is named, in the order it looks: the compose
+    /// specification's, not the lab's. The first it finds is the stack's, an override beside it
+    /// merged in.
     /// </summary>
-    public const string FileName = "compose.yaml";
+    public static IReadOnlyList<string> DefaultFiles { get; } = ["compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"];
 
     /// <summary>
     /// The project as <c>docker compose config --format json</c> prints it.
@@ -47,13 +52,15 @@ public sealed record ComposeProject(IReadOnlyList<ComposeService> Services)
                 .. (document?.Services ?? []).Select(service => new ComposeService(
                         service.Key,
                         service.Value.Labels ?? [],
-                        service.Value.Environment ?? []))
+                        service.Value.Environment ?? [],
+                        [.. (service.Value.Ports ?? []).Select(port => port.ToPort())],
+                        service.Value.NetworkMode))
                     .OrderBy(service => service.Name, StringComparer.Ordinal)
             ]);
         }
         catch (JsonException e)
         {
-            return new Error($"compose printed something that is not its configuration: {e.Message}");
+            return ComposeErrors.NotConfiguration(e.Message);
         }
     }
 
@@ -61,5 +68,18 @@ public sealed record ComposeProject(IReadOnlyList<ComposeService> Services)
 
     private sealed record Definition(
         [property: JsonPropertyName("labels")] Dictionary<string, string>? Labels,
-        [property: JsonPropertyName("environment")] Dictionary<string, string?>? Environment);
+        [property: JsonPropertyName("environment")] Dictionary<string, string?>? Environment,
+        [property: JsonPropertyName("ports")] List<Port>? Ports,
+        [property: JsonPropertyName("network_mode")] string? NetworkMode);
+
+    // Compose prints a published port as a string, which is a range when the file gave one.
+    private sealed record Port(
+        [property: JsonPropertyName("target")] int Target,
+        [property: JsonPropertyName("published")] string? Published,
+        [property: JsonPropertyName("host_ip")] string? HostIp,
+        [property: JsonPropertyName("protocol")] string? Protocol)
+    {
+        public ComposePort ToPort() =>
+            new(Target, int.TryParse(Published, out var published) ? published : null, HostIp, Protocol ?? "tcp");
+    }
 }

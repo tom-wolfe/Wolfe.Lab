@@ -27,15 +27,21 @@ internal sealed class GatherRoutes(IFileSystem fileSystem, IGit git, IWorkflowLo
 
         staging.Create();
 
-        // Hidden directories are skipped by default, which keeps .git out of the walk.
-        var snippets = Directory.EnumerateFiles(checkout.AbsolutePath, Snippet, new EnumerationOptions { RecurseSubdirectories = true })
+        // Hidden directories are skipped, which keeps .git — and any worktree under a dot — out of the walk.
+        var snippets = checkout.GetFiles($"**/{Snippet}")
+            .Where(snippet => !checkout.RelativePath(snippet).Split('/').Any(segment => segment.StartsWith('.')))
             .Select(snippet => (Snippet: snippet, Name: Name(checkout, snippet)))
             .OrderBy(route => route.Name, StringComparer.Ordinal);
 
         var names = new List<string>();
         foreach (var (snippet, name) in snippets)
         {
-            File.Copy(snippet, Path.Combine(staging.AbsolutePath, name + Extension), overwrite: true);
+            await using (var from = snippet.OpenRead())
+            await using (var to = staging.GetFile(name + Extension).OpenWrite())
+            {
+                await from.CopyToAsync(to, ct);
+            }
+
             names.Add(name);
         }
 
@@ -43,6 +49,5 @@ internal sealed class GatherRoutes(IFileSystem fileSystem, IGit git, IWorkflowLo
         return new StagedRoutes(staging, names);
     }
 
-    private static string Name(IDirectory checkout, string snippet) =>
-        Path.GetRelativePath(checkout.AbsolutePath, Path.GetDirectoryName(snippet) ?? checkout.AbsolutePath).Replace(Path.DirectorySeparatorChar, '-');
+    private static string Name(IDirectory checkout, IFile snippet) => checkout.RelativePath(snippet.Directory).Replace('/', '-');
 }

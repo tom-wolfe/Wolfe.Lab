@@ -21,7 +21,7 @@ internal sealed class CheckJob : LabJob<TofuOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
-        Step.FromType<CheckServiceCatalog>(),
+        Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<EnsureTools>(),
         Step.FromType<ResolveEnvironment>(),
         Step.FromType<TofuFormatCheck>(),

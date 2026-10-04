@@ -35,7 +35,7 @@ internal sealed class PublishArtifacts(IReleaseInstaller installer, IFileSystem 
     private void Report(Artifact artifact, IReadOnlyList<string> changes)
     {
         var section = report.Section(Section);
-        var relative = Path.GetRelativePath(fileSystem.ProjectRoot.AbsolutePath, artifact.Source.AbsolutePath);
+        var relative = fileSystem.ProjectRoot.RelativePath(artifact.Source);
         var source = relative == "." ? "the component" : $"`{relative}`";
         var output = $"`{artifact.Output.AbsolutePath}`";
         if (changes.Count == 0)

@@ -6,11 +6,6 @@ namespace Wolfe.Lab.Infrastructure.Telemetry;
 /// <summary>
 /// What a compose project tells the collector: the labels each service sets for it.
 /// </summary>
-/// <remarks>
-/// A compose file sets only the labels meant for it, with values the collector understands, and
-/// leaves the deploy's own — where the component lives, and the resource attributes that say so —
-/// to the deploy: set here too, one would silently override the other.
-/// </remarks>
 /// <param name="Labels">The collector's labels and their values, by service; a service that sets none is absent.</param>
 public sealed record ComposeTelemetry(IReadOnlyDictionary<string, IReadOnlyDictionary<ContainerLabel, string>> Labels)
 {
@@ -28,28 +23,32 @@ public sealed record ComposeTelemetry(IReadOnlyDictionary<string, IReadOnlyDicti
             {
                 if (TelemetryAttribute.Named(name).IsSuccess)
                 {
-                    errors.Add(new Error($"service '{service.Name}' sets the label {name}, which the deploy sets from where the component lives."));
+                    errors.Add(ComposeTelemetryErrors.SetsWhereItLives(service.Name, name));
+                }
+                else if (ContainerLabel.Named(name).Value is { Facet: not null } written)
+                {
+                    errors.Add(ComposeTelemetryErrors.SetsAFacet(service.Name, written));
                 }
                 else if (ContainerLabel.Named(name).Value is { } label)
                 {
-                    if (label.Accept(value).Errors is { } refused)
+                    if (!label.Understands(value))
                     {
-                        errors.AddRange(refused.Select(error => new Error($"service '{service.Name}': {error.Message}")));
+                        errors.Add(ComposeTelemetryErrors.NotUnderstood(service.Name, label, value));
                     }
                     else
                     {
                         own[label] = value;
                     }
                 }
-                else if (name.StartsWith("lab.", StringComparison.Ordinal) && ContainerLabel.Named(name).Errors is { } unknown)
+                else if (name.StartsWith("lab.", StringComparison.Ordinal))
                 {
-                    errors.AddRange(unknown.Select(error => new Error($"service '{service.Name}' sets the label {name}: {error.Message}")));
+                    errors.Add(ComposeTelemetryErrors.UnknownLabel(service.Name, name));
                 }
             }
 
             if (service.Environment.ContainsKey(TelemetryAttribute.ResourceAttributesVariable))
             {
-                errors.Add(new Error($"service '{service.Name}' sets {TelemetryAttribute.ResourceAttributesVariable}, which the deploy sets from where the component lives."));
+                errors.Add(ComposeTelemetryErrors.SetsResourceAttributes(service.Name));
             }
 
             if (own.Count > 0)

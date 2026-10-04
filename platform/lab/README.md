@@ -65,8 +65,12 @@ which the collector reads a container's logs under, and as
 `OTEL_RESOURCE_ATTRIBUTES`, which an application sending its own
 telemetry reads. No compose file in the repository carries them, so none
 can disagree with where it sits; the file is the deploy's, so the
-release's mirror leaves it in place. A component anywhere but three
-levels down fails the deploy rather than going unlabelled.
+release's mirror leaves it in place. Each service of the stack is a
+component of its own, labelled with its own name: the deploy finds the
+components its directory declares in the catalog, so a stack whose
+services are not all declared — with their service — fails the deploy
+rather than going unlabelled. The same file carries what each component
+asks of its service — its `logs` and `metrics` (Declarations, below).
 
 `network/caddy/routes` is the one component that reads other components, and
 deliberately: it gathers every `caddy.caddyfile` in the checkout into a
@@ -179,12 +183,18 @@ nothing else is, so every other value reaches its process as written.
 
 The lab is moving from `ritten.json` to describing itself in YAML files
 of its own (ROADMAP.md #14): a `kind: service` document in each service's
-directory — its catalog entry — and a document per component, `kind:`
-saying what it is in general and `type:` in particular
-(`kind: workload`, `type: compose`). By convention they are
-`service.yaml` and `component.yaml`, but a file's name decides nothing,
-and one file may hold several documents split by `---`. A file is the
-lab's when its first line names the schema, relative to itself:
+directory — its catalog entry — and a document per component, a logical
+part of the service: `kind:` saying what it is used for and `workflow:`
+the workflow that operates it, by the CLI's own name (`kind: database`,
+`workflow: docker`), each a closed set and neither implying the other.
+The workflow is the document's discriminator: one that reads more than
+every component declares says so in a shape of its own. By
+convention they are `service.yaml` and `component.yaml`, but a file's
+name decides nothing, and one file may hold several documents split by
+`---` — a compose stack's components, beside its `compose.yaml`. Every
+component names itself: where a file sits says which service it belongs
+to, never what anything in it is called. A file is the lab's when its
+first line names the schema, relative to itself:
 
 ```yaml
 # yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
@@ -195,25 +205,66 @@ description: The photo library, and the phone app's server.
 
 That line is also what gives an editor the rules: completion, and a
 description of every key. The schema is generated from the declaration
-types in `Wolfe.Lab.Infrastructure/Declarations`, never written by hand;
-a test fails when the committed copy is stale, and `LAB_WRITE_SCHEMA=1
-dotnet test` rewrites it. Only files git tracks are read, three
+types in `Wolfe.Lab.Infrastructure/Declarations`, never written by hand:
+every local build writes it, through the CLI's hidden `lab schema
+<file>`, so the committed copy is the branch's. CI does not write it, and
+a test there fails when the committed copy is stale. The CLI a node runs
+is the pinned one, so between a change to the declarations' types and
+the pin bump that ships it, an editor reads a schema the pinned CLI does
+not yet judge by. Only files git tracks are read, three
 directories deep at most.
 
-Each component's check job holds its own declaration (`CheckDeclaration`,
-straight after the path filter), so a problem with it is reported in that
-component's check, on the pull request that made it. Every declaration in
-the repository is read — in four stages: the YAML, its shape against the
-schema, each value as the domain's types take it, and the documents
-together against the catalog's rules — so what it names can be found
-whoever declares it, but only the component's own problems are its
-check's — and its service entry's, since every component of the service
-is declared in that context and nothing else judges it — each pointed at
-its file and line. While a component has a
-`ritten.json` as well, the workflow running the check must be what the
-declaration says: a `workload/compose` beside a `"workflow": "docker"`.
+Each component's check job reads the catalog (`CheckServiceCatalog`,
+straight after the path filter), so a problem is reported on the pull
+request that made it. There is one way a catalog is read,
+`ServiceCatalogReader`, and it is valid or it is every problem, each
+pointed at its file and line: one anywhere fails every check, as it
+would fail every deploy — so `main` only ever holds a valid one. The
+reader judges the YAML and its shape against the schema; every rule of
+the catalog is the domain's, each held by what owns it. A service or
+component is made by its type's `Create`, which refuses what cannot be
+one — a file out of its place, a name not its directory's, a reference
+to itself — and then added: `ServiceCatalog.Add` refuses a service of a
+name or directory already taken, or depending on one the catalog has
+not got; `Service.Add` refuses a component out of its service's
+directory, of a sibling's name, or part of or depending on a sibling the
+service has not got. References stay names, found through
+`ServiceCatalog.FindService` and `Service.FindComponent`. A catalog is valid from
+empty and stays so. The reader only chooses an order a valid catalog can
+be built in — a service after the services it depends on, a component
+after what it is part of or depends on. While a component has a
+`ritten.json` as well, the directory's components must declare the
+workflow it names — `workflow: docker` beside a `"workflow": "docker"` —
+but for a part of one (`partOf`), which names its own.
 The CLI's own tests hold the whole repository's declarations, a service's
 entry included.
+
+A component the `docker` or `dotnet-service` workflow operates names the
+compose service it runs as, so the component's name is the catalog's and
+the container keeps the unique name Docker gives it; and it may carry two
+facets so far:
+
+```yaml
+name: server
+kind: app
+workflow: docker
+service: immich-server       # the compose service it converges
+logs: otlp                   # sends its own; its output is left alone
+metrics: { port: 8081 }      # the container's port; path /metrics unless given
+```
+
+The check, and the deploy again, hold the directory's `compose`
+components to its stack exactly: every service is one component's, and
+every component names a service the stack has. The deploy writes each
+component's facets into the `compose.override.yaml` as the labels the
+collector reads — `lab.logs`, `lab.metrics.port` and `lab.metrics.path`
+— and the collector, a host process, reaches a container only through a
+published port: one the file publishes already is scraped where it is,
+and any other is published on `127.0.0.1` alone. Refused too: metrics on
+a service in another's network (it has no ports of its own), and logs
+declared both on the component and by a `lab.logs` label in the compose
+file, which is still read until each moves; a compose file may never set
+`lab.metrics.*`.
 
 ## Layout
 
@@ -221,16 +272,23 @@ entry included.
 references between them are the only direction a dependency can point:
 
 - `Wolfe.Lab.Domain` — the lab's model: the value types the rest is typed
-  in (`HostPath`, `ServiceUrl`), where a component sits (`Component`), the
-  telemetry attributes, a backup's retention — by concept, one folder
-  each (`Paths/`, `Components/`, `Telemetry/`, `Backups/`). No I/O, and no
-  reference beyond Ritten's `Result` and `Error`.
+  in (`HostPath`, `RepositoryPath`, `Port`), the catalog — each service
+  the aggregate of its components, which read their area from it, and
+  their facets — the telemetry attributes, a backup's retention:
+  by concept, one folder each (`Paths/`, `Network/`, `Catalog/`,
+  `Telemetry/`, `Backups/`). Docker is one workflow among the catalog's: a
+  `docker` component names its compose service, and the infrastructure
+  binds the two. No reference
+  beyond Ritten's `Result` and `Error` and its file system abstraction,
+  `IDirectory` and `IFile`: the domain says where a file is and what is in
+  it, and a test hands it a fake.
 - `Wolfe.Lab.Infrastructure` — the outside world, one folder per module:
   a client, its dry-run twin and the `AddX()` that registers the pair.
   `Releases` (the installer and where a component is released to),
   `Volumes` (the mounted-drive guard), `Restic`, `Secrets`, `Heartbeat`,
-  `Alerts`, `Agents`, `Caddy`, and the rest. A domain type the file
-  system opens is opened here (`HostPaths`), never in the domain.
+  `Alerts`, `Agents`, `Caddy`, and the rest. The domain opens its own
+  files through `IDirectory` and `IFile` (`HostPath.Directory`); what
+  reads a disk, a process or the network directly is here.
 - `Wolfe.Lab.Application` — what the lab does:
   - `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name,
     the folder named for the workflow (`CaddyRoutes/` for
@@ -259,6 +317,16 @@ and `ValidateSettings` are Ritten's names, not the lab's. Production code
 has no null-forgiving operator (`!`): a value validation has already
 promised is taken with a pattern (`is { } path`), or through an accessor
 that throws saying which setting is missing.
+
+An error is a well-known one, never written where it is returned: each
+concept has an `…Errors` class beside it (`ServiceErrors`,
+`ComponentErrors`, `ComposeFacetErrors`), as ErrorOr has them — a
+property for one that takes nothing (`ComponentErrors.NeedsAName`), a
+method for one that does (`ComponentErrors.DependsOnItself(name)`) — so
+a caller can ask which it got: `error == ComponentErrors.NeedsAName`.
+Where an error is, is kept beside it rather than written into it: a
+`CatalogError` holds the document, line and field around its `Problem`,
+and a `FieldError` the field, so the problem stays the error it was.
 
 The other line is between this project and Ritten. A client for a tool
 with no lab policy in it — Docker, git, the .NET SDK, OpenTofu — is a

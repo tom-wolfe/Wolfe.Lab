@@ -1,5 +1,4 @@
 using Ritten.Engine.FileSystem;
-
 using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Application.Releases;
@@ -13,12 +12,12 @@ namespace Wolfe.Lab.Application.Releases;
 /// directory is a refusal here, not a deletion there.
 /// </remarks>
 [Step("resolve artifacts", StepKind.Work)]
-internal sealed class ResolveArtifacts(ArtifactDeclarations declarations, IFileSystem fileSystem, WorkflowEnvironment environment, IWorkflowLog log)
+internal sealed class ResolveArtifacts(ArtifactDeclarations declarations, IFileSystem fileSystem, IOptions<LabDirectories> options, IWorkflowLog log)
 {
     public StepResult<Artifacts> Run()
     {
-        var roots = LabRoots.From(environment);
-        var component = fileSystem.ProjectRoot.AbsolutePath;
+        var roots = options.Value;
+        var component = fileSystem.ProjectRoot;
         var resolved = new List<Artifact>();
         var errors = new List<Error>();
 
@@ -30,32 +29,32 @@ internal sealed class ResolveArtifacts(ArtifactDeclarations declarations, IFileS
                 continue;
             }
 
-            var from = Path.GetFullPath(Path.Combine(component, source));
-            if (from != Path.GetFullPath(component) && !Inside(from, component))
+            var from = component.GetDirectory(source);
+            if (from.AbsolutePath != component.AbsolutePath && !Inside(from, component))
             {
                 errors.Add(new Error($"Artifact '{source}' is outside the component; publish only what the component holds."));
                 continue;
             }
 
-            if (!Directory.Exists(from))
+            if (!from.Exists)
             {
                 errors.Add(new Error($"Artifact '{source}' is not a directory of the component."));
                 continue;
             }
 
             var to = roots.Expand(output);
-            if (!Path.IsPathFullyQualified(to) || !roots.Contains(to))
+            if (!Path.IsPathFullyQualified(to) || new PhysicalDirectory(to) is var into && !roots.Contains(into))
             {
-                errors.Add(new Error($"Artifact '{source}' publishes to '{to}', which is not inside {roots.Root} (${{{LabRoots.RootVariable}}}): an output is mirrored, so it must be the lab's alone."));
+                errors.Add(new Error($"Artifact '{source}' publishes to '{to}', which is not inside {roots.Root.AbsolutePath} (${{{LabDirectories.RootVariable}}}): an output is mirrored, so it must be the lab's alone."));
                 continue;
             }
 
-            resolved.Add(new Artifact(new PhysicalDirectory(from), new PhysicalDirectory(Path.GetFullPath(to))));
+            resolved.Add(new Artifact(from, into));
         }
 
         foreach (var (outer, inner) in resolved.SelectMany(a => resolved.Where(b => !ReferenceEquals(a, b)).Select(b => (a, b))))
         {
-            if (Inside(inner.Output.AbsolutePath, outer.Output.AbsolutePath) || inner.Output.AbsolutePath == outer.Output.AbsolutePath)
+            if (Inside(inner.Output, outer.Output) || inner.Output.AbsolutePath == outer.Output.AbsolutePath)
             {
                 errors.Add(new Error($"Artifacts publish to {outer.Output.AbsolutePath} and {inner.Output.AbsolutePath}: one would mirror the other away."));
             }
@@ -74,6 +73,6 @@ internal sealed class ResolveArtifacts(ArtifactDeclarations declarations, IFileS
         return new Artifacts(resolved);
     }
 
-    private static bool Inside(string path, string directory) =>
-        Path.GetFullPath(path).StartsWith(Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory)) + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+    private static bool Inside(IDirectory directory, IDirectory outer) =>
+        outer.RelativePath(directory) is var relative && relative != "." && relative != ".." && !relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(relative);
 }

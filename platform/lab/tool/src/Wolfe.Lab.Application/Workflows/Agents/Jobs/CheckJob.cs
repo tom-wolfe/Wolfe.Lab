@@ -18,7 +18,7 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
 
     public override IReadOnlyList<Step> Steps { get; } = [
         Step.FromType<GatePathFilter>(),
-        Step.FromType<CheckServiceCatalog>(),
+        Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<CheckAgentDeclarations>(),
         Step.FromType<CheckTelemetryNames>()
     ];

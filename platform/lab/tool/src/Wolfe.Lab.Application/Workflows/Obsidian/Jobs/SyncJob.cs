@@ -3,7 +3,6 @@ using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Workflows.Obsidian.Models;
 using Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 using Wolfe.Lab.Infrastructure.Obsidian;
-using Wolfe.Lab.Infrastructure.Paths;
 
 namespace Wolfe.Lab.Application.Workflows.Obsidian.Jobs;
 

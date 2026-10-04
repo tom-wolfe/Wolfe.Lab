@@ -324,8 +324,10 @@ formats, each read by code of its own:
 **Decided: a `Wolfe.Lab.Domain` project, and lab-owned YAML declarations.**
 
 - **The domain is a project of its own**, not a namespace, so the
-  dependency direction is the compiler's to hold: it does no I/O and
-  depends on nothing but Ritten's `Result` and `Error`. It holds the
+  dependency direction is the compiler's to hold: it depends on nothing
+  but Ritten's `Result` and `Error`, and its file system abstraction
+  (`IDirectory`, `IFile`) — the one way it touches a disk, and the one a
+  test fakes. It holds the
   model — areas, services, components, nodes and their roles — the value
   objects, now foundational rather than helpers, and the rules between
   them ("a scraped service is one its compose project has"). The
@@ -348,9 +350,12 @@ formats, each read by code of its own:
     service never carries a declaration of its own", since its name, what
     it is and its links belong to the service, not to any one of its
     components;
-  - a **component** is a part of a service that the lab operates: a
-    document whose `kind:` says what it is in general and `type:` in
-    particular — `kind: workload, type: compose`.
+  - a **component** is a logical part of a service — a process the lab
+    runs, the database it keeps, a directory of its state — never a
+    deployment unit: Immich is a server, a machine-learning worker, a
+    cache and a database, not "a compose stack". Its `kind:` says what it
+    is used for and its `workflow:` what operates it — `kind: database,
+    workflow: docker` — and `partOf:` the component it lives inside, if any.
 
   *Slice* retires: it was the repository's word for a service's
   directory, beside the telemetry's `lab.service` for the same thing,
@@ -389,16 +394,35 @@ decides nothing (see "found by its schema").
   services. It passes nothing operational down to its components:
   explicit beats inherited.
 - **A component** has the same `name`, `displayName`
-  and `description`, its `kind` and `type`, `dependsOn` (other components
-  of its own service) and its **facets**: sections that any kind may
-  carry and that mean the same in each — `runsOn`, `requiresVolumes`,
-  `artifacts`, `packages`, `logs`, `metrics`, `route`, `check`,
-  `heartbeat`, and the rest the migration finds.
-- **`name` is the identity**, a slug unique within its service, defaulting
-  to the directory's name where there is one. A file may hold several
-  documents, split by `---`, so a directory is needed only where native
-  files live: three vault backups, or a dozen once the D&D vault is one
-  per campaign, are documents in one file rather than directories.
+  and `description`, its `kind` and `workflow`, `partOf` and `dependsOn`
+  (other components of its own service), what its workflow needs to act on
+  it — a `docker` component's compose service, a `sqlite` one's path — and
+  its **facets**: sections that mean the same wherever they appear —
+  `runsOn`, `requiresVolumes`, `artifacts`, `packages`, `logs`,
+  `metrics`, `backup`, `route`, `check`, `heartbeat`, and the rest the
+  migration finds. Which facets a component may carry is its workflow's to
+  say (below).
+- **`name` is the identity**, a slug unique within its service. A file may
+  hold several documents, split by `---`: a directory is needed only where
+  native files live — a compose stack's components are documents in one
+  file beside its `compose.yaml`, and three vault backups, or a dozen
+  once the D&D vault is one per campaign, documents in one file rather
+  than directories. Every document names itself — no name is read from a
+  directory — so a declaration says what it is called where it says it.
+- **`partOf` is a component's place inside another, recursively.** A
+  SQLite database is part of the app whose state holds it; a Postgres
+  database part of the Postgres server holding it, itself a `compose`
+  component. `partOf` names a sibling — within the service, never a
+  cycle — so declarations stay flat while the parts nest: a diagram nests
+  by it, and whatever a backup must stop is found by walking up it to the
+  nearest component the lab runs.
+- **A service is the aggregate its components belong to.** A component
+  exists only as its service's, which holds the rules between siblings —
+  unique names, dependencies kept inside the service — and a service
+  holds its area, which its components read rather than copy. The rules
+  between services (unique names, `dependsOn`) are the catalog's. So a
+  deploy finds its component in the catalog, declared with its service,
+  and the placement read from a path alone is gone.
 - **Like depends on like, and never across a service's boundary to a
   component.** A service depends on services, a component on components
   of its own service. What one service needs of another is published
@@ -426,11 +450,11 @@ links:
 ```
 
 ```yaml
-# personal/immich/compose/component.yaml
-name: compose
-description: The four containers of Immich's reference compose.
-kind: workload
-type: compose
+# personal/immich/compose/component.yaml — beside Immich's compose.yaml
+name: server
+kind: app
+workflow: docker
+service: immich-server            # the compose service it converges
 runsOn: [mini]
 requiresVolumes: [/Volumes/Data2]
 route: { host: immich.twolfe.dev, to: immich-server:2283 }
@@ -438,41 +462,101 @@ check:
   url: https://immich.twolfe.dev/api/server/ping
   every: 2m
   expect: { status: 200, body: { res: pong } }
-metrics:
-  immich-server: { port: 8081 }
+metrics: { port: 8081 }
+---
+name: postgres
+kind: database
+workflow: docker
+service: immich-database
+---
+name: database
+kind: database
+workflow: postgres                # a state workflow, to come with the backups
+partOf: postgres
+database: immich                  # dumped nightly: a job of its workflow
+---
+name: cache
+kind: cache
+workflow: docker
+service: immich-redis
+---
+name: machine-learning
+kind: model
+workflow: docker
+service: immich-machine-learning
 ```
 
 ```yaml
 # personal/obsidian/vaults.yaml
 name: main-vault
 kind: backup
-type: git
+workflow: obsidian
 path: ~/Obsidian/main
 repository: http://macmini.local:3000/Obsidian/Wolfe.Main.git
 ---
 name: dnd-vault
 kind: backup
-type: git
+workflow: obsidian
 path: ~/Obsidian/dnd
 repository: http://macmini.local:3000/Obsidian/Wolfe.Dnd.git
 ```
 
-**Decided: the kinds.** A short list the agent is built around — what
-the lab operates, not how each one-off happens to run today:
+**Decided: `kind` is usage, `workflow` is what operates it, and the two
+are independent.** A component's kind says what it is for — the icon it
+would have on a diagram — and its workflow what the lab does with it.
+Neither implies the other: Redis is a `cache` in Immich and a `queue` in
+Paperless, and Postgres, with its extensions, could be either too. Where
+behaviour ever depends on both, it is a rule on the pair; no list of
+permitted pairs.
 
-| Today's workflow | `kind` / `type` | |
+- **The workflow is the type.** A closed, behaviour-bearing type was the
+  set of workflows under another name, mapped back to them; so a
+  component names the workflow that operates it, by the CLI's own name,
+  and nothing maps one to the other. Its jobs are everything the lab does
+  with the component — deploy, check, and for state a backup, a restore,
+  a drill — and a test holds every name a declaration may use to a
+  workflow the CLI has.
+- **Both are closed sets**, grown by a code change — a new workflow is
+  one anyway. Renaming a workflow renames it in every declaration.
+- **`workflow` is the discriminator.** Each workflow's components are a
+  document shape of its own — the options `ritten.json` holds today,
+  moved into the declaration — read polymorphically, so a workflow says
+  what it needs and which facets it takes: a `docker` component its
+  compose service and `logs`/`metrics`, a `sqlite` one its path. The
+  schema has a branch per shape rather than one that holds everything
+  loosely.
+- **The link to a runtime is the workflow's own field.** A `docker`
+  component names the compose service it converges (`service:
+  immich-server`), so a component's name is the catalog's (`server`) and
+  the container keeps the unique name Docker Desktop and Beszel list. The
+  deploy holds the two to each other exactly: every service of the
+  stack is some component's, and every component's is a service the
+  stack has.
+- **While `ritten.json` remains**, a directory's components declare the
+  workflow it runs; a part of one (`partOf`) names its own.
+
+The first sets, each a starting point rather than a closed argument:
+
+| `kind` — what it is for | |
+| --- | --- |
+| `app` | what people use: Immich's server, Jellyfin, Sonarr, Grafana |
+| `backend` | a part with no face of its own: the mail watcher, the bridge |
+| `database`, `cache`, `queue`, `storage` | what keeps or carries data |
+| `proxy`, `network` | Caddy; gluetun, Forgejo's tailscale |
+| `model`, `collector` | Immich's machine learning, Ollama; Alloy, Beszel's agent |
+| `runner`, `backup`, `repository` | Forgejo's runners; a vault; restic's repositories |
+| `infrastructure`, `certificate`, `package`, `machine` | tofu; `*.twolfe.dev`; an image or tool; a node's profile |
+
+| Today's workflow | A component's `workflow` | |
 | --- | --- | --- |
-| `docker`, `dotnet-service` | `workload` / `compose` | building from source is an `images` facet |
-| `agents`, `ollama` | `workload` / `agent` | ollama's pulls are a `models` facet |
-| `forgejo-runners` | `runner` / `host`, `docker` | declarative, so the agent can bootstrap a new node's runner |
-| `backup` | `backup` / `snapshot` | |
-| `obsidian` | `backup` / `git` | a component per vault |
-| `restic` | `repository` / `restic` | where backups go: retention, verification, the offsite copy |
-| `tofu` | `infrastructure` / `tofu` | |
-| `caddy-certificates` | `certificate` / `acme` | a certificate for `*.twolfe.dev`, kept renewed |
-| `image`, `dotnet-tool` | `package` / `image`, `nuget` | |
-| `chezmoi` | `machine` / `chezmoi` | the nodes' profiles: the kernel's |
-| `garage-layout` | a facet | `layout:` on Garage's workload |
+| `docker`, `dotnet-service` | as it is | a component per compose service; `dotnet-service` builds its image first |
+| `agents`, `ollama` | as it is | ollama also pulls its models |
+| `forgejo-runners` | as it is | declarative, so the agent can bootstrap a new node's runner |
+| `obsidian` | as it is | a component per vault |
+| `restic` | as it is | where backups go: retention, verification, the offsite copy |
+| `tofu`, `caddy-certificates`, `image`, `dotnet-tool`, `chezmoi` | as it is | |
+| `backup` | `sqlite`, `postgres`, `directory`, `lmdb` | state workflows, to come: one per kind of state, operating the parts that hold it (below) |
+| `garage-layout` | a facet | `layout:` on Garage's component |
 | `heartbeat`, `gatus-health` | facets | a `heartbeat:` or `check:` on what they watch |
 | `caddy-routes` | gone | Caddy renders the published `route` facets |
 | `immich-import` | not a component | a one-off operation, and a CLI command |
@@ -481,48 +565,70 @@ There are no jobs: what looked like one is a declarative kind (a runner,
 a certificate, a repository), a facet of something else, or an operation
 rather than a component.
 
-**Decided: a workload's backup is a section of it.** A `backup:` in the
-workload's own `component.yaml` rather than a component of its own, so
-nothing is inherited or referred to — it is part of what it backs up,
-its release, volumes and containers already its own — and it says
-structurally what is held: a directory, a database. `kind: backup`
-remains for what is only a backup, as the vaults are. The cost is an
-agent that tells which part of a component changed, so new backup paths
-re-register a schedule rather than restart the stack, which routes and
-checks need of it anyway.
-
-**Decided: a backup is a list of what it holds, each entry typed.** So a
-component holding a database and a directory — Paperless's SQLite and
-its media — composes two entries, and a new mechanism is one new type:
+**Decided: a backup belongs to the component that holds the state, one
+each, a job of its workflow.** A component's parts are components, so
+what used to need a list of typed backups — Sonarr's SQLite and its
+config directory, Paperless's SQLite and its media — is two components,
+each operated by the state workflow that knows how to back it up:
 
 ```yaml
-backup:
-  - type: sqlite
-    path: config/sonarr.db
-    stopContainer: sonarr
-  - type: directory
-    path: config
-    excludes: [Backups, MediaCover, logs, "logs.db*"]
+# media/sonarr/compose/component.yaml
+name: app
+kind: app
+workflow: docker
+service: sonarr
+---
+name: database
+kind: database
+workflow: sqlite
+partOf: app
+path: config/sonarr.db
+---
+name: config
+kind: storage
+workflow: directory
+partOf: app
+path: config
+excludes: [Backups, MediaCover, logs, "logs.db*"]
 ```
 
-- **Every type has the same shape — prepare, then verify — and only its
-  implementation differs.** Preparing stops what must be stopped
-  (`stopContainer`: a SQLite file copied while it is written can come
-  back corrupt) or nothing; verifying is what the type knows how to check
-  after a restore — an integrity check for SQLite, a recent dump for a
-  database that dumps itself (Immich's Postgres), the named files for a
-  directory. Garage's LMDB store is one more type, not a special case.
-- **`type`, not `kind`**, by the rule above: `sqlite` is a particular
-  backup, as `compose` is a particular workload.
+- **Every state workflow backs up with the same shape — prepare, then
+  verify — and only its implementation differs.** Preparing stops what must be
+  stopped — a `sqlite` file copied while it is written can come back
+  corrupt, so its host, found up `partOf`, is stopped — or nothing: a
+  `postgres` dumps while it runs. Verifying is what the workflow knows how to
+  check after a restore: an integrity check for SQLite, a recent dump for
+  Postgres, the named files for a directory. Garage's LMDB store is one
+  more workflow, not a special case.
+- **`kind: backup` remains for what is only a backup**, as the vaults are.
 - **Paths are relative to where the component is deployed.** What it
   ships — config, artifacts — to its release, which mirrors its
   directory in the repository, so in the checkout such a path reads as
   relative to the YAML file itself. What it keeps — state, and so what a
-  backup holds — to its state directory, `${LAB_DATA}/<service>` (the
-  convention already: `~/Docker/sonarr`). An absolute path is for an
+  backup holds — to its service's state directory, `${LAB_DATA}/<service>`
+  (the convention already: `~/Docker/sonarr`). An absolute path is for an
   external drive alone, and must fall under one of the component's
   `requiresVolumes`. Jellyfin, the one service still keeping state
   outside its state directory, moves into it first (see "Debt" below).
+
+**Decided: backups are planned by the agent, never scheduled.** No cron
+lines, and no offsets: staggering backups by hand-picked minutes overlaps
+as they grow, puts every new service at the end, and makes "which runs
+last" a search through every schedule. Each component declares only what
+it holds; the agent (#6) plans the night from all of them:
+
+- **What runs together**: every part of a host is taken in one stop of
+  it, so Sonarr's database and config are one consistent moment, tagged
+  together and restored together, and the app is stopped once.
+- **How much at once**: concurrency per disk, so two backups never fight
+  over one drive, rather than minutes apart in the hope they don't.
+- **In what order**: by the service's `lifecycle`, then an optional
+  `priority` on the service — production before experimental, and what
+  matters most first.
+- **When**: nightly, every backup — which is all the lab has ever needed —
+  so nothing declares a schedule until something needs another cadence.
+  Disruption stays inside the night, and the plan says how long each host
+  will be down.
 
 **Decided: per-node differences are facts of the node, not copies of
 the component.** Tested on the hardest case, Alloy — one package on three
@@ -562,8 +668,8 @@ so the design has **no per-node overrides** until something needs one.
 # monitoring/alloy/forwarder/component.yaml
 name: forwarder
 description: Each node's collector, forwarding to the gateway.
-kind: workload
-type: agent
+kind: collector
+workflow: agents
 runsOn: every node
 package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
 program: "alloy-{platform}"
@@ -623,12 +729,18 @@ name: immich
   in its own directory, nodes in `platform/`. Any object may live in any
   file, but not in any place — which is what keeps `lab.area`,
   `lab.service` and `lab.component` derived.
-- **One pipeline, four stages, each with its own errors**: YAML read as a
-  JSON document; validated against the schema, for its shape, with the
-  path of each problem; deserialized into the domain's types, whose value
-  objects judge each value; and held to the domain's rules across
-  documents — references, like-to-like `dependsOn`, unique names — as a
-  `Result`.
+- **One way in, valid by construction, the rules where they belong.** A
+  catalog is read by one reader, which judges the YAML and its shape
+  against the schema, with the path of each problem, and adds each
+  declaration in an order a valid catalog can be built in — a service
+  after the services it depends on, a component after what it is part of
+  or depends on. The rules are the domain's, each held by what owns it:
+  a service or component is made by its own `Create`, which refuses what
+  cannot be one, then added — the catalog refusing a service that breaks
+  its rules (unique names and directories, `dependsOn`), and a service a
+  component that breaks its own (where it sits, unique names among
+  siblings, `partOf`, `dependsOn`). A catalog is valid from empty and
+  stays so; the reader's result is that catalog, or every problem.
 - **The schema is generated from the domain's types**, so there is one
   truth, and committed, so the relative path in each file works offline
   and in any editor; a test fails when the committed schema is stale.
@@ -637,7 +749,7 @@ name: immich
 
 | Project | Holds | References |
 | --- | --- | --- |
-| `Wolfe.Lab.Domain` | the model, its value objects and rules; no I/O | Ritten's `Result` and `Error` |
+| `Wolfe.Lab.Domain` | the model, its value objects and rules | Ritten's `Result`, `Error`, `IDirectory` and `IFile` |
 | `Wolfe.Lab.Infrastructure` | the readers — declarations, compose — and the clients: Docker, launchd, systemd, the vault | Domain |
 | `Wolfe.Lab.Application` | the Ritten workflows, jobs and steps | Domain, Infrastructure |
 | `Wolfe.Lab` | the CLI, a thin host | Application |
@@ -650,9 +762,9 @@ CLI rather than running workflows itself.
 pinned CLI, as a child process — through Ritten's own command runner —
 so a run is pinned to the version it was planned with, a crash ends the
 run and not the agent, and each run's environment carries only its own
-secrets (#8's narrowing). Not a container, at least to begin with: a
-workload agent writes launchd units, a machine applies chezmoi and a
-runner registers on the host, and on a Mac a container is a Linux VM
+secrets (#8's narrowing). Not a container, at least to begin with: an
+`agent` component's deploy writes launchd units, a machine applies
+chezmoi and a runner registers on the host, and on a Mac a container is a Linux VM
 that can reach none of it — the reason the lab has host runners today.
 Containers can come later, as hardening, for the kinds that need no host.
 
@@ -662,6 +774,10 @@ Containers can come later, as hardening, for the kinds that need no host.
   #8's well-known keys — endpoint, health, route, scrape — are the same
   facets, published, so they share one schema rather than having one
   each.
+- **The kinds themselves.** The tables above are a first
+  list: whether Loki and Prometheus are `database`s or a kind of their
+  own. A part with no face is a `backend`, never a *service*, which is
+  the catalog's own word — and `kind: service`, a service's entry.
 
 **Migration is incremental.** The loader reads a fact from its new file
 or its old place, never both — the check refuses one declared twice —
@@ -675,7 +791,8 @@ and each fact moves once.
 3. The projects: `Wolfe.Lab.Domain`, `Wolfe.Lab.Infrastructure` and
    `Wolfe.Lab.Application` split out of today's one, with the value
    objects and the component's placement moved into the domain.
-4. The pilot: the declaration loader and its first facets, `logs` and
+4. The pilot: the declaration loader, components as logical parts with
+   their workflows' documents read polymorphically, and the first facets, `logs` and
    `metrics`, with typed readers in place of the telemetry checks'
    key-walking. #11's service metrics (step 4) ship on it.
 5. Agents, the largest declarations, with placement and the nodes —
@@ -1263,6 +1380,33 @@ LaunchAgent starts; from *sleep*, with "Wake for network access" on, a
 Wake-on-LAN packet from the Pi brings it back with the session intact.
 So "switched off" means asleep, and a wake step in the workflows that
 target it is there to add if a queued deploy ever needs to land sooner.
+
+### The lab works around gaps in Ritten
+
+The lab goes round Ritten in two ways where Ritten has nothing for the job.
+Each gap is closed in Ritten, released and pinned, and then the workaround
+goes. This waits until #14's component-first migration is working.
+
+- **The file system abstraction.** `IFile` and `IDirectory` have no
+  last-write time, no directory move, no unique temp directory and no
+  recursive walk that includes hidden entries. So these still use
+  `System.IO`:
+  - `PublishArtifacts.Stamp`, and the program timestamp in `ResolveAgents`;
+  - the staging-to-version rename in `GithubPackageInstaller`, and
+    `StateDirectories`;
+  - the scratch directories in `ChezmoiClient`, `RenderProfiles` and
+    `DrillRestore`.
+- **The native clients.** Some commands run raw through `ICommandRunner`
+  where Ritten's clients have no method for them:
+  - Docker: `compose config --format json` (`ComposeProject.Read`),
+    `container inspect` (`RegisterRunner`), and `exec` (`ReloadCaddy`,
+    `GarageClient`);
+  - Git: `ls-files` (`DeclarationFiles`, `CheckTelemetryNames`), and
+    `diff --quiet`, `tag --list` and `rev-parse --is-shallow-repository`
+    (`ComputeVersion`).
+
+  restic, ollama, chezmoi and the supervisors are the lab's own clients,
+  so they are not part of this.
 
 ## Undecided
 

@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Options;
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Infrastructure.Packages;
+using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Packages;
 
@@ -29,7 +31,7 @@ public class GithubPackageInstallerTests : IDisposable
         File.WriteAllText(Path.Combine(directory.FullName, GithubPackageInstaller.Complete), "");
         var http = new HttpClient(new RefusingHandler());
         var installer = new GithubPackageInstaller(Clients(http), Sources, Substitute.For<ICommandRunner>(),
-            new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null), Substitute.For<IWorkflowLog>());
+            Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) }), Substitute.For<IWorkflowLog>());
 
         var installed = await installer.Install(package, TestContext.Current.CancellationToken);
 
@@ -58,7 +60,7 @@ public class GithubPackageInstallerTests : IDisposable
             assets = new object[] { digest is null ? new { name = "shellcheck" } : new { name = "shellcheck", digest = digest == "MATCH" ? actual : digest } }
         });
         var installer = new GithubPackageInstaller(Clients(new HttpClient(new ReleaseHandler(body, release))), Sources, Substitute.For<ICommandRunner>(),
-            new WorkflowEnvironment(name => name == "LAB_ROOT" ? _root.FullName : null), Substitute.For<IWorkflowLog>());
+            Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) }), Substitute.For<IWorkflowLog>());
 
         if (failure is null)
         {

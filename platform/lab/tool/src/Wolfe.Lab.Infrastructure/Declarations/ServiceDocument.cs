@@ -1,11 +1,7 @@
 using Json.Schema.Generation;
-using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Services;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
-
-// The documents as a file writes them: the shape the schema is generated from and the serializer
-// reads, before the domain's types judge each value. Each property's description is what an
-// editor shows for it, so it is written for whoever is writing the file.
 
 /// <summary>
 /// A service's catalog entry, as its file writes it.

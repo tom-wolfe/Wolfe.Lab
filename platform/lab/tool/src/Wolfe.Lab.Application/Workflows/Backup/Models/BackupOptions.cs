@@ -1,5 +1,4 @@
 using Wolfe.Lab.Domain.Paths;
-using Wolfe.Lab.Infrastructure.Paths;
 
 namespace Wolfe.Lab.Application.Workflows.Backup.Models;
 

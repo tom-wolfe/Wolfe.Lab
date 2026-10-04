@@ -20,7 +20,7 @@ internal sealed class DotNetCheckJob : LabJob<DotNetServiceOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<GatePathFilter>(),
-        Step.FromType<CheckServiceCatalog>(),
+        Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ComposeCheck>(),
         Step.FromType<DotnetRestore>(),
         Step.FromType<DotnetFormatCheck>(),

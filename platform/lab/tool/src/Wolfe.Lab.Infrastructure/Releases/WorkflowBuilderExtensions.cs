@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Wolfe.Lab.Infrastructure.Releases;
 
@@ -10,6 +12,21 @@ public static class WorkflowBuilderExtensions
 {
     extension(IWorkflowBuilder builder)
     {
+        /// <summary>
+        /// Adds where the lab installs and keeps state on this node, as <see cref="LabDirectories"/> options.
+        /// </summary>
+        public IWorkflowBuilder AddLabRoots()
+        {
+            builder.AddLabConfiguration();
+            if (builder.Services.Any(service => service.ServiceType == typeof(IConfigureOptions<LabDirectories>)))
+            {
+                return builder;
+            }
+
+            builder.Services.AddOptions<LabDirectories>().Configure<IConfiguration>((roots, configuration) => roots.Configure(configuration));
+            return builder;
+        }
+
         /// <summary>
         /// Adds the name a component is released under, the installer that puts it there, and
         /// the installer's rehearsal.

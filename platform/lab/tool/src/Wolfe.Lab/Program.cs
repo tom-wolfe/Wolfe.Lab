@@ -8,5 +8,6 @@ if (app.IsError)
 }
 
 var root = new RootCommand("The lab's jobs. The workflow to run is declared by the ritten.json in the working directory.");
+root.Subcommands.Add(SchemaCommand.Create());
 await root.InstallRitten(app.Value);
 return await root.Parse(args).InvokeAsync();

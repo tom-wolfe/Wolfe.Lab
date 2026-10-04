@@ -1,6 +1,5 @@
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Caddy;
-using Wolfe.Lab.Infrastructure.Paths;
 
 namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Models;
 

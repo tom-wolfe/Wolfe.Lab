@@ -1,5 +1,3 @@
-using Vogen;
-
 namespace Wolfe.Lab.Domain.Git;
 
 /// <summary>

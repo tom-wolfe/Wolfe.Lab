@@ -1,4 +1,5 @@
-using Vogen;
+using Ritten.Contracts.FileSystem;
+using Ritten.Engine.FileSystem;
 
 namespace Wolfe.Lab.Domain.Paths;
 
@@ -9,6 +10,16 @@ namespace Wolfe.Lab.Domain.Paths;
 [ValueObject<string>(conversions: Conversions.SystemTextJson | Conversions.TypeConverter)]
 public readonly partial struct HostPath
 {
+    /// <summary>
+    /// The path as a directory on this node.
+    /// </summary>
+    public IDirectory Directory => new PhysicalDirectory(Value);
+
+    /// <summary>
+    /// The path as a file on this node.
+    /// </summary>
+    public IFile File => new PhysicalFile(Value);
+
     private static string NormalizeInput(string input)
     {
         var path = input.Trim();

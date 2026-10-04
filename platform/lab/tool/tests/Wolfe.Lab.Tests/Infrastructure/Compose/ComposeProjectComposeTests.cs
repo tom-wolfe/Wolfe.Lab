@@ -1,3 +1,4 @@
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Infrastructure.Compose;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Compose;
@@ -11,7 +12,7 @@ public class ComposeProjectComposeTests : IDisposable
     [Fact]
     public async Task Read_ReadsListsAndMapsAlike()
     {
-        await File.WriteAllTextAsync(Path.Combine(_project.FullName, ComposeProject.FileName), """
+        await File.WriteAllTextAsync(Path.Combine(_project.FullName, "compose.yaml"), """
                                                                                                services:
                                                                                                  listed:
                                                                                                    image: busybox
@@ -23,7 +24,7 @@ public class ComposeProjectComposeTests : IDisposable
                                                                                                    environment: { TZ: Europe/London, TOKEN: }
                                                                                                """, TestContext.Current.CancellationToken);
 
-        var project = (await ComposeProject.Read(new ProcessCommandRunner(), _project.FullName, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var project = (await ComposeProject.Read(new ProcessCommandRunner(), new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
 
         foreach (var service in project.Services)
         {
@@ -36,10 +37,30 @@ public class ComposeProjectComposeTests : IDisposable
     [Fact]
     public async Task Read_SaysWhyComposeCannotReadTheFile()
     {
-        await File.WriteAllTextAsync(Path.Combine(_project.FullName, ComposeProject.FileName), "services: [", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_project.FullName, "compose.yaml"), "services: [", TestContext.Current.CancellationToken);
 
-        var errors = (await ComposeProject.Read(new ProcessCommandRunner(), _project.FullName, TestContext.Current.CancellationToken)).Errors.ShouldNotBeNull();
+        var errors = (await ComposeProject.Read(new ProcessCommandRunner(), new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken)).Errors.ShouldNotBeNull();
 
-        errors.ShouldHaveSingleItem().Message.ShouldStartWith("compose cannot read compose.yaml");
+        errors.ShouldHaveSingleItem().Message.ShouldStartWith($"compose cannot read the stack in {_project.FullName}");
+    }
+
+    // The stack's files are compose's to find, as compose up finds them: any of its default
+    // names, and an override beside it, merged — so what is read is what runs.
+    [Fact]
+    public async Task Read_FindsTheStackAsComposeDoes_OverrideMerged()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_project.FullName, "docker-compose.yml"), """
+            services:
+              server: { image: busybox }
+            """, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(_project.FullName, "docker-compose.override.yml"), """
+            services:
+              server: { labels: { lab.logs: otlp } }
+            """, TestContext.Current.CancellationToken);
+
+        var project = (await ComposeProject.Read(new ProcessCommandRunner(), new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull();
+
+        project.Services.ShouldHaveSingleItem().Labels.ShouldBe(new Dictionary<string, string> { ["lab.logs"] = "otlp" });
     }
 }

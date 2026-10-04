@@ -33,11 +33,4 @@ public class TelemetryAttributeTests
                 "the list: 'lab.rol' is not an attribute the lab knows (service.name, host.name, lab.area, lab.service, lab.component, lab.role)."
             ]);
     }
-
-    [Fact]
-    public void Accept_TakesOnlyAValueTheCollectorUnderstands()
-    {
-        ContainerLabel.Logs.Accept("otlp").Value.ShouldBe("otlp");
-        ContainerLabel.Logs.Accept("stdout").Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldBe("lab.logs is 'stdout': the collector understands otlp.");
-    }
 }

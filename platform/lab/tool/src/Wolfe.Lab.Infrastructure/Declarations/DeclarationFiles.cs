@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Paths;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
@@ -27,10 +28,10 @@ public sealed partial record DeclarationFiles(IReadOnlyList<DeclarationFile> Fil
     /// The declaration files in the checkout at <paramref name="root"/>, and every one that names
     /// the schema wrongly.
     /// </summary>
-    public static async Task<DeclarationFiles> Find(ICommandRunner commands, string root, CancellationToken ct = default)
+    public static async Task<DeclarationFiles> Find(ICommandRunner commands, IDirectory root, CancellationToken ct = default)
     {
         var listed = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z", "--", "*.yaml", "*.yml")
-            .InDirectory(root).QuietOutput().ThrowOnError(), ct);
+            .InDirectory(root.AbsolutePath).QuietOutput().ThrowOnError(), ct);
 
         var files = new List<DeclarationFile>();
         var problems = new List<CatalogError>();
@@ -38,7 +39,12 @@ public sealed partial record DeclarationFiles(IReadOnlyList<DeclarationFile> Fil
         foreach (var listing in listed.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal))
         {
             var path = RepositoryPath.From(listing);
-            var text = await File.ReadAllTextAsync(Path.Combine(root, path.Value), ct);
+            // Tracked, but deleted in the working directory: nothing to read, and nothing declared.
+            if (await path.FileIn(root).ReadAllTextIfExists(ct) is not { } text)
+            {
+                continue;
+            }
+
             if (SchemaLine().Match(text) is not { Success: true } line || !line.Groups["schema"].Value.EndsWith(LabSchema.Location.Segments[^1], StringComparison.Ordinal))
             {
                 continue;
@@ -47,12 +53,11 @@ public sealed partial record DeclarationFiles(IReadOnlyList<DeclarationFile> Fil
             var named = RepositoryPath.Resolve(path.Parent, line.Groups["schema"].Value);
             if (path.Directories.Count > Depth)
             {
-                problems.Add(new(new DocumentSource(path), $"a declaration is at most {Depth} directories deep, area/service/component/.", 1));
+                problems.Add(new CatalogError(new DocumentSource(path), DeclarationErrors.TooDeep(Depth), 1));
             }
             else if (named != LabSchema.Location)
             {
-                problems.Add(new(new DocumentSource(path),
-                    $"names the schema at {named?.Value ?? "a path out of the repository"}, but it is at {LabSchema.Location}; from here that is {LabSchema.Location.RelativeFrom(path.Parent)}.", 1));
+                problems.Add(new CatalogError(new DocumentSource(path), DeclarationErrors.SchemaElsewhere(named, LabSchema.Location, LabSchema.Location.RelativeFrom(path.Parent)), 1));
             }
             else
             {

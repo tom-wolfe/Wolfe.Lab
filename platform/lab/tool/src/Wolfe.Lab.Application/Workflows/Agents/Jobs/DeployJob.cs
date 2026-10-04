@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Agents;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
@@ -26,7 +27,8 @@ internal sealed class DeployJob : LabJob<AgentsOptions>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<ResolveComponent>(),
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),

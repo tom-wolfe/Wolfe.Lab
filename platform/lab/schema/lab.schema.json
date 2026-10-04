@@ -9,12 +9,21 @@
   ],
   "properties": {
     "kind": {
-      "description": "What the document declares: a service, or a kind of component.",
+      "description": "What the document declares: a service, or what a component is used for.",
       "enum": [
         "service",
-        "workload",
-        "backup",
+        "app",
+        "backend",
+        "database",
+        "cache",
+        "queue",
+        "storage",
+        "proxy",
+        "network",
+        "model",
+        "collector",
         "runner",
+        "backup",
         "repository",
         "infrastructure",
         "certificate",
@@ -144,9 +153,18 @@
         "properties": {
           "kind": {
             "enum": [
-              "workload",
-              "backup",
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
               "runner",
+              "backup",
               "repository",
               "infrastructure",
               "certificate",
@@ -157,16 +175,50 @@
         }
       },
       "then": {
-        "$id": "https://lab.twolfe.dev/schema/component",
-        "type": "object",
+        "required": [
+          "workflow"
+        ],
+        "properties": {
+          "workflow": {
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "agents",
+              "ollama",
+              "forgejo-runners",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
         "properties": {
           "kind": {
-            "description": "What the component is in general.",
-            "type": "string",
             "enum": [
-              "workload",
-              "backup",
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
               "runner",
+              "backup",
               "repository",
               "infrastructure",
               "certificate",
@@ -174,17 +226,63 @@
               "machine"
             ]
           },
-          "type": {
+          "workflow": {
+            "enum": [
+              "docker",
+              "dotnet-service"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/compose",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
             "type": "string",
-            "description": "What the component is in particular: one of its kind's types."
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "agents",
+              "ollama",
+              "forgejo-runners",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi"
+            ]
           },
           "name": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "pattern": "^[a-z][a-z0-9-]*$",
-            "description": "The component's name. One in a directory of its own is named for it and needs none; one beside its service's declaration must say it."
+            "description": "The component's name within its service."
           },
           "displayName": {
             "type": [
@@ -199,6 +297,193 @@
               "string"
             ],
             "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "service": {
+            "type": "string",
+            "description": "The compose service the component runs as, as the compose file names it: the container keeps Docker's unique name, the component the catalog's."
+          },
+          "logs": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "enum": [
+              "otlp",
+              null
+            ],
+            "description": "How the component's logs reach the lab, when not as its output: otlp, when it sends its own."
+          },
+          "metrics": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535,
+                "description": "The port the service serves its metrics on, in its own container."
+              },
+              "path": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "The path it serves them on: /metrics unless it says otherwise."
+              }
+            },
+            "required": [
+              "port"
+            ],
+            "additionalProperties": false,
+            "description": "Where the component serves Prometheus metrics, in its own container."
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "service"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "agents",
+              "ollama",
+              "forgejo-runners",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/common",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "agents",
+              "ollama",
+              "forgejo-runners",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
           },
           "dependsOn": {
             "type": [
@@ -215,157 +500,10 @@
         },
         "required": [
           "kind",
-          "type"
+          "workflow",
+          "name"
         ],
         "additionalProperties": false
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "workload"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "compose",
-              "agent"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "backup"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "snapshot",
-              "git"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "runner"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "host",
-              "docker"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "repository"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "restic"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "infrastructure"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "tofu"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "certificate"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "acme"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "package"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "image",
-              "nuget"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "kind": {
-            "const": "machine"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "type": {
-            "enum": [
-              "chezmoi"
-            ]
-          }
-        }
       }
     }
   ]

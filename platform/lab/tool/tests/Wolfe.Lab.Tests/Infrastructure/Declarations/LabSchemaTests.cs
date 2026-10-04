@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Infrastructure.Declarations;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Declarations;
@@ -17,23 +18,20 @@ public class LabSchemaTests
         throw new InvalidOperationException($"{AppContext.BaseDirectory} is not in a checkout.");
     }
 
-    // The committed schema is what every editor reads, so it must be the one the CLI judges by.
-    // LAB_WRITE_SCHEMA=1 writes it, rather than anyone writing it by hand.
+    // The committed schema is what every editor reads, so it must be the one the CLI judges by. A
+    // local build writes it (Wolfe.Lab.csproj, WriteLabSchema); in CI, which does not, this is
+    // what catches a branch that changed the declarations' types without building.
     [Fact]
     public void TheCommittedSchemaIsTheOneTheTypesGenerate()
     {
         var file = Path.Combine(Checkout(), LabSchema.Location.Value);
-        if (Environment.GetEnvironmentVariable("LAB_WRITE_SCHEMA") == "1")
-        {
-            File.WriteAllText(file, LabSchema.Json);
-        }
 
-        File.Exists(file).ShouldBeTrue($"{LabSchema.Location} is not committed: run the tests with LAB_WRITE_SCHEMA=1.");
-        File.ReadAllText(file).ShouldBe(LabSchema.Json, $"{LabSchema.Location} is stale: run the tests with LAB_WRITE_SCHEMA=1.");
+        File.Exists(file).ShouldBeTrue($"{LabSchema.Location} is not committed: build the CLI locally, which writes it.");
+        File.ReadAllText(file).ShouldBe(LabSchema.Json, $"{LabSchema.Location} is stale: build the CLI locally, which writes it.");
     }
 
     private static IReadOnlyList<string> Judge(string yaml) =>
-        [.. LabSchema.Judge(YamlDocuments.Parse(yaml).Value.ShouldNotBeNull().Documents.Single()).Select(problem => $"{problem.Line}: {problem.Problem}")];
+        [.. LabSchema.Judge(YamlDocuments.Parse(yaml).Value.ShouldNotBeNull().Documents.Single()).Select(problem => $"{problem.Line}: {problem.Problem.Message}")];
 
     [Fact]
     public void Judge_PassesAServiceAndAComponent()
@@ -46,16 +44,21 @@ public class LabSchemaTests
               - { title: Runbook, type: runbook, path: RUNBOOK.md }
             """).ShouldBeEmpty();
 
-        Judge("kind: workload\ntype: compose\ndescription: The stack.\n").ShouldBeEmpty();
+        Judge("name: server\nkind: app\nworkflow: docker\nservice: server\ndescription: The server.\n").ShouldBeEmpty();
     }
 
     [Fact]
     public void Judge_SaysWhatIsMissingAndWhere() =>
-        Judge("kind: service\nname: immich\n").ShouldBe(["1: the document: Required properties [\"description\"] are not present"]);
+        Judge("kind: service\nname: immich\n").ShouldBe(["1: Required properties [\"description\"] are not present"]);
 
     [Fact]
     public void Judge_RefusesAKeyNothingDeclaresInItsOwnWords() =>
-        Judge("kind: workload\ntype: compose\nvolumes: [/Volumes/Data2]\n").ShouldBe(["3: volumes: 'volumes' is not something a workload declares."]);
+        Judge("name: server\nkind: app\nworkflow: docker\nservice: server\nvolumes: [/Volumes/Data2]\n").ShouldBe(["5: volumes: 'volumes' is not something a docker component declares."]);
+
+    [Fact]
+    public void Judge_HoldsEachProblemAsTheWellKnownErrorOfItsField() =>
+        LabSchema.Judge(YamlDocuments.Parse("name: server\nkind: app\nworkflow: docker\nservice: server\nvolumes: [/Volumes/Data2]\n").Value.ShouldNotBeNull().Documents.Single())
+            .ShouldHaveSingleItem().Problem.ShouldBe(new FieldError("volumes", DeclarationErrors.NotDeclarable("volumes", "a docker component")));
 
     [Fact]
     public void Judge_RefusesANameThatIsNotOneInItsOwnWords() =>
@@ -63,12 +66,24 @@ public class LabSchemaTests
             .ShouldBe(["2: name: 'Immich' is not a name: lower case, a letter first, then letters, digits and hyphens."]);
 
     [Fact]
-    public void Judge_HoldsAKindToItsOwnTypes() =>
-        Judge("kind: workload\ntype: snapshot\n").ShouldBe(["2: type: 'snapshot' is not a type of workload (compose, agent)."]);
+    public void Judge_RefusesAWorkflowThatOperatesNoComponent() =>
+        Judge("kind: app\nworkflow: gatus-health\n").ShouldHaveSingleItem()
+            .ShouldStartWith("2: workflow: 'gatus-health' is not a workflow that operates components (docker, dotnet-service, agents,");
+
+    // Kind and workflow are independent: any usage, operated by any workflow.
+    [Theory]
+    [InlineData("name: broker\nkind: queue\nworkflow: restic\n")]
+    [InlineData("name: cache\nkind: cache\nworkflow: docker\nservice: redis\n")]
+    public void Judge_TakesAnyKindWithAnyWorkflow(string yaml) =>
+        Judge(yaml).ShouldBeEmpty();
+
+    [Fact]
+    public void Judge_HoldsADockerComponentToItsService() =>
+        Judge("name: server\nkind: app\nworkflow: docker\n").ShouldBe(["1: Required properties [\"service\"] are not present"]);
 
     [Fact]
     public void Judge_RefusesAKindTheLabDoesNotHave() =>
-        Judge("kind: daemon\ntype: compose\n").ShouldHaveSingleItem().ShouldStartWith("1: kind: 'daemon' is not a kind of declaration (service, workload, backup,");
+        Judge("kind: daemon\nworkflow: docker\n").ShouldHaveSingleItem().ShouldStartWith("1: kind: 'daemon' is not a kind of declaration (service, app, backend, database,");
 
     [Fact]
     public void Judge_SaysWhichLifecyclesAndLinkTypesThereAre() =>

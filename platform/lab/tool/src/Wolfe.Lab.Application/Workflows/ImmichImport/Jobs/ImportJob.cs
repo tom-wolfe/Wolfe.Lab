@@ -3,7 +3,6 @@ using Ritten.Docker;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Workflows.ImmichImport.Models;
 using Wolfe.Lab.Application.Workflows.ImmichImport.Steps;
-using Wolfe.Lab.Infrastructure.Paths;
 
 namespace Wolfe.Lab.Application.Workflows.ImmichImport.Jobs;
 

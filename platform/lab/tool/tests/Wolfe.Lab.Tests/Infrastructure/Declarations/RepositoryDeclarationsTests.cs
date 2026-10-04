@@ -1,3 +1,4 @@
+using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Infrastructure.Declarations;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Declarations;
@@ -22,6 +23,6 @@ public class RepositoryDeclarationsTests
 
     [Fact]
     public async Task TheRepositorysDeclarationsHold() =>
-        (await DeclarationReader.Read(new ProcessCommandRunner(), Checkout(), TestContext.Current.CancellationToken))
-            .Errors.Select(problem => problem.Message).ShouldBeEmpty();
+        (await ServiceCatalogReader.Read(new ProcessCommandRunner(), new PhysicalDirectory(Checkout()), TestContext.Current.CancellationToken))
+            .Errors?.Select(problem => problem.Message).ShouldBeNull();
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Resilience;
 
 namespace Wolfe.Lab.Infrastructure.Packages;
@@ -16,7 +17,7 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddPackages()
         {
-            builder.AddCommandRunner().AddBuildReporting().AddLabConfiguration();
+            builder.AddCommandRunner().AddBuildReporting().AddLabConfiguration().AddLabRoots();
             builder.Services.AddOptions<GithubOptions>().BindConfiguration("Packages")
                 .Validate(options => options.Releases is not null && options.Api is not null, "'Packages:Releases' and 'Packages:Api' must both be set in appsettings.json.");
             builder.Services

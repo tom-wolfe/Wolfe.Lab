@@ -1,5 +1,3 @@
-using Ritten.Engine.FileSystem;
-
 namespace Wolfe.Lab.Infrastructure.Checkout;
 
 /// <summary>
@@ -57,9 +55,9 @@ public sealed record Service(string Name)
             yield break;
         }
 
-        foreach (var area in Directory.EnumerateDirectories(directory.AbsolutePath).Order(StringComparer.Ordinal))
+        foreach (var area in directory.GetDirectories().OrderBy(area => area.Name, StringComparer.Ordinal))
         {
-            yield return new PhysicalDirectory(area).GetDirectory(Name);
+            yield return area.GetDirectory(Name);
         }
     }
 
@@ -70,7 +68,5 @@ public sealed record Service(string Name)
         directory.GetDirectory(".git").Exists || directory.GetFile(".git").Exists;
 
     private static IDirectory? Parent(IDirectory directory) =>
-        Path.GetDirectoryName(directory.AbsolutePath) is { Length: > 0 } parent && parent != directory.AbsolutePath
-            ? new PhysicalDirectory(parent)
-            : null;
+        directory.GetDirectory("..") is var parent && parent.AbsolutePath != directory.AbsolutePath ? parent : null;
 }
