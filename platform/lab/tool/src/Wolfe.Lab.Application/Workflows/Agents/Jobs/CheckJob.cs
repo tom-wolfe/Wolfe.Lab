@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Telemetry;
 using Wolfe.Lab.Application.Workflows.Agents.Models;
 using Wolfe.Lab.Application.Workflows.Agents.Steps;
@@ -19,14 +20,12 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
     public override IReadOnlyList<Step> Steps { get; } = [
         Step.FromType<GatePathFilter>(),
         Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<CheckAgentDeclarations>(),
         Step.FromType<CheckTelemetryNames>()
     ];
 
     public override JobKind Kind => JobKind.Check;
-
-    protected override void ValidateSettings(SettingsValidator<AgentsOptions> options) => options
-        .Require(s => s.Nodes.Count > 0, "'nodes' names no node in ritten.json.");
 
     protected override void Configure(IWorkflowBuilder builder, AgentsOptions options)
     {

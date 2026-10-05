@@ -75,4 +75,40 @@ public class DeclareAgentLogsTests : IDisposable
 
         File.Exists(TargetFile).ShouldBeFalse();
     }
+
+    private void Declared(string file, string area, string service, string component, string agent) =>
+        File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(_root.FullName, ".logs")).FullName, file),
+            $$"""[{ "targets": ["localhost"], "labels": { "__path__": "/old.log", "service_name": "{{agent}}", "lab_area": "{{area}}", "lab_service": "{{service}}", "lab_component": "{{component}}" } }]""");
+
+    [Fact]
+    public async Task Run_RetiresTheTargetsItsAgentsHadUnderAnEarlierName()
+    {
+        Declared("ai-ollama-old.json", "ai", "ollama", "old", "ollama");
+
+        await Declare(agents: Agent("ollama", "/var/log/ollama.log"));
+
+        Directory.GetFiles(Path.Combine(_root.FullName, ".logs")).Select(Path.GetFileName).ShouldBe(["ai-ollama-server.json"]);
+    }
+
+    [Fact]
+    public async Task Run_LeavesTheTargetsOfAnotherServiceOrAgentAlone()
+    {
+        Declared("monitoring-alloy-forwarder.json", "monitoring", "alloy", "forwarder", "ollama");
+        Declared("ai-ollama-studio.json", "ai", "ollama", "studio", "something-else");
+
+        await Declare(agents: Agent("ollama", "/var/log/ollama.log"));
+
+        Directory.GetFiles(Path.Combine(_root.FullName, ".logs")).Select(Path.GetFileName).Order(StringComparer.Ordinal)
+            .ShouldBe(["ai-ollama-server.json", "ai-ollama-studio.json", "monitoring-alloy-forwarder.json"]);
+    }
+
+    [Fact]
+    public async Task Run_RetiresNothingInARehearsal()
+    {
+        Declared("ai-ollama-old.json", "ai", "ollama", "old", "ollama");
+
+        await Declare(dryRun: true, Agent("ollama", "/var/log/ollama.log"));
+
+        File.Exists(Path.Combine(_root.FullName, ".logs", "ai-ollama-old.json")).ShouldBeTrue();
+    }
 }

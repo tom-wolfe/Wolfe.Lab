@@ -3,28 +3,22 @@ using System.Text.Json.Nodes;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
+using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Network;
+using Wolfe.Lab.Domain.Packages;
 using Wolfe.Lab.Domain.Paths;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
 /// <summary>
-/// Reads a checkout's declarations into its <see cref="ServiceCatalog"/>: the one way one is read,
-/// and either a valid catalog or every problem with the declarations.
+/// Reads the service catalog from a Git repository.
 /// </summary>
-/// <remarks>
-/// The YAML and its shape, against <see cref="LabSchema"/>, are judged here; every rule of the
-/// catalog is the domain's, held by the catalog as a service is added to it and by a service as a
-/// component is. This chooses only the order: whatever a declaration refers to — the services it
-/// depends on, the component it is part of or depends on — before it, so a valid catalog can be
-/// built, and a reference to what is missing, or refers back, is refused where it is made.
-/// </remarks>
 public static class ServiceCatalogReader
 {
-    // Each closed set reads itself from its value, through its own converter.
     private static readonly JsonSerializerOptions Serializer = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     /// <summary>
@@ -36,6 +30,7 @@ public static class ServiceCatalogReader
     private static Result<ServiceCatalog> Read(IDirectory root, DeclarationFiles files)
     {
         var problems = new List<Error>(files.Problems);
+        var nodes = new List<(DocumentSource Source, NodeDocument Document)>();
         var services = new List<(DocumentSource Source, ServiceDocument Document)>();
         var components = new List<(DocumentSource Source, ComponentDocument Document)>();
         foreach (var file in files.Files)
@@ -58,6 +53,10 @@ public static class ServiceCatalogReader
                 {
                     services.Add((source, Read<ServiceDocument>(document.Root)));
                 }
+                else if (document.Root?["kind"]?.GetValue<string>() == "node")
+                {
+                    nodes.Add((source, Read<NodeDocument>(document.Root)));
+                }
                 else
                 {
                     components.Add((source, ComponentDocuments.Read(document.Root, Serializer)));
@@ -66,6 +65,11 @@ public static class ServiceCatalogReader
         }
 
         var catalog = new ServiceCatalog();
+        foreach (var (source, document) in nodes)
+        {
+            AddNode(catalog, source, document, problems);
+        }
+
         foreach (var (source, document) in InOrder(services, service => service.Document.Name, service => service.Document.DependsOn ?? []))
         {
             AddService(catalog, root, source, document, problems);
@@ -102,12 +106,14 @@ public static class ServiceCatalogReader
             yield return next;
         }
 
-        bool Ready(T declaration) => refers(declaration).All(placed.Contains);
-
         foreach (var stuck in waiting)
         {
             yield return stuck;
         }
+
+        yield break;
+
+        bool Ready(T declaration) => refers(declaration).All(placed.Contains);
     }
 
     // The service a component's file sits under, area/service: what groups it with its siblings.
@@ -146,11 +152,102 @@ public static class ServiceCatalogReader
         problems.AddRange(catalog.Add(created).Errors ?? []);
     }
 
+    private static void AddNode(ServiceCatalog catalog, DocumentSource source, NodeDocument document, List<Error> problems)
+    {
+        var drives = new List<HostPath>();
+        foreach (var (drive, index) in (document.Drives ?? []).Select((drive, index) => (drive, index)))
+        {
+            var path = HostPath.TryFrom(drive);
+            if (path.IsSuccess)
+            {
+                drives.Add(path.ValueObject);
+            }
+            else
+            {
+                problems.Add(CatalogError.In(source, new FieldError($"drives.{index}", DeclarationErrors.Schema(path.Error.ErrorMessage))));
+            }
+        }
+
+        var address = HostName.TryFrom(document.Address);
+        if (!address.IsSuccess)
+        {
+            problems.Add(CatalogError.In(source, new FieldError("address", DeclarationErrors.Schema(address.Error.ErrorMessage))));
+        }
+
+        var docker = document.Docker is { } written ? DockerHost.TryFrom(written) : null;
+        if (docker is { IsSuccess: false } refused)
+        {
+            problems.Add(CatalogError.In(source, new FieldError("docker", DeclarationErrors.Schema(refused.Error.ErrorMessage))));
+        }
+
+        var root = AbsolutePath.TryFrom(document.Root);
+        var data = AbsolutePath.TryFrom(document.Data);
+        foreach (var (field, path) in new[] { ("root", root), ("data", data) }.Where(path => !path.Item2.IsSuccess))
+        {
+            problems.Add(CatalogError.In(source, new FieldError(field, DeclarationErrors.Schema(path.Error.ErrorMessage))));
+        }
+
+        if (!address.IsSuccess || docker is { IsSuccess: false } || !root.IsSuccess || !data.IsSuccess)
+        {
+            return;
+        }
+
+        var node = Node.Create(source, NodeName.From(document.Name), document.Role, document.Platform, address.ValueObject,
+            new NodeDirectories(root.ValueObject, data.ValueObject));
+        if (!node.TryGetValue(out var created, out var invalid))
+        {
+            problems.AddRange(invalid);
+            return;
+        }
+
+        created.Docker = docker?.ValueObject;
+        created.Drives = drives;
+        problems.AddRange(catalog.Add(created).Errors ?? []);
+    }
+
     private static void AddComponent(ServiceCatalog catalog, DocumentSource source, ComponentDocument document, List<Error> problems)
     {
         var name = ComponentName.From(document.Name);
         var partOf = document.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
         IReadOnlyList<ComponentName> dependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
+        if (document is AgentsDocument { DeclaresAgent: true } agents)
+        {
+            if (agents is not { RunsOn: { } target, Agent: { } agent, Program: { } program })
+            {
+                problems.Add(CatalogError.In(source, DeclarationErrors.AgentIncomplete));
+                return;
+            }
+
+            AgentPackage? package = null;
+            if (agents.Package is { } declaredPackage)
+            {
+                if (!Package(declaredPackage).TryGetValue(out package, out var unpackaged))
+                {
+                    problems.AddRange(unpackaged.Select(error => CatalogError.In(source, error)));
+                    return;
+                }
+            }
+
+            var declared = new AgentProcess
+            {
+                Name = AgentName.From(agent),
+                Package = package,
+                Program = Template.From(program),
+                Arguments = [.. (agents.Arguments ?? []).Select(Template.From)],
+                Environment = (agents.Environment ?? []).ToDictionary(variable => variable.Key, variable => Template.From(variable.Value), StringComparer.Ordinal),
+                Supersedes = agents.Supersedes ?? []
+            };
+
+            if (!Placed(target).TryGetValue(out var runsOn, out var unplaced))
+            {
+                problems.AddRange(unplaced.Select(error => CatalogError.In(source, new FieldError("runsOn", error))));
+                return;
+            }
+
+            AddTo(catalog, AgentComponent.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn, runsOn, declared), document, problems);
+            return;
+        }
+
         if (document is not ComposeDocument compose)
         {
             AddTo(catalog, Component.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn), document, problems);
@@ -204,6 +301,46 @@ public static class ServiceCatalogReader
         }
 
         problems.AddRange(owner.Add(component).Errors ?? []);
+    }
+
+    // An agent's package: the schema holds the repository to owner/name already, and the domain
+    // judges both it and the version.
+    private static Result<AgentPackage> Package(AgentPackageDocument document)
+    {
+        var repository = GitHubRepository.TryFrom(document.Github);
+        var version = PackageVersion.TryFrom(document.Version);
+        var errors = new List<Error>();
+        if (!repository.IsSuccess)
+        {
+            errors.Add(new FieldError("package.github", DeclarationErrors.Schema(repository.Error.ErrorMessage)));
+        }
+
+        if (!version.IsSuccess)
+        {
+            errors.Add(new FieldError("package.version", DeclarationErrors.Schema(version.Error.ErrorMessage)));
+        }
+
+        return errors.Count > 0
+            ? errors
+            : new AgentPackage(repository.ValueObject, version.ValueObject, Template.From(document.Asset),
+                document.Checksums is { } checksums ? Template.From(checksums) : null);
+    }
+
+    // The schema holds a rule to "all" or "every <word>" and a list to strings; the domain judges each.
+    private static Result<DeploymentTarget> Placed(DeploymentTargetDocument document)
+    {
+        if (document.Rule is { } rule)
+        {
+            return DeploymentTarget.Rule(rule);
+        }
+
+        var written = document.Nodes ?? [];
+        if (written.FirstOrDefault(name => !NodeName.TryFrom(name).IsSuccess) is { } invalid)
+        {
+            return DeclarationErrors.NotAName(invalid);
+        }
+
+        return DeploymentTarget.On([.. written.Select(NodeName.From)]);
     }
 
     /// <summary>

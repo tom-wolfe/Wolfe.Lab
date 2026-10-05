@@ -48,9 +48,9 @@ public class InstallAgentPackagesTests : IDisposable
         {
             ["alloy"] = agent ?? new AgentOptions { Package = Alloy, Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }
         });
-        return new InstallAgentPackages(declarations, _installer, Options.Create(new LabDirectories()),
+        return new InstallAgentPackages(_installer, Options.Create(new LabDirectories()),
                 new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), Report(), Substitute.For<IWorkflowLog>())
-            .Run(TestContext.Current.CancellationToken);
+            .Run(declarations, TestContext.Current.CancellationToken);
     }
 
     [Fact]

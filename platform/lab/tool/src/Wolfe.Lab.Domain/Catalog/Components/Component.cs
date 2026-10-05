@@ -64,9 +64,9 @@ public class Component : IEquatable<Component>
     }
 
     /// <summary>
-    /// Makes it <paramref name="service"/>'s.
+    /// Attempts to set the owning service, and returns any errors.
     /// </summary>
-    internal void Join(Service service)
+    internal virtual IReadOnlyList<Error> SetService(Service service)
     {
         if (_service is not null)
         {
@@ -74,6 +74,7 @@ public class Component : IEquatable<Component>
         }
 
         _service = service;
+        return [];
     }
 
     /// <summary>

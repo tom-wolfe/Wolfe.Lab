@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Domain.Catalog.Nodes;
 
 namespace Wolfe.Lab.Infrastructure.Releases;
 
@@ -25,6 +26,15 @@ public sealed class LabDirectories
     /// Where services keep their state: <c>LAB_DATA</c>.
     /// </summary>
     public IDirectory Data { get; set; } = new PhysicalDirectory(Path.Combine(Home, "Docker"));
+
+    /// <summary>
+    /// The directories <paramref name="node"/> declares it keeps the lab in, wherever this runs.
+    /// </summary>
+    public static LabDirectories ForNode(Node node) => new()
+    {
+        Root = new PhysicalDirectory(node.Directories.Root.Value),
+        Data = new PhysicalDirectory(node.Directories.Data.Value)
+    };
 
     /// <summary>
     /// Takes each root <paramref name="configuration"/> sets over its default; one it leaves
@@ -75,4 +85,10 @@ public sealed class LabDirectories
     /// find (monitoring/alloy): one target file per component, beside the releases.
     /// </summary>
     public IDirectory Logs => Root.GetDirectory(".logs");
+
+    /// <summary>
+    /// Where an agent the catalog declares writes its output, both streams: a file of its
+    /// component's, beside the releases, on every node alike.
+    /// </summary>
+    public IFile AgentLog(string qualifiedName) => Root.GetDirectory("logs").GetFile($"{qualifiedName}.log");
 }

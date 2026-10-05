@@ -9,8 +9,14 @@ namespace Wolfe.Lab.Domain.Catalog.Services;
 public sealed class Service : IEquatable<Service>
 {
     private readonly List<Component> _components = [];
+    private ServiceCatalog? _catalog;
 
     private Service() { }
+
+    /// <summary>
+    /// The catalog it is listed in.
+    /// </summary>
+    public ServiceCatalog Catalog => _catalog ?? throw new InvalidOperationException($"{Name} is in no catalog until one adds it.");
 
     /// <summary>
     /// The area it is classified under: its directory's parent.
@@ -115,16 +121,31 @@ public sealed class Service : IEquatable<Service>
         }
 
         problems.AddRange(component.DependsOn.Where(needed => FindComponent(needed) is null).Select(ComponentErrors.DependsOnUndeclared));
+        if (problems.Count == 0)
+        {
+            problems.AddRange(component.SetService(this));
+        }
 
         if (problems.Count > 0)
         {
             return problems.Select(Error (problem) => CatalogError.In(component.Source, problem)).ToList();
         }
-
-        component.Join(this);
         var at = _components.FindIndex(sibling => string.CompareOrdinal(sibling.Name.Value, component.Name.Value) > 0);
         _components.Insert(at < 0 ? _components.Count : at, component);
         return component;
+    }
+
+    /// <summary>
+    /// Makes it <paramref name="catalog"/>'s.
+    /// </summary>
+    internal void Join(ServiceCatalog catalog)
+    {
+        if (_catalog is not null)
+        {
+            throw new InvalidOperationException($"{this} is a catalog's already; a service is listed once.");
+        }
+
+        _catalog = catalog;
     }
 
     /// <summary>

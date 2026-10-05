@@ -10,6 +10,8 @@ rather than versioned — the lab is continuous, not released.
 
 - **Nodes know their own name.** chezmoi now exports `LAB_NODE` (`mini`, `studio`, `pi`).
 
+- **Nodes, and agents placed on them.** `platform/nodes.yaml` contains the machine definitions.
+
 ### Changed
 
 - **Alloy gateway.** The collectors now forward to a dedicated gateway instead of

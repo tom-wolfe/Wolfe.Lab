@@ -1,7 +1,9 @@
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
+using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Paths;
 
@@ -14,7 +16,8 @@ namespace Wolfe.Lab.Tests.Domain.Catalog;
 internal static class Catalogs
 {
     /// <summary>
-    /// What a test says a component declares; a compose service makes it a compose component.
+    /// What a test says a component declares; a compose service makes it a compose component, a
+    /// placement and an agent an agent component.
     /// </summary>
     internal sealed record Declaration(
         string Name,
@@ -24,7 +27,60 @@ internal static class Catalogs
         string[]? DependsOn = null,
         string? ComposeService = null,
         LogTransport? Logs = null,
-        MetricsEndpoint? Metrics = null);
+        MetricsEndpoint? Metrics = null,
+        DeploymentTarget? RunsOn = null,
+        AgentProcess? Agent = null);
+
+    /// <summary>
+    /// <paramref name="values"/>, as the templates an agent's fields are.
+    /// </summary>
+    public static IReadOnlyList<Template> Templates(params string[] values) => [.. values.Select(Template.From)];
+
+    /// <summary>
+    /// An agent's environment of <paramref name="variables"/>, each value a template.
+    /// </summary>
+    public static IReadOnlyDictionary<string, Template> Variables(params (string Name, string Value)[] variables) =>
+        variables.ToDictionary(variable => variable.Name, variable => Template.From(variable.Value), StringComparer.Ordinal);
+
+    /// <summary>
+    /// What <paramref name="templates"/> say once written out, for comparing with what a test expects.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> Written(IReadOnlyDictionary<string, Template> templates) =>
+        templates.ToDictionary(template => template.Key, template => template.Value.Value, StringComparer.Ordinal);
+
+    /// <summary>
+    /// An agent component <paramref name="name"/>, running <paramref name="agent"/> on the nodes of <paramref name="runsOn"/>.
+    /// </summary>
+    public static Declaration Agent(string name, DeploymentTarget runsOn, AgentProcess agent) =>
+        new(name, ComponentKind.Collector, WorkflowName.Agents, RunsOn: runsOn, Agent: agent);
+
+    /// <summary>
+    /// A node as <c>platform/nodes.yaml</c> would declare it, keeping the lab in <c>/lab/root</c>
+    /// and <c>/lab/data</c>.
+    /// </summary>
+    public static Node Node(string name, NodeRole role, NodePlatform? platform = null, string? docker = null, params string[] drives)
+    {
+        var node = Wolfe.Lab.Domain.Catalog.Nodes.Node.Create(new DocumentSource(RepositoryPath.From("platform/nodes.yaml")), NodeName.From(name), role,
+            platform ?? NodePlatform.DarwinArm64, Wolfe.Lab.Domain.Network.HostName.From($"{name}.tailnet.ts.net"),
+            new NodeDirectories(AbsolutePath.From("/lab/root"), AbsolutePath.From("/lab/data"))).Value.ShouldNotBeNull();
+        node.Docker = docker is null ? null : Wolfe.Lab.Domain.Network.DockerHost.From(docker);
+        node.Drives = [.. drives.Select(Wolfe.Lab.Domain.Paths.HostPath.From)];
+        return node;
+    }
+
+    /// <summary>
+    /// A catalog of <paramref name="nodes"/> alone, for <see cref="Of(ServiceCatalog, string, Declaration[])"/> to add to.
+    /// </summary>
+    public static ServiceCatalog Nodes(params Node[] nodes)
+    {
+        var catalog = new ServiceCatalog();
+        foreach (var node in nodes)
+        {
+            catalog.Add(node).Value.ShouldNotBeNull();
+        }
+
+        return catalog;
+    }
 
     /// <summary>
     /// A component of a workflow that reads nothing beyond what every one does.
@@ -46,6 +102,12 @@ internal static class Catalogs
         var name = ComponentName.From(declaration.Name);
         var partOf = declaration.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
         IReadOnlyList<ComponentName> dependsOn = [.. (declaration.DependsOn ?? []).Select(ComponentName.From)];
+        if (declaration is { RunsOn: { } runsOn, Agent: { } agent })
+        {
+            var placed = AgentComponent.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn, runsOn, agent);
+            return placed.Value is { } agentComponent ? service.Add<Component>(agentComponent) : new Result<Component>(placed.Errors ?? []);
+        }
+
         var created = declaration.ComposeService is { } composeService
             ? Created(ComposeComponent.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn, ComposeServiceName.From(composeService)),
                 declaration)
@@ -81,10 +143,15 @@ internal static class Catalogs
     /// The catalog of the components <paramref name="directory"/> declares, documents of one file
     /// in it, with their service declared.
     /// </summary>
-    public static ServiceCatalog Of(string directory, params Declaration[] components)
+    public static ServiceCatalog Of(string directory, params Declaration[] components) => Of(new ServiceCatalog(), directory, components);
+
+    /// <summary>
+    /// <paramref name="catalog"/>, with the components <paramref name="directory"/> declares added
+    /// to it, as <see cref="Of(string, Declaration[])"/> adds them.
+    /// </summary>
+    public static ServiceCatalog Of(ServiceCatalog catalog, string directory, params Declaration[] components)
     {
         var at = RepositoryPath.From(directory);
-        var catalog = new ServiceCatalog();
         var service = AddService(catalog, (at.Parent ?? throw new ArgumentException($"{directory} has no service.")).Value).Value.ShouldNotBeNull();
         for (var index = 0; index < components.Length; index++)
         {

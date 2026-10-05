@@ -1,4 +1,5 @@
 using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Paths;
 
@@ -10,11 +11,44 @@ namespace Wolfe.Lab.Domain.Catalog;
 public sealed class ServiceCatalog
 {
     private readonly List<Service> _services = [];
+    private readonly List<Node> _nodes = [];
 
     /// <summary>
     /// Every service, by area and name.
     /// </summary>
     public IReadOnlyList<Service> Services => _services;
+
+    /// <summary>
+    /// The machines the lab runs on, by name.
+    /// </summary>
+    public IReadOnlyList<Node> Nodes => _nodes;
+
+    /// <summary>
+    /// Adds a node to the catalog.
+    /// </summary>
+    public Result<Node> Add(Node node)
+    {
+        var problems = new List<Error>();
+        if (FindNode(node.Name) is { } namesake)
+        {
+            problems.Add(NodeErrors.DeclaredAlready(node.Name, namesake.Source));
+        }
+
+        if (problems.Count > 0)
+        {
+            return problems.Select(Error (problem) => CatalogError.In(node.Source, problem)).ToList();
+        }
+
+        var position = _nodes.FindIndex(other => string.CompareOrdinal(other.Name.Value, node.Name.Value) > 0);
+        _nodes.Insert(position < 0 ? _nodes.Count : position, node);
+        return node;
+    }
+
+    /// <summary>
+    /// Its node named <paramref name="name"/>, if it has one.
+    /// </summary>
+    public Node? FindNode(NodeName name) => _nodes.FirstOrDefault(node => node.Name == name);
+
 
     /// <summary>
     /// Adds a service to the catalog.
@@ -38,6 +72,7 @@ public sealed class ServiceCatalog
             return problems.Select(Error (problem) => CatalogError.In(service.Source, problem)).ToList();
         }
 
+        service.Join(this);
         var position = _services.FindIndex(other => string.CompareOrdinal(other.Directory.Value, service.Directory.Value) > 0);
         _services.Insert(position < 0 ? _services.Count : position, service);
         return service;

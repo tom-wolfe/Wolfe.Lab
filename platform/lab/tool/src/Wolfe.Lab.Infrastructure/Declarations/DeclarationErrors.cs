@@ -43,4 +43,10 @@ public static class DeclarationErrors
     /// What the schema says is wrong, in its own words, when the lab has none better.
     /// </summary>
     public static Error Schema(string message) => new(message);
+
+    /// <summary>
+    /// An agent component declares some of its agent, but not what every one needs.
+    /// </summary>
+    public static Error AgentIncomplete { get; } =
+        new("an agent component declares runsOn, agent and program together — or none of its agent, while its ritten.json declares it per node.");
 }

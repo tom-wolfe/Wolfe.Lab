@@ -14,4 +14,15 @@ public static class NetworkErrors
     /// Not the path of an HTTP request (<see cref="HttpPath"/>).
     /// </summary>
     public static Error NotAPath(string given) => new($"'{given}' is not a path: it starts with '/', and has no spaces, query or fragment.");
+
+    /// <summary>
+    /// The value is not a DNS name or an IP address.
+    /// </summary>
+    public static Error NotAHostName(string given) => new($"'{given}' is not a host name: a DNS name or an IP address.");
+
+    /// <summary>
+    /// The value is not an endpoint Docker can be reached at.
+    /// </summary>
+    public static Error NotADockerHost(string given, IEnumerable<string> schemes) =>
+        new($"'{given}' is not a Docker endpoint: an absolute URI, {string.Join(", ", schemes.Select(scheme => $"{scheme}://"))}.");
 }

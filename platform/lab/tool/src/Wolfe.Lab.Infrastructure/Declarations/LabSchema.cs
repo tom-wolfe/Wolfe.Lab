@@ -6,6 +6,7 @@ using Json.Schema.Generation;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
+using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Paths;
 
@@ -120,7 +121,9 @@ public static class LabSchema
         return segments switch
         {
             ["workflow"] => DeclarationErrors.NotOneOf(given, "a workflow that operates components", Listed<WorkflowName>()),
-            ["kind"] => DeclarationErrors.NotOneOf(given, "a kind of declaration", ["service", .. Listed<ComponentKind>()]),
+            ["kind"] => DeclarationErrors.NotOneOf(given, "a kind of declaration", ["service", "node", .. Listed<ComponentKind>()]),
+            ["role"] => DeclarationErrors.NotOneOf(given, "a node's role", Listed<NodeRole>()),
+            ["platform"] => DeclarationErrors.NotOneOf(given, "a platform", Listed<NodePlatform>()),
             ["lifecycle"] => DeclarationErrors.NotOneOf(given, "a lifecycle", Listed<Lifecycle>()),
             ["links", _, "type"] => DeclarationErrors.NotOneOf(given, "a type of link", Listed<LinkType>()),
             ["logs"] => DeclarationErrors.NotOneOf(given, "a way logs are delivered", Listed<LogTransport>()),
@@ -134,6 +137,7 @@ public static class LabSchema
     private static string Kind(JsonNode? root) => (root?["kind"]?.ToString(), root?["workflow"]?.ToString()) switch
     {
         ("service", _) => "a service",
+        ("node", _) => "a node",
         (not null, { } workflow) => $"a {workflow} component",
         _ => "a declaration"
     };
@@ -150,7 +154,9 @@ public static class LabSchema
             PropertyOrder = PropertyOrder.AsDeclared
         };
         configuration.Generators.Add(ClosedSetSchemas.Instance);
+        configuration.Generators.Add(DeploymentTargetDocument.Schemas.Instance);
         var service = new JsonSchemaBuilder().Id($"{Id}/service").FromType<ServiceDocument>(configuration);
+        var node = new JsonSchemaBuilder().Id($"{Id}/node").FromType<NodeDocument>(configuration);
         var kinds = ComponentKind.All.Select(kind => kind.Value).ToList();
 
         // A branch per document shape, each taking the workflows written as it: the workflow is
@@ -171,14 +177,15 @@ public static class LabSchema
             .Schema(MetaSchemas.Draft202012Id)
             .Id(Id)
             .Title("Wolfe.Lab declaration")
-            .Description("A service or a component of the lab (ROADMAP.md #14). Name this schema in a file's first line to make it one of the lab's.")
+            .Description("A service, a component or a node of the lab (ROADMAP.md #14). Name this schema in a file's first line to make it one of the lab's.")
             .Type(SchemaValueType.Object)
             .Required("kind")
             .Properties(("kind", new JsonSchemaBuilder()
-                .Description("What the document declares: a service, or what a component is used for.")
-                .Enum(["service", .. kinds])))
+                .Description("What the document declares: a service, a node, or what a component is used for.")
+                .Enum(["service", "node", .. kinds])))
             .AllOf([
                 new JsonSchemaBuilder().If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Const("service")))).Then(service),
+                new JsonSchemaBuilder().If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Const("node")))).Then(node),
                 new JsonSchemaBuilder()
                     .If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Enum(kinds))))
                     .Then(new JsonSchemaBuilder().Required("workflow").Properties(("workflow", new JsonSchemaBuilder().Enum(WorkflowName.All.Select(workflow => workflow.Value))))),
