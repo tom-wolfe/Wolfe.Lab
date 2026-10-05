@@ -168,3 +168,11 @@ brew "lazydocker"
 npm  "obsidian-headless"
 # Deliberately NOT docker, because updating reboots Docker.
 {{ end -}}
+
+{{ if has .profile (list "macstudio" "macmini-node") -}}
+# =========================================================
+# Mac Nodes
+# =========================================================
+
+brew "logrotate"
+{{ end -}}

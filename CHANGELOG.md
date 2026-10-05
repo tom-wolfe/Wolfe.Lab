@@ -12,6 +12,9 @@ rather than versioned — the lab is continuous, not released.
 
 - **Nodes, and agents placed on them.** `platform/nodes.yaml` contains the machine definitions.
 
+- **logrotate on the Mac nodes.** Installed by the Brewfile, ready for the lab to rotate its
+  agents' logs; the Pi's OS ships it.
+
 ### Changed
 
 - **Alloy gateway.** The collectors now forward to a dedicated gateway instead of
