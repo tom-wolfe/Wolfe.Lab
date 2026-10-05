@@ -1419,14 +1419,6 @@ registration (`platform/forgejo/runners`), with branch protection's
 required checks changed in the same step; `alloy agent` becomes
 `alloy forwarder` with them, its workflow named for what it now runs.
 
-### Agents' logs are never rotated
-
-Every agent writes both streams to one file
-(`{lab.root}/logs/<component>.log`), and nothing rotates it: Ollama's on
-the Studio was 10 MB and growing. Without root, a lab agent on each node
-can run `newsyslog -r` on a Mac and `logrotate` with its own state file on
-Linux, on a schedule, over that one directory. Next after #14's agents.
-
 ## Undecided
 
 ### General file sharing (the third thing Google Drive does)
