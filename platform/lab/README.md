@@ -317,6 +317,15 @@ on every node alike, declared to the collector by the deploy, which
 retires any targets its agents left under an earlier name. A deploy on a
 node the component is not placed on has nothing to do.
 
+An agent's log is kept to a size by `lab rotate`, a job of the agents and
+ollama workflows: logrotate, as the lab's user, with the component's own
+configuration and state under `{lab.root}/.logrotate`, rotating past 10 MB
+and keeping five compressed generations. It copies a log and truncates it
+in place rather than moving it, because launchd and systemd hold the file
+open for as long as the agent runs. chezmoi installs logrotate on the
+Macs, and the Pi's OS ships it; nothing else runs it. A rehearsal is
+logrotate's own debug run, from the run's scratch.
+
 `runsOn`, `agent` and `program` are required of every agents component;
 its `ritten.json` declares only its `artifacts`.
 

@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-06
+
+### Added
+
+- **`lab rotate`.** The agents and ollama workflows rotate their agents' logs with logrotate,
+  past 10 MB, keeping five compressed generations.
+
 ## 2026-10-05
 
 ### Added
