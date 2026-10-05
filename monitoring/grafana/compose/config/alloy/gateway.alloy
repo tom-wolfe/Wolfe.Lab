@@ -1,0 +1,88 @@
+// The gateway (monitoring/alloy/README.md): the one collector that writes to
+// the stores, over the telemetry network beside them. Every node's forwarder
+// sends here (monitoring/alloy/forwarder/config/forwarder.alloy), the mini's
+// included, over the tailnet — never through caddy: a broken front door must
+// not hide the evidence of its own failure. It gathers nothing of its own:
+// what the mini has is its forwarder's, as every other node's is.
+
+// ── What the nodes forward ─────────────────────────────────────────────────
+// On every interface of the container, which compose publishes on the mini's;
+// the tailnet policy is what lets a node reach them. Passed through as it
+// arrived: each node labelled its own where it read it (node.alloy).
+
+otelcol.receiver.otlp "nodes" {
+	grpc {
+		endpoint = "0.0.0.0:4417"
+	}
+
+	output {
+		metrics = [otelcol.processor.batch.stores.input]
+		logs    = [otelcol.processor.batch.stores.input]
+		traces  = [otelcol.processor.batch.stores.input]
+	}
+}
+
+loki.source.api "nodes" {
+	http {
+		listen_address = "0.0.0.0"
+		listen_port    = 4418
+	}
+
+	// When it happened, not when it got here: a node catching up after an
+	// outage sends what it buffered.
+	use_incoming_timestamp = true
+	forward_to             = [loki.write.stores.receiver]
+}
+
+prometheus.receive_http "nodes" {
+	http {
+		listen_address = "0.0.0.0"
+		listen_port    = 4419
+	}
+
+	forward_to = [prometheus.remote_write.stores.receiver]
+}
+
+// ── The stores, by name on the telemetry network ───────────────────────────
+
+otelcol.processor.batch "stores" {
+	output {
+		metrics = [otelcol.exporter.otlphttp.prometheus.input]
+		logs    = [otelcol.exporter.otlphttp.loki.input]
+		traces  = [otelcol.exporter.otlp.tempo.input]
+	}
+}
+
+otelcol.exporter.otlp "tempo" {
+	client {
+		endpoint = "tempo:4317"
+
+		tls {
+			insecure = true
+		}
+	}
+}
+
+otelcol.exporter.otlphttp "loki" {
+	client {
+		endpoint = "http://loki:3100/otlp"
+	}
+}
+
+otelcol.exporter.otlphttp "prometheus" {
+	client {
+		endpoint = "http://prometheus:9090/api/v1/otlp"
+	}
+}
+
+loki.write "stores" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}
+
+prometheus.remote_write "stores" {
+	endpoint {
+		url = "http://prometheus:9090/api/v1/write"
+	}
+}

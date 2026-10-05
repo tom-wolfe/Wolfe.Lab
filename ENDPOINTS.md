@@ -41,12 +41,9 @@ fallback when the front door is down.
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
 | `:4317`, `:4318` | Alloy — OTLP gRPC, HTTP, from applications (**loopback only**; containers use `host.docker.internal`) | none | `monitoring/alloy` |
 | `:12345` | Alloy — UI and API (**loopback only**)   | none                                                       | `monitoring/alloy`          |
-| `:4417` | Alloy gateway — OTLP gRPC from the other nodes' collectors | none — LAN and tailnet, like the mini's other ports | `monitoring/alloy` |
-| `:4418` | Alloy gateway — Loki push from the other nodes' collectors | none — LAN and tailnet, like the mini's other ports | `monitoring/alloy` |
-| `:4419` | Alloy gateway — Prometheus remote write from the other nodes' collectors | none — LAN and tailnet, like the mini's other ports | `monitoring/alloy` |
-| `:3100` | Loki — push + query API (**loopback only**)     | none; only the mini's Alloy writes                        | `grafana`                   |
-| `:9090` | Prometheus — remote write, OTLP, query (**loopback only**) | none; only the mini's Alloy writes              | `grafana`                   |
-| `:14317`, `:14318` | Tempo — OTLP gRPC, HTTP (**loopback only**; `:4317`/`:4318` are Alloy's) | none; only the mini's Alloy writes | `grafana` |
+| `:4417` | Alloy gateway — OTLP gRPC from every node's forwarder | none — LAN and tailnet, like the mini's other ports | `grafana` |
+| `:4418` | Alloy gateway — Loki push from every node's forwarder | none — LAN and tailnet, like the mini's other ports | `grafana` |
+| `:4419` | Alloy gateway — Prometheus remote write from every node's forwarder | none — LAN and tailnet, like the mini's other ports | `grafana` |
 | `:3900` | Garage — S3 API                                  | 1P `garage-tofu-state-key` (per-bucket keys)               | `garage`                    |
 | `:3903` | Garage — admin API                               | 1P `garage-s3-admin-token`                                 | `garage`                    |
 | `:2283` | Immich — web, API and the phone app              | Immich accounts (1P `immich-admin`); API: 1P `immich-api-key`; `/api/server/ping` is unauthenticated | `immich`   |

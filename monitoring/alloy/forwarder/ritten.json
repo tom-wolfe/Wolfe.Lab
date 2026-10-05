@@ -19,7 +19,7 @@
           "program": "${PACKAGE}/alloy-darwin-arm64",
           "arguments": [
             "run",
-            "${LAB_ROOT}/alloy/gateway.alloy",
+            "${LAB_ROOT}/alloy/forwarder.alloy",
             "--storage.path=${LAB_DATA}/alloy",
             "--server.http.listen-addr=127.0.0.1:12345",
             "--disable-reporting"
@@ -27,7 +27,8 @@
           "environment": {
             "LAB_HOST": "mini",
             "LAB_ROLE": "server",
-            "LAB_ROOT": "${LAB_ROOT}"
+            "LAB_ROOT": "${LAB_ROOT}",
+            "LAB_GATEWAY": "macmini.tailf823b8.ts.net"
           },
           "log": "~/.cache/alloy/alloy.log",
           "supersedes": [

@@ -1,8 +1,8 @@
 // What every node's collector gathers from the node itself
 // (monitoring/alloy/README.md), as one component its root config places:
-// gateway.alloy on the mini, forwarder.alloy everywhere else. The root says
-// where it goes; this labels it with the node, once, here — so the gateway
-// passes what other nodes send through as it arrived. The node's identity
+// forwarder.alloy, on every node. The root says where it goes; this labels it
+// with the node, once, here — so the gateway passes what each node sends
+// through as it arrived. The node's identity
 // comes from the agent's environment (ritten.json).
 
 declare "collect" {
