@@ -27,3 +27,11 @@ service: grafana
 displayName: Grafana
 description: "Grafana, in front of the three stores."
 dependsOn: [loki, prometheus, tempo]
+---
+name: gateway
+kind: collector
+workflow: docker
+service: gateway
+displayName: Alloy gateway
+description: "The single entry point for all telemetry."
+dependsOn: [loki, prometheus, tempo]

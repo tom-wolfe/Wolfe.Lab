@@ -2,7 +2,8 @@
 
 The lab's telemetry backend (ROADMAP.md #11): **Loki** for logs, **Tempo**
 for traces, **Prometheus** for metrics, and **Grafana** in front, at
-`grafana.twolfe.dev` — on the tailnet, like every name under the wildcard.
+`grafana.twolfe.dev` — on the tailnet, like every name under the wildcard —
+with the **Alloy gateway** that writes to them (monitoring/alloy/README.md).
 One compose stack on the mini, release `grafana`.
 
 | Concern | Handled by |
@@ -17,12 +18,11 @@ One compose stack on the mini, release `grafana`.
 
 ## What goes in
 
-Only the mini's Alloy writes to the stores, from the host: Loki's `:3100`,
-Prometheus's `:9090` and Tempo's OTLP on `:14317`/`:14318` are published on
-loopback alone. (`:4317` and `:4318` on the host are Alloy's own, where
-applications send.) Every other node forwards through that Alloy, over the
-tailnet, never through caddy — a broken front door must not hide the
-evidence of its own failure.
+Only the gateway writes to the stores, by name on the stack's `telemetry`
+network; none of them publishes a port. Every node's forwarder, the mini's
+included, sends to the gateway's `:4417`–`:4419` over the tailnet, never
+through caddy — a broken front door must not hide the evidence of its own
+failure.
 
 All three take OTLP: logs into Loki's `/otlp`, traces into Tempo, metrics
 into Prometheus's OTLP receiver (and scraped metrics by remote write).
@@ -40,7 +40,7 @@ Prometheus's `--storage.tsdb.retention.time`, with an 8 GB size cap beside
 it. Telemetry is disposable and is not backed up; everything worth keeping
 is provisioned from the repository, so a rebuild loses history and nothing
 else. Data lives in `~/Docker/grafana/{grafana,loki,tempo,prometheus}` on
-the internal disk.
+the internal disk, and the gateway's write-ahead log in `~/Docker/grafana/alloy`.
 
 **Why not Garage.** The standard shape keeps Loki and Tempo in object
 storage, but on one backend node it buys nothing and costs two things:

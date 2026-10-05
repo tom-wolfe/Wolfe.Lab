@@ -1,8 +1,5 @@
 name: grafana
 
-# The lab's telemetry backend (ROADMAP.md #11): Loki for logs, Tempo for
-# traces, Prometheus for metrics, Grafana in front.
-
 services:
   grafana:
     image: grafana/grafana:13.2.3
@@ -53,8 +50,6 @@ services:
     volumes:
       - ./config/loki:/etc/loki:ro
       - ${HOME}/Docker/grafana/loki:/loki
-    ports:
-      - "127.0.0.1:3100:3100"
     networks:
       - telemetry
     deploy:
@@ -80,11 +75,6 @@ services:
     volumes:
       - ./config/tempo:/etc/tempo:ro
       - ${HOME}/Docker/grafana/tempo:/var/tempo
-    ports:
-      # OTLP, on ports of its own: 4317 and 4318 on the host are Alloy's,
-      # where applications send.
-      - "127.0.0.1:14317:4317"
-      - "127.0.0.1:14318:4318"
     networks:
       - telemetry
     deploy:
@@ -105,18 +95,13 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
-      # Seven days, and a size cap as the guard beside it.
       - --storage.tsdb.retention.time=7d
       - --storage.tsdb.retention.size=5GB
-      # Alloy writes scraped metrics by remote write and applications'
-      # metrics by OTLP.
       - --web.enable-remote-write-receiver
       - --web.enable-otlp-receiver
     volumes:
       - ./config/prometheus:/etc/prometheus:ro
       - ${HOME}/Docker/grafana/prometheus:/prometheus
-    ports:
-      - "127.0.0.1:9090:9090"
     networks:
       - telemetry
     deploy:
@@ -130,8 +115,35 @@ services:
       retries: 3
       start_period: 30s
 
+  gateway:
+    image: grafana/alloy:v1.20.1
+    container_name: alloy-gateway
+    restart: unless-stopped
+    command:
+      - run
+      - /etc/alloy/gateway.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=127.0.0.1:12345
+      - --disable-reporting
+    volumes:
+      - ./config/alloy:/etc/alloy:ro
+      - ${HOME}/Docker/grafana/alloy:/var/lib/alloy/data
+    ports:
+      - "4417:4417"
+      - "4418:4418"
+      - "4419:4419"
+    networks:
+      - telemetry
+    depends_on:
+      - loki
+      - prometheus
+      - tempo
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
 networks:
   lab:
     external: true
-  # The stores and Grafana, and nothing else.
   telemetry:

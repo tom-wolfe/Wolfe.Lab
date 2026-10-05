@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-05
+
+### Changed
+
+- **Alloy gateway.** The collectors now forward to a dedicated gateway instead of
+  one collector being a hybrid config.
+
 ## 2026-10-04
 
 ### Added

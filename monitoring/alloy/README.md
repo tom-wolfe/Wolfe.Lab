@@ -1,25 +1,28 @@
 # Alloy
 
-The lab's collector (ROADMAP.md #11): Grafana Alloy, a host process on
-every node. Each gathers what its own node has; the mini's is also the
-**gateway**, the only thing that writes to the telemetry stores
-(`monitoring/grafana`), and every other node's forwards to it: the Pi's
-and the Studio's.
+The lab's collector (ROADMAP.md #11): Grafana Alloy, a **forwarder** on
+every node as a host process, the mini included. Each gathers what its own
+node has and forwards it to the **gateway**, the only thing that writes to
+the telemetry stores — a container in Grafana's own stack
+(`monitoring/grafana`), so it moves with them.
 
 | Concern | Handled by |
 | --- | --- |
-| Binary | the agent's `package` in `agent/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
-| Process | `agent/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml` |
-| Config | `agent/config/`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts every node's agent (platform/lab/README.md, "Artifacts") |
+| Binary | the agent's `package` in `forwarder/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
+| Process | `forwarder/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml` |
+| Config | `forwarder/config/`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts every node's agent (platform/lab/README.md, "Artifacts") |
+| Gateway | the `gateway` component of `monitoring/grafana/compose`: its container and `config/alloy/gateway.alloy` |
 | State | `${LAB_DATA}/alloy` — its write-ahead log; disposable |
 | UI | `127.0.0.1:12345` on each node — component health and a live view of each pipeline |
 
-## Why a host process
+## Why a host process — and why the gateway is not one
 
 On a Mac a container sees Docker Desktop's VM, not the Mac: its CPU,
 memory and disks rather than `/Volumes/Data1`, and none of the host
 processes' logs. So Alloy runs on the host, like the Beszel agent, and
-reaches containers through the Docker socket.
+reaches containers through the Docker socket. The gateway needs none of
+that: it only receives and writes, so it is a container beside the stores,
+reaching them by name on their `telemetry` network.
 
 ## Why a gateway
 
@@ -28,33 +31,35 @@ only reachable there: the Docker socket, the journal, launchd's log files.
 Where it all goes is a separate choice, and the lab sends it through one
 collector rather than letting each node write to the stores:
 
-- **The stores stay on the mini's loopback.** None of Loki, Tempo or
-  Prometheus has auth; the gateway's three ports, which only accept
-  writes, are all the network sees of them.
+- **The stores publish nothing.** None of Loki, Tempo or Prometheus has
+  auth; the gateway's three ports, which only accept writes, are all the
+  network sees of them.
 - **One place to relabel, drop or move.** When the backend moves to the
-  Linux node, the gateway moves with it, and the other nodes follow one
-  name (`LAB_GATEWAY`).
+  Linux node, the gateway moves with it, as part of its stack, and every
+  node follows one name (`LAB_GATEWAY`).
+- **One forwarder, identical everywhere.** The mini forwards to the
+  gateway as every other node does, so no node's collector is special.
 
 ## The config
 
-Three files, one component:
+Two files for the forwarder, and one for the gateway:
 
 - **`node.alloy`** — what every node gathers from itself, as one
   component (`collect`) that its root places. Everything it reads it
   labels with the node, here and nowhere else.
-- **`gateway.alloy`** — the mini's root: the node's own, plus what other
-  nodes forward, to the stores.
-- **`forwarder.alloy`** — every other node's root: the node's own, to the
+- **`forwarder.alloy`** — every node's root: the node's own, to the
   gateway.
+- **`gateway.alloy`**, in Grafana's stack — what the nodes forward, to the
+  stores. It gathers nothing of its own.
 
 The gateway passes what it receives through as it arrived. Each node has
-already labelled its own; a label the gateway set would only ever say
-`mini`.
+already labelled its own; a label the gateway set would say nothing about
+where anything came from.
 
 The node's identity is the agent's — `LAB_HOST`, `LAB_ROLE`, `LAB_ROOT`
-for where the targets are, `LAB_GATEWAY` on a forwarder, and
-`DOCKER_HOST` where the Docker socket is not the standard one, all in
-`agent/ritten.json` — so one config serves any node of its kind.
+for where the targets are, `LAB_GATEWAY`, and `DOCKER_HOST` where the
+Docker socket is not the standard one, all in `forwarder/ritten.json` —
+so one config serves every node.
 
 ## What every node does
 
@@ -94,7 +99,8 @@ for where the targets are, `LAB_GATEWAY` on a forwarder, and
 
 ## What the gateway does
 
-- **Receives from the other nodes**, on every interface — the LAN's and
+- **Receives from every node's forwarder**, the mini's included, on ports
+  its container publishes on every interface of the mini — the LAN's and
   the tailnet's, like the mini's other services. A node reaches them over
   the tailnet, never through caddy: a broken front door must not hide the
   evidence of its own failure.
@@ -107,9 +113,11 @@ for where the targets are, `LAB_GATEWAY` on a forwarder, and
 
   Logs keep the time they were read, not the time they arrived, so a
   node catching up after an outage lands where it happened.
-- **Writes to the stores** on their loopback ports: OTLP logs to Loki's
-  `/otlp`, traces to Tempo, metrics to Prometheus's OTLP receiver; the
-  read logs to Loki's push API and Alloy's metrics by remote write.
+- **Writes to the stores** by name on the `telemetry` network: OTLP logs
+  to Loki's `/otlp`, traces to Tempo, metrics to Prometheus's OTLP
+  receiver; the read logs to Loki's push API and Alloy's metrics by remote
+  write. Its write-ahead log is `~/Docker/grafana/alloy`, as disposable as
+  a forwarder's.
 
 ## Checking it
 
@@ -119,4 +127,11 @@ On any node:
 curl -s 127.0.0.1:12345/-/ready
 tail ~/.cache/alloy/alloy.log            # a Mac
 journalctl --user -u dev.twolfe.alloy -n 50   # the Pi
+```
+
+The gateway, on the mini:
+
+```
+docker logs alloy-gateway --tail 50
+docker exec alloy-gateway curl -s 127.0.0.1:12345/-/ready
 ```
