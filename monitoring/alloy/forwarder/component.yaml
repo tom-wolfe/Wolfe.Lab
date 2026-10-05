@@ -6,7 +6,7 @@ description: "Telemetry collector on each node."
 runsOn: all
 agent: alloy
 package:
-  github: grafana/alloy,
+  github: grafana/alloy
   version: 1.20.1
   asset: "alloy-{platform}.zip"
   checksums: SHA256SUMS
