@@ -1,10 +1,10 @@
-name: alloy forwarder
+name: alloy agent
 
 on:
   pull_request:
   push:
     branches: [main]
-    paths: [monitoring/alloy/forwarder/**, .forgejo/workflows/alloy-forwarder.yaml]
+    paths: [monitoring/alloy/forwarder/**, .forgejo/workflows/alloy-agent.yaml]
   workflow_dispatch:
 
 jobs:

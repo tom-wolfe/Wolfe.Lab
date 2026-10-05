@@ -9,7 +9,7 @@ the telemetry stores — a container in Grafana's own stack
 | Concern | Handled by |
 | --- | --- |
 | Binary | the agent's `package` in `forwarder/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
-| Process | `forwarder/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-forwarder.yaml` |
+| Process | `forwarder/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml` |
 | Config | `forwarder/config/`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts every node's agent (platform/lab/README.md, "Artifacts") |
 | Gateway | the `gateway` component of `monitoring/grafana/compose`: its container and `config/alloy/gateway.alloy` |
 | State | `${LAB_DATA}/alloy` — its write-ahead log; disposable |
