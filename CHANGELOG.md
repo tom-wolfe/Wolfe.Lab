@@ -11,6 +11,8 @@ rather than versioned — the lab is continuous, not released.
 - **`lab rotate`.** The agents and ollama workflows rotate their agents' logs with logrotate,
   past 10 MB, keeping five compressed generations.
 
+- **The agents' logs are rotated nightly.** Each agent workflow runs `lab rotate` before the backups.
+
 ## 2026-10-05
 
 ### Added

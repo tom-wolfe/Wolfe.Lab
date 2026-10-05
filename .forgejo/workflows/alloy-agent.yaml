@@ -6,6 +6,8 @@ on:
     branches: [main]
     paths: [monitoring/alloy/forwarder/**, .forgejo/workflows/alloy-agent.yaml]
   workflow_dispatch:
+  schedule:
+    - cron: "15 1 * * *"
 
 jobs:
   check:
@@ -20,7 +22,7 @@ jobs:
         run: lab check
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         node: [MacMini, MacStudio, wolfe-pi5]
@@ -33,3 +35,18 @@ jobs:
       - uses: actions/checkout@v7
       - working-directory: monitoring/alloy/forwarder
         run: lab deploy --auto-approve
+
+  rotate:
+    if: github.event_name == 'schedule'
+    strategy:
+      matrix:
+        node: [MacMini, MacStudio, wolfe-pi5]
+    runs-on: ${{ matrix.node }}
+    concurrency:
+      group: ${{ matrix.node }}
+      cancel-in-progress: false
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - working-directory: monitoring/alloy/forwarder
+        run: lab rotate --auto-approve
