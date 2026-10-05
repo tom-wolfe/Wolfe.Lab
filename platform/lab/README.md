@@ -171,16 +171,18 @@ pair).
 
 ### Two roots
 
-Every node keeps the lab in two places, which chezmoi sets for the host
-runners' jobs and for every shell: `LAB_ROOT`, where components and their
-artifacts are installed (`~/.local/share/Wolfe.Lab`), and `LAB_DATA`, where
-services keep their state (`~/Docker`) — and `LAB_NODE`, which node this
-is in `platform/nodes.yaml` (`mini`, `studio`, `pi`; unset on a laptop),
-which a deploy reads rather than being told. Each node declares its two
-roots in `platform/nodes.yaml`, which is to become their one source:
-chezmoi will export them from there. Until it does, an agent deploy
-refuses a node whose declaration and environment disagree. A `ritten.json` path names
-the roots —
+Every node keeps the lab in two places, declared in `platform/nodes.yaml`
+as its `root`, where components and their artifacts are installed
+(`~/.local/share/Wolfe.Lab`), and its `data`, where services keep their
+state (`~/Docker`). That declaration is their one source. chezmoi
+exports a replica of it for the host runners' jobs and for every shell
+on a node, as `LAB_ROOT` and `LAB_DATA`, looked up by the node's name
+(`.chezmoitemplates/lab-node.tmpl`), and exports that name as `LAB_NODE`
+(`mini`, `studio`, `pi`), which a deploy reads rather than being told. A
+laptop is no node, and has none of the three. An agent deploy still
+refuses a node whose declaration and environment disagree, which is
+only possible between a change to `nodes.yaml` and chezmoi applying it.
+A `ritten.json` path names the roots —
 `${LAB_ROOT}` and `${LAB_DATA}` are expanded in artifact outputs and in an
 agent's program, arguments, variables, working directory and log, and
 nothing else is, so every other value reaches its process as written.

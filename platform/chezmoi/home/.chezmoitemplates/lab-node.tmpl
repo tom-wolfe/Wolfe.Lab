@@ -1,0 +1,10 @@
+{{- /* This machine's node in the lab's catalog, platform/nodes.yaml, as JSON
+       Used as: includeTemplate "lab-node.tmpl" . | fromJson */ -}}
+{{- $name := (index .profiles .profile).name -}}
+{{- $found := dict -}}
+{{- range splitList "\n---\n" (include (joinPath .chezmoi.workingTree "platform/nodes.yaml")) -}}
+{{-   $document := fromYaml . -}}
+{{-   if eq (get $document "name") $name -}}{{- $found = $document -}}{{- end -}}
+{{- end -}}
+{{- if not $found -}}{{- fail (printf "platform/nodes.yaml declares no node %q, which the %s profile is" $name .profile) -}}{{- end -}}
+{{- $found | toJson -}}

@@ -1,13 +1,14 @@
 {{- /* The HOST runner: one job at a time (deploys mutate node state; a job
        that overlaps itself queues). */ -}}
 {{- /* The lab's two roots (platform/lab/README.md, "Two roots"): where components and
-       their artifacts are installed, and where services keep their state —
-       and LAB_NODE, which node this is in the catalog. The same values the
-       zprofile exports, so a job and a shell agree. */ -}}
-{{- $root := joinPath .chezmoi.homeDir ".local/share/Wolfe.Lab" -}}
-{{- $data := joinPath .chezmoi.homeDir "Docker" -}}
+       their artifacts are installed, and where services keep their state — and
+       LAB_NODE, which node this is. All three are the node's declaration in
+       platform/nodes.yaml, which the zprofile exports too, so a job and a shell agree. */ -}}
+{{- $lab := includeTemplate "lab-node.tmpl" . | fromJson -}}
+{{- $root := $lab.root -}}
+{{- $data := $lab.data -}}
+{{- $name := $lab.name -}}
 {{- $node := (index .profiles .profile).node -}}
-{{- $name := (index .profiles .profile).name -}}
 {{- if eq .profile "macmini-node" -}}
 {{- /* Capacity 3: stateful jobs serialise themselves through the MacMini
        concurrency group; the heartbeat, the obsidian syncs and the Gatus

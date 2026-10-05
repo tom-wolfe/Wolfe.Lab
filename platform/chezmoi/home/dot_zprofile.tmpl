@@ -2,10 +2,11 @@
 export PATH="$PATH:/Users/tomwolfe/.docker/bin"
 # End of Docker Desktop section.
 
-export LAB_ROOT="$HOME/.local/share/Wolfe.Lab"
-export LAB_DATA="$HOME/Docker"
-{{- with index .profiles .profile }}
-export LAB_NODE={{ .name | quote }}
+{{- if hasKey .profiles .profile }}
+{{- $lab := includeTemplate "lab-node.tmpl" . | fromJson }}
+export LAB_ROOT={{ $lab.root | quote }}
+export LAB_DATA={{ $lab.data | quote }}
+export LAB_NODE={{ $lab.name | quote }}
 {{- end }}
 
 {{ if has .profile (list "macbook" "macstudio" "work-macbook") -}}
