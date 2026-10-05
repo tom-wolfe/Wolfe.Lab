@@ -8,11 +8,6 @@ namespace Wolfe.Lab.Application.Workflows.Agents.Models;
 public sealed record AgentsOptions : WorkflowSettings
 {
     /// <summary>
-    /// What each node runs, by the node's name — the same name its runner carries.
-    /// </summary>
-    public Dictionary<string, NodeAgentsOptions> Nodes { get; init; } = [];
-
-    /// <summary>
     /// Directories of the component published to every node it runs on.
     /// </summary>
     public IReadOnlyList<ArtifactOptions> Artifacts { get; init; } = [];

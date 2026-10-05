@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Application.Workflows.Agents.Models;
 using Wolfe.Lab.Application.Workflows.Agents.Steps;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
@@ -31,9 +30,9 @@ public class ResolveAgentDeclarationsTests
         Supersedes = ["homebrew.mxcl.grafana-alloy"]
     };
 
-    // The node is the environment's (LAB_NODE); the runner is only what ritten.json's entries are keyed by.
-    private static StepResult<AgentDeclarations> Resolve(ServiceCatalog catalog, string? node, string runner = "", AgentsDeclaredPerNode? perNode = null) =>
-        new ResolveAgentDeclarations(perNode ?? new AgentsDeclaredPerNode(new Dictionary<string, NodeAgentsOptions>()), new NodeRunner(runner), Directories,
+    // The node is the environment's: LAB_NODE.
+    private static StepResult<AgentDeclarations> Resolve(ServiceCatalog catalog, string? node) =>
+        new ResolveAgentDeclarations(Directories,
                 Options.Create(new LabNode { Given = node }), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
 
@@ -87,16 +86,9 @@ public class ResolveAgentDeclarationsTests
         Resolve(Placed(DeploymentTarget.All), null).Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldStartWith("LAB_NODE is not set");
 
     [Fact]
-    public void Run_TakesThisNodesEntryFromRittenJson_WhileTheComponentDeclaresNoAgent()
-    {
-        var catalog = Catalogs.Of(Directory, Catalogs.Definition("forwarder", ComponentKind.Collector, WorkflowName.Agents));
-        var perNode = new AgentsDeclaredPerNode(new Dictionary<string, NodeAgentsOptions>
-        {
-            ["MacMini"] = new() { Agents = new Dictionary<string, AgentOptions> { ["alloy"] = new() { Program = HostPath.From("/opt/alloy") } } }
-        });
-
-        Resolve(catalog, node: null, runner: "MacMini", perNode).Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem().Key.ShouldBe("alloy");
-    }
+    public void Run_RefusesAComponentThatDeclaresNoAgent() =>
+        Resolve(Catalogs.Of(Directory, Catalogs.Definition("forwarder", ComponentKind.Collector, WorkflowName.Agents)), "mini")
+            .Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("declares no agent");
 
     [Fact]
     public void Run_RefusesAVariableTheNodeSetsForEveryAgent()
@@ -111,7 +103,7 @@ public class ResolveAgentDeclarationsTests
     [Fact]
     public void Run_RefusesANodeThatKeepsTheLabElsewhereThanTheEnvironmentSays()
     {
-        var result = new ResolveAgentDeclarations(new AgentsDeclaredPerNode(new Dictionary<string, NodeAgentsOptions>()), new NodeRunner(""),
+        var result = new ResolveAgentDeclarations(
                 Options.Create(new LabDirectories { Root = new PhysicalDirectory("/elsewhere/root"), Data = new PhysicalDirectory("/lab/data") }),
                 Options.Create(new LabNode { Given = "mini" }), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(Placed(DeploymentTarget.All), Placed(DeploymentTarget.All).DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());

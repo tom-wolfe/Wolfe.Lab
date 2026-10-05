@@ -20,6 +20,9 @@ rather than versioned — the lab is continuous, not released.
 - **The agents declare themselves once.** Alloy's forwarder and Beszel's agent run on every node
   from their component, and their logs move to `{lab.root}/logs`.
 
+- **Agents are the catalog's alone.** `ritten.json` no longer declares agents per node, and an
+  agents deploy is no longer told its node with `--node`.
+
 ## 2026-10-04
 
 ### Added

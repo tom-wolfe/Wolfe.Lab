@@ -1,10 +1,8 @@
 using Wolfe.Lab.Application.Agents;
-using Wolfe.Lab.Application.Workflows.Agents.Models;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Infrastructure.Agents;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Secrets;
 
 namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
@@ -13,15 +11,8 @@ namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
 /// Judges the component's agent on every node it runs on, as a pull request would want it judged:
 /// without being on any of them.
 /// </summary>
-/// <remarks>
-/// What a deploy can only find out on the node — whether the program is there — is left to the
-/// deploy. What the declarations alone decide is caught here: a placeholder a node has nothing
-/// for, a name that cannot be a label, an agent with no program, and a vault reference that
-/// would not resolve because it is not one. While <c>ritten.json</c> declares the agents per node,
-/// each of its nodes is judged instead.
-/// </remarks>
 [Step("check agent declarations", StepKind.Check)]
-internal sealed class CheckAgentDeclarations(AgentsDeclaredPerNode perNode, WorkflowJob job, IWorkflowLog log)
+internal sealed class CheckAgentDeclarations(WorkflowJob job, IWorkflowLog log)
 {
     public StepResult Run(ServiceCatalog catalog, DeploymentUnit unit)
     {
@@ -30,48 +21,29 @@ internal sealed class CheckAgentDeclarations(AgentsDeclaredPerNode perNode, Work
             return StepResult.Failed(unowned);
         }
 
+        if (component is not AgentComponent agent)
+        {
+            return AgentDeclarationErrors.NoAgent(component);
+        }
+
         var errors = new List<Error>();
         var nodes = 0;
-        if (component is AgentComponent agent)
+        foreach (var node in agent.RunsOn.In(catalog))
         {
-            foreach (var node in agent.RunsOn.In(catalog))
+            nodes++;
+            if (!agent.RunningOn(node).TryGetValue(out var process, out var unexpanded))
             {
-                nodes++;
-                if (!agent.RunningOn(node).TryGetValue(out var process, out var unexpanded))
-                {
-                    errors.AddRange(unexpanded.Select(error => new Error($"{node}: {error.Message}")));
-                    continue;
-                }
-
-                if (!ResolveAgentDeclarations.Options(process, node, component).TryGetValue(out var resolved, out var invalid))
-                {
-                    errors.AddRange(invalid.Select(error => new Error($"{node}: {error.Message}")));
-                    continue;
-                }
-
-                errors.AddRange(Judge(node.Name.Value, process.Name.Value, resolved));
-            }
-        }
-        else
-        {
-            foreach (var (node, declared) in perNode.Nodes.OrderBy(n => n.Key, StringComparer.Ordinal))
-            {
-                nodes++;
-                if (declared.Agents.Count == 0)
-                {
-                    errors.Add(new Error($"{node} declares no agents."));
-                }
-
-                foreach (var (name, declaredAgent) in declared.Agents)
-                {
-                    errors.AddRange(Judge(node, name, declaredAgent));
-                }
+                errors.AddRange(unexpanded.Select(error => new Error($"{node}: {error.Message}")));
+                continue;
             }
 
-            if (nodes == 0)
+            if (!ResolveAgentDeclarations.Options(process, node, component).TryGetValue(out var resolved, out var invalid))
             {
-                errors.Add(new Error($"{component} declares no agent, and ritten.json no nodes: declare its runsOn, agent and program."));
+                errors.AddRange(invalid.Select(error => new Error($"{node}: {error.Message}")));
+                continue;
             }
+
+            errors.AddRange(Judge(node.Name.Value, process.Name.Value, resolved));
         }
 
         if (errors.Count > 0)

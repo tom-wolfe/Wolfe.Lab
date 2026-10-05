@@ -210,14 +210,8 @@ public static class ServiceCatalogReader
         var name = ComponentName.From(document.Name);
         var partOf = document.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
         IReadOnlyList<ComponentName> dependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
-        if (document is AgentsDocument { DeclaresAgent: true } agents)
+        if (document is AgentsDocument agents)
         {
-            if (agents is not { RunsOn: { } target, Agent: { } agent, Program: { } program })
-            {
-                problems.Add(CatalogError.In(source, DeclarationErrors.AgentIncomplete));
-                return;
-            }
-
             AgentPackage? package = null;
             if (agents.Package is { } declaredPackage)
             {
@@ -230,15 +224,15 @@ public static class ServiceCatalogReader
 
             var declared = new AgentProcess
             {
-                Name = AgentName.From(agent),
+                Name = AgentName.From(agents.Agent),
                 Package = package,
-                Program = Template.From(program),
+                Program = Template.From(agents.Program),
                 Arguments = [.. (agents.Arguments ?? []).Select(Template.From)],
                 Environment = (agents.Environment ?? []).ToDictionary(variable => variable.Key, variable => Template.From(variable.Value), StringComparer.Ordinal),
                 Supersedes = agents.Supersedes ?? []
             };
 
-            if (!Placed(target).TryGetValue(out var runsOn, out var unplaced))
+            if (!Placed(agents.RunsOn).TryGetValue(out var runsOn, out var unplaced))
             {
                 problems.AddRange(unplaced.Select(error => CatalogError.In(source, new FieldError("runsOn", error))));
                 return;

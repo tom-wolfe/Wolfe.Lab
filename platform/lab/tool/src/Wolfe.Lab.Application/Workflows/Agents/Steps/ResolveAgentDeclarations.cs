@@ -1,4 +1,3 @@
-using Wolfe.Lab.Application.Workflows.Agents.Models;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
@@ -12,23 +11,15 @@ using Wolfe.Lab.Infrastructure.Releases;
 namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
 
 /// <summary>
-/// What this node runs of the component: its agent as the catalog declares it, expanded for the
-/// node — or, while its <c>ritten.json</c> still declares its agents per node, this node's entry.
+/// What this node runs of the component: its agent as the catalog declares it, expanded for the node.
 /// </summary>
-/// <remarks>
-/// The node is where the deploy runs (<see cref="LabNode"/>), never an argument to it. A
-/// component placed elsewhere is nothing to do here, and the deploy stops. Its log is the
-/// node's to place (<see cref="LabDirectories.AgentLog"/>), and its own variables
-/// (<see cref="NodeVariables"/>) the node's to set.
-/// </remarks>
 [Step("resolve agent declarations", StepKind.Work)]
 internal sealed class ResolveAgentDeclarations(
-    AgentsDeclaredPerNode perNode,
-    NodeRunner runner,
     IOptions<LabDirectories> options,
     IOptions<LabNode> here,
     WorkflowJob job,
-    IWorkflowLog log)
+    IWorkflowLog log
+)
 {
     public StepResult<AgentDeclarations> Run(ServiceCatalog catalog, DeploymentUnit unit)
     {
@@ -39,9 +30,7 @@ internal sealed class ResolveAgentDeclarations(
 
         if (component is not AgentComponent agent)
         {
-            var declared = perNode.Nodes.GetValueOrDefault(runner.Name)?.Agents ?? [];
-            log.Detail($"{component} declares its agents per node in ritten.json; {runner.Name} runs {declared.Count}.");
-            return new AgentDeclarations(declared);
+            return AgentDeclarationErrors.NoAgent(component);
         }
 
         if (here.Value.Name is not { } name || catalog.FindNode(name) is not { } node)

@@ -340,21 +340,12 @@ public class ServiceCatalogReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task Read_LeavesAnAgentComponentThatDeclaresNoAgentToItsRittenJson()
-    {
-        Declare("monitoring/alloy/service.yaml", Alloy);
-        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\n");
-
-        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldNotBeOfType<AgentComponent>();
-    }
-
-    [Fact]
-    public async Task Read_RefusesAnAgentComponentThatDeclaresOnlySomeOfItsAgent()
+    public async Task Read_RefusesAnAgentComponentThatDeclaresNoAgent()
     {
         Declare("monitoring/alloy/service.yaml", Alloy);
         Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\n");
 
-        (await Errors()).ShouldHaveSingleItem().ShouldContain("declares runsOn, agent and program together");
+        (await Errors()).ShouldBe(["monitoring/alloy/forwarder/component.yaml:2: Required properties [\"agent\",\"program\"] are not present"]);
     }
 
     [Fact]

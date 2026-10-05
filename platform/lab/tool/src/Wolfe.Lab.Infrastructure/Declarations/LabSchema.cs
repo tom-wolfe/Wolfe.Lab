@@ -65,6 +65,17 @@ public static class LabSchema
             return [];
         }
 
+        // A value one of an anyOf's shapes takes is the right shape: the other shapes' complaints
+        // about it are only what it is not. Each shape is reported as …/anyOf/<n>.
+        var matched = (results.Details ?? [])
+            .Where(detail => detail.IsValid)
+            .Select(detail => detail.EvaluationPath.ToString())
+            .Select(path => path.LastIndexOf("/anyOf/", StringComparison.Ordinal) is var at and >= 0 && int.TryParse(path[(at + "/anyOf/".Length)..], out _)
+                ? path[..(at + "/anyOf/".Length)]
+                : null)
+            .OfType<string>()
+            .ToList();
+
         var problems = new List<(int, Error)>();
         foreach (var detail in results.Details ?? [])
         {
@@ -72,7 +83,8 @@ public static class LabSchema
             var path = detail.EvaluationPath.ToString();
             // An `if` that does not hold only means the branch is not this document's; and a
             // summary of the problems beneath it says nothing those do not.
-            if (detail.Errors is not { Count: > 0 } errors || path.Contains("/if", StringComparison.Ordinal))
+            if (detail.Errors is not { Count: > 0 } errors || path.Contains("/if", StringComparison.Ordinal)
+                || matched.Any(anyOf => path.StartsWith(anyOf, StringComparison.Ordinal)))
             {
                 continue;
             }
