@@ -315,10 +315,8 @@ on every node alike, declared to the collector by the deploy, which
 retires any targets its agents left under an earlier name. A deploy on a
 node the component is not placed on has nothing to do.
 
-While a component declares none of its agent, its `ritten.json` declares
-its agents per node instead, under `nodes`, as before — one or the
-other, never both: a component that declares any of `runsOn`, `agent`
-and `program` declares all three.
+`runsOn`, `agent` and `program` are required of every agents component;
+its `ritten.json` declares only its `artifacts`.
 
 ## Layout
 

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
@@ -27,9 +26,4 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, AgentsOptions options)
-    {
-        base.Configure(builder, options);
-        builder.Services.AddSingleton(new AgentsDeclaredPerNode(options.Nodes));
-    }
 }

@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Infrastructure.Releases;
 
@@ -8,6 +9,11 @@ namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
 /// </summary>
 internal static class AgentDeclarationErrors
 {
+    /// <summary>
+    /// The component doesn't declare an agent.
+    /// </summary>
+    public static Error NoAgent(Component component) => new($"{component} is operated by the agents workflow, but declares no agent.");
+
     /// <summary>
     /// The environment names no node the catalog declares as the one the deploy runs on.
     /// </summary>

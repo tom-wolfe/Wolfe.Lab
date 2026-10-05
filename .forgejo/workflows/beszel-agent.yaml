@@ -32,4 +32,4 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - working-directory: monitoring/beszel/agent
-        run: lab deploy --node "${{ matrix.node }}" --auto-approve
+        run: lab deploy --auto-approve
