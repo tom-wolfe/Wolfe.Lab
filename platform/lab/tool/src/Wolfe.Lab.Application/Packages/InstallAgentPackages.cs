@@ -16,9 +16,9 @@ namespace Wolfe.Lab.Application.Packages;
 /// the agent's version.
 /// </remarks>
 [Step("install agent packages", StepKind.Work)]
-internal sealed class InstallAgentPackages(AgentDeclarations declarations, IPackageInstaller installer, IOptions<LabDirectories> roots, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
+internal sealed class InstallAgentPackages(IPackageInstaller installer, IOptions<LabDirectories> roots, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
 {
-    public async Task<StepResult<AgentPackages>> Run(CancellationToken ct = default)
+    public async Task<StepResult<AgentPackages>> Run(AgentDeclarations declarations, CancellationToken ct = default)
     {
         var installed = new Dictionary<string, InstalledPackage>(StringComparer.Ordinal);
         var errors = new List<Error>();

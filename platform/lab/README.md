@@ -27,9 +27,9 @@ carry most of the lab: `docker` (a compose stack — check on the pull
 request, deploy on the merge), `tofu` (a root module — plan on the pull
 request, apply on the merge), `backup` (what a snapshot holds, what has
 to be quiet while it is taken, and what a restore must bring back),
-`image`, `dotnet-service` and `agents` (host processes declared per node —
-the node services that used to live in chezmoi — deployed to each node by
-its own runner with `lab deploy --node <name>`). Two services with the same shape share a
+`image`, `dotnet-service` and `agents` (host processes — the node services
+that used to live in chezmoi — placed on the nodes they run on, and
+deployed to each by its own runner with `lab deploy --node <runner>`). Two services with the same shape share a
 workflow and differ only in what they declare. What only one service does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
 `network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`, `personal/immich/import`,
@@ -265,6 +265,53 @@ a service in another's network (it has no ports of its own), and logs
 declared both on the component and by a `lab.logs` label in the compose
 file, which is still read until each moves; a compose file may never set
 `lab.metrics.*`.
+
+The machines are declared too, in `platform/nodes.yaml`, a `kind: node`
+document each: its name, its `role` (`server` or `hybrid`), its
+`platform` as release assets name it, its tailnet `address`, its Docker
+socket, its drives, and the `runner` its CI runner carries — which a
+deploy is told, and finds its node by, until the runners carry the
+node's own name. They are added to the catalog first, so a component can
+be placed on them.
+
+A component the `agents` workflow operates is one host process, declared
+once for every node it runs on:
+
+```yaml
+name: forwarder
+kind: collector
+workflow: agents
+runsOn: all                  # or 'every server', or [mini, pi]
+agent: alloy                 # its unit is dev.twolfe.alloy, its logs' service_name alloy
+package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
+program: "{package}/alloy-{platform}"
+arguments: [run, "{lab.root}/alloy/forwarder.alloy", "--storage.path={state}"]
+environment:
+  LAB_GATEWAY: "{node.mini.address}"
+  DOCKER_HOST: "{node.docker}"
+```
+
+What differs between its nodes is the nodes' to say, through one
+placeholder syntax, `{dotted.lower}`: `{lab.root}` and `{lab.data}`, the
+two roots; `{state}`, the service's state directory under `{lab.data}`;
+`{package}`, where its package is installed; `{platform}`, or
+`{platform.os}` and `{platform.arch}` apart; `{node.name}`, `{node.role}`,
+`{node.address}`, `{node.docker}` and `{node.drives}` (comma-separated);
+and `{node.<name>.address}` for another node. A package's asset and
+checksums take `{version}` and the platform alone. A placeholder the lab
+does not have is refused where it is written, and one a node has no
+value for — `{node.docker}` on a node without Docker — by the check, for
+that node. `LAB_HOST`, `LAB_ROLE` and `LAB_ROOT` are the node's, set for
+every agent and declared by none. Where its output goes is the node's
+too: both streams to `{lab.root}/logs/<area>-<service>-<component>.log`,
+on every node alike, declared to the collector by the deploy, which
+retires any targets its agents left under an earlier name. A deploy on a
+node the component is not placed on has nothing to do.
+
+While a component declares none of its agent, its `ritten.json` declares
+its agents per node instead, under `nodes`, as before — one or the
+other, never both: a component that declares any of `runsOn`, `agent`
+and `program` declares all three.
 
 ## Layout
 

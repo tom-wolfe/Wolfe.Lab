@@ -1,8 +1,10 @@
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
+using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Paths;
@@ -259,5 +261,122 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("personal/immich/compose/component.yaml", "name: server\nkind: app\nworkflow: docker\nservice: server\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldContain("personal/immich/ declares none");
+    }
+
+    private const string Nodes = """
+        kind: node
+        name: mini
+        role: server
+        platform: darwin-arm64
+        address: macmini.tailnet.ts.net
+        runner: MacMini
+        docker: unix:///Users/me/.docker/run/docker.sock
+        drives: [/Volumes/Data1, /Volumes/Data2]
+        ---
+        kind: node
+        name: pi
+        role: server
+        platform: linux-arm64
+        address: wolfe-pi5.tailnet.ts.net
+        runner: wolfe-pi5
+        docker: unix:///var/run/docker.sock
+
+        """;
+
+    private const string Alloy = "kind: service\nname: alloy\ndescription: The collector.\n";
+
+    [Fact]
+    public async Task Read_TakesTheNodesFromPlatform()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+
+        var nodes = (await Read()).Value.ShouldNotBeNull().Nodes;
+
+        nodes.Select(node => node.Name.Value).ShouldBe(["mini", "pi"]);
+        nodes[0].Drives.Select(drive => drive.Value).ShouldBe(["/Volumes/Data1", "/Volumes/Data2"]);
+        nodes[1].Platform.ShouldBe(NodePlatform.LinuxArm64);
+    }
+
+    [Fact]
+    public async Task Read_PlacesAnAgentComponentOnTheNodes()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+        Declare("monitoring/alloy/service.yaml", Alloy);
+        Declare("monitoring/alloy/forwarder/component.yaml", """
+            name: forwarder
+            kind: collector
+            workflow: agents
+            runsOn: all
+            agent: alloy
+            package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
+            program: "{package}/alloy-{platform}"
+            arguments: [run, "{lab.root}/alloy/forwarder.alloy"]
+            environment:
+              LAB_GATEWAY: "{node.mini.address}"
+
+            """);
+
+        var component = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
+
+        component.RunsOn.ToString().ShouldBe("all");
+        component.Agent.Name.Value.ShouldBe("alloy");
+        component.Agent.Package.ShouldNotBeNull().Checksums.ShouldBe("SHA256SUMS");
+        component.Agent.Environment["LAB_GATEWAY"].ShouldBe("{node.mini.address}");
+    }
+
+    [Fact]
+    public async Task Read_PlacesAnAgentComponentOnTheNodesItNames()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+        Declare("monitoring/alloy/service.yaml", Alloy);
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: [pi]\nagent: alloy\nprogram: /usr/bin/alloy\n");
+
+        var component = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
+
+        component.RunsOn.Named.ShouldBe([NodeName.From("pi")]);
+    }
+
+    [Fact]
+    public async Task Read_LeavesAnAgentComponentThatDeclaresNoAgentToItsRittenJson()
+    {
+        Declare("monitoring/alloy/service.yaml", Alloy);
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\n");
+
+        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldNotBeOfType<AgentComponent>();
+    }
+
+    [Fact]
+    public async Task Read_RefusesAnAgentComponentThatDeclaresOnlySomeOfItsAgent()
+    {
+        Declare("monitoring/alloy/service.yaml", Alloy);
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("declares runsOn, agent and program together");
+    }
+
+    [Fact]
+    public async Task Read_RefusesAPlacementOnANodeTheLabDoesNotDeclare()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+        Declare("monitoring/alloy/service.yaml", Alloy);
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: [studio]\nagent: alloy\nprogram: /usr/bin/alloy\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldBe("monitoring/alloy/forwarder/component.yaml: runsOn: names the node 'studio', which the lab does not declare.");
+    }
+
+    [Fact]
+    public async Task Read_RefusesANodeOutsidePlatform()
+    {
+        Declare("monitoring/nodes.yaml", Nodes);
+
+        (await Errors()).ShouldAllBe(error => error.Contains("a node is declared in platform/"));
+    }
+
+    [Fact]
+    public async Task Read_RefusesANodesAddressAndDockerThatAreNotThem()
+    {
+        Declare("platform/nodes.yaml", "kind: node\nname: mini\nrole: server\nplatform: darwin-arm64\naddress: http://macmini\nrunner: MacMini\ndocker: /var/run/docker.sock\n");
+
+        (await Errors()).Select(error => error.Split(": ")[1]).ShouldBe(["address", "docker"]);
     }
 }

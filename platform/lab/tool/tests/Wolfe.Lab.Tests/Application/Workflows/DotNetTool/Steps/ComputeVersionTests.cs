@@ -20,6 +20,10 @@ public class ComputeVersionTests : IDisposable
         Git("init", "-q", "-b", "main");
         Git("config", "user.email", "test@example.com");
         Git("config", "user.name", "Test");
+        // A node's own config may sign every commit and tag through the vault: a prompt nobody
+        // is there to answer, for a repository that exists for a second.
+        Git("config", "commit.gpgsign", "false");
+        Git("config", "tag.gpgsign", "false");
         _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(new PhysicalDirectory(_repository.FullName));
         At("platform/lab/tool");
     }

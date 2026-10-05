@@ -31,8 +31,8 @@ public class ResolveAgentsTests : IDisposable
         Resolve(new Dictionary<string, InstalledPackage>(), agents);
 
     private Task<StepResult<AgentPlan>> Resolve(Dictionary<string, InstalledPackage> packages, params (string Name, AgentOptions Options)[] agents) =>
-        new ResolveAgents(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Options)), _secrets, _roots, Substitute.For<IWorkflowLog>())
-            .Run(new AgentPackages(packages), TestContext.Current.CancellationToken);
+        new ResolveAgents(_secrets, _roots, Substitute.For<IWorkflowLog>())
+            .Run(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Options)), new AgentPackages(packages), TestContext.Current.CancellationToken);
 
     private static InstalledPackage Alloy(string directory, PackageOutcome outcome) =>
         new(new Package("alloy", "grafana/alloy", "1.20.1", "v1.20.1", "alloy-darwin-arm64.zip", "SHA256SUMS"), new Ritten.Engine.FileSystem.PhysicalDirectory(directory), outcome);

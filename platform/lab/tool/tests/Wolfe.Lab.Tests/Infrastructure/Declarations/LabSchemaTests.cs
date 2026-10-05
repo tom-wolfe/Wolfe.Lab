@@ -83,7 +83,7 @@ public class LabSchemaTests
 
     [Fact]
     public void Judge_RefusesAKindTheLabDoesNotHave() =>
-        Judge("kind: daemon\nworkflow: docker\n").ShouldHaveSingleItem().ShouldStartWith("1: kind: 'daemon' is not a kind of declaration (service, app, backend, database,");
+        Judge("kind: daemon\nworkflow: docker\n").ShouldHaveSingleItem().ShouldStartWith("1: kind: 'daemon' is not a kind of declaration (service, node, app, backend, database,");
 
     [Fact]
     public void Judge_SaysWhichLifecyclesAndLinkTypesThereAre() =>

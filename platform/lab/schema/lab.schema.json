@@ -2,16 +2,17 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://lab.twolfe.dev/schema",
   "title": "Wolfe.Lab declaration",
-  "description": "A service or a component of the lab (ROADMAP.md #14). Name this schema in a file's first line to make it one of the lab's.",
+  "description": "A service, a component or a node of the lab (ROADMAP.md #14). Name this schema in a file's first line to make it one of the lab's.",
   "type": "object",
   "required": [
     "kind"
   ],
   "properties": {
     "kind": {
-      "description": "What the document declares: a service, or what a component is used for.",
+      "description": "What the document declares: a service, a node, or what a component is used for.",
       "enum": [
         "service",
+        "node",
         "app",
         "backend",
         "database",
@@ -144,6 +145,86 @@
           "kind",
           "name",
           "description"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "node"
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/node",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "node",
+            "description": "A node: a machine the lab runs on, declared in platform/."
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The node's name: what a component's runsOn names it by."
+          },
+          "role": {
+            "description": "What the node is to the lab: what fails when it does.",
+            "type": "string",
+            "enum": [
+              "server",
+              "hybrid"
+            ]
+          },
+          "platform": {
+            "description": "The node's operating system and architecture, as release assets name them.",
+            "type": "string",
+            "enum": [
+              "darwin-arm64",
+              "linux-arm64",
+              "linux-amd64"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where the other nodes reach it: its name on the tailnet."
+          },
+          "runner": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The label of its CI runner, which a deploy finds the node by until the runners carry its name."
+          },
+          "docker": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "minLength": 1,
+            "description": "Where its Docker socket is, when it runs Docker: {node.docker}."
+          },
+          "drives": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it holds, where it mounts them: {node.drives}, comma-separated."
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "role",
+          "platform",
+          "address",
+          "runner"
         ],
         "additionalProperties": false
       }
@@ -399,7 +480,241 @@
           },
           "workflow": {
             "enum": [
+              "agents"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/agents",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
               "agents",
+              "ollama",
+              "forgejo-runners",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "runsOn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(all|every [a-z]+)$"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            ],
+            "description": "The nodes it runs on: 'all', 'every <role>', or a list of nodes by name."
+          },
+          "agent": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The name it runs under on each node — its unit is dev.twolfe.<agent> — and the service_name its logs carry."
+          },
+          "package": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "github": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$",
+                "description": "The GitHub repository it is released from: owner/name."
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The version, pinned: {version} in the asset and checksums."
+              },
+              "asset": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The release's asset to install, named for the node by {platform}, or {platform.os} and {platform.arch}."
+              },
+              "checksums": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "minLength": 1,
+                "description": "The release's checksum file; without one, GitHub's own digest of the asset."
+              }
+            },
+            "required": [
+              "github",
+              "version",
+              "asset"
+            ],
+            "additionalProperties": false,
+            "description": "What it runs, installed from a GitHub release."
+          },
+          "program": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "minLength": 1,
+            "description": "The executable: {package}/<file> for one its package holds."
+          },
+          "arguments": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The arguments it runs with."
+          },
+          "environment": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string",
+              "description": "The variables it runs with; LAB_HOST, LAB_ROLE and LAB_ROOT are its node's, set for every agent."
+            },
+            "description": "The variables it runs with; LAB_HOST, LAB_ROLE and LAB_ROOT are its node's, set for every agent."
+          },
+          "supersedes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "Units an earlier supervisor ran it under, retired before it starts."
+          },
+          "declaresAgent": {
+            "type": "boolean",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
               "ollama",
               "forgejo-runners",
               "obsidian",

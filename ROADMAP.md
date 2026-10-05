@@ -1408,6 +1408,26 @@ goes. This waits until #14's component-first migration is working.
   restic, ollama, chezmoi and the supervisors are the lab's own clients,
   so they are not part of this.
 
+### The runners carry labels, not their nodes' names
+
+A node declares the label its CI runner carries (`runner:` in
+`platform/nodes.yaml`) because every workflow's matrix and `runs-on` name
+the runners — `MacMini`, `MacStudio`, `wolfe-pi5` — and a deploy is told
+one and finds its node by it. The runners should carry the node's own
+name, `mini`, `studio`, `pi`, so `runner:` goes and a deploy is told its
+node. It is one change across every workflow and the runners'
+registration (`platform/forgejo/runners`), with branch protection's
+required checks changed in the same step; `alloy agent` becomes
+`alloy forwarder` with them, its workflow named for what it now runs.
+
+### Agents' logs are never rotated
+
+Every agent writes both streams to one file
+(`{lab.root}/logs/<component>.log`), and nothing rotates it: Ollama's on
+the Studio was 10 MB and growing. Without root, a lab agent on each node
+can run `newsyslog -r` on a Mac and `logrotate` with its own state file on
+Linux, on a schedule, over that one directory. Next after #14's agents.
+
 ## Undecided
 
 ### General file sharing (the third thing Google Drive does)
