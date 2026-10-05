@@ -17,11 +17,8 @@ public class CheckAgentDeclarationsTests
 {
     private const string Directory = "monitoring/beszel/agent";
 
-    private static readonly IOptions<LabDirectories> Directories =
-        Options.Create(new LabDirectories { Root = new PhysicalDirectory("/lab/root"), Data = new PhysicalDirectory("/lab/data") });
-
     private static StepResult Check(ServiceCatalog catalog, AgentsDeclaredPerNode? perNode = null) =>
-        new CheckAgentDeclarations(perNode ?? new AgentsDeclaredPerNode(new Dictionary<string, NodeAgentsOptions>()), Directories,
+        new CheckAgentDeclarations(perNode ?? new AgentsDeclaredPerNode(new Dictionary<string, NodeAgentsOptions>()),
                 new WorkflowJob("agents", "check", DryRun: false, AutoApprove: false), Substitute.For<IWorkflowLog>())
             .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
 
@@ -43,8 +40,8 @@ public class CheckAgentDeclarationsTests
     private static AgentProcess Placed(params (string Variable, string Value)[] environment) => new()
     {
         Name = AgentName.From("beszel-agent"),
-        Program = "{package}/beszel-agent",
-        Environment = environment.ToDictionary(variable => variable.Variable, variable => variable.Value)
+        Program = Template.From("{package}/beszel-agent"),
+        Environment = Catalogs.Variables(environment)
     };
 
     private static StepResult CheckPlaced(AgentProcess agent, params Node[] nodes) =>

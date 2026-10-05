@@ -7,13 +7,13 @@ namespace Wolfe.Lab.Tests.Domain.Catalog.Nodes;
 
 public class NodeTests
 {
-    private static Result<Node> Create(string file = "platform/nodes.yaml", string name = "mini", string runner = "MacMini") =>
+    private static Result<Node> Create(string file = "platform/nodes.yaml", string name = "mini") =>
         Node.Create(new DocumentSource(RepositoryPath.From(file)), NodeName.From(name), NodeRole.Server, NodePlatform.DarwinArm64,
-            HostName.From("macmini.tailnet.ts.net"), runner);
+            HostName.From("macmini.tailnet.ts.net"), new NodeDirectories(AbsolutePath.From("/Users/me/.local/share/Wolfe.Lab"), AbsolutePath.From("/Users/me/Docker")));
 
     [Fact]
     public void Create_MakesANodeDeclaredInPlatform() =>
-        Create().Value.ShouldNotBeNull().Runner.ShouldBe("MacMini");
+        Create().Value.ShouldNotBeNull().Address.ShouldBe(HostName.From("macmini.tailnet.ts.net"));
 
     [Fact]
     public void Create_RefusesANodeDeclaredAnywhereElse() =>
@@ -49,26 +49,17 @@ public class NodeTests
         var catalog = new ServiceCatalog();
         catalog.Add(Create().Value.ShouldNotBeNull());
 
-        catalog.Add(Create(runner: "Other").Value.ShouldNotBeNull()).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("declared already");
+        catalog.Add(Create().Value.ShouldNotBeNull()).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("declared already");
     }
 
     [Fact]
-    public void Add_RefusesARunnerTwoNodesCarry()
-    {
-        var catalog = new ServiceCatalog();
-        catalog.Add(Create().Value.ShouldNotBeNull());
-
-        catalog.Add(Create(name: "studio").Value.ShouldNotBeNull()).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("runner 'MacMini' too");
-    }
-
-    [Fact]
-    public void NodeRunning_FindsTheNodeByItsRunner()
+    public void FindNode_FindsTheNodeByItsName()
     {
         var catalog = new ServiceCatalog();
         var mini = catalog.Add(Create().Value.ShouldNotBeNull()).Value.ShouldNotBeNull();
 
-        catalog.NodeRunning("MacMini").ShouldBe(mini);
-        catalog.NodeRunning("MacStudio").ShouldBeNull();
+        catalog.FindNode(NodeName.From("mini")).ShouldBe(mini);
+        catalog.FindNode(NodeName.From("studio")).ShouldBeNull();
     }
 
     [Fact]
@@ -77,4 +68,11 @@ public class NodeTests
         NodePlatform.LinuxArm64.Os.ShouldBe("linux");
         NodePlatform.LinuxArm64.Arch.ShouldBe("arm64");
     }
+
+    [Theory]
+    [InlineData("~/Docker")]
+    [InlineData("${HOME}/Docker")]
+    [InlineData("Docker")]
+    public void AbsolutePath_RefusesWhatMeansSomethingElseElsewhere(string given) =>
+        AbsolutePath.TryFrom(given).Error.ErrorMessage.ShouldContain("is not an absolute path");
 }

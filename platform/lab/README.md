@@ -29,7 +29,7 @@ request, apply on the merge), `backup` (what a snapshot holds, what has
 to be quiet while it is taken, and what a restore must bring back),
 `image`, `dotnet-service` and `agents` (host processes — the node services
 that used to live in chezmoi — placed on the nodes they run on, and
-deployed to each by its own runner with `lab deploy --node <runner>`). Two services with the same shape share a
+deployed to each by its own runner, which runs `lab deploy` on the node it converges). Two services with the same shape share a
 workflow and differ only in what they declare. What only one service does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
 `network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`, `personal/immich/import`,
@@ -174,7 +174,13 @@ pair).
 Every node keeps the lab in two places, which chezmoi sets for the host
 runners' jobs and for every shell: `LAB_ROOT`, where components and their
 artifacts are installed (`~/.local/share/Wolfe.Lab`), and `LAB_DATA`, where
-services keep their state (`~/Docker`). A `ritten.json` path names them —
+services keep their state (`~/Docker`) — and `LAB_NODE`, which node this
+is in `platform/nodes.yaml` (`mini`, `studio`, `pi`; unset on a laptop),
+which a deploy reads rather than being told. Each node declares its two
+roots in `platform/nodes.yaml`, which is to become their one source:
+chezmoi will export them from there. Until it does, an agent deploy
+refuses a node whose declaration and environment disagree. A `ritten.json` path names
+the roots —
 `${LAB_ROOT}` and `${LAB_DATA}` are expanded in artifact outputs and in an
 agent's program, arguments, variables, working directory and log, and
 nothing else is, so every other value reaches its process as written.
@@ -268,10 +274,11 @@ file, which is still read until each moves; a compose file may never set
 
 The machines are declared too, in `platform/nodes.yaml`, a `kind: node`
 document each: its name, its `role` (`server` or `hybrid`), its
-`platform` as release assets name it, its tailnet `address`, its Docker
-socket, its drives, and the `runner` its CI runner carries — which a
-deploy is told, and finds its node by, until the runners carry the
-node's own name. They are added to the catalog first, so a component can
+`platform` as release assets name it, its tailnet `address`, its two
+roots (`root` and `data`, written whole: a `~` or a variable would mean
+whatever it means on the machine reading the file), its Docker socket and
+its drives. Which node a deploy is on is the node's to say —
+`LAB_NODE`, set by chezmoi (see "Two roots") — never an argument to it. They are added to the catalog first, so a component can
 be placed on them.
 
 A component the `agents` workflow operates is one host process, declared

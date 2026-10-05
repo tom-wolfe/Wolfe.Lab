@@ -35,18 +35,19 @@ public class StoreConfigTests
     [Fact]
     public void Read_HoldsGrafanasSpanToLogsLinkToTheAttributesOwnLabel()
     {
-        static string Tag(string key, string value) => $$"""
-            datasources:
-              - name: Tempo
-                jsonData:
-                  tracesToLogsV2:
-                    tags:
-                      - { key: {{key}}, value: {{value}} }
-            """;
-
         StoreConfig.Read(Tag("service.name", "service_name")).IsSuccess.ShouldBeTrue();
         StoreConfig.Read(Tag("service.name", "service")).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("Loki spells it service_name");
         StoreConfig.Read(Tag("service.nam", "service_nam")).Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("service.nam");
+        return;
+
+        static string Tag(string key, string value) => $$"""
+                                                         datasources:
+                                                           - name: Tempo
+                                                             jsonData:
+                                                               tracesToLogsV2:
+                                                                 tags:
+                                                                   - { key: {{key}}, value: {{value}} }
+                                                         """;
     }
 
     [Theory]

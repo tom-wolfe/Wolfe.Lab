@@ -121,14 +121,15 @@ public sealed class Service : IEquatable<Service>
         }
 
         problems.AddRange(component.DependsOn.Where(needed => FindComponent(needed) is null).Select(ComponentErrors.DependsOnUndeclared));
-        problems.AddRange(component.ProblemsIn(this));
+        if (problems.Count == 0)
+        {
+            problems.AddRange(component.SetService(this));
+        }
 
         if (problems.Count > 0)
         {
             return problems.Select(Error (problem) => CatalogError.In(component.Source, problem)).ToList();
         }
-
-        component.Join(this);
         var at = _components.FindIndex(sibling => string.CompareOrdinal(sibling.Name.Value, component.Name.Value) > 0);
         _components.Insert(at < 0 ? _components.Count : at, component);
         return component;

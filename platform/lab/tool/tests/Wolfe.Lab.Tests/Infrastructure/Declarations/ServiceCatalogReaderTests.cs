@@ -269,7 +269,8 @@ public class ServiceCatalogReaderTests : IDisposable
         role: server
         platform: darwin-arm64
         address: macmini.tailnet.ts.net
-        runner: MacMini
+        root: /Users/me/.local/share/Wolfe.Lab
+        data: /Users/me/Docker
         docker: unix:///Users/me/.docker/run/docker.sock
         drives: [/Volumes/Data1, /Volumes/Data2]
         ---
@@ -278,7 +279,8 @@ public class ServiceCatalogReaderTests : IDisposable
         role: server
         platform: linux-arm64
         address: wolfe-pi5.tailnet.ts.net
-        runner: wolfe-pi5
+        root: /home/me/.local/share/Wolfe.Lab
+        data: /home/me/Docker
         docker: unix:///var/run/docker.sock
 
         """;
@@ -295,6 +297,7 @@ public class ServiceCatalogReaderTests : IDisposable
         nodes.Select(node => node.Name.Value).ShouldBe(["mini", "pi"]);
         nodes[0].Drives.Select(drive => drive.Value).ShouldBe(["/Volumes/Data1", "/Volumes/Data2"]);
         nodes[1].Platform.ShouldBe(NodePlatform.LinuxArm64);
+        nodes[1].Directories.Data.ShouldBe(AbsolutePath.From("/home/me/Docker"));
     }
 
     [Fact]
@@ -320,8 +323,8 @@ public class ServiceCatalogReaderTests : IDisposable
 
         component.RunsOn.ToString().ShouldBe("all");
         component.Agent.Name.Value.ShouldBe("alloy");
-        component.Agent.Package.ShouldNotBeNull().Checksums.ShouldBe("SHA256SUMS");
-        component.Agent.Environment["LAB_GATEWAY"].ShouldBe("{node.mini.address}");
+        component.Agent.Package.ShouldNotBeNull().Checksums.ShouldBe(Template.From("SHA256SUMS"));
+        component.Agent.Environment["LAB_GATEWAY"].ShouldBe(Template.From("{node.mini.address}"));
     }
 
     [Fact]
@@ -373,10 +376,22 @@ public class ServiceCatalogReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task Read_RefusesANodesAddressAndDockerThatAreNotThem()
+    public async Task Read_RefusesANodesAddressDockerAndDirectoriesThatAreNotThem()
     {
-        Declare("platform/nodes.yaml", "kind: node\nname: mini\nrole: server\nplatform: darwin-arm64\naddress: http://macmini\nrunner: MacMini\ndocker: /var/run/docker.sock\n");
+        Declare("platform/nodes.yaml", "kind: node\nname: mini\nrole: server\nplatform: darwin-arm64\naddress: http://macmini\nroot: ~/.local/share/Wolfe.Lab\ndata: /Users/me/Docker\ndocker: /var/run/docker.sock\n");
 
-        (await Errors()).Select(error => error.Split(": ")[1]).ShouldBe(["address", "docker"]);
+        (await Errors()).Select(error => error.Split(": ")[1]).ShouldBe(["address", "docker", "root"]);
+    }
+
+    [Fact]
+    public async Task Read_RefusesAPackageVersionThatIsNotOne()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+        Declare("monitoring/alloy/service.yaml", Alloy);
+        Declare("monitoring/alloy/forwarder/component.yaml",
+            "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\nagent: alloy\nprogram: \"{package}/alloy\"\n"
+            + "package: { github: grafana/alloy, version: ../1.20.1, asset: alloy.zip }\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldStartWith("monitoring/alloy/forwarder/component.yaml: package.version: '../1.20.1' is not a version");
     }
 }

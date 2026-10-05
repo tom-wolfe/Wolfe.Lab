@@ -18,9 +18,20 @@ namespace Wolfe.Lab.Application.Agents;
 /// and variable first, so an agent can name its artifacts and its program wherever this node keeps them.
 /// </remarks>
 [Step("resolve agents", StepKind.Work)]
-internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvider secrets, IOptions<LabDirectories> options, IWorkflowLog log)
+internal sealed class ResolveAgents(ISecretProvider secrets, IOptions<LabDirectories> options, IWorkflowLog log)
 {
-    public async Task<StepResult<AgentPlan>> Run(AgentPackages packages, CancellationToken ct = default)
+    /// <summary>
+    /// The agent's installed package, in any of its options.
+    /// </summary>
+    private const string PackageVariable = "${PACKAGE}";
+
+    /// <summary>
+    /// The agent's installed package, as a catalog declaration writes it: the one placeholder only
+    /// the install can expand.
+    /// </summary>
+    private const string PackagePlaceholder = "{package}";
+
+    public async Task<StepResult<AgentPlan>> Run(AgentDeclarations declarations, AgentPackages packages, CancellationToken ct = default)
     {
         if (declarations.Agents.Count == 0)
         {
@@ -87,9 +98,6 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
     /// </summary>
     internal static AgentOptions Expand(AgentOptions options, LabDirectories directories, string? package = null)
     {
-        string Value(string value) => directories.Expand(package is null ? value : value.Replace(PackageVariable, package, StringComparison.Ordinal));
-        HostPath? Path(HostPath? path) => path is { } value ? HostPath.From(Value(value.Value)) : null;
-
         return options with
         {
             Program = Path(options.Program),
@@ -98,12 +106,13 @@ internal sealed class ResolveAgents(AgentDeclarations declarations, ISecretProvi
             WorkingDirectory = Path(options.WorkingDirectory),
             Log = Path(options.Log)
         };
-    }
 
-    /// <summary>
-    /// The agent's installed package, in any of its options.
-    /// </summary>
-    internal const string PackageVariable = "${PACKAGE}";
+        HostPath? Path(HostPath? path) => path is { } value ? HostPath.From(Value(value.Value)) : null;
+
+        string Value(string value) => directories.Expand(package is null
+            ? value
+            : value.Replace(PackageVariable, package, StringComparison.Ordinal).Replace(PackagePlaceholder, package, StringComparison.Ordinal));
+    }
 
     private async Task<IReadOnlyDictionary<string, string>> Resolve(IReadOnlyDictionary<string, string> environment, CancellationToken ct)
     {

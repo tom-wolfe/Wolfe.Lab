@@ -28,6 +28,21 @@ public static class WorkflowBuilderExtensions
         }
 
         /// <summary>
+        /// Adds which node the lab is running on, as <see cref="LabNode"/> options.
+        /// </summary>
+        public IWorkflowBuilder AddLabNode()
+        {
+            builder.AddLabConfiguration();
+            if (builder.Services.Any(service => service.ServiceType == typeof(IConfigureOptions<LabNode>)))
+            {
+                return builder;
+            }
+
+            builder.Services.AddOptions<LabNode>().Configure<IConfiguration>((node, configuration) => node.Configure(configuration));
+            return builder;
+        }
+
+        /// <summary>
         /// Adds the name a component is released under, the installer that puts it there, and
         /// the installer's rehearsal.
         /// </summary>

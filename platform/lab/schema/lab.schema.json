@@ -193,10 +193,15 @@
             "minLength": 1,
             "description": "Where the other nodes reach it: its name on the tailnet."
           },
-          "runner": {
+          "root": {
             "type": "string",
             "minLength": 1,
-            "description": "The label of its CI runner, which a deploy finds the node by until the runners carry its name."
+            "description": "Where it installs components and their artifacts, written whole: {lab.root}, and LAB_ROOT on the node."
+          },
+          "data": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Where its services keep their state, written whole: {lab.data}, and LAB_DATA on the node."
           },
           "docker": {
             "type": [
@@ -224,7 +229,8 @@
           "role",
           "platform",
           "address",
-          "runner"
+          "root",
+          "data"
         ],
         "additionalProperties": false
       }
@@ -657,9 +663,9 @@
             ],
             "additionalProperties": {
               "type": "string",
-              "description": "The variables it runs with; LAB_HOST, LAB_ROLE and LAB_ROOT are its node's, set for every agent."
+              "description": "The variables it runs with; what the node sets for every agent is not declared."
             },
-            "description": "The variables it runs with; LAB_HOST, LAB_ROLE and LAB_ROOT are its node's, set for every agent."
+            "description": "The variables it runs with; what the node sets for every agent is not declared."
           },
           "supersedes": {
             "type": [

@@ -36,10 +36,9 @@ public sealed class Node : IEquatable<Node>
     public required HostName Address { get; init; }
 
     /// <summary>
-    /// The label of the CI runner on it, which a deploy is told and finds the node by — until
-    /// the runners carry the node's own name.
+    /// Where it keeps the lab.
     /// </summary>
-    public required string Runner { get; init; }
+    public required NodeDirectories Directories { get; init; }
 
     /// <summary>
     /// Where its Docker socket is, when it runs Docker: <c>unix:///var/run/docker.sock</c>.
@@ -54,9 +53,9 @@ public sealed class Node : IEquatable<Node>
     /// <summary>
     /// Creates a new node.
     /// </summary>
-    public static Result<Node> Create(DocumentSource source, NodeName name, NodeRole role, NodePlatform platform, HostName address, string runner) =>
+    public static Result<Node> Create(DocumentSource source, NodeName name, NodeRole role, NodePlatform platform, HostName address, NodeDirectories directories) =>
         source.Directories is ["platform"]
-            ? new Node { Source = source, Name = name, Role = role, Platform = platform, Address = address, Runner = runner }
+            ? new Node { Source = source, Name = name, Role = role, Platform = platform, Address = address, Directories = directories }
             : CatalogError.In(source, NodeErrors.OutOfPlace);
 
     /// <inheritdoc />

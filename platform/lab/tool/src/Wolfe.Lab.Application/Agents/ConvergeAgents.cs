@@ -22,6 +22,13 @@ internal sealed class ConvergeAgents(IServiceSupervisor supervisor, WorkflowJob 
                 await supervisor.Retire(unit, ct);
             }
 
+            // Neither launchd nor systemd makes the directory a log is written to, and an agent
+            // whose log cannot be opened never starts.
+            if (!job.DryRun && agent.Log is { } output)
+            {
+                output.File.Directory.Create();
+            }
+
             var outcome = await supervisor.Converge(agent, ct);
             if (job.DryRun)
             {

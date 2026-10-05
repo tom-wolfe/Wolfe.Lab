@@ -28,7 +28,6 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
     internal static XDocument Unit(AgentDefinition agent)
     {
         var entries = new List<XElement>();
-        void Entry(string key, XElement value) => entries.AddRange(new XElement("key", key), value);
 
         Entry("Label", Plist.String(agent.Label.Value));
         Entry("ProgramArguments", new XElement("array", agent.Arguments.Prepend(agent.Program.Value).Select(Plist.String)));
@@ -71,6 +70,8 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
         }
 
         return Plist.Document(string.Join('\n', provenance), new XElement("dict", entries));
+
+        void Entry(string key, XElement value) => entries.AddRange(new XElement("key", key), value);
     }
 
     private static string Stamp(DateTimeOffset stamp) => stamp.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);

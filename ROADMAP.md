@@ -1410,12 +1410,14 @@ goes. This waits until #14's component-first migration is working.
 
 ### The runners carry labels, not their nodes' names
 
-A node declares the label its CI runner carries (`runner:` in
-`platform/nodes.yaml`) because every workflow's matrix and `runs-on` name
-the runners — `MacMini`, `MacStudio`, `wolfe-pi5` — and a deploy is told
-one and finds its node by it. The runners should carry the node's own
-name, `mini`, `studio`, `pi`, so `runner:` goes and a deploy is told its
-node. It is one change across every workflow and the runners'
+A deploy knows its node from `LAB_NODE`, which chezmoi exports, so the
+catalog knows nothing of CI. What is left is naming. Every workflow's
+matrix and `runs-on` still name the runners `MacMini`, `MacStudio` and
+`wolfe-pi5`, and an agents deploy still passes one as `--node`, which only
+its `ritten.json` path reads: that path's entries are keyed by runner
+label. Once no component declares its agents per node, `--node` and that
+path go. The runners should carry the node's own name, `mini`, `studio`,
+`pi`, too. That is one change across every workflow and the runners'
 registration (`platform/forgejo/runners`), with branch protection's
 required checks changed in the same step; `alloy agent` becomes
 `alloy forwarder` with them, its workflow named for what it now runs.

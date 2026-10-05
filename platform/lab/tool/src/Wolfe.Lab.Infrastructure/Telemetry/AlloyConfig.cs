@@ -26,18 +26,6 @@ public sealed partial record AlloyConfig(IReadOnlyList<TelemetryAttribute> Attri
         var errors = new List<Error>();
         var judged = new HashSet<string>(StringComparer.Ordinal);
 
-        void Take(Result<TelemetryAttribute> attribute, string where)
-        {
-            if (attribute.Value is { } found)
-            {
-                attributes.Add(found);
-            }
-            else
-            {
-                errors.AddRange((attribute.Errors ?? []).Select(error => new Error($"{where}: {error.Message}")));
-            }
-        }
-
         foreach (var name in Names(OttlAttribute(), text))
         {
             Take(TelemetryAttribute.Named(name), $"attributes[\"{name}\"]");
@@ -69,6 +57,18 @@ public sealed partial record AlloyConfig(IReadOnlyList<TelemetryAttribute> Attri
         }
 
         return errors.Count > 0 ? errors : new AlloyConfig([.. attributes.Distinct()], [.. labels.Distinct()]);
+
+        void Take(Result<TelemetryAttribute> attribute, string where)
+        {
+            if (attribute.Value is { } found)
+            {
+                attributes.Add(found);
+            }
+            else
+            {
+                errors.AddRange((attribute.Errors ?? []).Select(error => new Error($"{where}: {error.Message}")));
+            }
+        }
     }
 
     private static IEnumerable<string> Names(Regex pattern, string text) =>

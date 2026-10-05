@@ -32,19 +32,37 @@ internal static class Catalogs
         AgentProcess? Agent = null);
 
     /// <summary>
+    /// <paramref name="values"/>, as the templates an agent's fields are.
+    /// </summary>
+    public static IReadOnlyList<Template> Templates(params string[] values) => [.. values.Select(Template.From)];
+
+    /// <summary>
+    /// An agent's environment of <paramref name="variables"/>, each value a template.
+    /// </summary>
+    public static IReadOnlyDictionary<string, Template> Variables(params (string Name, string Value)[] variables) =>
+        variables.ToDictionary(variable => variable.Name, variable => Template.From(variable.Value), StringComparer.Ordinal);
+
+    /// <summary>
+    /// What <paramref name="templates"/> say once written out, for comparing with what a test expects.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> Written(IReadOnlyDictionary<string, Template> templates) =>
+        templates.ToDictionary(template => template.Key, template => template.Value.Value, StringComparer.Ordinal);
+
+    /// <summary>
     /// An agent component <paramref name="name"/>, running <paramref name="agent"/> on the nodes of <paramref name="runsOn"/>.
     /// </summary>
     public static Declaration Agent(string name, DeploymentTarget runsOn, AgentProcess agent) =>
         new(name, ComponentKind.Collector, WorkflowName.Agents, RunsOn: runsOn, Agent: agent);
 
     /// <summary>
-    /// A node as <c>platform/nodes.yaml</c> would declare it, carrying the runner of its name
-    /// capitalised: <c>mini</c> runs <c>Mini</c>.
+    /// A node as <c>platform/nodes.yaml</c> would declare it, keeping the lab in <c>/lab/root</c>
+    /// and <c>/lab/data</c>.
     /// </summary>
     public static Node Node(string name, NodeRole role, NodePlatform? platform = null, string? docker = null, params string[] drives)
     {
         var node = Wolfe.Lab.Domain.Catalog.Nodes.Node.Create(new DocumentSource(RepositoryPath.From("platform/nodes.yaml")), NodeName.From(name), role,
-            platform ?? NodePlatform.DarwinArm64, Wolfe.Lab.Domain.Network.HostName.From($"{name}.tailnet.ts.net"), char.ToUpperInvariant(name[0]) + name[1..]).Value.ShouldNotBeNull();
+            platform ?? NodePlatform.DarwinArm64, Wolfe.Lab.Domain.Network.HostName.From($"{name}.tailnet.ts.net"),
+            new NodeDirectories(AbsolutePath.From("/lab/root"), AbsolutePath.From("/lab/data"))).Value.ShouldNotBeNull();
         node.Docker = docker is null ? null : Wolfe.Lab.Domain.Network.DockerHost.From(docker);
         node.Drives = [.. drives.Select(Wolfe.Lab.Domain.Paths.HostPath.From)];
         return node;

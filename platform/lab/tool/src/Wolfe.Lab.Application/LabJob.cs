@@ -17,5 +17,6 @@ public abstract class LabJob<TOptions> : Job<TOptions> where TOptions : Workflow
         builder.AddGit();
         builder.AddLabConfiguration();
         builder.AddLabRoots();
+        builder.AddLabNode();
     }
 }

@@ -14,7 +14,8 @@ internal static class ComponentDocuments
     private static readonly Dictionary<WorkflowName, Type> Shapes = new()
     {
         [WorkflowName.Docker] = typeof(ComposeDocument),
-        [WorkflowName.DotNetService] = typeof(ComposeDocument)
+        [WorkflowName.DotNetService] = typeof(ComposeDocument),
+        [WorkflowName.Agents] = typeof(AgentsDocument)
     };
 
     /// <summary>

@@ -34,11 +34,6 @@ public sealed class ServiceCatalog
             problems.Add(NodeErrors.DeclaredAlready(node.Name, namesake.Source));
         }
 
-        if (NodeRunning(node.Runner) is { } other)
-        {
-            problems.Add(NodeErrors.RunnerShared(node.Runner, other.Source));
-        }
-
         if (problems.Count > 0)
         {
             return problems.Select(Error (problem) => CatalogError.In(node.Source, problem)).ToList();
@@ -54,10 +49,6 @@ public sealed class ServiceCatalog
     /// </summary>
     public Node? FindNode(NodeName name) => _nodes.FirstOrDefault(node => node.Name == name);
 
-    /// <summary>
-    /// The node that carries the runner <paramref name="runner"/>, if one does.
-    /// </summary>
-    public Node? NodeRunning(string runner) => _nodes.FirstOrDefault(node => node.Runner == runner);
 
     /// <summary>
     /// Adds a service to the catalog.
