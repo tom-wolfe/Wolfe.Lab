@@ -9,6 +9,8 @@
 {{- $data := $lab.data -}}
 {{- $name := $lab.name -}}
 {{- $node := (index .profiles .profile).node -}}
+{{- /* /opt/homebrew/sbin on a Mac, as /usr/sbin on the Pi: where logrotate is, which the lab
+       runs to rotate its agents' logs. */ -}}
 {{- if eq .profile "macmini-node" -}}
 {{- /* Capacity 3: stateful jobs serialise themselves through the MacMini
        concurrency group; the heartbeat, the obsidian syncs and the Gatus
@@ -20,7 +22,7 @@
       "host" true
       "labels" (list (printf "%s:host" $node))
       "cache" false
-      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:%s/.dotnet/tools:/usr/local/share/dotnet:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir .chezmoi.homeDir)
+      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.docker-headless/bin:%s/.dotnet/tools:/usr/local/share/dotnet:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir .chezmoi.homeDir)
       "envs" (dict
         "LAB_ROOT" $root
         "LAB_DATA" $data
@@ -36,7 +38,7 @@
       "host" true
       "labels" (list (printf "%s:host" $node))
       "cache" false
-      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.dotnet/tools:/usr/local/share/dotnet:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir)
+      "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.dotnet/tools:/usr/local/share/dotnet:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir)
       "envs" (dict "LAB_ROOT" $root "LAB_DATA" $data "LAB_NODE" $name)) -}}
 {{- end -}}
 {{- if eq .profile "pi-node" -}}
