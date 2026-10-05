@@ -34,8 +34,9 @@ each profile gets:
   membership test (`has .profile (list …)`) rather than a copy per
   profile; a profile-specific step inside it is its own block.
 - **`.chezmoidata.toml` is the inventory:** the facts a template needs by
-  name (each node's runner name, which is also its vault-item suffix),
-  looked up as `(index .profiles .profile).node`. Adding a machine is a
+  name (each node's runner name, which is also its vault-item suffix,
+  and its catalog name, which the runner and every shell export as
+  `LAB_NODE`), looked up as `(index .profiles .profile).node`. Adding a machine is a
   new profile in the prompt's list, an entry there if it is a node, and
   a block in each file it should get.
 

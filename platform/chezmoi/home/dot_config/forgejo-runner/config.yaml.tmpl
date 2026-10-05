@@ -1,11 +1,13 @@
 {{- /* The HOST runner: one job at a time (deploys mutate node state; a job
        that overlaps itself queues). */ -}}
 {{- /* The lab's two roots (platform/lab/README.md, "Two roots"): where components and
-       their artifacts are installed, and where services keep their state. The
-       same values the zprofile exports, so a job and a shell agree. */ -}}
+       their artifacts are installed, and where services keep their state —
+       and LAB_NODE, which node this is in the catalog. The same values the
+       zprofile exports, so a job and a shell agree. */ -}}
 {{- $root := joinPath .chezmoi.homeDir ".local/share/Wolfe.Lab" -}}
 {{- $data := joinPath .chezmoi.homeDir "Docker" -}}
 {{- $node := (index .profiles .profile).node -}}
+{{- $name := (index .profiles .profile).name -}}
 {{- if eq .profile "macmini-node" -}}
 {{- /* Capacity 3: stateful jobs serialise themselves through the MacMini
        concurrency group; the heartbeat, the obsidian syncs and the Gatus
@@ -21,6 +23,7 @@
       "envs" (dict
         "LAB_ROOT" $root
         "LAB_DATA" $data
+        "LAB_NODE" $name
         "DOCKER_CONFIG" (printf "%s/.docker-headless" .chezmoi.homeDir)
         "TF_PLUGIN_CACHE_DIR" (printf "%s/.cache/tofu-plugins" .chezmoi.homeDir))) -}}
 {{- end -}}
@@ -33,7 +36,7 @@
       "labels" (list (printf "%s:host" $node))
       "cache" false
       "path" (printf "%s/.local/share/forgejo-runner/bin:%s/.dotnet/tools:/usr/local/share/dotnet:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" .chezmoi.homeDir .chezmoi.homeDir)
-      "envs" (dict "LAB_ROOT" $root "LAB_DATA" $data)) -}}
+      "envs" (dict "LAB_ROOT" $root "LAB_DATA" $data "LAB_NODE" $name)) -}}
 {{- end -}}
 {{- if eq .profile "pi-node" -}}
 {{- /* DOTNET_ROOT: the SDK is a tarball in ~/.dotnet, and a global tool's
@@ -50,5 +53,6 @@
       "envs" (dict
         "LAB_ROOT" $root
         "LAB_DATA" $data
+        "LAB_NODE" $name
         "DOTNET_ROOT" (printf "%s/.dotnet" .chezmoi.homeDir))) -}}
 {{- end -}}
