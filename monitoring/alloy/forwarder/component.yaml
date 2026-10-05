@@ -7,8 +7,8 @@ runsOn: all
 agent: alloy
 package:
   github: grafana/alloy,
-  version: 1.20.1,
-  asset: "alloy-{platform}.zip",
+  version: 1.20.1
+  asset: "alloy-{platform}.zip"
   checksums: SHA256SUMS
 program: "{package}/alloy-{platform}"
 arguments: [run, "{lab.root}/alloy/forwarder.alloy", "--storage.path={state}", --server.http.listen-addr=127.0.0.1:12345, --disable-reporting]

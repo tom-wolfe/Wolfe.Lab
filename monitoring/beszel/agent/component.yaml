@@ -6,9 +6,9 @@ description: "The monitoring agent that runs on each node."
 runsOn: all
 agent: beszel-agent
 package:
-  github: henrygd/beszel,
-  version: 0.21.0,
-  asset: "beszel-agent_{platform.os}_{platform.arch}.tar.gz",
+  github: henrygd/beszel
+  version: 0.21.0
+  asset: "beszel-agent_{platform.os}_{platform.arch}.tar.gz"
   checksums: "beszel_{version}_checksums.txt"
 program: "{package}/beszel-agent"
 environment:
