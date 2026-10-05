@@ -1,10 +1,17 @@
 # Set variables/args based on the selected profile.
+#
+# node: the node's runner name, which is also its vault-item suffix.
+# name: the node's name in the lab's catalog (platform/nodes.yaml), exported
+#       as LAB_NODE so the CLI knows which node it is running on.
 
 [profiles.macmini-node]
 node = "MacMini"
+name = "mini"
 
 [profiles.macstudio]
 node = "MacStudio"
+name = "studio"
 
 [profiles.pi-node]
 node = "wolfe-pi5"
+name = "pi"

@@ -6,6 +6,10 @@ rather than versioned — the lab is continuous, not released.
 
 ## 2026-10-05
 
+### Added
+
+- **Nodes know their own name.** chezmoi now exports `LAB_NODE` (`mini`, `studio`, `pi`).
+
 ### Changed
 
 - **Alloy gateway.** The collectors now forward to a dedicated gateway instead of
