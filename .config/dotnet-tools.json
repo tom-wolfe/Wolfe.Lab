@@ -3,7 +3,7 @@
   "isRoot": true,
   "tools": {
     "wolfe.lab": {
-      "version": "1.0.60",
+      "version": "1.0.61",
       "commands": [
         "lab"
       ],
