@@ -23,6 +23,9 @@ rather than versioned — the lab is continuous, not released.
 - **Agents are the catalog's alone.** `ritten.json` no longer declares agents per node, and an
   agents deploy is no longer told its node with `--node`.
 
+- **A node's roots come from its declaration.** chezmoi exports `LAB_ROOT` and `LAB_DATA` from
+  `platform/nodes.yaml` instead of its own copy; a laptop, which is no node, exports neither.
+
 ## 2026-10-04
 
 ### Added
