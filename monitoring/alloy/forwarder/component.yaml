@@ -3,3 +3,16 @@ name: forwarder
 kind: collector
 workflow: agents
 description: "Telemetry collector on each node."
+runsOn: all
+agent: alloy
+package:
+  github: grafana/alloy
+  version: 1.20.1
+  asset: "alloy-{platform}.zip"
+  checksums: SHA256SUMS
+program: "{package}/alloy-{platform}"
+arguments: [run, "{lab.root}/alloy/forwarder.alloy", "--storage.path={state}", --server.http.listen-addr=127.0.0.1:12345, --disable-reporting]
+environment:
+  LAB_GATEWAY: "{node.mini.address}"
+  DOCKER_HOST: "{node.docker}"
+supersedes: [homebrew.mxcl.grafana-alloy]

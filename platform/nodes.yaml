@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=lab/schema/lab.schema.json
+kind: node
+name: mini
+role: server
+platform: darwin-arm64
+address: macmini.tailf823b8.ts.net
+root: /Users/tomwolfe/.local/share/Wolfe.Lab
+data: /Users/tomwolfe/Docker
+docker: unix:///Users/tomwolfe/.docker/run/docker.sock
+drives: [/Volumes/Data1, /Volumes/Data2]
+---
+kind: node
+name: studio
+role: hybrid
+platform: darwin-arm64
+address: macstudio.tailf823b8.ts.net
+root: /Users/tomwolfe/.local/share/Wolfe.Lab
+data: /Users/tomwolfe/Docker
+docker: unix:///Users/tomwolfe/.docker/run/docker.sock
+---
+kind: node
+name: pi
+role: server
+platform: linux-arm64
+address: wolfe-pi5.tailf823b8.ts.net
+root: /home/tomwolfe/.local/share/Wolfe.Lab
+data: /home/tomwolfe/Docker
+docker: unix:///var/run/docker.sock

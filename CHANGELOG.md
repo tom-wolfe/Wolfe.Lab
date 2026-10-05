@@ -17,6 +17,9 @@ rather than versioned — the lab is continuous, not released.
 - **Alloy gateway.** The collectors now forward to a dedicated gateway instead of
   one collector being a hybrid config.
 
+- **The agents declare themselves once.** Alloy's forwarder and Beszel's agent run on every node
+  from their component, and their logs move to `{lab.root}/logs`.
+
 ## 2026-10-04
 
 ### Added
