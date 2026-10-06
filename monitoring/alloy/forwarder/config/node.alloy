@@ -118,66 +118,13 @@ declare "collect" {
 		forward_to = [loki.relabel.node.receiver]
 	}
 
-	// ── Container metrics ────────────────────────────────────────────────
-	// Every container whose component declares where it serves metrics: its
-	// deploy labels it lab.metrics.port and lab.metrics.path, the port one it
-	// publishes on the node's loopback (platform/lab/README.md,
-	// "Declarations"). Named and placed as its logs are. Discovery offers a
-	// target per port a container exposes; once each is the one address, they
-	// are one target.
-
-	discovery.relabel "metrics" {
-		targets = discovery.docker.containers.targets
-
-		rule {
-			source_labels = ["__meta_docker_container_label_lab_metrics_port"]
-			regex         = ".+"
-			action        = "keep"
-		}
-
-		rule {
-			source_labels = ["__meta_docker_container_label_lab_metrics_port"]
-			target_label  = "__address__"
-			replacement   = "127.0.0.1:$1"
-		}
-
-		rule {
-			source_labels = ["__meta_docker_container_label_lab_metrics_path"]
-			target_label  = "__metrics_path__"
-		}
-
-		rule {
-			source_labels = ["__meta_docker_container_name"]
-			regex         = "/(.*)"
-			target_label  = "service_name"
-		}
-
-		rule {
-			action      = "labelmap"
-			regex       = "__meta_docker_container_label_(lab_.+)"
-			replacement = "$1"
-		}
-
-		rule {
-			action = "labeldrop"
-			regex  = "lab_metrics_port|lab_metrics_path|lab_logs"
-		}
-	}
-
-	prometheus.scrape "containers" {
-		targets         = discovery.relabel.metrics.output
-		scrape_interval = "30s"
-		forward_to      = [prometheus.relabel.node.receiver]
-	}
-
 	// ── Declared metrics ─────────────────────────────────────────────────
 	// The endpoints a deploy declares in ${LAB_ROOT}/.metrics, a file per
 	// component, as it declares log files in .logs: each target names its
-	// address, its path (__metrics_path__) and where it lives. Several
-	// endpoints of one container, a port of the component's choosing, and a
-	// host process's metrics are all just entries here. Until every component
-	// with metrics has deployed with a CLI that writes them, its container's
-	// labels (above) are read too; never both for one container.
+	// address on the node's loopback, its path (__metrics_path__) and where it
+	// lives (platform/lab/README.md, "Declarations"). Several endpoints of one
+	// container, a port of the component's choosing, and a host process's
+	// metrics are all just entries here.
 
 	discovery.file "metrics" {
 		files = [sys.env("LAB_ROOT") + "/.metrics/*.json"]
