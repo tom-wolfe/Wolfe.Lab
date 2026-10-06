@@ -57,8 +57,8 @@ checkout, which is right for the check and wrong for the deploy; the
 one step that differs is owned here, the rest are a `using`.
 
 Every container says where in the lab it lives. The component's path is
-`<area>/<service>/<component>`, which is the label schema (ROADMAP.md
-#11) already, so the deploy writes a `compose.override.yaml` into the
+`<area>/<service>/<component>`, which is the label schema
+(monitoring/README.md) already, so the deploy writes a `compose.override.yaml` into the
 release — compose merges it by itself — putting `lab.area`,
 `lab.service` and `lab.component` on every service as Docker labels,
 which the collector reads a container's logs under, and as

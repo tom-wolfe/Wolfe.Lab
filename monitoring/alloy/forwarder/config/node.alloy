@@ -39,7 +39,7 @@ declare "collect" {
 		}
 	}
 
-	// The lab's label schema (ROADMAP.md #11): the node an application runs
+	// The lab's label schema (monitoring/README.md): the node an application runs
 	// on, and its role, set where the application did not say — never over
 	// what it sent. OTTL, in the resource context.
 	otelcol.processor.transform "node" {

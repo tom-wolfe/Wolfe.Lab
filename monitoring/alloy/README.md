@@ -1,6 +1,6 @@
 # Alloy
 
-The lab's collector (ROADMAP.md #11): Grafana Alloy, a **forwarder** on
+The lab's collector (monitoring/README.md): Grafana Alloy, a **forwarder** on
 every node as a host process, the mini included. Each gathers what its own
 node has and forwards it to the **gateway**, the only thing that writes to
 the telemetry stores — a container in Grafana's own stack

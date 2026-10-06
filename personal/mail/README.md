@@ -134,7 +134,7 @@ is to keep it that way.
 
 Traces, metrics and logs, over OTLP to the node's collector
 (`monitoring/alloy`), under `service.name` `mail-watcher` and the lab's
-labels (ROADMAP.md #11). Each message read is one trace, `mail.message`,
+labels (monitoring/README.md). Each message read is one trace, `mail.message`,
 tagged with its UID and what came of it — `mail.outcome`: `invitation`
 (left to Proton), `structured`, `model` or `none` — with a span for each
 part of the work beneath it: fetching the message, reading its structured
