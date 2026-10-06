@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ritten.Docker;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Models;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
@@ -49,6 +50,7 @@ internal sealed class RegisterJob : LabJob<ForgejoRunnersOptions>
     protected override void Configure(IWorkflowBuilder builder, ForgejoRunnersOptions options, JobArguments args)
     {
         base.Configure(builder, options, args);
+        builder.AddDocker();
         builder.Services.AddSingleton(new RunnerRequest(args.Get(Node) ?? "", args.Get(RunnerKindArgument)));
         if (options.ToDefaults() is { } defaults)
         {

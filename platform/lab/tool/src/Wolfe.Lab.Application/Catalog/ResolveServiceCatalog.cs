@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Application.Catalog;
 /// Resolves and verifies the component's catalog definition against the rest of the lab.
 /// </summary>
 [Step("resolve service catalog", StepKind.Check)]
-internal sealed class ResolveServiceCatalog(ICommandRunner commands, IGit git, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
 {
     public async Task<StepResult<ServiceCatalog>> Run(CancellationToken ct = default)
     {
@@ -21,7 +21,7 @@ internal sealed class ResolveServiceCatalog(ICommandRunner commands, IGit git, I
         }
 
         var directory = fileSystem.ProjectRoot;
-        if (!(await Check(commands, repository, directory, job.Workflow, ct)).TryGetValue(out var catalog, out var errors))
+        if (!(await Check(git, repository, directory, job.Workflow, ct)).TryGetValue(out var catalog, out var errors))
         {
             return StepResult.Failed(errors);
         }
@@ -36,14 +36,14 @@ internal sealed class ResolveServiceCatalog(ICommandRunner commands, IGit git, I
     /// The catalog, when every declaration holds and the directory's are those of its workflow, or
     /// every problem: one anywhere fails every check, as it would fail every deploy.
     /// </summary>
-    /// <param name="commands">What runs git.</param>
+    /// <param name="git">What lists the checkout's files.</param>
     /// <param name="root">The checkout's root.</param>
     /// <param name="directory">The directory the workflow runs in.</param>
     /// <param name="workflow">The workflow its <c>ritten.json</c> names, which is running this check.</param>
     /// <param name="ct">A token to monitor for cancellation.</param>
-    internal static async Task<Result<ServiceCatalog>> Check(ICommandRunner commands, IDirectory root, IDirectory directory, string workflow, CancellationToken ct = default)
+    internal static async Task<Result<ServiceCatalog>> Check(IGit git, IDirectory root, IDirectory directory, string workflow, CancellationToken ct = default)
     {
-        if (!(await ServiceCatalogReader.Read(commands, root, ct)).TryGetValue(out var catalog, out var errors))
+        if (!(await ServiceCatalogReader.Read(git, root, ct)).TryGetValue(out var catalog, out var errors))
         {
             return errors;
         }

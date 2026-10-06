@@ -13,7 +13,7 @@ internal sealed class StateDirectories : IStateDirectories
             return false;
         }
 
-        Directory.Move(from.AbsolutePath, to.AbsolutePath);
+        from.MoveTo(to);
         return true;
     }
 }

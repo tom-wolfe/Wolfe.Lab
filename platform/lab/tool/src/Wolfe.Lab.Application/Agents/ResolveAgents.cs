@@ -61,7 +61,7 @@ internal sealed class ResolveAgents(ISecretProvider secrets, AgentResolver agent
                 continue;
             }
 
-            if (options.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : System.IO.File.GetLastWriteTimeUtc(program.File.AbsolutePath)) is not { } definition)
+            if (options.ToDefinition(label, rehearsed ? DateTimeOffset.UnixEpoch : program.File.LastWriteTime) is not { } definition)
             {
                 errors.Add(new Error($"Agent '{name}' is incomplete."));
                 continue;

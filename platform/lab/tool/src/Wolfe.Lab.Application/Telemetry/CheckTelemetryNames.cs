@@ -1,3 +1,5 @@
+using Ritten.Docker;
+using Ritten.Git;
 using Wolfe.Lab.Infrastructure.Compose;
 using Wolfe.Lab.Infrastructure.Telemetry;
 
@@ -8,11 +10,11 @@ namespace Wolfe.Lab.Application.Telemetry;
 /// its compose file, its collector's configuration, its stores' and its log targets.
 /// </summary>
 [Step("check telemetry names", StepKind.Check)]
-internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem fileSystem, IWorkflowLog log)
+internal sealed class CheckTelemetryNames(IGit git, IDocker docker, IFileSystem fileSystem, IWorkflowLog log)
 {
     public async Task<StepResult> Run(CancellationToken ct = default)
     {
-        var problems = await Check(commands, fileSystem.ProjectRoot, ct);
+        var problems = await Check(git, docker, fileSystem.ProjectRoot, ct);
         if (problems.Count > 0)
         {
             return StepResult.Failed(problems);
@@ -27,10 +29,10 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
     /// git tracks is read: the component as it is committed, not whatever lies beside it — a
     /// run's report, a tool's scratch, a build's output.
     /// </summary>
-    internal static async Task<IReadOnlyList<Error>> Check(ICommandRunner commands, IDirectory component, CancellationToken ct = default)
+    internal static async Task<IReadOnlyList<Error>> Check(IGit git, IDocker docker, IDirectory component, CancellationToken ct = default)
     {
         var problems = new List<Error>();
-        var tracked = await Tracked(commands, component, ct);
+        var tracked = (await git.InRepository(component).TrackedFiles(ct: ct)).Order(StringComparer.Ordinal).ToList();
         foreach (var file in tracked)
         {
             var errors = await Read(component, file, ct);
@@ -38,9 +40,9 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
         }
 
         // A stack is read once, as compose resolves it, whichever of its files it is spread over.
-        if (ComposeProject.DefaultFiles.FirstOrDefault(tracked.Contains) is { } stack)
+        if (ComposeFiles.Defaults.FirstOrDefault(tracked.Contains) is { } stack)
         {
-            var project = await ComposeProject.Read(commands, component, ct: ct);
+            var project = await docker.ComposeConfig(component, ct: ct);
             problems.AddRange((project.Value is { } read ? ComposeTelemetry.From(read).Errors ?? [] : project.Errors ?? [])
                 .Select(error => new Error($"{stack}: {error.Message}")));
         }
@@ -80,15 +82,5 @@ internal sealed class CheckTelemetryNames(ICommandRunner commands, IFileSystem f
         }
 
         return [.. StoreConfig.Read(text).Errors ?? [], .. LabelMentions.In(text).Errors ?? []];
-    }
-
-    /// <summary>
-    /// The files git tracks in the component, relative to it.
-    /// </summary>
-    private static async Task<IReadOnlyList<string>> Tracked(ICommandRunner commands, IDirectory component, CancellationToken ct)
-    {
-        var result = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z").InDirectory(component.AbsolutePath).QuietOutput().ThrowOnError(), ct);
-        // Ritten's runner ends what it captures with a newline, which is no file's name.
-        return [.. result.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)];
     }
 }

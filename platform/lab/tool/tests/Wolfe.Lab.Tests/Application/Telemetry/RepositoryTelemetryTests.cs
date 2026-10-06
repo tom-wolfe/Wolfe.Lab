@@ -40,6 +40,6 @@ public class RepositoryTelemetryTests
     [Theory]
     [MemberData(nameof(Components))]
     public async Task EveryTelemetryNameIsOneTheLabKnows(string component) =>
-        (await CheckTelemetryNames.Check(new ProcessCommandRunner(), new PhysicalDirectory(Path.Combine(Checkout(), component)), TestContext.Current.CancellationToken))
+        (await CheckTelemetryNames.Check(RealClients.Git, RealClients.Docker, new PhysicalDirectory(Path.Combine(Checkout(), component)), TestContext.Current.CancellationToken))
             .Select(error => error.Message).ShouldBeEmpty();
 }

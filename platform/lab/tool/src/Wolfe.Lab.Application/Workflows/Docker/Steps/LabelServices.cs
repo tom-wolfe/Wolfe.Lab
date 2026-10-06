@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
@@ -13,15 +14,15 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 /// Annotates the compose file with the service tags.
 /// </summary>
 [Step("label services", StepKind.Publish)]
-internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+internal sealed class LabelServices(IDocker docker, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
 {
     internal const string OverrideFile = "compose.override.yaml";
 
     public async Task<StepResult<ComposeBindings>> Run(Release release, DeploymentUnit unit, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
     {
-        if (!(await ComposeProject.Read(commands, fileSystem.ProjectRoot, composeEnvironment.Variables, ct)).TryGetValue(out var project, out var unreadable))
+        if (!(await docker.ComposeConfig(fileSystem.ProjectRoot, composeEnvironment.Variables, ct)).TryGetValue(out var project, out var unreadable))
         {
-            return StepResult.Failed(unreadable);
+            return StepResult.Failed(ComposeErrors.Unreadable(fileSystem.ProjectRoot, unreadable));
         }
 
         if (!ComposeBindings.Of(unit, project).TryGetValue(out var bindings, out var unfit))

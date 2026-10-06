@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Ritten.Docker;
 using Wolfe.Lab.Infrastructure.Resilience;
 
 namespace Wolfe.Lab.Infrastructure.Garage;
@@ -16,7 +17,7 @@ public static class WorkflowBuilderExtensions
         /// </summary>
         public IWorkflowBuilder AddGarage()
         {
-            builder.AddCommandRunner()
+            builder.AddDocker()
                 .AddPolling(GarageClient.Answering, "Garage:Answering");
             builder.Services.TryAddSingleton<GarageClient>();
             builder.Services.TryAddSingleton<IGarage>(services => services.GetRequiredService<GarageClient>());

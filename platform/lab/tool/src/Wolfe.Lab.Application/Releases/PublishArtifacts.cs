@@ -61,23 +61,12 @@ internal sealed class PublishArtifacts(IReleaseInstaller installer, IFileSystem 
     /// The newest write among the outputs' files and directories — a directory's time moves when
     /// an entry is added, removed or replaced, so a deleted file counts as a change too.
     /// </summary>
-    internal static DateTimeOffset? Stamp(IEnumerable<Artifact> artifacts)
-    {
-        DateTime? newest = null;
-        foreach (var output in artifacts.Select(artifact => artifact.Output.AbsolutePath).Where(Directory.Exists))
-        {
-            var entries = Directory.EnumerateFileSystemEntries(output, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = 0 })
-                .Append(output);
-            foreach (var entry in entries)
-            {
-                var written = Directory.Exists(entry) ? Directory.GetLastWriteTimeUtc(entry) : File.GetLastWriteTimeUtc(entry);
-                if (newest is null || written > newest)
-                {
-                    newest = written;
-                }
-            }
-        }
-
-        return newest is { } stamp ? new DateTimeOffset(stamp, TimeSpan.Zero) : null;
-    }
+    internal static DateTimeOffset? Stamp(IEnumerable<Artifact> artifacts) =>
+        artifacts.Select(artifact => artifact.Output)
+            .Where(output => output.Exists)
+            .SelectMany(output => output.GetDirectories(recursive: true).Select(directory => directory.LastWriteTime)
+                .Concat(output.GetFiles("**/*").Select(file => file.LastWriteTime))
+                .Append(output.LastWriteTime))
+            .Select(written => (DateTimeOffset?)written)
+            .Max();
 }

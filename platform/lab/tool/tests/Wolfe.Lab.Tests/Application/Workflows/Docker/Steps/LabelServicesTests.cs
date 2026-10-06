@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
@@ -14,7 +15,7 @@ namespace Wolfe.Lab.Tests.Application.Workflows.Docker.Steps;
 public class LabelServicesTests : IDisposable
 {
     private readonly DirectoryInfo _root = Directory.CreateTempSubdirectory("lab-label-");
-    private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
+    private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
     private readonly DirectoryInfo _release;
 
@@ -24,9 +25,10 @@ public class LabelServicesTests : IDisposable
         var component = checkout.CreateSubdirectory("personal").CreateSubdirectory("mail").CreateSubdirectory("watcher");
         _release = _root.CreateSubdirectory("release");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
-        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, """
-            { "services": { "watcher": { "image": "watcher" }, "bridge": { "image": "bridge", "ports": [{ "target": 8080, "published": "8080" }] } } }
-            """, ""));
+        _docker.ComposeConfig(Arg.Any<IDirectory>(), Arg.Any<IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>()).Returns(new ComposeProject([
+            new ComposeService("bridge", new Dictionary<string, string>(), new Dictionary<string, string?>(), [new ComposePort(8080, 8080, null, "tcp")]),
+            new ComposeService("watcher", new Dictionary<string, string>(), new Dictionary<string, string?>(), [])
+        ]));
     }
 
     public void Dispose() => _root.Delete(recursive: true);
@@ -42,7 +44,7 @@ public class LabelServicesTests : IDisposable
     ];
 
     private Task<StepResult<ComposeBindings>> Run(bool dryRun = false, Catalogs.Declaration[]? components = null) =>
-        new LabelServices(_commands, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
+        new LabelServices(_docker, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), Catalogs.Unit("personal/mail/watcher", components ?? Plain),
                 ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
 
@@ -76,10 +78,10 @@ public class LabelServicesTests : IDisposable
     {
         await Run();
 
-        // The checkout's directory, never the release's, and no file named: compose finds its own.
-        await _commands.Received().Run(
-            Arg.Is<Command>(c => c.Path == "docker" && c.Arguments.Contains("config") && !c.Arguments.Contains("-f")
-                && c.Arguments.Any(a => a.EndsWith("watcher", StringComparison.Ordinal))),
+        // The checkout's directory, never the release's: compose finds its own files there.
+        await _docker.Received().ComposeConfig(
+            Arg.Is<IDirectory>(directory => directory.AbsolutePath.EndsWith("watcher", StringComparison.Ordinal)),
+            Arg.Any<IReadOnlyDictionary<string, string>?>(),
             Arg.Any<CancellationToken>());
     }
 

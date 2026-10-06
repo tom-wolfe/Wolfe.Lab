@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
@@ -26,4 +27,9 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
 
     public override JobKind Kind => JobKind.Check;
 
+    protected override void Configure(IWorkflowBuilder builder, AgentsOptions options)
+    {
+        base.Configure(builder, options);
+        builder.AddDocker();
+    }
 }

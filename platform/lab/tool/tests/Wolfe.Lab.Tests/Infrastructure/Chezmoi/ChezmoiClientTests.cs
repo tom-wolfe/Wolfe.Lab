@@ -47,7 +47,7 @@ public class ChezmoiClientTests : IDisposable
         var source = new PhysicalDirectory(Path.Combine(_root.FullName, "checkout"));
         var destination = new PhysicalDirectory(Path.Combine(_root.FullName, "render", "pi-node"));
 
-        var files = await new ChezmoiClient(_commands).Render(source, "pi-node", destination, TestContext.Current.CancellationToken);
+        var files = await new ChezmoiClient(_commands, ScratchFileSystem.Create()).Render(source, "pi-node", destination, TestContext.Current.CancellationToken);
 
         files.ShouldBe([".chezmoiscripts/install-packages.sh", ".zshrc"]);
         File.Exists(Path.Combine(destination.AbsolutePath, ".zshrc")).ShouldBeTrue();
@@ -81,7 +81,7 @@ public class ChezmoiClientTests : IDisposable
             return new CommandResult(0, "", "");
         });
 
-        await new ChezmoiClient(_commands).Render(new PhysicalDirectory(_root.FullName), "macbook", new PhysicalDirectory(Path.Combine(_root.FullName, "out")), TestContext.Current.CancellationToken);
+        await new ChezmoiClient(_commands, ScratchFileSystem.Create()).Render(new PhysicalDirectory(_root.FullName), "macbook", new PhysicalDirectory(Path.Combine(_root.FullName, "out")), TestContext.Current.CancellationToken);
 
         using var read = JsonDocument.Parse(config.ShouldNotBeNull());
         read.RootElement.GetProperty("data").GetProperty("profile").GetString().ShouldBe("macbook");
@@ -103,7 +103,7 @@ public class ChezmoiClientTests : IDisposable
             return new CommandResult(0, "", "");
         });
 
-        await new ChezmoiClient(_commands).Render(new PhysicalDirectory(_root.FullName), "macbook", new PhysicalDirectory(Path.Combine(_root.FullName, "out")), TestContext.Current.CancellationToken);
+        await new ChezmoiClient(_commands, ScratchFileSystem.Create()).Render(new PhysicalDirectory(_root.FullName), "macbook", new PhysicalDirectory(Path.Combine(_root.FullName, "out")), TestContext.Current.CancellationToken);
 
         var rm = _commands.ReceivedCalls().Select(c => (Command)c.GetArguments()[0]!).Single(c => c.Path == "rm");
         rm.Arguments[0].ShouldBe("-rf");
@@ -115,7 +115,7 @@ public class ChezmoiClientTests : IDisposable
     {
         _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
 
-        await new ChezmoiClient(_commands).Update(TestContext.Current.CancellationToken);
+        await new ChezmoiClient(_commands, ScratchFileSystem.Create()).Update(TestContext.Current.CancellationToken);
 
         var command = (Command)_commands.ReceivedCalls().Single().GetArguments()[0]!;
         command.Arguments.ShouldBe(["update", "--init", "--no-tty"]);

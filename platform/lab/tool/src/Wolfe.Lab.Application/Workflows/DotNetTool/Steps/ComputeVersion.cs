@@ -10,7 +10,7 @@ namespace Wolfe.Lab.Application.Workflows.DotNetTool.Steps;
 /// Works out the version this merge publishes.
 /// </summary>
 [Step("compute version", StepKind.Work)]
-internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSystem fileSystem, PackageContents shipped, IOptions<GitOptions> options, IWorkflowLog log)
+internal sealed class ComputeVersion(IGit git, IFileSystem fileSystem, PackageContents shipped, IOptions<GitOptions> options, IWorkflowLog log)
 {
     /// <summary>
     /// Where the version is written, under the component; <c>Directory.Build.props</c> names it too.
@@ -30,16 +30,14 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
             return new Error($"{component.AbsolutePath} is not in a git checkout, and its releases are its tags.");
         }
 
-        var root = checkout.AbsolutePath;
-        var shallow = await commands.Run(Git(root, "rev-parse", "--is-shallow-repository"), ct);
-        if (shallow.StandardOutput.Trim() == "true")
+        var repository = git.InRepository(checkout);
+        if (await repository.IsShallow(ct))
         {
             return new Error("The checkout is shallow, so it may not hold the last release: check out the whole history (fetch-depth: 0).");
         }
 
         var prefix = options.Value.TagPrefix;
-        var tags = await commands.Run(Git(root, "tag", "--list", $"{prefix}*"), ct);
-        var last = LastRelease(tags.StandardOutput, prefix);
+        var last = LastRelease(await repository.Tags($"{prefix}*", ct), prefix);
 
         string version;
         if (last is null)
@@ -49,16 +47,7 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
         }
         else
         {
-            var diff = await commands.Run(
-                Command.Create("git").WithArguments(["diff", "--quiet", $"{prefix}{last}", "HEAD", "--", .. shipped.FromRoot(checkout, component)])
-                    .InDirectory(root).QuietOutput(),
-                ct);
-            var changed = diff.ExitCode.Value switch
-            {
-                0 => false,
-                1 => true,
-                _ => throw new InvalidOperationException($"git diff against {prefix}{last} failed: {diff.StandardError.Trim()}")
-            };
+            var changed = await Changed(repository, $"{prefix}{last}", shipped.FromRoot(checkout, component), ct);
 
             version = changed ? Next(last) : last.ToNormalizedString();
             log.Status(changed
@@ -74,9 +63,8 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
     /// <summary>
     /// The highest version among the release tags, or null when there are none.
     /// </summary>
-    private static NuGetVersion? LastRelease(string tags, string prefix) =>
-        tags.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(tag => tag.StartsWith(prefix, StringComparison.Ordinal))
+    private static NuGetVersion? LastRelease(IReadOnlyList<string> tags, string prefix) =>
+        tags.Where(tag => tag.StartsWith(prefix, StringComparison.Ordinal))
             .Select(tag => NuGetVersion.TryParse(tag[prefix.Length..], out var version) ? version : null)
             .OfType<NuGetVersion>()
             .Max();
@@ -87,6 +75,20 @@ internal sealed class ComputeVersion(ICommandRunner commands, IGit git, IFileSys
     private static string Next(NuGetVersion? last) =>
         string.Create(CultureInfo.InvariantCulture, $"1.0.{(last?.Patch ?? 0) + 1}");
 
-    private static Command Git(string directory, params string[] arguments) =>
-        Command.Create("git").WithArguments(arguments).InDirectory(directory).QuietOutput().ThrowOnError();
+    /// <summary>
+    /// Whether anything that ships has changed since <paramref name="release"/>: the tag is an ancestor of HEAD, so
+    /// against its merge base is against the tag itself.
+    /// </summary>
+    private static async Task<bool> Changed(IGit repository, string release, IReadOnlyList<string> paths, CancellationToken ct)
+    {
+        foreach (var path in paths)
+        {
+            if ((await repository.ChangedFilesSince(release, path, ct)).Count > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

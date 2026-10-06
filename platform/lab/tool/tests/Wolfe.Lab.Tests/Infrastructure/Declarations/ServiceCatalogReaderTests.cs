@@ -44,7 +44,7 @@ public class ServiceCatalogReaderTests : IDisposable
     }
 
     private async Task<Result<ServiceCatalog>> Read() =>
-        (await ServiceCatalogReader.Read(new ProcessCommandRunner(), new PhysicalDirectory(_repository.FullName), TestContext.Current.CancellationToken));
+        (await ServiceCatalogReader.Read(RealClients.Git, new PhysicalDirectory(_repository.FullName), TestContext.Current.CancellationToken));
 
     private async Task<IReadOnlyList<string>> Errors() => [.. (await Read()).Errors.ShouldNotBeNull().Select(error => error.Message)];
 
@@ -120,17 +120,6 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("personal/immich/service.yaml", Immich + $"links:\n  - {link}\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldContain(expected);
-    }
-
-    [Fact]
-    public async Task Read_TakesGitsListingAsRittensRunnerCapturesIt()
-    {
-        Declare("personal/immich/service.yaml", Immich);
-        var commands = Substitute.For<ICommandRunner>();
-        commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "personal/immich/service.yaml\0\n", ""));
-
-        (await ServiceCatalogReader.Read(commands, new PhysicalDirectory(_repository.FullName), TestContext.Current.CancellationToken)).Value.ShouldNotBeNull()
-            .Services.ShouldHaveSingleItem();
     }
 
     [Fact]

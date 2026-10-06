@@ -19,7 +19,11 @@ internal sealed class ResolveImage(IDocker docker, BackupPlan plan, IWorkflowLog
             return SnapshotImage.None;
         }
 
-        var state = await docker.Inspect(plan.Image, ct);
+        if (await docker.Inspect(plan.Image, ct) is not { } state)
+        {
+            return new Error($"No {plan.Image} container here, so the snapshot cannot name the image its data belongs to.");
+        }
+
         log.Detail($"{plan.Image} runs {state.Image}.");
         return new SnapshotImage(state.Image);
     }

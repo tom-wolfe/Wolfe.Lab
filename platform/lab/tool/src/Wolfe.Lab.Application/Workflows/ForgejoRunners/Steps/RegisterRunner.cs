@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Models;
 
 namespace Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
@@ -12,7 +13,7 @@ namespace Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
 /// <c>--secret-stdin</c> counts one (41 is not 40).
 /// </remarks>
 [Step("register runner", StepKind.Publish)]
-internal sealed class RegisterRunner(ICommandRunner commands, ISecretProvider secrets, WorkflowJob job, IWorkflowLog log)
+internal sealed class RegisterRunner(IDocker docker, ISecretProvider secrets, WorkflowJob job, IWorkflowLog log)
 {
     private const string Container = "forgejo";
 
@@ -27,10 +28,7 @@ internal sealed class RegisterRunner(ICommandRunner commands, ISecretProvider se
             return StepResult.Successful;
         }
 
-        var container = await commands.Run(
-            Command.Create("docker").WithArguments("container", "inspect", "--format", "{{.Name}}", Container).QuietOutput(),
-            ct);
-        if (container.ExitCode != 0)
+        if (await docker.Inspect(Container, ct) is null)
         {
             return new Error(
                 $"No {Container} container here. Registration runs where Forgejo does: on the mini, or through the forgejo runners workflow.");
@@ -45,17 +43,18 @@ internal sealed class RegisterRunner(ICommandRunner commands, ISecretProvider se
         }
 
         string[] scope = registration.Scope is { } repository ? ["--scope", repository] : [];
-        await commands.Run(
-            Command.Create("docker")
-                .WithArguments(
+        await docker.Exec(
+            new ContainerExec(
+                Container,
                 [
-                    "exec", "-i", "-u", "git", Container,
                     "forgejo", "forgejo-cli", "actions", "register",
                     "--secret-stdin", "--name", registration.Name, "--labels", registration.Labels,
                     .. scope
                 ])
-                .WithInput(secret)
-                .ThrowOnError(),
+            {
+                User = "git",
+                Input = secret
+            },
             ct);
 
         log.Status($"Registered {registration.Name} (labels {registration.Labels}, scope {registration.Scope ?? "instance"}).");

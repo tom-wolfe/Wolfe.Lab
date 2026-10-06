@@ -31,7 +31,7 @@ public class ResolveServiceCatalogTests : IDisposable
     }
 
     private async Task<Result<ServiceCatalog>> Check(string directory, string workflow) =>
-        await ResolveServiceCatalog.Check(new ProcessCommandRunner(), new PhysicalDirectory(_repository.FullName), new PhysicalDirectory(Path.Combine(_repository.FullName, directory)), workflow,
+        await ResolveServiceCatalog.Check(RealClients.Git, new PhysicalDirectory(_repository.FullName), new PhysicalDirectory(Path.Combine(_repository.FullName, directory)), workflow,
             TestContext.Current.CancellationToken);
 
     private async Task<IReadOnlyList<string>> Errors(string directory, string workflow) =>
