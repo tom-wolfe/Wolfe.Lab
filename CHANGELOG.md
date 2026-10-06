@@ -8,6 +8,14 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
+- **Every node reports on itself.** The collectors report host CPU, memory, disks, network and
+  temperatures, and each container's resources; Grafana alerts on Beszel's thresholds.
+
+- **A Nodes dashboard.** Each machine and its containers, provisioned with Grafana's alert rules.
+
+- **cAdvisor on the mini.** Docker Desktop's containers are measured from inside its VM, by the one
+  container given the Docker socket.
+
 - **Containers' metrics are scraped.** Each node's collector scrapes every container whose component
   declares `metrics:`: the Alloy gateway, Garage, Gatus, Caddy and Forgejo.
 

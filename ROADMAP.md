@@ -289,7 +289,9 @@ lab's pins.
    2026-10-06*, with Grafana's stack, which scrapes itself no longer,
    as targets files rather than labels.
 5. Host metrics, cAdvisor on the Macs, and the alert rules that replace
-   Beszel's; then Beszel removed.
+   Beszel's; then Beszel removed. Host and container metrics, the rules
+   and a Nodes dashboard on 2026-10-06: Alloy's own cAdvisor on Linux, and
+   a cAdvisor container on the mini, which keeps containers after #13.
 6. Ritten's traces — before the agent, so it is observable from its
    first reconcile.
 

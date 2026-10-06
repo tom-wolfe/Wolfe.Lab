@@ -12,6 +12,7 @@ the telemetry stores — a container in Grafana's own stack
 | Process | `forwarder/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml` |
 | Config | `forwarder/config/`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts every node's agent (platform/lab/README.md, "Artifacts") |
 | Gateway | the `gateway` component of `monitoring/grafana/compose`: its container and `config/alloy/gateway.alloy` |
+| A Mac's containers | `cadvisor/`, a compose component on the mini, `.forgejo/workflows/alloy-cadvisor.yaml` (below) |
 | State | `${LAB_DATA}/alloy` — its write-ahead log; disposable |
 | UI | `127.0.0.1:12345` on each node — component health and a live view of each pipeline |
 
@@ -97,9 +98,43 @@ so one config serves every node.
   endpoint a deploy lists in `${LAB_ROOT}/.metrics`, a file per component
   naming its address, path and where it lives, as `.logs` does for log
   files (platform/lab/README.md, "Declarations").
+- **Reports on the node itself**: CPU, memory, disks, network and, where
+  the node has sensors, temperatures (Alloy's own node exporter) — what
+  only a host process sees, since a container on a Mac sees Docker
+  Desktop's VM. A Mac's system volumes are left out (they share the data
+  volume's space), as are interfaces that only carry what a real one
+  does: loopback, tunnels, bridges.
+- **Reports each container's resources**: its CPU, memory, network and
+  OOM kills, named `service_name` for the container and placed by its
+  deploy's `lab.*` labels, as its logs are. On a Linux node Alloy reads
+  them from the node's cgroups itself (its cAdvisor), naming containers
+  through Docker's and containerd's sockets. On a Mac the cgroups are
+  inside Docker Desktop's VM: there a cAdvisor container reads them, and
+  its series arrive through `.metrics` and are named the same way.
 - **Reports on itself**: its own metrics, under the same labels with
   `service_name="alloy"` — so a pipeline that is failing shows up in
   Grafana beside what it carries.
+
+## The Docker socket
+
+The socket is Docker's control plane: anything that can talk to it can
+start a container that mounts the whole disk, which is root by another
+route. So the rule is that **no container gets the socket**: it is what
+keeps one compromised container from being a compromised host, and the
+containerised runner never mounts it into a job for the same reason. A
+host process is a different shape: the
+forwarder runs as the login user, who owns the socket and can run
+`docker` at any prompt, so reading it grants nothing new. On Linux the
+same holds for containerd's socket, which the `docker` group is given at
+bootstrap (RUNBOOK.md, "Secondary node bootstrap").
+
+**The one exception is `cadvisor/`, on a Mac.** Docker Desktop keeps the
+cgroups inside its VM, where no host process reaches, and the mini keeps
+containers for good, so a container reads them — and names them through
+both sockets, read-only, though read-only does not limit what a socket
+grants. It is not privileged (`SYSLOG` and `/dev/kmsg` alone, for OOM
+kills), it publishes on loopback, and its image is pinned. A Linux node
+never runs it.
 
 ## What the gateway does
 

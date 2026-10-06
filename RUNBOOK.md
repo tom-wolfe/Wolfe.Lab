@@ -44,7 +44,11 @@ and no GUI, so it is the same idea with different mechanics. In order:
 2. **Docker Engine** from Docker's apt repository; `sudo usermod -aG
    docker $USER` and log in again. `loginctl enable-linger $USER`, so user
    services (the runners, the Beszel agent) start at boot with nobody
-   logged in.
+   logged in. Give the `docker` group containerd's socket too, which the
+   collector names containers through (monitoring/alloy/README.md): a
+   `[grpc]` section with `gid = <docker's gid>` (`getent group docker`) in
+   `/etc/containerd/config.toml`, then `sudo systemctl restart
+   containerd`. No new privilege: the group already controls Docker.
 3. **Tailscale**, the native Linux client: `tailscale up`, then add the
    node to `servers` in `network/tailscale/tofu/variables.tf` (a normal PR) — that
    tags it and disables its key expiry.

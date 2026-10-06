@@ -10,7 +10,7 @@ One compose stack on the mini, release `grafana`.
 | --- | --- |
 | Container | `.forgejo/workflows/grafana-compose.yaml`, on every push that touches `compose/`; the mini's host runner |
 | Secrets | `compose/secrets.env`: the admin login (`grafana-admin`), Pushover (`pushover`, shared with Gatus) and the healthchecks.io ping key (`healthchecks-ping-key`, shared with the heartbeat) |
-| Datasources, contact points, alert rules | provisioned from `compose/config/grafana/provisioning/` — code, not state |
+| Datasources, contact points, alert rules, dashboards | provisioned from `compose/config/grafana/provisioning/` — code, not state |
 | The LLM app | installed at start (`GF_PLUGINS_PREINSTALL_SYNC`, pinned; Renovate bumps it) and configured from `provisioning/plugins/llm.yaml` (below) |
 | The watchdog's check | `monitoring/heartbeat/tofu` (`lab-grafana-watchdog`) |
 | Liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) |
@@ -62,6 +62,12 @@ fires. Its route re-sends it every five minutes to a webhook that pings
 healthchecks.io (`lab-grafana-watchdog`), which pages when the pings stop:
 proof that rules evaluate, Prometheus answers and notifications leave. A
 firing Watchdog in Grafana's alert list is the healthy state.
+
+The **nodes** rules are Beszel's thresholds, on every node — CPU busy,
+memory or a disk over 90% for ten minutes — and a server whose collector
+has gone quiet for ten. The **Nodes** dashboard shows the same: each
+machine, and each container on it. Both are provisioned, so a
+change is a change to their files; the UI refuses an edit.
 
 ## AI
 

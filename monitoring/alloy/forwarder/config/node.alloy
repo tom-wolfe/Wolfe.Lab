@@ -124,7 +124,8 @@ declare "collect" {
 	// address on the node's loopback, its path (__metrics_path__) and where it
 	// lives (platform/lab/README.md, "Declarations"). Several endpoints of one
 	// container, a port of the component's choosing, and a host process's
-	// metrics are all just entries here.
+	// metrics are all just entries here. A Mac's cAdvisor is one of them, and
+	// its series are named for their containers as a Linux node's are (below).
 
 	discovery.file "metrics" {
 		files = [sys.env("LAB_ROOT") + "/.metrics/*.json"]
@@ -133,7 +134,80 @@ declare "collect" {
 	prometheus.scrape "declared" {
 		targets         = discovery.file.metrics.targets
 		scrape_interval = "30s"
+		forward_to      = [prometheus.relabel.containers.receiver]
+	}
+
+	// ── The node itself ──────────────────────────────────────────────────
+	// Its CPU, memory, disks, network and, where it has sensors, its
+	// temperatures: what only a host process sees, since a container on a Mac
+	// sees Docker Desktop's VM. Left out besides what the exporter leaves out
+	// on Linux: memory posing as disks (tmpfs), a Mac's system volumes, which
+	// share the data volume's container (its sealed root, read-only, stays:
+	// it is Linux's root), and the interfaces that only carry what a real one
+	// carries already.
+
+	prometheus.exporter.unix "node" {
+		filesystem {
+			mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+|System/Volumes/(Hardware|iSCPreboot|Preboot|Update|VM|xarts)|Volumes/Recovery)($|/)"
+			fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devfs|devpts|devtmpfs|erofs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tmpfs|tracefs)$"
+		}
+
+		netdev {
+			device_exclude = "^(lo0?|utun[0-9]+|tailscale[0-9]+|awdl[0-9]+|llw[0-9]+|anpi[0-9]+|ap[0-9]+|gif[0-9]+|stf[0-9]+|nan[0-9]+|bridge[0-9]+|docker[0-9]+|br-.+|veth.+)$"
+		}
+	}
+
+	prometheus.scrape "node" {
+		targets         = prometheus.exporter.unix.node.targets
+		scrape_interval = "30s"
 		forward_to      = [prometheus.relabel.node.receiver]
+	}
+
+	// ── Containers' resources ────────────────────────────────────────────
+	// Each container's CPU, memory, network and OOM kills, read from the
+	// node's cgroups and named through Docker's and containerd's sockets — by
+	// a host process, so no container is handed them. Linux alone: a Mac's
+	// cgroups are inside Docker Desktop's VM, where this does nothing and a
+	// cAdvisor container reads them instead (monitoring/alloy/cadvisor).
+
+	prometheus.exporter.cadvisor "containers" {
+		docker_host                  = coalesce(sys.env("DOCKER_HOST"), "unix:///var/run/docker.sock")
+		docker_only                  = true
+		store_container_labels       = false
+		allowlisted_container_labels = ["lab.area", "lab.service", "lab.component"]
+		enabled_metrics              = ["cpu", "memory", "network", "oom_event", "diskIO"]
+	}
+
+	prometheus.scrape "containers" {
+		targets         = prometheus.exporter.cadvisor.containers.targets
+		scrape_interval = "30s"
+		forward_to      = [prometheus.relabel.containers.receiver]
+	}
+
+	// A container's series, this node's or a Mac's cAdvisor's, named and
+	// placed as its logs are: for the container, where its deploy's labels
+	// say it lives — not where cAdvisor does. Every other declared series
+	// passes through as it came: none has cAdvisor's labels.
+	prometheus.relabel "containers" {
+		forward_to = [prometheus.relabel.node.receiver]
+
+		rule {
+			source_labels = ["service_name", "name"]
+			regex         = "(cadvisor)?;(.+)"
+			target_label  = "service_name"
+			replacement   = "$2"
+		}
+
+		rule {
+			action      = "labelmap"
+			regex       = "container_label_(lab_.+)"
+			replacement = "$1"
+		}
+
+		rule {
+			action = "labeldrop"
+			regex  = "container_label_.+"
+		}
 	}
 
 	// ── Host-process logs, as files ──────────────────────────────────────
