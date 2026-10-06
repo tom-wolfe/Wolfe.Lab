@@ -29,7 +29,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
         Step.FromType<CheckRoles>(),
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
-        Step.FromType<ResolveOllamaAgents>(),
+        Step.FromType<ResolveAgentDeclarations>(),
         Step.FromType<CheckModelStore>(),
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
@@ -55,7 +55,6 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
     {
         base.Configure(builder, options);
         builder.AddPackages().AddAgents().AddOllama().AddVolumes(options.Volumes).AddArtifacts([]);
-        builder.Services.AddSingleton(new OllamaAgents(options.Agents));
         builder.Services.AddSingleton(new ModelPlan([.. options.Models.Pull]));
         builder.Services.AddSingleton(RolePlan.From(options.Models.Roles));
         builder.Services.AddSingleton(new DeclaredRoles(options.Models));

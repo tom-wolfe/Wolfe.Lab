@@ -1,13 +1,12 @@
-using Wolfe.Lab.Application.Workflows.Agents.Steps;
+using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Paths;
-using Wolfe.Lab.Tests.Application.Agents;
 using Wolfe.Lab.Tests.Domain.Catalog;
 
-namespace Wolfe.Lab.Tests.Application.Workflows.Agents.Steps;
+namespace Wolfe.Lab.Tests.Application.Agents;
 
 public class CheckAgentDeclarationsTests
 {

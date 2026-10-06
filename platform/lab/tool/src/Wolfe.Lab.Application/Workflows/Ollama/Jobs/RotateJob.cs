@@ -24,7 +24,7 @@ internal sealed class RotateJob : LabJob<OllamaOptions>
     [
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
-        Step.FromType<ResolveOllamaAgents>(),
+        Step.FromType<ResolveAgentDeclarations>(),
         Step.FromType<GateApproval>(),
         Step.FromType<RotateAgentLogs>()
     ];
@@ -33,6 +33,5 @@ internal sealed class RotateJob : LabJob<OllamaOptions>
     {
         base.Configure(builder, options);
         builder.AddLogrotate();
-        builder.Services.AddSingleton(new OllamaAgents(options.Agents));
     }
 }

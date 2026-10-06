@@ -577,6 +577,7 @@
             "description": "The components of this service this one needs, by name."
           },
           "runsOn": {
+            "description": "The nodes it runs on: 'all', 'every <role>', or a list of nodes by name.",
             "anyOf": [
               {
                 "type": "string",
@@ -590,14 +591,10 @@
                 "minItems": 1,
                 "uniqueItems": true
               }
-            ],
-            "description": "The nodes it runs on: 'all', 'every <role>', or a list of nodes by name."
+            ]
           },
           "agent": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "pattern": "^[a-z][a-z0-9-]*$",
             "description": "The name it runs under on each node — its unit is dev.twolfe.<agent> — and the service_name its logs carry."
           },
@@ -640,10 +637,7 @@
             "description": "What it runs, installed from a GitHub release."
           },
           "program": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "minLength": 1,
             "description": "The executable: {package}/<file> for one its package holds."
           },
@@ -678,16 +672,15 @@
             },
             "uniqueItems": true,
             "description": "Units an earlier supervisor ran it under, retired before it starts."
-          },
-          "declaresAgent": {
-            "type": "boolean",
-            "readOnly": true
           }
         },
         "required": [
           "kind",
           "workflow",
-          "name"
+          "name",
+          "runsOn",
+          "agent",
+          "program"
         ],
         "additionalProperties": false
       }

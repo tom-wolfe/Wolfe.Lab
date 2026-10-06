@@ -164,29 +164,12 @@ public class ResolveAgentsTests : IDisposable
         Resolvers.On().HomePathsIn(new Dictionary<string, string> { ["V"] = value }).Any().ShouldBe(found);
 
     [Fact]
-    public async Task Run_WritesTheLabsRootsIntoArgumentsAndVariables()
-    {
-        var result = await Resolve(("alloy", new AgentOptions
-        {
-            Program = HostPath.From(Program("alloy")),
-            Arguments = ["run", "${LAB_ROOT}/alloy/config.alloy", "--storage.path=${LAB_DATA}/alloy"],
-            Environment = new Dictionary<string, string> { ["CONFIG"] = "${LAB_ROOT}/alloy", ["KEPT"] = "${HOME}/as-written" }
-        }));
-
-        var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
-        agent.Arguments.ShouldBe(["run", "/lab/root/alloy/config.alloy", "--storage.path=/lab/data/alloy"]);
-        agent.Environment["CONFIG"].ShouldBe("/lab/root/alloy");
-        // Only the lab's own two are expanded; anything else reaches the process as written.
-        agent.Environment["KEPT"].ShouldBe("${HOME}/as-written");
-    }
-
-    [Fact]
     public async Task Run_RunsTheProgramOutOfItsPackage()
     {
         var program = Program("alloy-darwin-arm64");
 
         var result = await Resolve(new Dictionary<string, InstalledPackage> { ["alloy"] = Alloy(_node.FullName, PackageOutcome.Installed) },
-            ("alloy", new AgentOptions { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64"), Arguments = ["run", "${PACKAGE}/x"] }));
+            ("alloy", new AgentOptions { Program = HostPath.From("{package}/alloy-darwin-arm64"), Arguments = ["run", "{package}/x"] }));
 
         var agent = result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem();
         agent.Program.Value.ShouldBe(program);
@@ -197,7 +180,7 @@ public class ResolveAgentsTests : IDisposable
     public async Task Run_RehearsesAnAgentWhosePackageIsNotInstalledYet()
     {
         var result = await Resolve(new Dictionary<string, InstalledPackage> { ["alloy"] = Alloy("/nowhere/alloy/1.20.1", PackageOutcome.WouldInstall) },
-            ("alloy", new AgentOptions { Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }));
+            ("alloy", new AgentOptions { Program = HostPath.From("{package}/alloy-darwin-arm64") }));
 
         result.Value.ShouldNotBeNull().Agents.ShouldHaveSingleItem().Program.Value.ShouldBe("/nowhere/alloy/1.20.1/alloy-darwin-arm64");
     }

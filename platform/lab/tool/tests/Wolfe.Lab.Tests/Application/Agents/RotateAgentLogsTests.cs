@@ -42,7 +42,7 @@ public class RotateAgentLogsTests : IDisposable
     [Fact]
     public async Task Run_RotatesTheComponentsLogs_WithItsOwnConfigurationAndState()
     {
-        (await Rotate(agents: ("ollama", "${LAB_ROOT}/logs/ai-ollama-mini.log"))).IsFailure.ShouldBeFalse();
+        (await Rotate(agents: ("ollama", $"{_root.FullName}/logs/ai-ollama-mini.log"))).IsFailure.ShouldBeFalse();
 
         var configuration = Path.Combine(Rotations, "ai-ollama-mini.conf");
         (await File.ReadAllTextAsync(configuration, TestContext.Current.CancellationToken)).ShouldStartWith($"\"{_root.FullName}/logs/ai-ollama-mini.log\" {{");

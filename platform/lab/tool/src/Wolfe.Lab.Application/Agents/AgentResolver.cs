@@ -16,11 +16,6 @@ namespace Wolfe.Lab.Application.Agents;
 internal sealed class AgentResolver(IOptions<LabDirectories> options, IOptions<LabNode> here)
 {
     /// <summary>
-    /// The agent's installed package, as a <c>ritten.json</c> writes it.
-    /// </summary>
-    private const string PackageVariable = "${PACKAGE}";
-
-    /// <summary>
     /// The agent's installed package, as a catalog declaration writes it: the one placeholder only
     /// the install can expand.
     /// </summary>
@@ -99,12 +94,11 @@ internal sealed class AgentResolver(IOptions<LabDirectories> options, IOptions<L
     }
 
     /// <summary>
-    /// <paramref name="agent"/> with this node's roots written in, and its package's directory
-    /// when it has one.
+    /// <paramref name="agent"/> with its package's directory written in, when it has one: the one
+    /// placeholder its node could not (<see cref="On"/>).
     /// </summary>
     public AgentOptions Expand(AgentOptions agent, IDirectory? package = null)
     {
-        var directories = options.Value;
         return agent with
         {
             Program = Path(agent.Program),
@@ -116,9 +110,7 @@ internal sealed class AgentResolver(IOptions<LabDirectories> options, IOptions<L
 
         HostPath? Path(HostPath? path) => path is { } value ? HostPath.From(Value(value.Value)) : null;
 
-        string Value(string value) => directories.Expand(package is null
-            ? value
-            : value.Replace(PackageVariable, package.AbsolutePath, StringComparison.Ordinal).Replace(PackagePlaceholder, package.AbsolutePath, StringComparison.Ordinal));
+        string Value(string value) => package is null ? value : value.Replace(PackagePlaceholder, package.AbsolutePath, StringComparison.Ordinal);
     }
 
     /// <summary>

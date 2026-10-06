@@ -40,7 +40,7 @@ public class ResolveServiceCatalogTests : IDisposable
     [Theory]
     [InlineData("name: server\nkind: app\nworkflow: docker\nservice: server\n", "docker")]
     [InlineData("name: server\nkind: app\nworkflow: dotnet-service\nservice: server\n", "dotnet-service")]
-    [InlineData("name: server\nkind: model\nworkflow: ollama\n", "ollama")]
+    [InlineData("name: server\nkind: infrastructure\nworkflow: tofu\n", "tofu")]
     public async Task Check_PassesADeclarationThatSaysWhatItsWorkflowRuns(string declaration, string workflow)
     {
         Declare("personal/immich/compose/component.yaml", declaration);
@@ -56,10 +56,10 @@ public class ResolveServiceCatalogTests : IDisposable
     [Fact]
     public async Task Check_RefusesADeclarationThatSaysOtherwise()
     {
-        Declare("personal/immich/compose/component.yaml", "name: server\nkind: model\nworkflow: ollama\n");
+        Declare("personal/immich/compose/component.yaml", "name: server\nkind: infrastructure\nworkflow: tofu\n");
 
         (await Errors("personal/immich/compose", "docker")).ShouldHaveSingleItem()
-            .ShouldBe("personal/immich/compose/component.yaml: declares the ollama workflow, but its directory's ritten.json runs docker.");
+            .ShouldBe("personal/immich/compose/component.yaml: declares the tofu workflow, but its directory's ritten.json runs docker.");
     }
 
     [Fact]

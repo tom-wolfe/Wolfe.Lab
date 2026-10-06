@@ -1,5 +1,4 @@
 using Wolfe.Lab.Domain.Paths;
-using Wolfe.Lab.Infrastructure.Agents;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Models;
 
@@ -13,10 +12,6 @@ public sealed record OllamaOptions : WorkflowSettings
     /// </summary>
     public IReadOnlyList<HostPath> Volumes { get; init; } = [];
 
-    /// <summary>
-    /// The agents the node keeps running for this service, by name.
-    /// </summary>
-    public IReadOnlyDictionary<string, AgentOptions> Agents { get; init; } = new Dictionary<string, AgentOptions>();
 
     /// <summary>
     /// Where models live and which ones the node should have.

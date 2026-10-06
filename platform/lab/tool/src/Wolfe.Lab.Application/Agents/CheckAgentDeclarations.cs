@@ -1,11 +1,10 @@
-using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Secrets;
 
-namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
+namespace Wolfe.Lab.Application.Agents;
 
 /// <summary>
 /// Judges the component's agent on every node it runs on, as a pull request would want it judged:

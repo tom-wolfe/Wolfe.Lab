@@ -45,7 +45,7 @@ public class InstallAgentPackagesTests : IDisposable
             .Returns(call => new InstalledPackage(call.Arg<Package>(), new PhysicalDirectory(_package.FullName), outcome));
         var declarations = new AgentDeclarations(new Dictionary<string, AgentOptions>
         {
-            ["alloy"] = agent ?? new AgentOptions { Package = Alloy, Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }
+            ["alloy"] = agent ?? new AgentOptions { Package = Alloy, Program = HostPath.From("{package}/alloy-darwin-arm64") }
         });
         return new InstallAgentPackages(_installer, Resolvers.On(), new Wolfe.Lab.Application.Packages.EnvironmentPath(),
                 new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), Report(), Substitute.For<IWorkflowLog>())

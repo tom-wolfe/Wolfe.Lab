@@ -44,10 +44,5 @@ public static class DeclarationErrors
     /// </summary>
     public static Error Schema(string message) => new(message);
 
-    /// <summary>
-    /// A component declares some of its agent, but not what every agent needs.
-    /// </summary>
-    public static Error AgentIncomplete { get; } =
-        new("an agent is declared with its runsOn, agent and program together — and an agents component always declares one.");
 
 }
