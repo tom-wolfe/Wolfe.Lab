@@ -217,13 +217,14 @@ is `monitoring/grafana`, the collectors `monitoring/alloy`.
   dead alerting engine looks exactly like a quiet night — so one rule
   always fires and pings a healthchecks.io check, which pages when the
   pings stop.
-- **Beszel retires.** Its host and container stats are what the
-  collectors report, and its threshold alerts become Grafana rules; once
-  both are in place, the hub, the agents and Gatus's check of the hub
-  go. Per-container stats on the Macs are the one gap: Alloy's cAdvisor
-  exporter is Linux-only and a host process cannot see the VM's cgroups,
-  so they come from a cAdvisor container inside Docker Desktop's VM,
-  scraped like any other.
+- **Beszel stays, as the view; Grafana alerts.** The collectors report
+  what Beszel's agents do, host and container stats alike, and its
+  threshold alerts are Grafana rules, so a problem pages once, from
+  rules in the repo. Beszel alerts on nothing, and is kept for what it is
+  better at: a friendlier UI, and a phone app that self-hosted Grafana
+  does not match. Per-container stats on the Macs come from a cAdvisor
+  container inside Docker Desktop's VM: Alloy's cAdvisor is Linux-only,
+  and a host process cannot see the VM's cgroups.
 
 **Why not Garage for Loki and Tempo.** Object storage is the standard
 shape, but on one backend node it buys nothing, and here it costs: the
@@ -245,7 +246,8 @@ emitted:
 - `lab.area`, `lab.service`, `lab.component` — where it lives in the
   repo: `monitoring`, `gatus`, `compose`.
 - `lab.role` — `server` or `hybrid`, so every rule can leave the Studio
-  out in one matcher, as its Beszel agent and Gatus check never alert.
+  out in one matcher, as its Gatus check never alerts and a silent node
+  pages only when it is a server.
 
 **Why Alloy rather than the upstream Collector.** Both speak OTLP, so
 the applications do not care, and a later switch is the collectors'
@@ -289,9 +291,9 @@ lab's pins.
    2026-10-06*, with Grafana's stack, which scrapes itself no longer,
    as targets files rather than labels.
 5. Host metrics, cAdvisor on the Macs, and the alert rules that replace
-   Beszel's; then Beszel removed. Host and container metrics, the rules
-   and a Nodes dashboard on 2026-10-06: Alloy's own cAdvisor on Linux, and
-   a cAdvisor container on the mini, which keeps containers after #13.
+   Beszel's. *Shipped 2026-10-06*, with a Nodes dashboard: Alloy's own
+   cAdvisor on Linux, and a cAdvisor container on the mini, which keeps
+   containers after #13. Beszel stays, alerting on nothing (above).
 6. Ritten's traces — before the agent, so it is observable from its
    first reconcile.
 

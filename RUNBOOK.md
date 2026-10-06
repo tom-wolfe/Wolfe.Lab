@@ -102,8 +102,8 @@ are done once per fresh server, in order.
        Settings -> Tokens -> copy the universal token and public key into
          a 1Password item `beszel-agent` (credential / username)
        chezmoi apply && brew services list
-     Then set thresholds and the Pushover URL in the hub — it ships none,
-     so nothing alerts until you do. Full runbook: monitoring/beszel/README.md.
+     It alerts on nothing: Grafana does. Full runbook:
+     monitoring/beszel/README.md.
 
   3. Register every node's Actions runner, this machine's included — registrations live in
      Forgejo's database, so a fresh Forgejo knows none of them, while each
