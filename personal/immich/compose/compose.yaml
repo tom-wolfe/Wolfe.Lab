@@ -29,6 +29,7 @@ services:
       DB_PASSWORD:
       REDIS_HOSTNAME: immich-redis
       IMMICH_MACHINE_LEARNING_URL: http://immich-machine-learning:3003
+      IMMICH_TELEMETRY_INCLUDE: all
 
     volumes:
       - /Volumes/Data2/immich:/data

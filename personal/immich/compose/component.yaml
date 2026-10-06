@@ -23,3 +23,7 @@ workflow: docker
 service: immich-server
 description: "The web app, the API and the phone app's server."
 dependsOn: [postgres, cache]
+# The API's and the background jobs', with IMMICH_TELEMETRY_INCLUDE.
+metrics:
+  - port: 8081
+  - port: 8082

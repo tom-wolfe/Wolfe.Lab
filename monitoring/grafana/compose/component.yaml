@@ -5,6 +5,8 @@ workflow: docker
 service: loki
 displayName: Loki
 description: "The log store."
+metrics:
+  port: 3100
 ---
 name: prometheus
 kind: database
@@ -12,6 +14,8 @@ workflow: docker
 service: prometheus
 displayName: Prometheus
 description: "The metrics store."
+metrics:
+  port: 9090
 ---
 name: tempo
 kind: database
@@ -19,6 +23,8 @@ workflow: docker
 service: tempo
 displayName: Tempo
 description: "The trace store."
+metrics:
+  port: 3200
 ---
 name: grafana
 kind: app
@@ -27,6 +33,10 @@ service: grafana
 displayName: Grafana
 description: "Grafana, in front of the three stores."
 dependsOn: [loki, prometheus, tempo]
+# Forgejo has the mini's 3000.
+metrics:
+  port: 3000
+  published: 13000
 ---
 name: gateway
 kind: collector
