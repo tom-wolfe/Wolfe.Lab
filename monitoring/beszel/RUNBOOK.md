@@ -37,8 +37,8 @@ as `platform/garage/tofu` — run once, harvest the outputs, store them.
    agent's unit and starts it.
 6. **Confirm enrolment.** The mini should appear in the hub within a few
    seconds. If it doesn't, `tail ~/.cache/beszel/beszel-agent.log`.
-7. **Configure notifications and thresholds** (see "Alerting"). Nothing
-   alerts until you do — the hub ships no default thresholds.
+7. **Set no alerts.** The hub ships none, and none is wanted: Grafana
+   alerts for the nodes (README.md, "Alerting").
 
 ## Upgrading
 

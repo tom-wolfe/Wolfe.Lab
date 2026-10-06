@@ -37,8 +37,8 @@ grouped into *areas* — `<area>/<service>/<component>`, `monitoring/gatus/compo
   policy lets in the ports it serves and nothing else
   (`network/tailscale/README.md`); a host runner holding no privacy grants, whose
   jobs queue while it sleeps (`platform/forgejo/README.md`, "The Studio's
-  runner"); a Beszel agent and a Gatus check that never alert. Nothing in
-  the platform layer, nothing on the drives, and no job whose failure is
+  runner"); a Gatus check that never alerts, and no page when its
+  collector goes quiet. Nothing in the platform layer, nothing on the drives, and no job whose failure is
   an outage runs there — which is why Immich's machine learning stays on
   the mini (`personal/immich/README.md`).
 
@@ -85,8 +85,7 @@ watches.**
 | Layer                                        | Watches                                                                                                                         | Dies when                                          |
 |----------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
 | every job                                    | its own failure → Pushover, from the CLI's runtime                                                                              | Forgejo or the node's runner does                  |
-| Beszel agent                                 | each node's CPU, memory, disks (incl. `/Volumes/Data1`), containers                                                             | that node does                                     |
-| Grafana (`monitoring/grafana/`, on the mini) | logs, traces and metrics, and alert rules over them → Pushover                                                                  | the mini does — which Gatus and the watchdog catch |
+| Grafana (`monitoring/grafana/`, on the mini) | logs, traces and metrics — each node's and container's included — and alert rules over them → Pushover                         | the mini does — which Gatus and the watchdog catch |
 | Gatus (`monitoring/gatus/`, on the Pi)       | every service by REQUEST, once each through the front door, plus the third parties the lab stands on; the Beszel hub among them | the Pi does                                        |
 | `gatus-health.yaml`                          | Gatus itself, from the mini — a dead status page looks like one you haven't opened                                              | the mini does                                      |
 | healthchecks.io                              | the heartbeat still pings, and Grafana's watchdog still fires → **the only observer outside the building**                      | never (it's SaaS)                                  |

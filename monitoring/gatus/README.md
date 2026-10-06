@@ -123,7 +123,7 @@ healthchecks.io is, and it stays outside the building (`monitoring/heartbeat/`).
 ## Secrets
 
 The Pushover application token and user key are the same `pushover`
-item the CLI's failure alert and Beszel use, so every alert in the lab lands
+item the CLI's failure alert and Grafana use, so every alert in the lab lands
 in one place. `forgejo-gatus-token` is the one item of Gatus's own: a
 Forgejo token scoped `read:repository`, because the runners route wants
 a login and the `forgejo-api-token` the tofu holds can write. Minted by
