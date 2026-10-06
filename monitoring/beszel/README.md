@@ -1,10 +1,12 @@
 # Beszel
 
-Host monitoring for the lab: CPU, memory, disk, network and temperature,
-with history and threshold alerts. [Beszel](https://beszel.dev) is two
-pieces — a **hub** (the dashboard and alerting engine, a container in this
-service) and an **agent** (the thing that actually reads the metrics, a
-native process on each monitored machine).
+The lab's friendly view of its machines: CPU, memory, disk, network,
+temperature and containers, with history, in a UI and a phone app that
+self-hosted Grafana does not match. It alerts on nothing — Grafana does
+(ROADMAP.md #11, "Beszel stays"). [Beszel](https://beszel.dev) is two
+pieces — a **hub** (the dashboard, a container in this service) and an
+**agent** (the thing that actually reads the metrics, a native process on
+each monitored machine).
 
 | Concern | Handled by |
 | --- | --- |
@@ -12,9 +14,9 @@ native process on each monitored machine).
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
 | Agent binary | each node's `package` in `agent/ritten.json`: the release the deploy installs, pinned to the hub's version (platform/lab/README.md, "Packages and tools"); Renovate moves both as one |
 | Agent supervision and config | the `agent/` component: `agent/ritten.json` declares each node's agent — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
-| Hub liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) — Beszel cannot alert about its own hub being down |
+| Hub liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) |
 | Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
-| Systems, thresholds, notification URLs | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
+| Systems | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
 
 ## Why the agent is a host process
 
@@ -91,36 +93,20 @@ used, so `LISTEN` is pinned to loopback rather than published to the LAN.
 
 ### About the Docker socket
 
-`DOCKER_HOST` points the agent at `~/.docker/run/docker.sock`. The socket is
-Docker's control plane: anything that can talk to it can start a container
-that mounts the whole disk, which is root access by another route. The rule
-this lab follows is that **no container gets the socket** — that's the rule
-that matters, because it's the one that turns "one container compromised"
-into "host compromised" (the containerised Actions runner never mounts it
-into a job for the same reason).
-
-The agent is a different shape. It is a native process already running as
-`tomwolfe`, who owns the socket and can run `docker` at any prompt. Reading
-it grants the agent nothing it could not already do, so the escalation the
-rule exists to prevent is not on the table. If you ever containerise this
-agent, that stops being true and the socket must come out.
+`DOCKER_HOST` points the agent at `~/.docker/run/docker.sock`. **No
+container gets the socket** (monitoring/alloy/README.md, "The Docker
+socket"), but the agent is a native process already running as
+`tomwolfe`, who owns the socket and can run `docker` at any prompt:
+reading it grants nothing new. If you ever containerise this agent, that
+stops being true and the socket must come out.
 
 ## Alerting
 
-Two independent paths, on purpose, because they fail differently.
-
-**Beszel's own alerts** — thresholds on the metrics above, evaluated by the
-hub, delivered through [shoutrrr](https://containrrr.dev/shoutrrr/). Point
-it at the lab's existing Pushover application so these land in the same
-place as everything else, using the `pushover` 1Password item:
-
-```
-pushover://shoutrrr:<credential>@<username>/
-```
-
-(`credential` is the application token, `username` the user key — same item
-`system/alert-failed` uses.) Configured in **Settings → Notifications**, then
-per-system thresholds in the systems table.
+**None, on purpose.** Beszel's thresholds — CPU, memory and disk over 90%
+for ten minutes, and a server down — are Grafana's `nodes` rules
+(monitoring/grafana/README.md), in the repo rather than clicked into a
+UI, and a problem should page once. Leave the hub's alerts off: one
+turned back on pages beside Grafana's.
 
 **Who watches the hub:** Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`
 asks `/api/health` every two minutes, three failures page). This is the
@@ -139,22 +125,23 @@ a row in total silence. The check that alerts is the one that asks.
 
 Every other service declares its API resources in tofu — buckets in
 `platform/garage/tofu`, repositories in `platform/forgejo/tofu`, checks in `monitoring/gatus/tofu`. This
-one can't: Beszel has no Terraform/OpenTofu provider. Registered systems,
-alert thresholds and notification URLs are clicked into the UI and live only
-in `~/Docker/beszel/data`.
+one can't: Beszel has no Terraform/OpenTofu provider. Registered systems
+are clicked into the UI and live only in `~/Docker/beszel/data`, beside the
+hub's keypair and token.
 
 That is a genuine step down from the rest of the repo and it is worth naming
 rather than hiding. Two consequences follow:
 
 1. **The nightly backup is not optional.** It is the only copy of that
-   configuration, which is why it's labelled `alert: high` even though the
-   metrics history it also carries is expendable.
+   configuration and of the keypair every agent trusts, which is why it's
+   labelled `alert: high` even though the metrics history it also carries
+   is expendable.
 2. **Reproducing the hub from scratch is a manual ritual**, not an apply.
    Keep the bootstrap section below accurate; it is the runbook.
 
 The hub is a PocketBase app, so a REST API does exist and this could be
-scripted later. Not worth it for one machine and a handful of thresholds —
-revisit if the fleet grows.
+scripted later. Not worth it for a handful of systems — revisit if the
+fleet grows.
 
 ## Secrets: the hub is the origin (the one exception)
 
@@ -226,9 +213,8 @@ Container stats: the agent reads `/var/run/docker.sock` as the login
 user, who is in the `docker` group. Same reasoning as on the mini — a
 native process that already owns the socket gains nothing from reading it.
 
-In the hub UI: thresholds, and **Status alerts ON** — this machine is
-always-on and off is a failure. Take the SoC and NVMe temperature
-baselines while you are there.
+Take the SoC and NVMe temperature baselines in the hub while you are
+there.
 
 ## The Studio
 
@@ -236,11 +222,9 @@ The mini's shape with the Pi's `HUB_URL`, since the hub is on another
 machine. No `DOCKER_HOST`: the Studio runs no lab containers
 (`README.md`, "Nodes"). Its deploy waits while it sleeps and runs when it wakes.
 
-**Status alerts OFF.** The Studio is a hybrid node: off is its normal
-state most of the day, and nothing depends on it being on. A down alert
-would fire every evening and teach you to ignore Beszel. What it is
-worth watching for is load while it is on — how much a background model
-costs the desk — so set thresholds, and leave status alone.
+Off is its normal state most of the day, so the hub showing it down is
+no news; what is worth watching is load while it is on — how much a
+background model costs the desk.
 
 ## Moving off chezmoi and Homebrew's service
 
