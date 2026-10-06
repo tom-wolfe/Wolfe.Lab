@@ -35,3 +35,5 @@ service: gateway
 displayName: Alloy gateway
 description: "The single entry point for all telemetry."
 dependsOn: [loki, prometheus, tempo]
+metrics:
+  port: 12346

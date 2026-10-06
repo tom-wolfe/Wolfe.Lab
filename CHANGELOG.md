@@ -8,6 +8,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Added
 
+- **Containers' metrics are scraped.** Each node's collector scrapes every container whose component
+  declares `metrics:`; first the Alloy gateway, Garage and Gatus.
+
 - **Ollama's components can declare their agent.** Placed on their one node in `component.yaml`,
   as the other agents are; until they do, `ritten.json` still declares it.
 

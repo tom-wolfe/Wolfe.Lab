@@ -3,7 +3,8 @@
 // forwarder.alloy, on every node. The root says where it goes; this labels it
 // with the node, once, here — so the gateway passes what each node sends
 // through as it arrived. The node's identity
-// comes from the agent's environment (ritten.json).
+// comes from the agent's environment: LAB_HOST and LAB_ROLE, which its node
+// sets for every agent.
 
 declare "collect" {
 	argument "otlp_to" {
@@ -15,7 +16,7 @@ declare "collect" {
 	}
 
 	argument "metrics_to" {
-		comment = "Where the collector's own metrics go, once labelled."
+		comment = "Where scraped metrics go, once labelled: the collector's own and its containers'."
 	}
 
 	// ── OTLP from applications ───────────────────────────────────────────
@@ -117,6 +118,58 @@ declare "collect" {
 		forward_to = [loki.relabel.node.receiver]
 	}
 
+	// ── Container metrics ────────────────────────────────────────────────
+	// Every container whose component declares where it serves metrics: its
+	// deploy labels it lab.metrics.port and lab.metrics.path, the port one it
+	// publishes on the node's loopback (platform/lab/README.md,
+	// "Declarations"). Named and placed as its logs are. Discovery offers a
+	// target per port a container exposes; once each is the one address, they
+	// are one target.
+
+	discovery.relabel "metrics" {
+		targets = discovery.docker.containers.targets
+
+		rule {
+			source_labels = ["__meta_docker_container_label_lab_metrics_port"]
+			regex         = ".+"
+			action        = "keep"
+		}
+
+		rule {
+			source_labels = ["__meta_docker_container_label_lab_metrics_port"]
+			target_label  = "__address__"
+			replacement   = "127.0.0.1:$1"
+		}
+
+		rule {
+			source_labels = ["__meta_docker_container_label_lab_metrics_path"]
+			target_label  = "__metrics_path__"
+		}
+
+		rule {
+			source_labels = ["__meta_docker_container_name"]
+			regex         = "/(.*)"
+			target_label  = "service_name"
+		}
+
+		rule {
+			action      = "labelmap"
+			regex       = "__meta_docker_container_label_(lab_.+)"
+			replacement = "$1"
+		}
+
+		rule {
+			action = "labeldrop"
+			regex  = "lab_metrics_.+|lab_logs"
+		}
+	}
+
+	prometheus.scrape "containers" {
+		targets         = discovery.relabel.metrics.output
+		scrape_interval = "30s"
+		forward_to      = [prometheus.relabel.node.receiver]
+	}
+
 	// ── Host-process logs, as files ──────────────────────────────────────
 	// The files the node's own processes log to, as whatever runs them
 	// declares them in ${LAB_ROOT}/.logs: an agent deploy, for its agents, and
@@ -194,16 +247,21 @@ declare "collect" {
 	prometheus.scrape "alloy" {
 		targets         = prometheus.exporter.self.alloy.targets
 		scrape_interval = "30s"
-		forward_to      = [prometheus.relabel.node.receiver]
+		forward_to      = [prometheus.relabel.alloy.receiver]
 	}
 
-	prometheus.relabel "node" {
-		forward_to = argument.metrics_to.value
+	prometheus.relabel "alloy" {
+		forward_to = [prometheus.relabel.node.receiver]
 
 		rule {
 			target_label = "service_name"
 			replacement  = "alloy"
 		}
+	}
+
+	// Every metric the node scrapes, labelled with the node that scraped it.
+	prometheus.relabel "node" {
+		forward_to = argument.metrics_to.value
 
 		rule {
 			target_label = "host_name"

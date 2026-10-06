@@ -550,7 +550,8 @@ The first sets, each a starting point rather than a closed argument:
 | Today's workflow | A component's `workflow` | |
 | --- | --- | --- |
 | `docker`, `dotnet-service` | as it is | a component per compose service; `dotnet-service` builds its image first |
-| `agents`, `ollama` | as it is | ollama also pulls its models |
+| `agents` | as it is | Ollama's servers too, once their models are components of their own (below) |
+| `ollama` | the models' | a model is a component, served by one or more Ollama agents |
 | `forgejo-runners` | as it is | declarative, so the agent can bootstrap a new node's runner |
 | `obsidian` | as it is | a component per vault |
 | `restic` | as it is | where backups go: retention, verification, the offsite copy |
@@ -629,6 +630,46 @@ it holds; the agent (#6) plans the night from all of them:
   so nothing declares a schedule until something needs another cadence.
   Disruption stays inside the night, and the plan says how long each host
   will be down.
+
+**Decided: a model is a component, served by Ollama agents.** An
+Ollama server is an agent like any other (`agents`), and what it serves
+is declared beside it, a component per model, linked to the servers it
+is pulled on as an agent is to its nodes. The `ollama` workflow operates
+the models: it waits for each server, pulls what it serves and points its
+role names at it. A role differs by server on purpose — the Studio's
+`interactive` is a 30B model, the mini's an 8B one, and the endpoint
+degrades from one to the other — so the link carries the roles a model
+answers to on each server:
+
+```yaml
+# ai/ollama/models/component.yaml
+name: qwen3-8b
+kind: model
+workflow: ollama
+model: qwen3:8b
+servedBy:
+  mini: [background, interactive]
+  studio: []                        # pulled there; the Studio's roles are the 30Bs'
+---
+name: embedding
+kind: model
+workflow: ollama
+model: embeddinggemma:300m
+servedBy: { mini: [embedding], studio: [embedding] }
+```
+
+- **`identical` goes.** A role one model serves on several servers is the
+  same model by construction; a role two models serve on two servers is a
+  different model on each, as `interactive` is meant to be.
+- **The roles' rules are the catalog's**, checked as a model is added: a
+  server answers each role once, and every role a hybrid answers, a
+  server answers too, so nothing is "not found" while the Studio sleeps.
+- **The store and its drive are the server's.** `OLLAMA_MODELS` is its
+  agent's, and the mini's `/Volumes/Data2` its `requiresVolumes`.
+
+**Undecided:** whether `servedBy` names agent components or nodes — the
+same until one node runs two Ollamas — and whether the models deploy
+with their server, after its restart, or on a trigger of their own.
 
 **Decided: per-node differences are facts of the node, not copies of
 the component.** Tested on the hardest case, Alloy — one package on three

@@ -41,6 +41,7 @@ fallback when the front door is down.
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
 | `:4317`, `:4318` | Alloy — OTLP gRPC, HTTP, from applications (**loopback only**; containers use `host.docker.internal`) | none | `monitoring/alloy` |
 | `:12345` | Alloy — UI and API (**loopback only**)   | none                                                       | `monitoring/alloy`          |
+| `:12346` | Alloy gateway — UI, API and metrics (**loopback only**) | none | `grafana` |
 | `:4417` | Alloy gateway — OTLP gRPC from every node's forwarder | none — LAN and tailnet, like the mini's other ports | `grafana` |
 | `:4418` | Alloy gateway — Loki push from every node's forwarder | none — LAN and tailnet, like the mini's other ports | `grafana` |
 | `:4419` | Alloy gateway — Prometheus remote write from every node's forwarder | none — LAN and tailnet, like the mini's other ports | `grafana` |

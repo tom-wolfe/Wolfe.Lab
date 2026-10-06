@@ -24,9 +24,7 @@ storage:
   maximum-number-of-results: 100000
   maximum-number-of-events: 100000
 
-# Prometheus metrics at /metrics. Off — nothing scrapes them (Beszel is
-# the metrics tool here); turn on if a Prometheus ever appears.
-metrics: false
+metrics: true
 
 alerting:
   pushover:
