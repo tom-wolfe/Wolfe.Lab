@@ -11,6 +11,9 @@ rather than versioned — the lab is continuous, not released.
 - **Ollama's components can declare their agent.** Placed on their one node in `component.yaml`,
   as the other agents are; until they do, `ritten.json` still declares it.
 
+- **Ollama's agents are declared.** The mini's and the Studio's in their `component.yaml`, and
+  Renovate bumps an agent's package where a component declares it.
+
 - **`lab rotate`.** The agents and ollama workflows rotate their agents' logs with logrotate,
   past 10 MB, keeping five compressed generations.
 
