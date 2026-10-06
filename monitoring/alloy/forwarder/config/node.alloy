@@ -170,6 +170,25 @@ declare "collect" {
 		forward_to      = [prometheus.relabel.node.receiver]
 	}
 
+	// ── Declared metrics ─────────────────────────────────────────────────
+	// The endpoints a deploy declares in ${LAB_ROOT}/.metrics, a file per
+	// component, as it declares log files in .logs: each target names its
+	// address, its path (__metrics_path__) and where it lives. Several
+	// endpoints of one container, a port of the component's choosing, and a
+	// host process's metrics are all just entries here. Until every component
+	// with metrics has deployed with a CLI that writes them, its container's
+	// labels (above) are read too; never both for one container.
+
+	discovery.file "metrics" {
+		files = [sys.env("LAB_ROOT") + "/.metrics/*.json"]
+	}
+
+	prometheus.scrape "declared" {
+		targets         = discovery.file.metrics.targets
+		scrape_interval = "30s"
+		forward_to      = [prometheus.relabel.node.receiver]
+	}
+
 	// ── Host-process logs, as files ──────────────────────────────────────
 	// The files the node's own processes log to, as whatever runs them
 	// declares them in ${LAB_ROOT}/.logs: an agent deploy, for its agents, and

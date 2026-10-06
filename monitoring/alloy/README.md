@@ -93,11 +93,13 @@ so one config serves every node.
   for what it logged as where it has none. A no-op on a Mac.
 - **Labels every log stream it reads** with the node — `host_name` and
   `lab_role` — once, where they are read, rather than per source.
-- **Scrapes its containers' metrics**: every container whose component
-  declares `metrics:` — which its deploy labels `lab.metrics.port` and
-  `lab.metrics.path`, and publishes on the node's loopback
-  (platform/lab/README.md, "Declarations") — named and placed as its logs
-  are, every 30 seconds.
+- **Scrapes the metrics the lab declares**, every 30 seconds: each
+  endpoint a deploy lists in `${LAB_ROOT}/.metrics`, a file per component
+  naming its address, path and where it lives, as `.logs` does for log
+  files. Until every component with metrics has deployed with a CLI that
+  writes those, a container its deploy labelled `lab.metrics.port` and
+  `lab.metrics.path` is scraped from the labels instead, named and placed
+  as its logs are (platform/lab/README.md, "Declarations").
 - **Reports on itself**: its own metrics, under the same labels with
   `service_name="alloy"` — so a pipeline that is failing shows up in
   Grafana beside what it carries.
