@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Ritten.Git;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Paths;
 
@@ -28,15 +29,13 @@ public sealed partial record DeclarationFiles(IReadOnlyList<DeclarationFile> Fil
     /// The declaration files in the checkout at <paramref name="root"/>, and every one that names
     /// the schema wrongly.
     /// </summary>
-    public static async Task<DeclarationFiles> Find(ICommandRunner commands, IDirectory root, CancellationToken ct = default)
+    public static async Task<DeclarationFiles> Find(IGit git, IDirectory root, CancellationToken ct = default)
     {
-        var listed = await commands.Run(Command.Create("git").WithArguments("ls-files", "-z", "--", "*.yaml", "*.yml")
-            .InDirectory(root.AbsolutePath).QuietOutput().ThrowOnError(), ct);
+        var listed = await git.InRepository(root).TrackedFiles(["*.yaml", "*.yml"], ct);
 
         var files = new List<DeclarationFile>();
         var problems = new List<CatalogError>();
-        // Ritten's runner ends what it captures with a newline, which is no file's name.
-        foreach (var listing in listed.StandardOutput.Split('\0', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal))
+        foreach (var listing in listed.Order(StringComparer.Ordinal))
         {
             var path = RepositoryPath.From(listing);
             // Tracked, but deleted in the working directory: nothing to read, and nothing declared.

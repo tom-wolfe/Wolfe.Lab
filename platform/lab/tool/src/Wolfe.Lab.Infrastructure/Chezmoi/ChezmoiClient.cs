@@ -1,12 +1,11 @@
 using System.Text.Json;
-using Ritten.Engine.FileSystem;
 
 namespace Wolfe.Lab.Infrastructure.Chezmoi;
 
 /// <summary>
 /// Runs the installed Chezmoi CLI.
 /// </summary>
-internal sealed class ChezmoiClient(ICommandRunner commands) : IChezmoi
+internal sealed class ChezmoiClient(ICommandRunner commands, IFileSystem fileSystem) : IChezmoi
 {
     internal const string TokenVariable = "OP_SERVICE_ACCOUNT_TOKEN";
     internal const string StubToken = "render";
@@ -17,8 +16,7 @@ internal sealed class ChezmoiClient(ICommandRunner commands) : IChezmoi
     /// <inheritdoc />
     public async Task<IReadOnlyList<string>> Render(IDirectory source, string profile, IDirectory destination, CancellationToken ct = default)
     {
-        // Only the disk makes a directory of a name no other run has.
-        var scratch = new PhysicalDirectory(Directory.CreateTempSubdirectory("lab-chezmoi-").FullName);
+        var scratch = fileSystem.CreateTempDirectory("lab-chezmoi-");
         try
         {
             var op = scratch.GetFile("op");

@@ -1,5 +1,5 @@
+using Ritten.Docker;
 using Wolfe.Lab.Domain.Telemetry;
-using Wolfe.Lab.Infrastructure.Compose;
 
 namespace Wolfe.Lab.Infrastructure.Telemetry;
 

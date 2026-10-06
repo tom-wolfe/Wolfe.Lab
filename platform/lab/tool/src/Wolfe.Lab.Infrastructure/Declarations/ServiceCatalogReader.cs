@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Ritten.Git;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
@@ -24,8 +25,8 @@ public static class ServiceCatalogReader
     /// <summary>
     /// The catalog the checkout at <paramref name="root"/> declares, or every problem with it.
     /// </summary>
-    public static async Task<Result<ServiceCatalog>> Read(ICommandRunner commands, IDirectory root, CancellationToken ct = default) =>
-        Read(root, await DeclarationFiles.Find(commands, root, ct));
+    public static async Task<Result<ServiceCatalog>> Read(IGit git, IDirectory root, CancellationToken ct = default) =>
+        Read(root, await DeclarationFiles.Find(git, root, ct));
 
     private static Result<ServiceCatalog> Read(IDirectory root, DeclarationFiles files)
     {

@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Infrastructure.Telemetry;
 

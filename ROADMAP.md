@@ -295,7 +295,9 @@ lab's pins.
    cAdvisor on Linux, and a cAdvisor container on the mini, which keeps
    containers after #13. Beszel stays, alerting on nothing (above).
 6. Ritten's traces — before the agent, so it is observable from its
-   first reconcile.
+   first reconcile. Ritten traces each run from 0.21.0, and the lab's CLI
+   exports them, labelled with the component, wherever an OTLP endpoint
+   is set; done once the runners set one.
 
 Grafana is the metrics and alerting half of the lab's UI; the portal
 (#9) is the rest, and links into it rather than rebuilding it.
@@ -1430,30 +1432,13 @@ target it is there to add if a queued deploy ever needs to land sooner.
 
 ### The lab works around gaps in Ritten
 
-The lab goes round Ritten in two ways where Ritten has nothing for the job.
-Each gap is closed in Ritten, released and pinned, and then the workaround
-goes. This waits until #14's component-first migration is working.
+Ritten 0.21.0 closed every gap the lab went round (2026-10-07): the file
+system's times, moves, recursive listings and scratch directories, and
+Docker's and git's missing commands. One remains:
 
-- **The file system abstraction.** `IFile` and `IDirectory` have no
-  last-write time, no directory move, no unique temp directory and no
-  recursive walk that includes hidden entries. So these still use
-  `System.IO`:
-  - `PublishArtifacts.Stamp`, and the program timestamp in `ResolveAgents`;
-  - the staging-to-version rename in `GithubPackageInstaller`, and
-    `StateDirectories`;
-  - the scratch directories in `ChezmoiClient`, `RenderProfiles` and
-    `DrillRestore`.
-- **The native clients.** Some commands run raw through `ICommandRunner`
-  where Ritten's clients have no method for them:
-  - Docker: `compose config --format json` (`ComposeProject.Read`),
-    `container inspect` (`RegisterRunner`), and `exec` (`ReloadCaddy`,
-    `GarageClient`);
-  - Git: `ls-files` (`DeclarationFiles`, `CheckTelemetryNames`), and
-    `diff --quiet`, `tag --list` and `rev-parse --is-shallow-repository`
-    (`ComputeVersion`).
-
-  restic, ollama, chezmoi and the supervisors are the lab's own clients,
-  so they are not part of this.
+- **Deleting a deep directory.** `IDirectory.Delete` cannot remove a path
+  longer than .NET will traverse, and chezmoi's HTTP cache files a download
+  under one, so `ChezmoiClient` still clears its scratch with `rm -rf`.
 
 ### The runners carry labels, not their nodes' names
 
