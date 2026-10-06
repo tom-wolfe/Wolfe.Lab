@@ -96,10 +96,7 @@ so one config serves every node.
 - **Scrapes the metrics the lab declares**, every 30 seconds: each
   endpoint a deploy lists in `${LAB_ROOT}/.metrics`, a file per component
   naming its address, path and where it lives, as `.logs` does for log
-  files. Until every component with metrics has deployed with a CLI that
-  writes those, a container its deploy labelled `lab.metrics.port` and
-  `lab.metrics.path` is scraped from the labels instead, named and placed
-  as its logs are (platform/lab/README.md, "Declarations").
+  files (platform/lab/README.md, "Declarations").
 - **Reports on itself**: its own metrics, under the same labels with
   `service_name="alloy"` — so a pipeline that is failing shows up in
   Grafana beside what it carries.

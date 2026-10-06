@@ -186,12 +186,13 @@ is `monitoring/grafana`, the collectors `monitoring/alloy`.
   a broken front door must not hide the evidence of its own failure
   (the same reason the Beszel agents dial the hub on `:8090`). The
   Tailscale policy lets every node reach that port.
-- **A service declares its own collection, in Docker labels.** Alloy
-  discovers containers through the socket; a compose file that wants
-  its metrics scraped says so on the service (`lab.metrics.port`,
-  `lab.metrics.path`), so no central list of targets exists to drift —
-  the "a service owns everything about itself" shape from #6, before the
-  agent. Logs need no label: every container's are collected.
+- **A component declares its own collection.** Its `metrics` facet
+  (#14) says where it serves them, and its deploy lists them in a
+  targets file on the node the collector reads, so no central list of
+  targets exists to drift — the "a service owns everything about
+  itself" shape from #6, before the agent, and the config plane's poor
+  man's version. Logs need no declaring: every container's are
+  collected, through the Docker socket.
 - **The backend on the mini, on its own disk.** Loki and Tempo as single
   binaries on the filesystem, Prometheus in its own TSDB, all on the
   internal disk; Grafana in front, behind caddy, tailnet-only, with its
@@ -284,8 +285,9 @@ lab's pins.
    forwarder like every node (#14).
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich
-   each need theirs enabled — then declared for scraping. *Waits on
-   #14's pilot, which it ships on.*
+   each need theirs enabled — then declared for scraping. *Shipped
+   2026-10-06*, with Grafana's stack, which scrapes itself no longer,
+   as targets files rather than labels.
 5. Host metrics, cAdvisor on the Macs, and the alert rules that replace
    Beszel's; then Beszel removed.
 6. Ritten's traces — before the agent, so it is observable from its

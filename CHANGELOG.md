@@ -30,6 +30,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The collector reads metrics from targets files alone.** No container's labels are scraped any
+  longer; every component's endpoints are in `${LAB_ROOT}/.metrics`.
+
 - **Agents are the catalog's alone, Ollama's too.** An agents or ollama component must declare its
   agent, and `${PACKAGE}`, `${LAB_ROOT}` and `${LAB_DATA}` leave agent settings for `{package}`.
 
