@@ -34,13 +34,25 @@
   customManagers: [
     {
       // What the lab installs from GitHub releases (platform/lab/README.md,
-      // "Packages and tools"): an agent's `package` in its ritten.json, and
-      // every tool in .config/lab-tools.json. Only the version is pinned —
+      // "Packages and tools"): a package in a ritten.json, and every tool in
+      // .config/lab-tools.json. Only the version is pinned —
       // the checksum is read from the release — so this is all that moves.
       customType: "regex",
       managerFilePatterns: ["/(^|/)ritten\\.json$/", "/^\\.config/lab-tools\\.json$/"],
       matchStrings: [
         "\"github\":\\s*\"(?<depName>[^\"]+)\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\"",
+      ],
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v?(?<version>.+)$",
+    },
+    {
+      // The same, as a component declares its agent's package (platform/lab/README.md,
+      // "Declarations"): `package:` in block style, its `github:` then its `version:`. Any
+      // YAML, since a declaration's file name decides nothing; nothing else is written so.
+      customType: "regex",
+      managerFilePatterns: ["/\\.ya?ml$/"],
+      matchStrings: [
+        "package:\\s*\\n\\s+github:\\s*\"?(?<depName>[^\"\\s]+)\"?\\s*\\n\\s+version:\\s*\"?(?<currentValue>[^\"\\s]+)\"?",
       ],
       datasourceTemplate: "github-releases",
       extractVersionTemplate: "^v?(?<version>.+)$",

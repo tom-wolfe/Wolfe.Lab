@@ -9,27 +9,16 @@
       "embeddinggemma:300m"
     ],
     "roles": {
-      "background": { "model": "qwen3:30b-a3b" },
-      "interactive": { "model": "qwen3:30b-a3b-instruct-2507-q4_K_M" },
-      "embedding": { "model": "embeddinggemma:300m", "identical": true }
-    }
-  },
-  "agents": {
-    "ollama": {
-      "package": {
-        "github": "ollama/ollama",
-        "version": "0.35.1",
-        "asset": "ollama-darwin.tgz",
-        "checksums": "sha256sum.txt"
+      "background": {
+        "model": "qwen3:30b-a3b"
       },
-      "program": "${PACKAGE}/ollama",
-      "arguments": ["serve"],
-      "environment": {
-        "OLLAMA_HOST": "0.0.0.0:11434",
-        "OLLAMA_MODELS": "/Users/tomwolfe/.ollama/models",
-        "OLLAMA_NUM_PARALLEL": "1"
+      "interactive": {
+        "model": "qwen3:30b-a3b-instruct-2507-q4_K_M"
       },
-      "log": "~/Library/Logs/ollama.log"
+      "embedding": {
+        "model": "embeddinggemma:300m",
+        "identical": true
+      }
     }
   }
 }
