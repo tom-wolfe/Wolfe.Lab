@@ -345,7 +345,7 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("monitoring/alloy/service.yaml", Alloy);
         Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\n");
 
-        (await Errors()).ShouldHaveSingleItem().ShouldContain("declared with its runsOn, agent and program together");
+        (await Errors()).ShouldBe(["monitoring/alloy/forwarder/component.yaml:2: Required properties [\"agent\",\"program\"] are not present"]);
     }
 
     [Fact]
@@ -403,11 +403,11 @@ public class ServiceCatalogReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task Read_LeavesAnOllamaComponentThatDeclaresNoAgentToItsRittenJson()
+    public async Task Read_RefusesAnOllamaComponentThatDeclaresNoAgent()
     {
         Declare("ai/ollama/service.yaml", Ollama);
         Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\n");
 
-        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldNotBeOfType<AgentComponent>();
+        (await Errors()).ShouldBe(["ai/ollama/mini/component.yaml:2: Required properties [\"runsOn\",\"agent\",\"program\"] are not present"]);
     }
 }

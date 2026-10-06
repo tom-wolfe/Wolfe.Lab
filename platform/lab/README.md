@@ -130,16 +130,18 @@ The lab installs what it runs, from GitHub releases, at versions the
 repository pins — rather than whatever a node's Homebrew last upgraded
 to. One installer, two kinds of declaration:
 
-- **An agent's `package`**, in its `ritten.json`: the release its program
-  comes from, on that node. The deploy installs it before resolving the
-  agent, and `${PACKAGE}` names its directory:
+- **An agent's `package`**, in its component's declaration: the release
+  its program comes from, its asset named for each node by `{platform}`.
+  The deploy installs it before resolving the agent, and `{package}` names
+  its directory:
 
-  ```json
-  "alloy": {
-    "package": { "github": "grafana/alloy", "version": "1.20.1",
-                 "asset": "alloy-darwin-arm64.zip", "checksums": "SHA256SUMS" },
-    "program": "${PACKAGE}/alloy-darwin-arm64"
-  }
+  ```yaml
+  package:
+    github: grafana/alloy
+    version: 1.20.1
+    asset: "alloy-{platform}.zip"
+    checksums: SHA256SUMS
+  program: "{package}/alloy-{platform}"
   ```
 
 - **A tool**, in `.config/lab-tools.json`: a program jobs run by name —
@@ -182,10 +184,9 @@ on a node, as `LAB_ROOT` and `LAB_DATA`, looked up by the node's name
 laptop is no node, and has none of the three. An agent deploy still
 refuses a node whose declaration and environment disagree, which is
 only possible between a change to `nodes.yaml` and chezmoi applying it.
-A `ritten.json` path names the roots —
-`${LAB_ROOT}` and `${LAB_DATA}` are expanded in artifact outputs and in an
-agent's program, arguments, variables, working directory and log, and
-nothing else is, so every other value reaches its process as written.
+A `ritten.json` artifact output names the roots as `${LAB_ROOT}` and
+`${LAB_DATA}`, and nothing else in one is expanded; a declaration names
+them as `{lab.root}` and `{lab.data}`.
 
 ### Declarations
 
@@ -328,11 +329,10 @@ logrotate's own debug run, from the run's scratch.
 
 `runsOn`, `agent` and `program` are required of every agents component;
 its `ritten.json` declares only its `artifacts`. An `ollama` component
-declares its agent the same way, placed on its one node (`runsOn: [mini]`),
-while its models and roles stay in its `ritten.json`; until both of
-Ollama's components declare theirs, one that declares none still takes it
-from there. Its deploy holds `models.store` to the agent's
-`OLLAMA_MODELS`, wherever the agent is declared.
+declares its agent the same way, required of it too, placed on its one
+node (`runsOn: [mini]`), while its models and roles stay in its
+`ritten.json`. Its deploy holds `models.store` to the agent's
+`OLLAMA_MODELS`.
 
 ## Layout
 

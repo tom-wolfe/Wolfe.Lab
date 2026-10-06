@@ -1,13 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.Ollama.Models;
 using Wolfe.Lab.Application.Workflows.Ollama.Steps;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Jobs;
 
 /// <summary>
-/// Proves the component's roles are sound before any node points a name at a model.
+/// Proves the component's agent and roles are sound before any node runs the one or points a name at a model.
 /// </summary>
 internal sealed class CheckJob : LabJob<OllamaOptions>
 {
@@ -15,7 +17,14 @@ internal sealed class CheckJob : LabJob<OllamaOptions>
 
     public override string Description => "Checks the component's model roles, alone and against the service's other servers.";
 
-    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<ResolveServiceCatalog>(), Step.FromType<CheckRoles>()];
+    public override IReadOnlyList<Step> Steps { get; } =
+    [
+        Step.FromType<GatePathFilter>(),
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
+        Step.FromType<CheckAgentDeclarations>(),
+        Step.FromType<CheckRoles>()
+    ];
 
     public override JobKind Kind => JobKind.Check;
 

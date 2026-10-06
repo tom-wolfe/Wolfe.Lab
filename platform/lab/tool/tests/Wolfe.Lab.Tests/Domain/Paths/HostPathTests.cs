@@ -35,15 +35,14 @@ public class HostPathTests
         Should.Throw<ValueObjectValidationException>(() => HostPath.From(text));
     }
 
-    [Theory]
-    [InlineData("${LAB_ROOT}/alloy/config.alloy")]
-    [InlineData("${LAB_DATA}/alloy")]
-    [InlineData("${PACKAGE}/alloy-darwin-arm64")]
-    public void From_TakesAPathFromOneOfTheLabsRoots(string path) =>
-        HostPath.From(path).Value.ShouldBe(path);
+    [Fact]
+    public void From_TakesAPathInAnAgentsPackage() =>
+        HostPath.From("{package}/alloy-darwin-arm64").Value.ShouldBe("{package}/alloy-darwin-arm64");
 
     [Theory]
     [InlineData("${HOME}/elsewhere")]
+    [InlineData("${LAB_ROOT}/alloy/config.alloy")]
+    [InlineData("${PACKAGE}/alloy-darwin-arm64")]
     [InlineData("relative/path")]
     public void From_StillRefusesAPathThatIsNotAbsolute(string path) =>
         Should.Throw<ValueObjectValidationException>(() => HostPath.From(path));
