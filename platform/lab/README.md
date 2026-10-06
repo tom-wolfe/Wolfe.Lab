@@ -262,14 +262,21 @@ logs: otlp                   # sends its own; its output is left alone
 metrics: { port: 8081 }      # the container's port; path /metrics unless given
 ```
 
+`metrics` is one endpoint or a list of them, and an endpoint may say
+where on the host it is `published` when its container port is taken
+there already (`{ port: 3000, published: 13000 }`).
+
 The check, and the deploy again, hold the directory's `compose`
 components to its stack exactly: every service is one component's, and
-every component names a service the stack has. The deploy writes each
-component's facets into the `compose.override.yaml` as the labels the
-collector reads — `lab.logs`, `lab.metrics.port` and `lab.metrics.path`
-— and the collector, a host process, reaches a container only through a
-published port: one the file publishes already is scraped where it is,
-and any other is published on `127.0.0.1` alone. Refused too: metrics on
+every component names a service the stack has. The deploy writes the
+`logs` facet into the `compose.override.yaml` as the `lab.logs` label the
+collector reads, and the component's metrics endpoints into
+`${LAB_ROOT}/.metrics/<component>.json`, the targets file the collector
+scrapes (its own file, so a component that stops declaring them is
+dropped). The collector, a host process, reaches a container only through
+a published port: one the file publishes already on `127.0.0.1` is
+scraped where it is, and any other is published on `127.0.0.1` alone.
+Refused too: metrics on
 a service in another's network (it has no ports of its own), and logs
 declared both on the component and by a `lab.logs` label in the compose
 file, which is still read until each moves; a compose file may never set

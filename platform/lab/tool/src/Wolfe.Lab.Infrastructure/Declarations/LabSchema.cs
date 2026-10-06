@@ -56,7 +56,7 @@ public static class LabSchema
     /// <summary>
     /// What is wrong with a document's shape, each problem with the line it is on, or nothing.
     /// </summary>
-    public static IReadOnlyList<(int Line, Error Problem)> Judge(YamlDocuments.Document document)
+    public static IReadOnlyList<(int Line, Error Problem)> Validate(YamlDocuments.Document document)
     {
         var element = JsonSerializer.SerializeToElement(document.Root);
         var results = Schema.Evaluate(element, new EvaluationOptions { OutputFormat = OutputFormat.List });
@@ -70,11 +70,18 @@ public static class LabSchema
         var matched = (results.Details ?? [])
             .Where(detail => detail.IsValid)
             .Select(detail => detail.EvaluationPath.ToString())
-            .Select(path => path.LastIndexOf("/anyOf/", StringComparison.Ordinal) is var at and >= 0 && int.TryParse(path[(at + "/anyOf/".Length)..], out _)
-                ? path[..(at + "/anyOf/".Length)]
-                : null)
+            .Where(path => int.TryParse(path[(path.LastIndexOf('/') + 1)..], out _))
+            .Select(AnyOf)
             .OfType<string>()
-            .ToList();
+            .ToHashSet(StringComparer.Ordinal);
+
+        // When no shape takes it, the shape of the value's own type says what is wrong with it;
+        // the others' only complaint is the type — one endpoint is not a list of them.
+        var explained = (results.Details ?? [])
+            .Where(detail => detail.Errors is { Count: > 0 } errors && errors.Keys.Any(keyword => keyword != "type"))
+            .Select(detail => AnyOf(detail.EvaluationPath.ToString()))
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
 
         var problems = new List<(int, Error)>();
         foreach (var detail in results.Details ?? [])
@@ -91,7 +98,8 @@ public static class LabSchema
 
             foreach (var (keyword, message) in errors)
             {
-                if (message.StartsWith("Some ", StringComparison.Ordinal) || keyword is "allOf" or "oneOf" or "anyOf" or "if" or "then" or "else")
+                if (message.StartsWith("Some ", StringComparison.Ordinal) || keyword is "allOf" or "oneOf" or "anyOf" or "if" or "then" or "else"
+                    || keyword == "type" && AnyOf(path) is { } anyOf && explained.Contains(anyOf))
                 {
                     continue;
                 }
@@ -107,6 +115,10 @@ public static class LabSchema
     /// A problem in the words of the field it is in: the schema's own message, but for the two
     /// that say only that a value failed — a pattern, and a key nothing declares.
     /// </summary>
+    // The anyOf a path is in — up to and including …/anyOf/ — or null when it is in none.
+    private static string? AnyOf(string path) =>
+        path.LastIndexOf("/anyOf/", StringComparison.Ordinal) is var at and >= 0 ? path[..(at + "/anyOf/".Length)] : null;
+
     private static Error Describe(string pointer, string keyword, string message, JsonNode? root)
     {
         var segments = pointer.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -167,6 +179,7 @@ public static class LabSchema
         };
         configuration.Generators.Add(ClosedSetSchemas.Instance);
         configuration.Generators.Add(DeploymentTargetDocument.Schemas.Instance);
+        configuration.Generators.Add(MetricsDocuments.Schemas.Instance);
         var service = new JsonSchemaBuilder().Id($"{Id}/service").FromType<ServiceDocument>(configuration);
         var node = new JsonSchemaBuilder().Id($"{Id}/node").FromType<NodeDocument>(configuration);
         var kinds = ComponentKind.All.Select(kind => kind.Value).ToList();

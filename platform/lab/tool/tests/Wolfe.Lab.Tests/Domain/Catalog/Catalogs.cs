@@ -27,7 +27,7 @@ internal static class Catalogs
         string[]? DependsOn = null,
         string? ComposeService = null,
         LogTransport? Logs = null,
-        MetricsEndpoint? Metrics = null,
+        IReadOnlyList<MetricsEndpoint>? Metrics = null,
         DeploymentTarget? RunsOn = null,
         AgentProcess? Agent = null);
 
@@ -91,7 +91,7 @@ internal static class Catalogs
     /// <summary>
     /// A component <paramref name="name"/> that runs as the compose service <paramref name="service"/>.
     /// </summary>
-    public static Declaration Compose(string name, string service, ComponentKind? kind = null, LogTransport? logs = null, MetricsEndpoint? metrics = null) =>
+    public static Declaration Compose(string name, string service, ComponentKind? kind = null, LogTransport? logs = null, params MetricsEndpoint[] metrics) =>
         new(name, kind ?? ComponentKind.App, WorkflowName.Docker, ComposeService: service, Logs: logs, Metrics: metrics);
 
     /// <summary>
@@ -135,7 +135,7 @@ internal static class Catalogs
         }
 
         component.Logs = declaration.Logs;
-        component.Metrics = declaration.Metrics;
+        component.Metrics = declaration.Metrics ?? [];
         return component;
     }
 

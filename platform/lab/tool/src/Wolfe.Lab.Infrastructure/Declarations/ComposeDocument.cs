@@ -16,6 +16,6 @@ internal sealed record ComposeDocument : ComponentDocument
     [Description("How the component's logs reach the lab, when not as its output: otlp, when it sends its own.")]
     public LogTransport? Logs { get; init; }
 
-    [Description("Where the component serves Prometheus metrics, in its own container.")]
-    public MetricsDocument? Metrics { get; init; }
+    [Description("Where the component serves Prometheus metrics, in its own container: an endpoint, or a list when it serves more than one.")]
+    public MetricsDocuments? Metrics { get; init; }
 }

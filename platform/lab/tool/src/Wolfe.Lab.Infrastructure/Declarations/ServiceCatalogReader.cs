@@ -45,7 +45,7 @@ public static class ServiceCatalogReader
             {
                 var document = yaml.Documents[index];
                 var source = new DocumentSource(file.Path, index, yaml.Documents.Count);
-                if (LabSchema.Judge(document) is { Count: > 0 } shape)
+                if (LabSchema.Validate(document) is { Count: > 0 } shape)
                 {
                     problems.AddRange(shape.Select(problem => CatalogError.In(source, problem.Problem, problem.Line)));
                 }
@@ -255,10 +255,20 @@ public static class ServiceCatalogReader
             errors.Add(new FieldError("service", ComponentErrors.NotAComposeService(compose.Service)));
         }
 
-        MetricsEndpoint? metrics = null;
-        if (compose.Metrics is { } written && !Endpoint(written).TryGetValue(out metrics, out var refused))
+        var metrics = new List<MetricsEndpoint>();
+        var endpoints = compose.Metrics?.Endpoints ?? [];
+        foreach (var (written, index) in endpoints.Select((written, index) => (written, index)))
         {
-            errors.AddRange(refused.Select(error => new FieldError("metrics.path", error)));
+            // As it is written: one endpoint is the facet itself, several each have an index.
+            var at = endpoints.Count > 1 ? $"metrics.{index}" : "metrics";
+            if (Endpoint(written).TryGetValue(out var endpoint, out var refused))
+            {
+                metrics.Add(endpoint);
+            }
+            else
+            {
+                errors.AddRange(refused.Select(error => new FieldError($"{at}.path", error)));
+            }
         }
 
         if (errors.Count > 0)
@@ -372,14 +382,15 @@ public static class ServiceCatalogReader
     // The schema holds the port to a port already; the path is the domain's to judge.
     private static Result<MetricsEndpoint> Endpoint(MetricsDocument document)
     {
+        var published = document.Published is { } port ? Port.From(port) : (Port?)null;
         if (document.Path is not { } written)
         {
-            return new MetricsEndpoint(Port.From(document.Port), HttpPath.Metrics);
+            return new MetricsEndpoint(Port.From(document.Port), HttpPath.Metrics) { Published = published };
         }
 
         var path = HttpPath.TryFrom(written);
         return path.IsSuccess
-            ? new MetricsEndpoint(Port.From(document.Port), path.ValueObject)
+            ? new MetricsEndpoint(Port.From(document.Port), path.ValueObject) { Published = published }
             : NetworkErrors.NotAPath(written);
     }
 }

@@ -172,9 +172,9 @@ public class ServiceCatalogReaderTests : IDisposable
         var server = components.Single(component => component.Name.Value == "server").ShouldBeOfType<ComposeComponent>();
         server.ComposeService.ShouldBe(ComposeServiceName.From("immich-server"));
         server.Logs.ShouldBe(LogTransport.Otlp);
-        server.Metrics.ShouldBe(new MetricsEndpoint(Port.From(8081), HttpPath.Metrics));
+        server.Metrics.ShouldBe([new MetricsEndpoint(Port.From(8081), HttpPath.Metrics)]);
         components.Single(component => component.Name.Value == "postgres").ShouldBeOfType<ComposeComponent>()
-            .Metrics.ShouldBe(new MetricsEndpoint(Port.From(9187), HttpPath.From("/stats")));
+            .Metrics.ShouldBe([new MetricsEndpoint(Port.From(9187), HttpPath.From("/stats"))]);
         var database = components.Single(component => component.Name.Value == "database");
         database.GetType().ShouldBe(typeof(Component));
         database.Kind.ShouldBe(ComponentKind.Database);
@@ -409,5 +409,28 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\n");
 
         (await Errors()).ShouldBe(["ai/ollama/mini/component.yaml:2: Required properties [\"runsOn\",\"agent\",\"program\"] are not present"]);
+    }
+
+    [Fact]
+    public async Task Read_TakesSeveralMetricsEndpoints_AndThePortsTheyArePublishedOn()
+    {
+        Declare("personal/immich/service.yaml", Immich);
+        Declare("personal/immich/compose/component.yaml", """
+            name: server
+            kind: app
+            workflow: docker
+            service: immich-server
+            metrics:
+              - { port: 8081 }
+              - { port: 8082, path: /stats, published: 18082 }
+
+            """);
+
+        var server = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<ComposeComponent>();
+
+        server.Metrics.ShouldBe([
+            new MetricsEndpoint(Port.From(8081), HttpPath.Metrics),
+            new MetricsEndpoint(Port.From(8082), HttpPath.From("/stats")) { Published = Port.From(18082) }
+        ]);
     }
 }

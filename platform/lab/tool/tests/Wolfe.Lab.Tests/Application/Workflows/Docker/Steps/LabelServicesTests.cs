@@ -4,6 +4,7 @@ using Wolfe.Lab.Application.Workflows.Docker.Steps;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Network;
+using Wolfe.Lab.Infrastructure.Compose;
 using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Tests.Domain.Catalog;
 using YamlDotNet.Serialization;
@@ -40,7 +41,7 @@ public class LabelServicesTests : IDisposable
         Catalogs.Compose("proton", "bridge", ComponentKind.Backend, metrics: new MetricsEndpoint(Port.From(9090), HttpPath.From("/stats")))
     ];
 
-    private Task<StepResult> Run(bool dryRun = false, Catalogs.Declaration[]? components = null) =>
+    private Task<StepResult<ComposeBindings>> Run(bool dryRun = false, Catalogs.Declaration[]? components = null) =>
         new LabelServices(_commands, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), Catalogs.Unit("personal/mail/watcher", components ?? Plain),
                 ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
@@ -50,7 +51,7 @@ public class LabelServicesTests : IDisposable
     [Fact]
     public async Task Run_LabelsEachServiceWithWhereItsOwnComponentLives()
     {
-        (await Run()).IsFailure.ShouldBeFalse();
+        (await Run()).Outcome.IsFailure.ShouldBeFalse();
 
         var text = await File.ReadAllTextAsync(Override, TestContext.Current.CancellationToken);
         text.ShouldNotContain("&"); // written out per service, not as anchors and aliases
@@ -85,16 +86,17 @@ public class LabelServicesTests : IDisposable
     [Fact]
     public async Task Run_WritesWhatEachComponentAsksOfItsService()
     {
-        (await Run(components: Declaring)).IsFailure.ShouldBeFalse();
+        var bindings = (await Run(components: Declaring)).Value.ShouldNotBeNull();
 
         var written = new DeserializerBuilder().IgnoreUnmatchedProperties().Build()
             .Deserialize<Dictionary<string, Dictionary<string, Written>>>(await File.ReadAllTextAsync(Override, TestContext.Current.CancellationToken))["services"];
         written["watcher"].Labels["lab.logs"].ShouldBe("otlp");
         written["watcher"].Ports.ShouldBeNull();
-        written["bridge"].Labels["lab.metrics.port"].ShouldBe("9090");
-        written["bridge"].Labels["lab.metrics.path"].ShouldBe("/stats");
+        // Metrics are the collector's to find in the deploy's target file, not in labels.
+        written["bridge"].Labels.Keys.ShouldNotContain("lab.metrics.port");
         written["bridge"].Labels["lab.area"].ShouldBe("personal");
         written["bridge"].Ports.ShouldBe(["127.0.0.1:9090:9090"]);
+        bindings.Bindings.Single(binding => binding.Service.Name == "bridge").Metrics.ShouldBe([new MetricsTarget(Port.From(9090), HttpPath.From("/stats"))]);
     }
 
     [Fact]
@@ -102,14 +104,14 @@ public class LabelServicesTests : IDisposable
     {
         var result = await Run(components: [Catalogs.Compose("watcher", "watcher")]);
 
-        result.IsFailure.ShouldBeTrue();
+        result.Outcome.IsFailure.ShouldBeTrue();
         File.Exists(Override).ShouldBeFalse();
     }
 
     [Fact]
     public async Task Run_WritesNothingWhenRehearsing()
     {
-        (await Run(dryRun: true)).IsFailure.ShouldBeFalse();
+        (await Run(dryRun: true)).Outcome.IsFailure.ShouldBeFalse();
 
         File.Exists(Override).ShouldBeFalse();
     }

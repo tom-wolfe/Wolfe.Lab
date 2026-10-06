@@ -17,6 +17,16 @@ public sealed record ComposeService(
 )
 {
     /// <summary>
+    /// The name it gives its container, when it gives one (<c>container_name</c>).
+    /// </summary>
+    public string? ContainerName { get; init; }
+
+    /// <summary>
+    /// What its container is called: its own name, or the service's when it gives none.
+    /// </summary>
+    public string Container => ContainerName ?? Name;
+
+    /// <summary>
     /// The host's loopback port the container's <paramref name="target"/> is published on, if one is.
     /// </summary>
     public int? OnLoopback(int target) =>

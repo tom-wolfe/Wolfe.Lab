@@ -86,18 +86,18 @@ internal sealed class DeclareAgentLogs(IOptions<LabDirectories> roots, WorkflowJ
         return earlier;
     }
 
-    private static string? Labelled(LogTarget target, TelemetryAttribute attribute) => target.Labels.GetValueOrDefault(attribute.Label);
+    private static string? Labelled(DiscoveryTarget target, TelemetryAttribute attribute) => target.Labels.GetValueOrDefault(attribute.Label);
 
     /// <summary>
     /// One target per agent that keeps a log: its path, its name and where the component lives,
     /// each attribute spelled as the store's labels are (<see cref="TelemetryAttribute.Label"/>).
     /// </summary>
-    private static IReadOnlyList<LogTarget> Targets(AgentPlan plan, Component component) =>
+    private static IReadOnlyList<DiscoveryTarget> Targets(AgentPlan plan, Component component) =>
     [
         .. plan.Agents
             .Where(agent => agent.Log is not null)
             .OrderBy(agent => agent.Label.Name, StringComparer.Ordinal)
-            .Select(agent => new LogTarget(["localhost"], new Dictionary<string, string>([
+            .Select(agent => new DiscoveryTarget(["localhost"], new Dictionary<string, string>([
                 new KeyValuePair<string, string>(LogTargetFile.PathLabel, agent.Log?.Value ?? ""),
                 new KeyValuePair<string, string>(TelemetryAttribute.ServiceName.Label, agent.Label.Name),
                 .. component.Attributes.Select(attribute => KeyValuePair.Create(attribute.Key.Label, attribute.Value))

@@ -17,7 +17,7 @@ internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSys
 {
     internal const string OverrideFile = "compose.override.yaml";
 
-    public async Task<StepResult> Run(Release release, DeploymentUnit unit, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
+    public async Task<StepResult<ComposeBindings>> Run(Release release, DeploymentUnit unit, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
     {
         if (!(await ComposeProject.Read(commands, fileSystem.ProjectRoot, composeEnvironment.Variables, ct)).TryGetValue(out var project, out var unreadable))
         {
@@ -33,12 +33,12 @@ internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSys
         if (job.DryRun)
         {
             log.Skipped($"Would label {Labelled(bindings)} of {release.Name}{Asked(bindings)}.");
-            return StepResult.Successful;
+            return bindings;
         }
 
         await release.Directory.GetFile(OverrideFile).WriteAllText(content, cancellationToken: ct);
         log.Status($"Labelled {Labelled(bindings)} of {release.Name}{Asked(bindings)}.");
-        return StepResult.Successful;
+        return bindings;
     }
 
     /// <summary>
@@ -91,8 +91,7 @@ internal sealed class LabelServices(ICommandRunner commands, IFileSystem fileSys
     {
         var logs = bindings.Bindings.Where(binding => binding.Labels.ContainsKey(ContainerLabel.Logs)).Select(binding => binding.Component.Name.Value).ToList();
         var metrics = bindings.Bindings
-            .Where(binding => binding.Labels.ContainsKey(ContainerLabel.MetricsPort))
-            .Select(binding => $"{binding.Component.Name} on loopback's {binding.Labels[ContainerLabel.MetricsPort]}, at {binding.Labels[ContainerLabel.MetricsPath]}")
+            .SelectMany(binding => binding.Metrics.Select(target => $"{binding.Component.Name} on loopback's {target.Port}, at {target.Path}"))
             .ToList();
         return (logs.Count > 0 ? $"; logs over OTLP from {string.Join(", ", logs)}" : "")
                + (metrics.Count > 0 ? $"; metrics from {string.Join(", ", metrics)}" : "");
