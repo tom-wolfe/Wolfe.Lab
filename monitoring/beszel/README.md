@@ -3,7 +3,7 @@
 The lab's friendly view of its machines: CPU, memory, disk, network,
 temperature and containers, with history, in a UI and a phone app that
 self-hosted Grafana does not match. It alerts on nothing — Grafana does
-(ROADMAP.md #11, "Beszel stays"). [Beszel](https://beszel.dev) is two
+(monitoring/README.md, "Alerting, and who watches Grafana"). [Beszel](https://beszel.dev) is two
 pieces — a **hub** (the dashboard, a container in this service) and an
 **agent** (the thing that actually reads the metrics, a native process on
 each monitored machine).

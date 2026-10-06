@@ -1,6 +1,6 @@
 # Grafana
 
-The lab's telemetry backend (ROADMAP.md #11): **Loki** for logs, **Tempo**
+The lab's telemetry backend (monitoring/README.md): **Loki** for logs, **Tempo**
 for traces, **Prometheus** for metrics, and **Grafana** in front, at
 `grafana.twolfe.dev` — on the tailnet, like every name under the wildcard —
 with the **Alloy gateway** that writes to them (monitoring/alloy/README.md).
