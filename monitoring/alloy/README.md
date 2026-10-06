@@ -93,6 +93,13 @@ so one config serves every node.
   for what it logged as where it has none. A no-op on a Mac.
 - **Labels every log stream it reads** with the node — `host_name` and
   `lab_role` — once, where they are read, rather than per source.
+- **Scrapes the metrics the lab declares**, every 30 seconds: each
+  endpoint a deploy lists in `${LAB_ROOT}/.metrics`, a file per component
+  naming its address, path and where it lives, as `.logs` does for log
+  files. Until every component with metrics has deployed with a CLI that
+  writes those, a container its deploy labelled `lab.metrics.port` and
+  `lab.metrics.path` is scraped from the labels instead, named and placed
+  as its logs are (platform/lab/README.md, "Declarations").
 - **Reports on itself**: its own metrics, under the same labels with
   `service_name="alloy"` — so a pipeline that is failing shows up in
   Grafana beside what it carries.
@@ -109,7 +116,7 @@ so one config serves every node.
   | --- | --- | --- |
   | `:4417` | OTLP gRPC | applications' telemetry |
   | `:4418` | Loki push | container, file and journal logs |
-  | `:4419` | Prometheus remote write | its own metrics |
+  | `:4419` | Prometheus remote write | its own metrics and its containers' |
 
   Logs keep the time they were read, not the time they arrived, so a
   node catching up after an outage lands where it happened.
@@ -133,5 +140,5 @@ The gateway, on the mini:
 
 ```
 docker logs alloy-gateway --tail 50
-docker exec alloy-gateway curl -s 127.0.0.1:12345/-/ready
+curl -s 127.0.0.1:12346/-/ready          # the gateway's UI and metrics, published on the mini's loopback
 ```

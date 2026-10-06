@@ -34,10 +34,21 @@
 	# redirect and drops only the certificate management; a name with no
 	# matching SAN now just fails its handshake until the renewal runs.
 	auto_https disable_certs
+
+	# The servers' own request metrics — counts, durations, sizes — served by
+	# the listener below.
+	metrics
 }
 
 *.twolfe.dev {
 	tls /certs/_.twolfe.dev.crt /certs/_.twolfe.dev.key
+
+		# Plenty of services publish metrics unauthenticated, so stop them being
+	# accessed from outside.
+	@metrics path /metrics /metrics/*
+	handle @metrics {
+		respond 404
+	}
 
 	import ../caddy-routes/*.caddyfile
 
@@ -46,4 +57,12 @@
 	handle {
 		respond "no such service" 404
 	}
+}
+
+# Caddy's own metrics, for the mini's collector alone: a listener of their
+# own rather than the admin API, which would serve them too but also
+# rewrites the configuration. The deploy publishes it on the mini's
+# loopback alone (component.yaml).
+http://:9180 {
+	metrics
 }

@@ -4,6 +4,8 @@ kind: app
 workflow: docker
 service: server
 description: "Forgejo itself."
+metrics:
+  port: 3000
 ---
 name: tailscale
 kind: network

@@ -18,6 +18,7 @@ services:
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__database__PATH: /data/gitea/forgejo.db
       FORGEJO__indexer__REPO_INDEXER_ENABLED: "true"
+      FORGEJO__metrics__ENABLED: "true"
       FORGEJO__pull-request__DEFAULT_MERGE_STYLE: "squash"
       FORGEJO__repository__ENABLE_PUSH_CREATE_ORG: "true"
       FORGEJO__repository__ENABLE_PUSH_CREATE_USER: "true"

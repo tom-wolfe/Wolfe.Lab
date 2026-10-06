@@ -123,7 +123,8 @@ services:
       - run
       - /etc/alloy/gateway.alloy
       - --storage.path=/var/lib/alloy/data
-      - --server.http.listen-addr=127.0.0.1:12345
+      # Its own metrics, which the collector scrapes.
+      - --server.http.listen-addr=0.0.0.0:12346
       - --disable-reporting
     volumes:
       - ./config/alloy:/etc/alloy:ro

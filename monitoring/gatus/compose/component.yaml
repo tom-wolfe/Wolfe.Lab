@@ -4,3 +4,5 @@ kind: app
 workflow: docker
 service: gatus
 description: "Gatus itself."
+metrics:
+  port: 8080

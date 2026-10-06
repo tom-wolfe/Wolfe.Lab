@@ -4,3 +4,5 @@ kind: proxy
 workflow: docker
 service: caddy
 description: "Caddy itself."
+metrics:
+  port: 9180
