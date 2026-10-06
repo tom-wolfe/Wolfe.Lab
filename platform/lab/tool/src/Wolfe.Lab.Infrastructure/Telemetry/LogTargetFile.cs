@@ -8,7 +8,7 @@ namespace Wolfe.Lab.Infrastructure.Telemetry;
 /// <c>${LAB_ROOT}/.logs</c> for its agents, and chezmoi for the runner.
 /// </summary>
 /// <param name="Targets">The files it declares, each with its stream's labels.</param>
-public sealed record LogTargetFile(IReadOnlyList<LogTarget> Targets)
+public sealed record LogTargetFile(IReadOnlyList<DiscoveryTarget> Targets)
 {
     /// <summary>
     /// The label the collector reads a target's file from — its own name, not the lab's.
@@ -22,10 +22,10 @@ public sealed record LogTargetFile(IReadOnlyList<LogTarget> Targets)
     /// </summary>
     public static Result<LogTargetFile> Read(string json)
     {
-        IReadOnlyList<LogTarget>? targets;
+        IReadOnlyList<DiscoveryTarget>? targets;
         try
         {
-            targets = JsonSerializer.Deserialize<List<LogTarget>>(json);
+            targets = JsonSerializer.Deserialize<List<DiscoveryTarget>>(json);
         }
         catch (JsonException)
         {

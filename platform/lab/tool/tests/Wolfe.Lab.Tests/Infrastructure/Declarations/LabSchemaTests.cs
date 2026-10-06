@@ -90,4 +90,13 @@ public class LabSchemaTests
         Judge("kind: service\nname: immich\ndescription: Photos.\nlifecycle: live\nlinks:\n  - { title: Home, type: homepage, url: https://immich.app }\n")
             .ShouldBe(["4: lifecycle: 'live' is not a lifecycle (production, experimental, deprecated).",
                 "6: links.0.type: 'homepage' is not a type of link (app, runbook, docs, dashboard, repository)."]);
+
+    [Fact]
+    public void Judge_SaysWhatIsWrongWithAMetricsEndpoint_NotThatItIsNotAList() =>
+        Judge("name: server\nkind: app\nworkflow: docker\nservice: server\nmetrics: { port: 70000 }\n")
+            .ShouldBe(["5: metrics.port: 70000 should be at most 65535"]);
+
+    [Fact]
+    public void Judge_StillRefusesMetricsThatAreNeitherAnEndpointNorAList() =>
+        Judge("name: server\nkind: app\nworkflow: docker\nservice: server\nmetrics: lots\n").ShouldNotBeEmpty();
 }

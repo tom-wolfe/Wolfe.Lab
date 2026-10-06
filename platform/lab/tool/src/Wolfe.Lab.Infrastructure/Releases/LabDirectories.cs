@@ -87,6 +87,12 @@ public sealed class LabDirectories
     public IDirectory Logs => Root.GetDirectory(".logs");
 
     /// <summary>
+    /// Where a deploy says which metrics endpoints its components serve, for the node's collector
+    /// to scrape (monitoring/alloy): one target file per component, beside the releases.
+    /// </summary>
+    public IDirectory Metrics => Root.GetDirectory(".metrics");
+
+    /// <summary>
     /// Where an agent the catalog declares writes its output, both streams: a file of its
     /// component's, beside the releases, on every node alike.
     /// </summary>

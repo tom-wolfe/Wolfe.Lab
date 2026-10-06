@@ -16,4 +16,11 @@ public sealed record ComposeBinding(
     ComposeService Service,
     IReadOnlyDictionary<ContainerLabel, string> Labels,
     IReadOnlyList<string> Publishes
-);
+)
+{
+    /// <summary>
+    /// Where the node's collector scrapes the component's metrics: each endpoint at its port on
+    /// the node's loopback.
+    /// </summary>
+    public IReadOnlyList<MetricsTarget> Metrics { get; init; } = [];
+}

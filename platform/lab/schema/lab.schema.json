@@ -421,30 +421,75 @@
             "description": "How the component's logs reach the lab, when not as its output: otlp, when it sends its own."
           },
           "metrics": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {
-              "port": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 65535,
-                "description": "The port the service serves its metrics on, in its own container."
-              },
-              "path": {
-                "type": [
-                  "null",
-                  "string"
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "The port the service serves its metrics on, in its own container."
+                  },
+                  "path": {
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "description": "The path it serves them on: /metrics unless it says otherwise."
+                  },
+                  "published": {
+                    "type": [
+                      "null",
+                      "integer"
+                    ],
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "The node's port to publish it on, when another service already holds the container's own number there."
+                  }
+                },
+                "required": [
+                  "port"
                 ],
-                "description": "The path it serves them on: /metrics unless it says otherwise."
+                "additionalProperties": false
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "port": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "description": "The port the service serves its metrics on, in its own container."
+                    },
+                    "path": {
+                      "type": [
+                        "null",
+                        "string"
+                      ],
+                      "description": "The path it serves them on: /metrics unless it says otherwise."
+                    },
+                    "published": {
+                      "type": [
+                        "null",
+                        "integer"
+                      ],
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "description": "The node's port to publish it on, when another service already holds the container's own number there."
+                    }
+                  },
+                  "required": [
+                    "port"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1
               }
-            },
-            "required": [
-              "port"
             ],
-            "additionalProperties": false,
-            "description": "Where the component serves Prometheus metrics, in its own container."
+            "description": "Where the component serves Prometheus metrics, in its own container: an endpoint, or a list when it serves more than one."
           }
         },
         "required": [

@@ -55,7 +55,7 @@ public class LabelServicesComposeTests : IDisposable
                                                                                                      ports: ["2283:2283"]
                                                                                                  """, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(Path.Combine(_project.FullName, LabelServices.OverrideFile),
-            LabelServices.Render(Bound("personal/immich/server", "server", new() { [ContainerLabel.MetricsPort] = "8081" }, ["127.0.0.1:8081:8081"])),
+            LabelServices.Render(Bound("personal/immich/server", "server", new() { [ContainerLabel.Logs] = "otlp" }, ["127.0.0.1:8081:8081"])),
             TestContext.Current.CancellationToken);
 
         var result = await new ProcessCommandRunner().Run(
@@ -64,7 +64,7 @@ public class LabelServicesComposeTests : IDisposable
 
         using var config = JsonDocument.Parse(result.StandardOutput);
         var server = config.RootElement.GetProperty("services").GetProperty("server");
-        server.GetProperty("labels").GetProperty("lab.metrics.port").GetString().ShouldBe("8081");
+        server.GetProperty("labels").GetProperty("lab.logs").GetString().ShouldBe("otlp");
         server.GetProperty("ports").EnumerateArray()
             .Select(port => $"{(port.TryGetProperty("host_ip", out var ip) ? ip.GetString() + ":" : "")}{port.GetProperty("published").GetString()}:{port.GetProperty("target").GetInt32()}")
             .ShouldBe(["2283:2283", "127.0.0.1:8081:8081"], ignoreOrder: true);

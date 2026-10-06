@@ -54,7 +54,10 @@ public sealed record ComposeProject(IReadOnlyList<ComposeService> Services)
                         service.Value.Labels ?? [],
                         service.Value.Environment ?? [],
                         [.. (service.Value.Ports ?? []).Select(port => port.ToPort())],
-                        service.Value.NetworkMode))
+                        service.Value.NetworkMode)
+                    {
+                        ContainerName = service.Value.ContainerName
+                    })
                     .OrderBy(service => service.Name, StringComparer.Ordinal)
             ]);
         }
@@ -70,7 +73,8 @@ public sealed record ComposeProject(IReadOnlyList<ComposeService> Services)
         [property: JsonPropertyName("labels")] Dictionary<string, string>? Labels,
         [property: JsonPropertyName("environment")] Dictionary<string, string?>? Environment,
         [property: JsonPropertyName("ports")] List<Port>? Ports,
-        [property: JsonPropertyName("network_mode")] string? NetworkMode);
+        [property: JsonPropertyName("network_mode")] string? NetworkMode,
+        [property: JsonPropertyName("container_name")] string? ContainerName = null);
 
     // Compose prints a published port as a string, which is a range when the file gave one.
     private sealed record Port(

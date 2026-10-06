@@ -13,4 +13,7 @@ internal sealed record MetricsDocument
 
     [Description("The path it serves them on: /metrics unless it says otherwise.")]
     public string? Path { get; init; }
+
+    [Minimum(1), Maximum(65535), Description("The node's port to publish it on, when another service already holds the container's own number there.")]
+    public int? Published { get; init; }
 }

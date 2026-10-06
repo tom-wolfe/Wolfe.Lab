@@ -24,7 +24,7 @@ public sealed class ComposeComponent : Component
     /// <summary>
     /// Where it serves its metrics, if it does.
     /// </summary>
-    public MetricsEndpoint? Metrics { get; set; }
+    public IReadOnlyList<MetricsEndpoint> Metrics { get; set; } = [];
 
     /// <summary>
     /// Creates a new compose component.

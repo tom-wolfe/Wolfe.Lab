@@ -2,6 +2,7 @@ using System.Globalization;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Infrastructure.Telemetry;
 
 namespace Wolfe.Lab.Infrastructure.Compose;
@@ -82,37 +83,38 @@ public sealed record ComposeBindings(IReadOnlyList<ComposeBinding> Bindings)
             labels[ContainerLabel.Logs] = logs.Value;
         }
 
-        if (compose.Metrics is { } metrics)
+        var targets = new List<MetricsTarget>();
+        foreach (var (metrics, index) in compose.Metrics.Select((metrics, index) => (metrics, index)))
         {
-            var target = metrics.Port.Value;
-            int scraped;
+            Port scraped;
             switch (service.NetworkMode)
             {
+                // A port the file publishes on loopback already is scraped where it is, unless the
+                // component chooses another; any other is published on loopback alone.
                 case null or "" or "bridge" or "default":
-                    if (service.OnLoopback(target) is { } published)
+                    if (metrics.Published is null && service.OnLoopback(metrics.Port.Value) is { } published)
                     {
-                        scraped = published;
+                        scraped = Port.From(published);
                     }
                     else
                     {
-                        scraped = target;
-                        publishes.Add($"127.0.0.1:{target}:{target}");
+                        scraped = metrics.Published ?? metrics.Port;
+                        publishes.Add($"127.0.0.1:{scraped.Value}:{metrics.Port.Value}");
                     }
 
                     break;
                 case "host":
-                    scraped = target;
+                    scraped = metrics.Port;
                     break;
                 default:
-                    refused("metrics", ComposeBindingErrors.NoNetworkOfItsOwn(service.NetworkMode));
+                    refused(compose.Metrics.Count > 1 ? $"metrics.{index}" : "metrics", ComposeBindingErrors.NoNetworkOfItsOwn(service.NetworkMode));
                     return null;
             }
 
-            labels[ContainerLabel.MetricsPort] = scraped.ToString(CultureInfo.InvariantCulture);
-            labels[ContainerLabel.MetricsPath] = metrics.Path.Value;
+            targets.Add(new MetricsTarget(scraped, metrics.Path));
         }
 
-        return new ComposeBinding(compose, service, labels, publishes);
+        return new ComposeBinding(compose, service, labels, publishes) { Metrics = targets };
     }
 
     // A problem with one field of the component's declaration, reported where it is declared.

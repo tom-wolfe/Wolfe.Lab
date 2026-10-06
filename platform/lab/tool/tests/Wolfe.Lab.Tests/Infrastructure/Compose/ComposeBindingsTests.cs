@@ -71,7 +71,8 @@ public class ComposeBindingsTests
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Publishes.ShouldBe(["127.0.0.1:8081:8081"]);
-        binding.Labels.ShouldBe(new Dictionary<ContainerLabel, string> { [ContainerLabel.MetricsPort] = "8081", [ContainerLabel.MetricsPath] = "/metrics" });
+        binding.Metrics.ShouldBe([new MetricsTarget(Port.From(8081), HttpPath.Metrics)]);
+        binding.Labels.ShouldBeEmpty();
     }
 
     [Fact]
@@ -81,13 +82,35 @@ public class ComposeBindingsTests
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Publishes.ShouldBeEmpty();
-        binding.Labels[ContainerLabel.MetricsPort].ShouldBe("13903");
+        binding.Metrics.ShouldBe([new MetricsTarget(Port.From(13903), HttpPath.Metrics)]);
     }
 
     [Fact]
     public void Of_ScrapesAServiceOnTheHostsNetworkOnItsOwnPort() =>
         Bind([Service("agent", networkMode: "host")], Catalogs.Compose("agent", "agent", metrics: Metrics(9100)))
-            .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem().Labels[ContainerLabel.MetricsPort].ShouldBe("9100");
+            .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem().Metrics.ShouldBe([new MetricsTarget(Port.From(9100), HttpPath.Metrics)]);
+
+    [Fact]
+    public void Of_PublishesAMetricsPortWhereTheComponentChooses()
+    {
+        var binding = Bind([Service("grafana", [new(3000, 3000, null, "tcp")])],
+                Catalogs.Compose("grafana", "grafana", metrics: Metrics(3000) with { Published = Port.From(13000) }))
+            .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
+
+        binding.Publishes.ShouldBe(["127.0.0.1:13000:3000"]);
+        binding.Metrics.ShouldBe([new MetricsTarget(Port.From(13000), HttpPath.Metrics)]);
+    }
+
+    [Fact]
+    public void Of_PublishesEachOfSeveralEndpoints()
+    {
+        var binding = Bind([Service("immich-server", [new(2283, 2283, null, "tcp")])],
+                Catalogs.Compose("server", "immich-server", metrics: [Metrics(8081), Metrics(8082)]))
+            .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
+
+        binding.Publishes.ShouldBe(["127.0.0.1:8081:8081", "127.0.0.1:8082:8082"]);
+        binding.Metrics.Select(target => target.Port.Value).ShouldBe([8081, 8082]);
+    }
 
     [Fact]
     public void Of_RefusesLogsDeclaredHereAndByTheirLabelToo() =>

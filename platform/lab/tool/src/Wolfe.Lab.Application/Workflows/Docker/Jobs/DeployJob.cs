@@ -38,7 +38,8 @@ internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : Do
         Step.FromType<ResolveComposeSecrets>(),
         Step.FromType<GateApproval>(),
         Step.FromType<LabelServices>(),
-        Step.FromType<ConvergeRelease>()
+        Step.FromType<ConvergeRelease>(),
+        Step.FromType<DeclareMetrics>()
     ];
 
     public override JobKind Kind => JobKind.Deploy;
