@@ -3,3 +3,15 @@ name: mini
 kind: model
 workflow: ollama
 description: "Ollama on the mini: the endpoint whenever the Studio sleeps."
+runsOn: [mini]
+agent: ollama
+package:
+  github: ollama/ollama
+  version: 0.35.1
+  asset: ollama-darwin.tgz
+  checksums: sha256sum.txt
+program: "{package}/ollama"
+arguments: [serve]
+environment:
+  OLLAMA_HOST: 0.0.0.0:11434
+  OLLAMA_MODELS: /Volumes/Data2/ollama/models

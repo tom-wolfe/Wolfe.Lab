@@ -3,3 +3,16 @@ name: studio
 kind: model
 workflow: ollama
 description: "Ollama on the Studio: the endpoint while it is awake."
+runsOn: [studio]
+agent: ollama
+package:
+  github: ollama/ollama
+  version: 0.35.1
+  asset: ollama-darwin.tgz
+  checksums: sha256sum.txt
+program: "{package}/ollama"
+arguments: [serve]
+environment:
+  OLLAMA_HOST: 0.0.0.0:11434
+  OLLAMA_MODELS: /Users/tomwolfe/.ollama/models
+  OLLAMA_NUM_PARALLEL: "1"
