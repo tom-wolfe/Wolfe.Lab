@@ -88,6 +88,19 @@ with the internet down; DNS for `*.twolfe.dev` lives on Netlify's
 nameservers and resolves only while the internet is up. The names are
 sugar for browsers, not plumbing.
 
+## No service's metrics under the lab's names
+
+`/metrics` is refused for every host under `*.twolfe.dev`, ahead of the
+routes, so a service's metrics are never a page anyone reaches through
+the front door, whatever it serves there: its node's collector scrapes
+them on the node's loopback instead (`monitoring/alloy/README.md`). A
+service whose port is published on the mini's other interfaces still
+serves them there, on the LAN and the tailnet, as Forgejo does on `:3000`.
+Caddy's own — its servers' requests, durations and sizes — are on a
+listener of their own, `:9180`, published on the mini's loopback alone,
+rather than through the admin API, which would serve them too but also
+rewrites the configuration.
+
 ## Operational notes
 
 - Certificate, key and ACME account live in `~/Docker/caddy/lego` —

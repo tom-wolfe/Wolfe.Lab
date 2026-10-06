@@ -9,7 +9,10 @@ rather than versioned — the lab is continuous, not released.
 ### Added
 
 - **Containers' metrics are scraped.** Each node's collector scrapes every container whose component
-  declares `metrics:`; first the Alloy gateway, Garage and Gatus.
+  declares `metrics:`: the Alloy gateway, Garage, Gatus, Caddy and Forgejo.
+
+- **No `/metrics` under `*.twolfe.dev`.** Caddy refuses the path for every host, and serves its own
+  metrics on a listener of its own.
 
 - **Ollama's components can declare their agent.** Placed on their one node in `component.yaml`,
   as the other agents are; until they do, `ritten.json` still declares it.

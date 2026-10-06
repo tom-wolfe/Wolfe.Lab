@@ -38,6 +38,7 @@ fallback when the front door is down.
 | `:22`   | SSH (macOS Remote Login)                         | 1Password SSH key via `~/.ssh/authorized_keys`; per Linux node an sftp-only restic key (`platform/restic/README.md`) | chezmoi (`private_dot_ssh`) |
 | `:80`   | Caddy — HTTP→HTTPS redirect                      | —                                                          | `caddy`                     |
 | `:443`  | Caddy — the front door (TLS, routes by hostname) | per-service (see rows below)                               | `caddy`.                    |
+| `:9180` | Caddy — its own metrics (**loopback only**) | none | `caddy` |
 | `:3000` | Forgejo — web UI + API                           | Forgejo account; API: 1P `forgejo-api-token`               | `forgejo`.                  |
 | `:4317`, `:4318` | Alloy — OTLP gRPC, HTTP, from applications (**loopback only**; containers use `host.docker.internal`) | none | `monitoring/alloy` |
 | `:12345` | Alloy — UI and API (**loopback only**)   | none                                                       | `monitoring/alloy`          |
