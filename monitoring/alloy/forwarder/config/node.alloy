@@ -160,7 +160,7 @@ declare "collect" {
 
 		rule {
 			action = "labeldrop"
-			regex  = "lab_metrics_.+|lab_logs"
+			regex  = "lab_metrics_port|lab_metrics_path|lab_logs"
 		}
 	}
 
