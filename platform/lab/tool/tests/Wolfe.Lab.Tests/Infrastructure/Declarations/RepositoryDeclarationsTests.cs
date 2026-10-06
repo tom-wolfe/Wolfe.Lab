@@ -23,6 +23,6 @@ public class RepositoryDeclarationsTests
 
     [Fact]
     public async Task TheRepositorysDeclarationsHold() =>
-        (await ServiceCatalogReader.Read(new ProcessCommandRunner(), new PhysicalDirectory(Checkout()), TestContext.Current.CancellationToken))
+        (await ServiceCatalogReader.Read(RealClients.Git, new PhysicalDirectory(Checkout()), TestContext.Current.CancellationToken))
             .Errors?.Select(problem => problem.Message).ShouldBeNull();
 }

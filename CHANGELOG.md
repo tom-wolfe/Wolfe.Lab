@@ -4,6 +4,13 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-07
+
+### Added
+
+- **The lab's CLI traces its runs.** Wherever an OTLP endpoint is set, each run is a trace in Tempo,
+  labelled with the component it ran for; Ritten 0.21.0 traces the job, its steps and commands.
+
 ## 2026-10-06
 
 ### Added

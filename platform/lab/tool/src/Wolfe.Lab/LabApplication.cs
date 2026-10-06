@@ -1,4 +1,10 @@
+using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using Ritten.Git;
 using Ritten.OnePassword;
+using Ritten.OpenTelemetry;
+using Wolfe.Lab.Application.Telemetry;
 using Wolfe.Lab.Application.Workflows.Agents;
 using Wolfe.Lab.Application.Workflows.Backup;
 using Wolfe.Lab.Application.Workflows.CaddyCertificates;
@@ -59,6 +65,11 @@ public static class LabApplication
         builder
             .AddOnePassword(options => options.ServiceAccountTokenFile = LabConfiguration.Current["OnePassword:ServiceAccountTokenFile"]
             is { Length: > 0 } file ? file : throw new InvalidOperationException("'OnePassword:ServiceAccountTokenFile' is not set in appsettings.json."));
+
+        // Traced where an OTLP endpoint is set: each run as the lab's, labelled with the component it runs for.
+        builder.AddOpenTelemetry(telemetry => telemetry.ConfigureResource(resource => resource
+            .AddService("lab", serviceVersion: typeof(LabApplication).Assembly.GetName().Version?.ToString())
+            .AddDetector(services => new ComponentResourceDetector(services.GetRequiredService<IGit>(), services.GetRequiredService<IFileSystem>()))));
 
         return builder;
     }

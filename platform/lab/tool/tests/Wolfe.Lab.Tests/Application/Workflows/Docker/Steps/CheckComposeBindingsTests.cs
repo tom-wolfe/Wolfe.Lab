@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
 using Wolfe.Lab.Tests.Domain.Catalog;
@@ -6,18 +7,18 @@ namespace Wolfe.Lab.Tests.Application.Workflows.Docker.Steps;
 
 public class CheckComposeBindingsTests
 {
-    private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
+    private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
 
     public CheckComposeBindingsTests()
     {
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(Path.GetTempPath()));
-        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>())
-            .Returns(new CommandResult(0, """{ "services": { "immich-server": { "image": "server" } } }""", ""));
+        _docker.ComposeConfig(Arg.Any<IDirectory>(), Arg.Any<IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>())
+            .Returns(new ComposeProject([new ComposeService("immich-server", new Dictionary<string, string>(), new Dictionary<string, string?>(), [])]));
     }
 
     private Task<StepResult> Run(string service) =>
-        new CheckComposeBindings(_commands, _fileSystem, Substitute.For<IWorkflowLog>())
+        new CheckComposeBindings(_docker, _fileSystem, Substitute.For<IWorkflowLog>())
             .Run(Catalogs.Unit("personal/immich/compose", Catalogs.Compose("server", service)), TestContext.Current.CancellationToken);
 
     [Fact]

@@ -1,3 +1,4 @@
+using Ritten.Docker;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Models;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
 using Wolfe.Lab.Infrastructure.Secrets;
@@ -6,19 +7,19 @@ namespace Wolfe.Lab.Tests.Application.Workflows.ForgejoRunners.Steps;
 
 public class RegisterRunnerTests
 {
-    private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
+    private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
 
     private RegisterRunner Step(bool dryRun = false) =>
-        new(_commands, _secrets, new WorkflowJob("forgejo", "register-runner", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>());
+        new(_docker, _secrets, new WorkflowJob("forgejo", "register-runner", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>());
 
     private const string Secret = "0123456789abcdef0123456789abcdef01234567";
 
     public RegisterRunnerTests() =>
-        _commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
+        _docker.Inspect("forgejo", Arg.Any<CancellationToken>()).Returns(new ContainerState("codeberg.org/forgejo/forgejo:13", Running: true));
 
-    private Command Registration() =>
-        _commands.ReceivedCalls().Select(call => (Command)call.GetArguments()[0]!).Single(command => command.Arguments.Contains("register"));
+    private ContainerExec Registration() =>
+        _docker.ReceivedCalls().Select(call => call.GetArguments()[0]).OfType<ContainerExec>().Single();
 
     private static RunnerRegistration Host => new("MacMini", "MacMini:host", "tom-wolfe/Wolfe.Lab", SecretReference.From("op://Wolfe.Lab/forgejo-runner-MacMini/credential"));
 
@@ -30,11 +31,13 @@ public class RegisterRunnerTests
         var result = await Step().Run(Host, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
-        var command = Registration();
-        command.Path.ShouldBe("docker");
-        command.Arguments.ShouldBe(["exec", "-i", "-u", "git", "forgejo", "forgejo", "forgejo-cli", "actions", "register", "--secret-stdin", "--name", "MacMini", "--labels", "MacMini:host", "--scope", "tom-wolfe/Wolfe.Lab"]);
-        command.StandardInput.ShouldBe("0123456789abcdef0123456789abcdef01234567");
-        command.Arguments.ShouldNotContain(command.StandardInput);
+        var exec = Registration();
+        exec.Container.ShouldBe("forgejo");
+        exec.User.ShouldBe("git");
+        exec.Arguments.ShouldBe(["forgejo", "forgejo-cli", "actions", "register", "--secret-stdin", "--name", "MacMini", "--labels", "MacMini:host", "--scope", "tom-wolfe/Wolfe.Lab"]);
+        exec.Input.ShouldBe(Secret);
+        exec.Arguments.ShouldNotContain(Secret);
+        exec.IsReadOnly.ShouldBeFalse();
     }
 
     [Fact]
@@ -52,14 +55,14 @@ public class RegisterRunnerTests
     {
         await Step(dryRun: true).Run(Host, TestContext.Current.CancellationToken);
 
-        _commands.ReceivedCalls().ShouldBeEmpty();
+        _docker.ReceivedCalls().ShouldBeEmpty();
         _secrets.ReceivedCalls().ShouldBeEmpty();
     }
 
     [Fact]
     public async Task Run_RefusesWhereThereIsNoForgejo()
     {
-        _commands.Run(Arg.Is<Command>(c => c.Arguments.Contains("inspect")), Arg.Any<CancellationToken>()).Returns(new CommandResult(1, "", "No such container"));
+        _docker.Inspect("forgejo", Arg.Any<CancellationToken>()).Returns((ContainerState?)null);
 
         var result = await Step().Run(Host, TestContext.Current.CancellationToken);
 
@@ -79,6 +82,6 @@ public class RegisterRunnerTests
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain($"holds {secret.Length} characters");
-        _commands.ReceivedCalls().Select(call => (Command)call.GetArguments()[0]!).ShouldNotContain(c => c.Arguments.Contains("register"));
+        await _docker.DidNotReceive().Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>());
     }
 }

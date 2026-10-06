@@ -1,4 +1,3 @@
-using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
 using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
@@ -10,7 +9,7 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
 /// into a scratch directory, only the paths that prove it, and each is asserted non-empty.
 /// </summary>
 [Step("drill restore", StepKind.Check)]
-internal sealed class DrillRestore(IRestic restic, BackupPlan plan, WorkflowJob job, IWorkflowLog log)
+internal sealed class DrillRestore(IRestic restic, BackupPlan plan, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
 {
     public async Task<StepResult> Run(Release release, ResticRepository repository, CancellationToken ct = default)
     {
@@ -21,7 +20,7 @@ internal sealed class DrillRestore(IRestic restic, BackupPlan plan, WorkflowJob 
             return new Error($"{repository.Location} holds no snapshot tagged {tag}.");
         }
 
-        var scratch = new PhysicalDirectory(Path.Combine(Path.GetTempPath(), $"lab-drill-{release.Name}-{Guid.NewGuid():N}"));
+        var scratch = fileSystem.CreateTempDirectory($"lab-drill-{release.Name}-");
         try
         {
             await restic.Restore(repository, snapshot.Id, scratch, plan.Verify, ct);

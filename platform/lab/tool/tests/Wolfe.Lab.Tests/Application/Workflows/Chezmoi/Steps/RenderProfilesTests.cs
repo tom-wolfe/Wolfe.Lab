@@ -10,7 +10,7 @@ public class RenderProfilesTests : IDisposable
 {
     private readonly IChezmoi _chezmoi = Substitute.For<IChezmoi>();
     private readonly DirectoryInfo _checkout = Directory.CreateTempSubdirectory("lab-render-checkout-");
-    private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
+    private readonly IFileSystem _fileSystem = ScratchFileSystem.Create();
     private readonly IGit _git = Substitute.For<IGit>();
 
     public RenderProfilesTests()

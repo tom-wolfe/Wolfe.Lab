@@ -1,9 +1,8 @@
 using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Infrastructure.Compose;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Compose;
 
-public class ComposeProjectComposeTests : IDisposable
+public class ComposeConfigTests : IDisposable
 {
     private readonly DirectoryInfo _project = Directory.CreateTempSubdirectory("lab-compose-");
 
@@ -24,7 +23,7 @@ public class ComposeProjectComposeTests : IDisposable
                                                                                                    environment: { TZ: Europe/London, TOKEN: }
                                                                                                """, TestContext.Current.CancellationToken);
 
-        var project = (await ComposeProject.Read(new ProcessCommandRunner(), new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var project = (await RealClients.Docker.ComposeConfig(new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
 
         foreach (var service in project.Services)
         {
@@ -39,9 +38,9 @@ public class ComposeProjectComposeTests : IDisposable
     {
         await File.WriteAllTextAsync(Path.Combine(_project.FullName, "compose.yaml"), "services: [", TestContext.Current.CancellationToken);
 
-        var errors = (await ComposeProject.Read(new ProcessCommandRunner(), new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken)).Errors.ShouldNotBeNull();
+        var errors = (await RealClients.Docker.ComposeConfig(new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken)).Errors.ShouldNotBeNull();
 
-        errors.ShouldHaveSingleItem().Message.ShouldStartWith($"compose cannot read the stack in {_project.FullName}");
+        errors.ShouldHaveSingleItem().Message.ShouldContain("yaml");
     }
 
     // The stack's files are compose's to find, as compose up finds them: any of its default
@@ -58,7 +57,7 @@ public class ComposeProjectComposeTests : IDisposable
               server: { labels: { lab.logs: otlp } }
             """, TestContext.Current.CancellationToken);
 
-        var project = (await ComposeProject.Read(new ProcessCommandRunner(), new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken))
+        var project = (await RealClients.Docker.ComposeConfig(new PhysicalDirectory(_project.FullName), ct: TestContext.Current.CancellationToken))
             .Value.ShouldNotBeNull();
 
         project.Services.ShouldHaveSingleItem().Labels.ShouldBe(new Dictionary<string, string> { ["lab.logs"] = "otlp" });

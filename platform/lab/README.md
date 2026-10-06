@@ -72,6 +72,13 @@ services are not all declared — with their service — fails the deploy
 rather than going unlabelled. The same file carries what each component
 asks of its service — its `logs` and `metrics` (Declarations, below).
 
+The CLI's own runs are traced too, wherever `OTEL_EXPORTER_OTLP_ENDPOINT`
+is set: Ritten makes the job a trace, each step a span and each command
+and HTTP call a span beneath its step, and the lab names it `lab` and
+labels it with where its directory's components live — `lab.component`
+when there is one, the area and service a stack's share otherwise. The
+node's collector adds the node, as it does to everything it forwards.
+
 `network/caddy/routes` is the one component that reads other components, and
 deliberately: it gathers every `caddy.caddyfile` in the checkout into a
 release of its own that the door's Caddyfile imports, so adding a

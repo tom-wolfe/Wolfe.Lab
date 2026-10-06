@@ -1,4 +1,3 @@
-using Ritten.Engine.FileSystem;
 using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
 using Wolfe.Lab.Infrastructure.Chezmoi;
@@ -24,7 +23,7 @@ internal sealed class RenderProfiles(IChezmoi chezmoi, Profiles profiles, IFileS
             return new Error($"{fileSystem.ProjectRoot.AbsolutePath} is not in a git checkout, and the profiles are rendered from one.");
         }
 
-        var scratch = new PhysicalDirectory(Directory.CreateTempSubdirectory("lab-render-").FullName);
+        var scratch = fileSystem.CreateTempDirectory("lab-render-");
         var rendered = new List<RenderedProfile>();
         foreach (var profile in profiles.Names)
         {

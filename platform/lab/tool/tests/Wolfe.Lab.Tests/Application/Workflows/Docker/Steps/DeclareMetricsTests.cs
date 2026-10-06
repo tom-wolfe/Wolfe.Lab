@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
 using Wolfe.Lab.Domain.Network;

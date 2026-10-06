@@ -13,7 +13,10 @@ public class ComputeVersionTests : IDisposable
 {
     private readonly DirectoryInfo _repository = Directory.CreateTempSubdirectory("lab-version-");
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly IGit _git = Substitute.For<IGit>();
+
+    // The root as git names it: on a Mac the temporary directory is reached through a symlink, and a component is found
+    // beneath the checkout git reports, as it is in a real one.
+    private readonly string _checkout;
 
     public ComputeVersionTests()
     {
@@ -24,7 +27,9 @@ public class ComputeVersionTests : IDisposable
         // is there to answer, for a repository that exists for a second.
         Git("config", "commit.gpgsign", "false");
         Git("config", "tag.gpgsign", "false");
-        _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(new PhysicalDirectory(_repository.FullName));
+        _checkout = new ProcessCommandRunner()
+            .Run(Command.Create("git").WithArguments("rev-parse", "--show-toplevel").InDirectory(_repository.FullName).ThrowOnError())
+            .GetAwaiter().GetResult().StandardOutput.Trim();
         At("platform/lab/tool");
     }
 
@@ -32,7 +37,7 @@ public class ComputeVersionTests : IDisposable
 
     // Not created: a move into it must find nothing there, as it would in a real checkout.
     private void At(string component) =>
-        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(Path.Combine(_repository.FullName, component)));
+        _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(Path.Combine(_checkout, component)));
 
     private void Git(params string[] arguments) =>
         new ProcessCommandRunner().Run(Command.Create("git").WithArguments(arguments).InDirectory(_repository.FullName).ThrowOnError()).GetAwaiter().GetResult();
@@ -48,8 +53,8 @@ public class ComputeVersionTests : IDisposable
 
     private void Release(string version) => Git("tag", DeployJob.TagPrefix + version);
 
-    private ComputeVersion Step(ICommandRunner? commands = null) =>
-        new(commands ?? new ProcessCommandRunner(), _git, _fileSystem, PackageContents.For("src/Tool/Tool.csproj"),
+    private ComputeVersion Step(IGit? git = null) =>
+        new(git ?? RealClients.Git.InRepository(new PhysicalDirectory(_checkout)), _fileSystem, PackageContents.For("src/Tool/Tool.csproj"),
             Options.Create(new GitOptions { TagPrefix = DeployJob.TagPrefix }), Substitute.For<IWorkflowLog>());
 
     private async Task<string> Compute()
@@ -155,10 +160,12 @@ public class ComputeVersionTests : IDisposable
     [Fact]
     public async Task Run_RefusesAShallowCheckout()
     {
-        var commands = Substitute.For<ICommandRunner>();
-        commands.Run(Arg.Any<Command>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "true\n", ""));
+        var git = Substitute.For<IGit>();
+        git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(new PhysicalDirectory(_repository.FullName));
+        git.InRepository(Arg.Any<IDirectory>()).Returns(git);
+        git.IsShallow(Arg.Any<CancellationToken>()).Returns(true);
 
-        (await Step(commands).Run(TestContext.Current.CancellationToken)).IsFailure.ShouldBeTrue();
+        (await Step(git).Run(TestContext.Current.CancellationToken)).IsFailure.ShouldBeTrue();
         File.Exists(Path.Combine(_fileSystem.ProjectRoot.AbsolutePath, ComputeVersion.VersionFile)).ShouldBeFalse();
     }
 }

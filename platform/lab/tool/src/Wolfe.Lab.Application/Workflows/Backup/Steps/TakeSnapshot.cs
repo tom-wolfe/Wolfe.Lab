@@ -33,7 +33,7 @@ internal sealed class TakeSnapshot(IDocker docker, IRestic restic, BackupPlan pl
             // A deploy converging concurrently would have restarted the stack under the
             // snapshot, leaving live mid-write files in it: discard rather than trust. Not on a
             // rehearsal, where nothing was stopped in the first place.
-            if (plan.Container is not null && !job.DryRun && (await docker.Inspect(plan.Container, ct)).Running)
+            if (plan.Container is not null && !job.DryRun && (await docker.Inspect(plan.Container, ct))?.Running == true)
             {
                 await restic.Forget(repository, snapshot, ct);
                 return new Error($"{plan.Container} was restarted mid-snapshot; snapshot {snapshot.Id} discarded. Run the backup again.");

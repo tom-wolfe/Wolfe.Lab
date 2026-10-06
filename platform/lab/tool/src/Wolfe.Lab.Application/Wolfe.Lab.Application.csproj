@@ -17,6 +17,7 @@
     <PackageReference Include="Ritten.Forgejo" />
     <PackageReference Include="Ritten.Git" />
     <PackageReference Include="Ritten.NuGet" />
+    <PackageReference Include="Ritten.OpenTelemetry" />
     <PackageReference Include="Ritten.OpenTofu" />
   </ItemGroup>
 

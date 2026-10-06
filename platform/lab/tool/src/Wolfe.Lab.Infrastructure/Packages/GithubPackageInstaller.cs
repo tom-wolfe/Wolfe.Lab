@@ -69,8 +69,8 @@ public sealed class GithubPackageInstaller(IHttpClientFactory clients, IOptions<
             // A directory without the marker is a previous attempt that never finished.
             directory.Delete();
 
-            // IDirectory has no move: the rename that makes a version appear whole is the disk's.
-            Directory.Move(staging.AbsolutePath, directory.AbsolutePath);
+            // A rename, so the version appears whole or not at all.
+            staging.MoveTo(directory);
             return new InstalledPackage(package, directory, PackageOutcome.Installed);
         }
         finally

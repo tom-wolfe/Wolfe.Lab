@@ -1,4 +1,4 @@
-using Wolfe.Lab.Infrastructure.Compose;
+using Ritten.Docker;
 using Wolfe.Lab.Infrastructure.Telemetry;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Telemetry;
