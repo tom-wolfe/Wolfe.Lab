@@ -1,0 +1,38 @@
+name: cadvisor
+
+# Each container's CPU, memory, network and OOM kills on a Mac, where the
+# cgroups are inside Docker Desktop's VM and the node's collector, a host
+# process, cannot read them (monitoring/alloy/README.md). The forwarder
+# names each series for its container, as a Linux node's collector does.
+services:
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.60.6
+    container_name: cadvisor
+    restart: unless-stopped
+    command:
+      - -docker_only=true
+      - -store_container_labels=false
+      - -whitelisted_container_labels=lab.area,lab.service,lab.component
+      - -enable_metrics=cpu,memory,network,oom_event,diskIO
+      - -housekeeping_interval=30s
+    security_opt:
+      - no-new-privileges:true
+    # OOM kills are read from the kernel's log.
+    cap_add:
+      - SYSLOG
+    devices:
+      - /dev/kmsg
+    # The VM's, not the Mac's: none of these is a path Docker Desktop
+    # shares. The sockets are the one exception to "no container gets the
+    # socket" (monitoring/alloy/README.md): containers are named through
+    # them.
+    volumes:
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+    deploy:
+      resources:
+        limits:
+          memory: 256m

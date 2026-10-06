@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: cadvisor
+kind: collector
+workflow: docker
+service: cadvisor
+displayName: cAdvisor
+description: "Monitors container resources on the mini."
+# The mini's 8080 is taken.
+metrics:
+  port: 8080
+  published: 18080

@@ -1,0 +1,13 @@
+apiVersion: 1
+
+# The lab's dashboards, from the JSON beside this file: code, not state, so
+# an edit in the UI is refused rather than lost at the next deploy.
+providers:
+  - name: lab
+    orgId: 1
+    folder: Lab
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards

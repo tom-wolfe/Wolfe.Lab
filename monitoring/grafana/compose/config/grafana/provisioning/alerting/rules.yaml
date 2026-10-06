@@ -38,3 +38,156 @@ groups:
             Always firing: every notification pings healthchecks.io
             (lab-grafana-watchdog). Silence there pages; this alert itself
             is not a problem.
+
+  # The nodes, from their collectors (monitoring/alloy/README.md): Beszel's
+  # thresholds, on every node, and a server gone quiet. A sleeping Studio
+  # sends nothing, and nothing is not a problem. A template's $$ is its $:
+  # Grafana fills in the environment's variables in what it provisions.
+  - orgId: 1
+    name: nodes
+    folder: Lab
+    interval: 1m
+    rules:
+      - uid: node-cpu
+        title: Node CPU busy
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # Averaged over ten minutes: a build is busy, not a problem.
+              expr: 1 - avg by (host_name) (rate(node_cpu_seconds_total{mode="idle"}[10m]))
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.9]
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: >-
+            {{ $$labels.host_name }}'s CPU has been
+            {{ humanizePercentage $$values.A.Value }} busy for ten minutes.
+
+      - uid: node-memory
+        title: Node memory full
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # What Activity Monitor calls used on a Mac — app memory, wired
+              # and compressed — and what is not available on Linux.
+              expr: >-
+                max by (host_name) (
+                  (node_memory_internal_bytes - node_memory_purgeable_bytes
+                    + node_memory_wired_bytes + node_memory_compressed_bytes)
+                    / node_memory_total_bytes
+                  or 1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes
+                )
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.9]
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: >-
+            {{ $$labels.host_name }}'s memory has been over 90% used for ten
+            minutes: {{ humanizePercentage $$values.A.Value }}.
+
+      - uid: node-disk
+        title: Node disk full
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # A Mac's sealed system volume is read-only, and its space is
+              # its data volume's.
+              expr: >-
+                max by (host_name, mountpoint) (
+                  (1 - node_filesystem_avail_bytes / node_filesystem_size_bytes)
+                  unless on (host_name, mountpoint) (node_filesystem_readonly == 1)
+                )
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.9]
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: >-
+            {{ $$labels.mountpoint }} on {{ $$labels.host_name }} is
+            {{ humanizePercentage $$values.A.Value }} full.
+
+      # A server's collector that reported in the last day and has not for
+      # ten minutes: the node is down, or its collector is. The mini's
+      # absence takes Grafana with it, and Gatus pages for that instead.
+      - uid: node-silent
+        title: Node silent
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: >-
+                group by (host_name) (last_over_time(up{service_name="alloy", lab_role="server"}[1d]))
+                unless on (host_name) group by (host_name) (up{service_name="alloy", lab_role="server"})
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: >-
+            {{ $$labels.host_name }} has sent nothing for ten minutes: the node
+            or its collector is down.
