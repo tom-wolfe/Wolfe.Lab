@@ -12,7 +12,7 @@ namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
 /// without being on any of them.
 /// </summary>
 [Step("check agent declarations", StepKind.Check)]
-internal sealed class CheckAgentDeclarations(WorkflowJob job, IWorkflowLog log)
+internal sealed class CheckAgentDeclarations(AgentResolver agents, WorkflowJob job, IWorkflowLog log)
 {
     public StepResult Run(ServiceCatalog catalog, DeploymentUnit unit)
     {
@@ -31,19 +31,16 @@ internal sealed class CheckAgentDeclarations(WorkflowJob job, IWorkflowLog log)
         foreach (var node in agent.RunsOn.In(catalog))
         {
             nodes++;
-            if (!agent.RunningOn(node).TryGetValue(out var process, out var unexpanded))
-            {
-                errors.AddRange(unexpanded.Select(error => new Error($"{node}: {error.Message}")));
-                continue;
-            }
-
-            if (!ResolveAgentDeclarations.Options(process, node, component).TryGetValue(out var resolved, out var invalid))
+            if (!agents.On(agent, node).TryGetValue(out var declarations, out var invalid))
             {
                 errors.AddRange(invalid.Select(error => new Error($"{node}: {error.Message}")));
                 continue;
             }
 
-            errors.AddRange(Judge(node.Name.Value, process.Name.Value, resolved));
+            foreach (var (name, declared) in declarations.Agents)
+            {
+                errors.AddRange(Judge(node.Name.Value, name, declared));
+            }
         }
 
         if (errors.Count > 0)
@@ -55,7 +52,7 @@ internal sealed class CheckAgentDeclarations(WorkflowJob job, IWorkflowLog log)
         return StepResult.Successful;
     }
 
-    private static IEnumerable<Error> Judge(string node, string name, AgentOptions agent)
+    private IEnumerable<Error> Judge(string node, string name, AgentOptions agent)
     {
         if (AgentLabel.ForName(name) is null)
         {
@@ -67,7 +64,7 @@ internal sealed class CheckAgentDeclarations(WorkflowJob job, IWorkflowLog log)
             yield return new Error($"{node}: agent '{name}' names no 'program'.");
         }
 
-        foreach (var variable in ResolveAgents.UnexpandedHomePaths(agent.Environment))
+        foreach (var variable in agents.HomePathsIn(agent.Environment))
         {
             yield return new Error($"{node}: agent '{name}' sets {variable} to a path under ~, which nothing expands: write the absolute path.");
         }

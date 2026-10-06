@@ -210,8 +210,15 @@ public static class ServiceCatalogReader
         var name = ComponentName.From(document.Name);
         var partOf = document.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
         IReadOnlyList<ComponentName> dependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
-        if (document is AgentsDocument agents)
+        // An ollama component's agent may still be its ritten.json's; an agents component's never is.
+        if (document is AgentsDocument agents && (agents.DeclaresAgent || document.Workflow == WorkflowName.Agents))
         {
+            if (agents is not { RunsOn: { } target, Agent: { } agentName, Program: { } program })
+            {
+                problems.Add(CatalogError.In(source, DeclarationErrors.AgentIncomplete));
+                return;
+            }
+
             AgentPackage? package = null;
             if (agents.Package is { } declaredPackage)
             {
@@ -224,15 +231,15 @@ public static class ServiceCatalogReader
 
             var declared = new AgentProcess
             {
-                Name = AgentName.From(agents.Agent),
+                Name = AgentName.From(agentName),
                 Package = package,
-                Program = Template.From(agents.Program),
+                Program = Template.From(program),
                 Arguments = [.. (agents.Arguments ?? []).Select(Template.From)],
                 Environment = (agents.Environment ?? []).ToDictionary(variable => variable.Key, variable => Template.From(variable.Value), StringComparer.Ordinal),
                 Supersedes = agents.Supersedes ?? []
             };
 
-            if (!Placed(agents.RunsOn).TryGetValue(out var runsOn, out var unplaced))
+            if (!Placed(target).TryGetValue(out var runsOn, out var unplaced))
             {
                 problems.AddRange(unplaced.Select(error => CatalogError.In(source, new FieldError("runsOn", error))));
                 return;

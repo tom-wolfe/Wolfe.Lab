@@ -8,13 +8,13 @@ public class PublishArtifactsReportTests
 {
     private readonly IReleaseInstaller _installer = Substitute.For<IReleaseInstaller>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly ReportSection _section = new(PublishArtifacts.Section);
+    private readonly ReportSection _section = new(ReportSections.Artifacts);
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
 
     public PublishArtifactsReportTests()
     {
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory("/repo/monitoring/alloy/agent"));
-        _report.Section(PublishArtifacts.Section).Returns(_section);
+        _report.Section(ReportSections.Artifacts).Returns(_section);
     }
 
     private static readonly Artifact Alloy = new(

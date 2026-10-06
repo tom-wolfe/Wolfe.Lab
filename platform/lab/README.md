@@ -327,7 +327,12 @@ Macs, and the Pi's OS ships it; nothing else runs it. A rehearsal is
 logrotate's own debug run, from the run's scratch.
 
 `runsOn`, `agent` and `program` are required of every agents component;
-its `ritten.json` declares only its `artifacts`.
+its `ritten.json` declares only its `artifacts`. An `ollama` component
+declares its agent the same way, placed on its one node (`runsOn: [mini]`),
+while its models and roles stay in its `ritten.json`; until both of
+Ollama's components declare theirs, one that declares none still takes it
+from there. Its deploy holds `models.store` to the agent's
+`OLLAMA_MODELS`, wherever the agent is declared.
 
 ## Layout
 

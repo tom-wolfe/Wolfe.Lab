@@ -29,9 +29,6 @@ internal sealed class RotateJob : LabJob<OllamaOptions>
         Step.FromType<RotateAgentLogs>()
     ];
 
-    protected override void ValidateSettings(SettingsValidator<OllamaOptions> options) => options
-        .Require(s => s.Agents.Count > 0, "'agents' names nothing in ritten.json.");
-
     protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
     {
         base.Configure(builder, options);

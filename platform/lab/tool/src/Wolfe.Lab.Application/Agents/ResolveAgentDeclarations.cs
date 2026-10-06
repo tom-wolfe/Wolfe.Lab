@@ -1,18 +1,19 @@
-using Wolfe.Lab.Application.Agents;
-using Wolfe.Lab.Application.Workflows.Ollama.Models;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Infrastructure.Agents;
 
-namespace Wolfe.Lab.Application.Workflows.Ollama.Steps;
+namespace Wolfe.Lab.Application.Agents;
 
 /// <summary>
-/// The model server's agent on this node: as the component declares it in the catalog — placed on
-/// its one node — or, while its <c>ritten.json</c> still declares it, as that does.
+/// What this node runs of the component: its agent as the catalog declares it, expanded for the node.
 /// </summary>
-[Step("resolve ollama agents", StepKind.Work)]
-internal sealed class ResolveOllamaAgents(OllamaAgents declared, AgentResolver agents, WorkflowJob job, IWorkflowLog log)
+/// <remarks>
+/// The node is where the deploy runs (<see cref="AgentResolver.ThisNode"/>), never an argument to
+/// it. A component placed elsewhere is nothing to do here, and the deploy stops.
+/// </remarks>
+[Step("resolve agent declarations", StepKind.Work)]
+internal sealed class ResolveAgentDeclarations(AgentResolver agents, WorkflowJob job, IWorkflowLog log)
 {
     public StepResult<AgentDeclarations> Run(ServiceCatalog catalog, DeploymentUnit unit)
     {
@@ -23,8 +24,7 @@ internal sealed class ResolveOllamaAgents(OllamaAgents declared, AgentResolver a
 
         if (component is not AgentComponent agent)
         {
-            log.Detail($"{component} declares its agent in ritten.json.");
-            return new AgentDeclarations(declared.Agents);
+            return AgentDeclarationErrors.NoAgent(component);
         }
 
         if (!agents.ThisNode(catalog).TryGetValue(out var node, out var nowhere))
@@ -43,7 +43,7 @@ internal sealed class ResolveOllamaAgents(OllamaAgents declared, AgentResolver a
             return StepResult.Failed(invalid);
         }
 
-        log.Detail($"{agent} runs on {node}.");
+        log.Detail($"{agent} runs on {node} as {string.Join(", ", declarations.Agents.Keys)}.");
         return declarations;
     }
 }

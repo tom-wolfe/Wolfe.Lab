@@ -4,6 +4,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Paths;
+using Wolfe.Lab.Tests.Application.Agents;
 using Wolfe.Lab.Tests.Domain.Catalog;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Agents.Steps;
@@ -13,7 +14,7 @@ public class CheckAgentDeclarationsTests
     private const string Directory = "monitoring/beszel/agent";
 
     private static StepResult Check(ServiceCatalog catalog) =>
-        new CheckAgentDeclarations(new WorkflowJob("agents", "check", DryRun: false, AutoApprove: false), Substitute.For<IWorkflowLog>())
+        new CheckAgentDeclarations(Resolvers.On(), new WorkflowJob("agents", "check", DryRun: false, AutoApprove: false), Substitute.For<IWorkflowLog>())
             .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
 
     private static AgentProcess Beszel(params (string Variable, string Value)[] environment) => new()

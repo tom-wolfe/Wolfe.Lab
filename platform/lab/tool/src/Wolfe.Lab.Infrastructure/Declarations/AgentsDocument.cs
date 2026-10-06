@@ -6,20 +6,25 @@ namespace Wolfe.Lab.Infrastructure.Declarations;
 /// A component the <c>agents</c> workflow operates, as its file writes it: one host process,
 /// placed on the nodes it runs on.
 /// </summary>
+/// <remarks>
+/// The ollama workflow's components are written as one too. While theirs still declare their
+/// agent in <c>ritten.json</c>, an ollama component may declare none of it; an agents component
+/// always declares <c>runsOn</c>, <c>agent</c> and <c>program</c>, which the reader holds it to.
+/// </remarks>
 [AdditionalProperties(false)]
 internal sealed record AgentsDocument : ComponentDocument
 {
-    [Required, Description("The nodes it runs on: 'all', 'every <role>', or a list of nodes by name.")]
-    public required DeploymentTargetDocument RunsOn { get; init; }
+    [Description("The nodes it runs on: 'all', 'every <role>', or a list of nodes by name.")]
+    public DeploymentTargetDocument? RunsOn { get; init; }
 
-    [Required, Pattern(LabSchema.NamePattern), Description("The name it runs under on each node — its unit is dev.twolfe.<agent> — and the service_name its logs carry.")]
-    public string Agent { get; init; } = "";
+    [Pattern(LabSchema.NamePattern), Description("The name it runs under on each node — its unit is dev.twolfe.<agent> — and the service_name its logs carry.")]
+    public string? Agent { get; init; }
 
     [Description("What it runs, installed from a GitHub release.")]
     public AgentPackageDocument? Package { get; init; }
 
-    [Required, MinLength(1), Description("The executable: {package}/<file> for one its package holds.")]
-    public string Program { get; init; } = "";
+    [MinLength(1), Description("The executable: {package}/<file> for one its package holds.")]
+    public string? Program { get; init; }
 
     [Description("The arguments it runs with.")]
     public List<string>? Arguments { get; init; }
@@ -29,4 +34,10 @@ internal sealed record AgentsDocument : ComponentDocument
 
     [UniqueItems(true), Description("Units an earlier supervisor ran it under, retired before it starts.")]
     public List<string>? Supersedes { get; init; }
+
+    /// <summary>
+    /// Whether it declares anything of its agent, rather than leaving it to ritten.json.
+    /// </summary>
+    public bool DeclaresAgent => RunsOn is not null || Agent is not null || Package is not null || Program is not null
+                                 || Arguments is not null || Environment is not null || Supersedes is not null;
 }

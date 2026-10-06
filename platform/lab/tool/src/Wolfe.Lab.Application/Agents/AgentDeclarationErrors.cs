@@ -2,7 +2,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Infrastructure.Releases;
 
-namespace Wolfe.Lab.Application.Workflows.Agents.Steps;
+namespace Wolfe.Lab.Application.Agents;
 
 /// <summary>
 /// The well-known problems with finding what a node runs of an agents component.

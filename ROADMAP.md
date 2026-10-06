@@ -280,7 +280,7 @@ lab's pins.
    *Shipped on 2026-09-29.*
 3. Collectors on the Pi and the Studio, forwarding; container and
    host-process logs from every node. *Shipped 2026-10-02.* The
-   gateway later moves into Grafana's stack and the mini gets a
+   gateway moved into Grafana's stack on 2026-10-05, and the mini runs a
    forwarder like every node (#14).
 4. The services' own metrics — turned on first, since none is today:
    Gatus has `metrics: false`, and caddy, Forgejo, Garage and Immich

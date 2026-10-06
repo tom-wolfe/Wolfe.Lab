@@ -7,17 +7,9 @@ namespace Wolfe.Lab.Application.Packages;
 /// <summary>
 /// Installs the pinned version of each tool the job runs, and puts it first on the path.
 /// </summary>
-/// <remarks>
-/// The path is this process's, which every command it starts inherits — so Ritten's clients, which
-/// run <c>tofu</c> or <c>restic</c> by name, run the pinned one without knowing it. A tool the
-/// manifest does not list is the node's own, as it always was; a rehearsal that would install one
-/// rehearses with the node's.
-/// </remarks>
 [Step("ensure tools", StepKind.Work)]
-internal sealed class EnsureTools(RequiredTools required, IGit git, IPackageInstaller installer, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
+internal sealed class EnsureTools(RequiredTools required, IGit git, IPackageInstaller installer, EnvironmentPath path, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
 {
-    internal const string PathVariable = "PATH";
-
     public async Task<StepResult> Run(CancellationToken ct = default)
     {
         if (await git.RepositoryRoot(ct) is not { } checkout)
@@ -61,8 +53,7 @@ internal sealed class EnsureTools(RequiredTools required, IGit git, IPackageInst
                 GithubPackageInstaller.Executable(tool);
             }
 
-            Environment.SetEnvironmentVariable(PathVariable,
-                $"{bin.AbsolutePath}{Path.PathSeparator}{Environment.GetEnvironmentVariable(PathVariable)}");
+            path.Prepend(bin);
         }
 
         return errors.Count > 0 ? StepResult.Failed(errors) : StepResult.Successful;

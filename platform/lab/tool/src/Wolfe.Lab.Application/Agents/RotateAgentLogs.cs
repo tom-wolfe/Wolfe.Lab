@@ -19,7 +19,7 @@ namespace Wolfe.Lab.Application.Agents;
 /// to the run's scratch instead, and logrotate only says what it would do.
 /// </remarks>
 [Step("rotate agent logs", StepKind.Publish)]
-internal sealed class RotateAgentLogs(ILogrotate logrotate, IFileSystem fileSystem, IOptions<LabDirectories> options, WorkflowJob job, IWorkflowLog log)
+internal sealed class RotateAgentLogs(ILogrotate logrotate, AgentResolver agents, IFileSystem fileSystem, IOptions<LabDirectories> options, WorkflowJob job, IWorkflowLog log)
 {
     internal const string Directory = ".logrotate";
 
@@ -32,7 +32,7 @@ internal sealed class RotateAgentLogs(ILogrotate logrotate, IFileSystem fileSyst
 
         var directories = options.Value;
         var logs = declarations.Agents.Values
-            .Select(agent => ResolveAgents.Expand(agent, directories).Log)
+            .Select(agent => agents.Expand(agent).Log)
             .OfType<HostPath>()
             .Select(path => path.File)
             .ToList();

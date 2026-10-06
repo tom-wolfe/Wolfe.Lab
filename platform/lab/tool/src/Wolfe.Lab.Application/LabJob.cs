@@ -1,4 +1,7 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Ritten.Git;
+using Wolfe.Lab.Application.Agents;
+using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Infrastructure;
 using Wolfe.Lab.Infrastructure.Releases;
 
@@ -18,5 +21,7 @@ public abstract class LabJob<TOptions> : Job<TOptions> where TOptions : Workflow
         builder.AddLabConfiguration();
         builder.AddLabRoots();
         builder.AddLabNode();
+        builder.Services.TryAddSingleton<AgentResolver>();
+        builder.Services.TryAddSingleton<EnvironmentPath>();
     }
 }

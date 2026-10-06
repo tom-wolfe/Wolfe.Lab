@@ -62,7 +62,7 @@ internal sealed class ConvergeRelease(IDocker docker, IOptions<LabDirectories> o
                 : $"Would restart {release.Name}: its files changed at {current}, after the last restart for them.");
             if (applied is not null)
             {
-                report.Section(PublishArtifacts.Section).Note($"Would restart `{release.Name}` for its changed files.");
+                report.Section(ReportSections.Artifacts).Note($"Would restart `{release.Name}` for its changed files.");
             }
 
             return;
@@ -73,7 +73,7 @@ internal sealed class ConvergeRelease(IDocker docker, IOptions<LabDirectories> o
             await docker.ComposeStop(release.Directory, ct);
             await docker.ComposeStart(release.Directory, ct);
             log.Status($"Restarted {release.Name} for its changed files.");
-            report.Section(PublishArtifacts.Section).Success($"Restarted `{release.Name}` for its changed files.");
+            report.Section(ReportSections.Artifacts).Success($"Restarted `{release.Name}` for its changed files.");
         }
 
         await file.WriteAllText(current, cancellationToken: ct);
