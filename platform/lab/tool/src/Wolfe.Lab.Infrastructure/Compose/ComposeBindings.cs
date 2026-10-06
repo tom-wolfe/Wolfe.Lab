@@ -1,4 +1,3 @@
-using System.Globalization;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;

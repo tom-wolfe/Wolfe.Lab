@@ -31,7 +31,7 @@ public class LabSchemaTests
     }
 
     private static IReadOnlyList<string> Judge(string yaml) =>
-        [.. LabSchema.Judge(YamlDocuments.Parse(yaml).Value.ShouldNotBeNull().Documents.Single()).Select(problem => $"{problem.Line}: {problem.Problem.Message}")];
+        [.. LabSchema.Validate(YamlDocuments.Parse(yaml).Value.ShouldNotBeNull().Documents.Single()).Select(problem => $"{problem.Line}: {problem.Problem.Message}")];
 
     [Fact]
     public void Judge_PassesAServiceAndAComponent()
@@ -57,7 +57,7 @@ public class LabSchemaTests
 
     [Fact]
     public void Judge_HoldsEachProblemAsTheWellKnownErrorOfItsField() =>
-        LabSchema.Judge(YamlDocuments.Parse("name: server\nkind: app\nworkflow: docker\nservice: server\nvolumes: [/Volumes/Data2]\n").Value.ShouldNotBeNull().Documents.Single())
+        LabSchema.Validate(YamlDocuments.Parse("name: server\nkind: app\nworkflow: docker\nservice: server\nvolumes: [/Volumes/Data2]\n").Value.ShouldNotBeNull().Documents.Single())
             .ShouldHaveSingleItem().Problem.ShouldBe(new FieldError("volumes", DeclarationErrors.NotDeclarable("volumes", "a docker component")));
 
     [Fact]

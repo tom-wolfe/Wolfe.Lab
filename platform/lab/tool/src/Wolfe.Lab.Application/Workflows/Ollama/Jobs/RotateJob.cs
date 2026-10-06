@@ -1,10 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.Ollama.Models;
-using Wolfe.Lab.Application.Workflows.Ollama.Steps;
 using Wolfe.Lab.Infrastructure.Logrotate;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Jobs;

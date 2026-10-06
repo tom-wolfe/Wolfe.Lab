@@ -22,10 +22,16 @@ rather than versioned — the lab is continuous, not released.
 
 - **The agents' logs are rotated nightly.** Each agent workflow runs `lab rotate` before the backups.
 
+- **A component can declare several metrics endpoints.** `metrics:` takes a list too, and an endpoint
+  may name the host port it is `published` on when its own is taken.
+
 ### Changed
 
 - **Agents are the catalog's alone, Ollama's too.** An agents or ollama component must declare its
   agent, and `${PACKAGE}`, `${LAB_ROOT}` and `${LAB_DATA}` leave agent settings for `{package}`.
+
+- **Deploys list metrics in files, not labels.** A compose deploy writes each component's endpoints
+  to `${LAB_ROOT}/.metrics/<component>.json` and no longer labels containers `lab.metrics.*`.
 
 ## 2026-10-05
 
