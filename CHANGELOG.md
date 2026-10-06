@@ -11,6 +11,9 @@ rather than versioned — the lab is continuous, not released.
 - **Containers' metrics are scraped.** Each node's collector scrapes every container whose component
   declares `metrics:`: the Alloy gateway, Garage, Gatus, Caddy and Forgejo.
 
+- **Grafana's stack and Immich report their metrics.** Loki, Prometheus, Tempo and Grafana are
+  scraped by the collector instead of by Prometheus itself, and Immich's API and jobs join them.
+
 - **No `/metrics` under `*.twolfe.dev`.** Caddy refuses the path for every host, and serves its own
   metrics on a listener of its own.
 
