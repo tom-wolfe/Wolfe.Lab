@@ -29,7 +29,7 @@ public class RotateAgentLogsTests : IDisposable
     }
 
     private Task<StepResult> Rotate(bool dryRun = false, params (string Name, string? Log)[] agents) =>
-        new RotateAgentLogs(_logrotate, _fileSystem, Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) }),
+        new RotateAgentLogs(_logrotate, Resolvers.On(root: _root.FullName), _fileSystem, Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) }),
                 new WorkflowJob("ollama", "rotate", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(new AgentDeclarations(agents.ToDictionary(agent => agent.Name, agent => new AgentOptions
             {

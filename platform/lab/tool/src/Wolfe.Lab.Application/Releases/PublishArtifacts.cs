@@ -8,8 +8,6 @@ namespace Wolfe.Lab.Application.Releases;
 [Step("publish artifacts", StepKind.Work)]
 internal sealed class PublishArtifacts(IReleaseInstaller installer, IFileSystem fileSystem, IWorkflowReport report, WorkflowJob job, IWorkflowLog log)
 {
-    internal const string Section = "Artifacts";
-
     public async Task<StepResult<PublishedArtifacts>> Run(Artifacts artifacts, CancellationToken ct = default)
     {
         foreach (var artifact in artifacts.Items)
@@ -34,7 +32,7 @@ internal sealed class PublishArtifacts(IReleaseInstaller installer, IFileSystem 
     /// </summary>
     private void Report(Artifact artifact, IReadOnlyList<string> changes)
     {
-        var section = report.Section(Section);
+        var section = report.Section(ReportSections.Artifacts);
         var relative = fileSystem.ProjectRoot.RelativePath(artifact.Source);
         var source = relative == "." ? "the component" : $"`{relative}`";
         var output = $"`{artifact.Output.AbsolutePath}`";

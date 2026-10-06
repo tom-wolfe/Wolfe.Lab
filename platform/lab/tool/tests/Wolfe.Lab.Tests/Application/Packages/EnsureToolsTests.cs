@@ -45,7 +45,7 @@ public class EnsureToolsTests : IDisposable
     {
         _installer.Install(Arg.Any<Package>(), Arg.Any<CancellationToken>())
             .Returns(call => new InstalledPackage(call.Arg<Package>(), new PhysicalDirectory(_package.FullName), outcome));
-        return new EnsureTools(new RequiredTools(tools), _git, _installer, new WorkflowJob("tofu", "deploy", dryRun, AutoApprove: true),
+        return new EnsureTools(new RequiredTools(tools), _git, _installer, new Wolfe.Lab.Application.Packages.EnvironmentPath(), new WorkflowJob("tofu", "deploy", dryRun, AutoApprove: true),
                 Report(), Substitute.For<IWorkflowLog>())
             .Run(TestContext.Current.CancellationToken);
     }

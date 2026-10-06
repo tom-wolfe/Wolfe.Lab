@@ -1,10 +1,9 @@
-using Microsoft.Extensions.Options;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Packages;
-using Wolfe.Lab.Infrastructure.Releases;
+using Wolfe.Lab.Tests.Application.Agents;
 
 namespace Wolfe.Lab.Tests.Application.Packages;
 
@@ -48,7 +47,7 @@ public class InstallAgentPackagesTests : IDisposable
         {
             ["alloy"] = agent ?? new AgentOptions { Package = Alloy, Program = HostPath.From("${PACKAGE}/alloy-darwin-arm64") }
         });
-        return new InstallAgentPackages(_installer, Options.Create(new LabDirectories()),
+        return new InstallAgentPackages(_installer, Resolvers.On(), new Wolfe.Lab.Application.Packages.EnvironmentPath(),
                 new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), Report(), Substitute.For<IWorkflowLog>())
             .Run(declarations, TestContext.Current.CancellationToken);
     }

@@ -2,21 +2,14 @@ using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Packages;
-using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Application.Packages;
 
 /// <summary>
-/// Installs what each agent runs, when it declares a <c>package</c>, before the agents are resolved.
+/// Installs the packages each agent needs to run, when it declares a <c>package</c>, before the agents are resolved.
 /// </summary>
-/// <remarks>
-/// The lab runs the agent, so it installs it too: its version pinned beside its unit, not left to
-/// whatever Homebrew last upgraded to. An agent without a package runs what the node already has.
-/// The package goes first on the job's path as well, so a command the job itself runs by name is
-/// the agent's version.
-/// </remarks>
 [Step("install agent packages", StepKind.Work)]
-internal sealed class InstallAgentPackages(IPackageInstaller installer, IOptions<LabDirectories> roots, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
+internal sealed class InstallAgentPackages(IPackageInstaller installer, AgentResolver agents, EnvironmentPath path, WorkflowJob job, IWorkflowReport report, IWorkflowLog log)
 {
     public async Task<StepResult<AgentPackages>> Run(AgentDeclarations declarations, CancellationToken ct = default)
     {
@@ -43,7 +36,7 @@ internal sealed class InstallAgentPackages(IPackageInstaller installer, IOptions
             // marked executable.
             var directory = result.Directory;
             if (!job.DryRun
-                && ResolveAgents.Expand(agent, roots.Value, directory.AbsolutePath).Program is { File: var program }
+                && agents.Expand(agent, directory).Program is { File: var program }
                 && directory.RelativePath(program) is var relative && !relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(relative)
                 && program.Exists)
             {
@@ -54,8 +47,7 @@ internal sealed class InstallAgentPackages(IPackageInstaller installer, IOptions
             // is the version the agent runs, not whatever else the node has.
             if (!job.DryRun)
             {
-                Environment.SetEnvironmentVariable(EnsureTools.PathVariable,
-                    $"{directory.AbsolutePath}{Path.PathSeparator}{Environment.GetEnvironmentVariable(EnsureTools.PathVariable)}");
+                path.Prepend(directory);
             }
         }
 

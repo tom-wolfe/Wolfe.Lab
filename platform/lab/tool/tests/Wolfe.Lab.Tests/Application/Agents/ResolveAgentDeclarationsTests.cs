@@ -1,6 +1,4 @@
-using Microsoft.Extensions.Options;
-using Ritten.Engine.FileSystem;
-using Wolfe.Lab.Application.Workflows.Agents.Steps;
+using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
@@ -8,17 +6,13 @@ using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Packages;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Tests.Domain.Catalog;
 
-namespace Wolfe.Lab.Tests.Application.Workflows.Agents.Steps;
+namespace Wolfe.Lab.Tests.Application.Agents;
 
 public class ResolveAgentDeclarationsTests
 {
     private const string Directory = "monitoring/alloy/forwarder";
-
-    private static readonly IOptions<LabDirectories> Directories =
-        Options.Create(new LabDirectories { Root = new PhysicalDirectory("/lab/root"), Data = new PhysicalDirectory("/lab/data") });
 
     private static readonly AgentProcess Alloy = new()
     {
@@ -32,8 +26,7 @@ public class ResolveAgentDeclarationsTests
 
     // The node is the environment's: LAB_NODE.
     private static StepResult<AgentDeclarations> Resolve(ServiceCatalog catalog, string? node) =>
-        new ResolveAgentDeclarations(Directories,
-                Options.Create(new LabNode { Given = node }), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
+        new ResolveAgentDeclarations(Resolvers.On(node), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
 
     private static ServiceCatalog Placed(DeploymentTarget runsOn) =>
@@ -103,9 +96,7 @@ public class ResolveAgentDeclarationsTests
     [Fact]
     public void Run_RefusesANodeThatKeepsTheLabElsewhereThanTheEnvironmentSays()
     {
-        var result = new ResolveAgentDeclarations(
-                Options.Create(new LabDirectories { Root = new PhysicalDirectory("/elsewhere/root"), Data = new PhysicalDirectory("/lab/data") }),
-                Options.Create(new LabNode { Given = "mini" }), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
+        var result = new ResolveAgentDeclarations(Resolvers.On("mini", root: "/elsewhere/root"), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(Placed(DeploymentTarget.All), Placed(DeploymentTarget.All).DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
 
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message

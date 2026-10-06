@@ -345,7 +345,7 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("monitoring/alloy/service.yaml", Alloy);
         Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\n");
 
-        (await Errors()).ShouldBe(["monitoring/alloy/forwarder/component.yaml:2: Required properties [\"agent\",\"program\"] are not present"]);
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("declared with its runsOn, agent and program together");
     }
 
     [Fact]
@@ -384,5 +384,30 @@ public class ServiceCatalogReaderTests : IDisposable
             + "package: { github: grafana/alloy, version: ../1.20.1, asset: alloy.zip }\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldStartWith("monitoring/alloy/forwarder/component.yaml: package.version: '../1.20.1' is not a version");
+    }
+
+    private const string Ollama = "kind: service\nname: ollama\ndescription: The model endpoint.\n";
+
+    [Fact]
+    public async Task Read_PlacesAnOllamaComponentThatDeclaresItsAgent()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+        Declare("ai/ollama/service.yaml", Ollama);
+        Declare("ai/ollama/mini/component.yaml",
+            "name: mini\nkind: model\nworkflow: ollama\nrunsOn: [mini]\nagent: ollama\nprogram: \"{package}/ollama\"\narguments: [serve]\n");
+
+        var component = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
+
+        component.RunsOn.Named.ShouldBe([NodeName.From("mini")]);
+        component.Agent.Name.Value.ShouldBe("ollama");
+    }
+
+    [Fact]
+    public async Task Read_LeavesAnOllamaComponentThatDeclaresNoAgentToItsRittenJson()
+    {
+        Declare("ai/ollama/service.yaml", Ollama);
+        Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\n");
+
+        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldNotBeOfType<AgentComponent>();
     }
 }

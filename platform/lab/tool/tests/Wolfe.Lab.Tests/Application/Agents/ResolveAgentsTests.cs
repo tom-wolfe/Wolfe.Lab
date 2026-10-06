@@ -1,11 +1,8 @@
-using Microsoft.Extensions.Options;
-using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Packages;
-using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Tests.Application.Agents;
 
@@ -13,7 +10,6 @@ public class ResolveAgentsTests : IDisposable
 {
     private readonly DirectoryInfo _node = Directory.CreateTempSubdirectory("lab-node-");
     private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
-    private readonly IOptions<LabDirectories> _roots = Options.Create(new LabDirectories { Root = new PhysicalDirectory("/lab/root"), Data = new PhysicalDirectory("/lab/data") });
 
     public ResolveAgentsTests() =>
         _secrets.Resolve(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(call => $"secret-of-{call.Arg<string>()}");
@@ -31,7 +27,7 @@ public class ResolveAgentsTests : IDisposable
         Resolve(new Dictionary<string, InstalledPackage>(), agents);
 
     private Task<StepResult<AgentPlan>> Resolve(Dictionary<string, InstalledPackage> packages, params (string Name, AgentOptions Options)[] agents) =>
-        new ResolveAgents(_secrets, _roots, Substitute.For<IWorkflowLog>())
+        new ResolveAgents(_secrets, Resolvers.On(), Substitute.For<IWorkflowLog>())
             .Run(new AgentDeclarations(agents.ToDictionary(a => a.Name, a => a.Options)), new AgentPackages(packages), TestContext.Current.CancellationToken);
 
     private static InstalledPackage Alloy(string directory, PackageOutcome outcome) =>
@@ -165,7 +161,7 @@ public class ResolveAgentsTests : IDisposable
     [InlineData("~user", false)]
     [InlineData("a~b", false)]
     public void UnexpandedHomePaths_FindsWhatStartsAtHome(string value, bool found) =>
-        ResolveAgents.UnexpandedHomePaths(new Dictionary<string, string> { ["V"] = value }).Any().ShouldBe(found);
+        Resolvers.On().HomePathsIn(new Dictionary<string, string> { ["V"] = value }).Any().ShouldBe(found);
 
     [Fact]
     public async Task Run_WritesTheLabsRootsIntoArgumentsAndVariables()

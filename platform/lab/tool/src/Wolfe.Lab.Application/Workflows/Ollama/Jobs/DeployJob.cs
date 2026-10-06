@@ -7,7 +7,6 @@ using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Volumes;
 using Wolfe.Lab.Application.Workflows.Ollama.Models;
 using Wolfe.Lab.Application.Workflows.Ollama.Steps;
-using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Ollama;
 using Wolfe.Lab.Infrastructure.Packages;
@@ -21,9 +20,6 @@ namespace Wolfe.Lab.Application.Workflows.Ollama.Jobs;
 /// </summary>
 internal sealed class DeployJob : LabJob<OllamaOptions>
 {
-    private const string AgentName = "ollama";
-    private const string StoreVariable = "OLLAMA_MODELS";
-
     public override string Name => "deploy";
 
     public override string Description => "Converges the model server's agent, pulls the models the service declares and points its roles at them.";
@@ -34,6 +30,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<ResolveOllamaAgents>(),
+        Step.FromType<CheckModelStore>(),
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
@@ -52,16 +49,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
     public override JobKind Kind => JobKind.Deploy;
 
     protected override void ValidateSettings(SettingsValidator<OllamaOptions> options) => options
-        .Require(s => s.Agents.Count > 0, "'agents' names nothing in ritten.json.")
-        .Require(s => s.Models.Store is not null, "'models.store' not set in ritten.json.")
-        // One directory named in two places is a pair that drifts, and the way it fails is the
-        // server starting against an empty store and answering with no models at all.
-        .Require(
-            s => s.Models.Store is { } store
-                 && s.Agents.TryGetValue(AgentName, out var agent)
-                 && agent.Environment.TryGetValue(StoreVariable, out var declared)
-                 && HostPath.From(declared) == store,
-            $"'models.store' must match the {AgentName} agent's {StoreVariable}.");
+        .Require(s => s.Models.Store is not null, "'models.store' not set in ritten.json.");
 
     protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
     {
