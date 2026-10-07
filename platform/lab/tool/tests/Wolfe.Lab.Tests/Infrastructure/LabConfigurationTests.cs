@@ -67,6 +67,22 @@ public class LabConfigurationTests
         packages.Api.ShouldNotBeNull();
     }
 
+    // The application traces, and OpenTelemetry tries its own IConfiguration (the environment alone)
+    // before any job registers the lab's.
+    [Fact]
+    public void AddLabConfiguration_WinsOverOpenTelemetrysConfiguration()
+    {
+        var services = new ServiceCollection();
+        services.AddOpenTelemetry().WithTracing(_ => { });
+        var builder = Substitute.For<IWorkflowBuilder>();
+        builder.Services.Returns(services);
+
+        builder.AddLabConfiguration();
+
+        using var provider = services.BuildServiceProvider();
+        provider.GetRequiredService<IConfiguration>().ShouldBeSameAs(LabConfiguration.Current);
+    }
+
     [Fact]
     public void Current_SaysWhereTheVaultsServiceAccountIs() =>
         LabConfiguration.Current["OnePassword:ServiceAccountTokenFile"].ShouldNotBeNullOrEmpty();
