@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
 name: forwarder
 kind: collector
-workflow: agents
+workflow: agent
 description: "Telemetry collector on each node."
 runsOn: all
 agent: alloy
@@ -11,7 +11,7 @@ package:
   asset: "alloy-{platform}.zip"
   checksums: SHA256SUMS
 program: "{package}/alloy-{platform}"
-arguments: [run, "{lab.root}/alloy/forwarder.alloy", "--storage.path={state}", --server.http.listen-addr=127.0.0.1:12345, --disable-reporting]
+arguments: [run, "{lab.root}/alloy-forwarder/config/forwarder.alloy", "--storage.path={state}", --server.http.listen-addr=127.0.0.1:12345, --disable-reporting]
 environment:
   LAB_GATEWAY: "{node.mini.address}"
   DOCKER_HOST: "{node.docker}"

@@ -75,12 +75,6 @@
       groupName: "lab CLI pin",
     },
 
-    // Built on the node from source, not pulled: nothing to look up.
-    {
-      matchPackageNames: ["lab/mail-watcher"],
-      enabled: false,
-    },
-
     // Immich's own compose file pins its database and cache, by digest, per
     // release. They move when Immich's release notes say so, not before.
     {

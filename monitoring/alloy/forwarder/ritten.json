@@ -1,9 +1,3 @@
 {
-  "workflow": "agents",
-  "artifacts": [
-    {
-      "source": "config",
-      "output": "${LAB_ROOT}/alloy"
-    }
-  ]
+  "workflow": "agent"
 }

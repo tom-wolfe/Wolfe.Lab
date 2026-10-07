@@ -2,7 +2,7 @@ name: mail-watcher
 
 services:
   watcher:
-    image: lab/mail-watcher
+    build: .
     container_name: mail-watcher
     restart: unless-stopped
     pull_policy: never
