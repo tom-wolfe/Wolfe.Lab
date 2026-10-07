@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "Sonarr's database and config."
+partOf: server
+requiresVolumes: [/Volumes/Data1, /Volumes/Data2]
+paths: [~/Docker/sonarr/config]
+excludes:
+  - ~/Docker/sonarr/config/Backups
+  - ~/Docker/sonarr/config/MediaCover
+  - ~/Docker/sonarr/config/logs
+  - ~/Docker/sonarr/config/logs.db
+  - "~/Docker/sonarr/config/logs.db-*"
+verify: [~/Docker/sonarr/config/sonarr.db]

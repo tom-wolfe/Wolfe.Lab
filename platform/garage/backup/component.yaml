@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "Garage's metadata and the blocks it holds."
+partOf: server
+paths: [~/Docker/garage/meta, ~/Docker/garage/data]
+verify: [~/Docker/garage/meta]

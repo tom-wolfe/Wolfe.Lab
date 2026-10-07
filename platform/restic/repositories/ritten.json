@@ -1,6 +1,5 @@
 {
   "workflow": "restic",
-  "volumes": ["/Volumes/Data2"],
   "retention": {
     "daily": 7,
     "weekly": 5,

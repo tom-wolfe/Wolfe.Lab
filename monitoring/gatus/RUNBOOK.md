@@ -15,7 +15,7 @@ reasons are in `README.md`.
    names work and the neat name doesn't.
 4. **Reload caddy's routes** — the `caddy routes` workflow (it fires on any `caddy.caddyfile` change) does
    this on its next run; by hand,
-   `docker exec caddy caddy reload --config /etc/caddy/lab/caddy/Caddyfile`.
+   `docker exec caddy caddy reload --config /etc/caddy/lab/caddy-proxy/Caddyfile`.
 5. **The record**: `gatus-tofu.yaml` creates the CNAME on the push;
    `forgejo-tofu.yaml` creates `code.twolfe.dev` the same way.
    Or by hand from a laptop: `lab deploy` from `monitoring/gatus/tofu` — plan tripwire:

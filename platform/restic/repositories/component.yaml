@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: repositories
+kind: repository
+workflow: restic
+description: "The local repository on Data2 and its offsite copy."
+requiresVolumes: [/Volumes/Data2]

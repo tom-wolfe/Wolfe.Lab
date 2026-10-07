@@ -13,7 +13,7 @@ whose stack is a supervised agent rather than a container.
 
 What that means concretely — `ritten.json` declares an `agents` section
 instead of naming a compose file, `lab deploy` renders it to a launchd
-unit and bootstraps it, and there is nothing to install into the release
+unit and bootstraps it, and there is nothing to install into an install
 directory because nothing on the node reads from there. The declaration
 is platform-neutral, so when the primary node stops being a Mac this
 service does not change; only which renderer the CLI registers does.

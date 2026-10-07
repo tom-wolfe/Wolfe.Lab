@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "Forgejo's repositories, database and config."
+partOf: server
+paths: [~/Docker/forgejo/data]
+excludes:
+  - ~/Docker/forgejo/data/gitea/packages
+verify: [~/Docker/forgejo/data/gitea/forgejo.db]

@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: files
+displayName: Files
+description: "The personal files: what Google Drive held, and the archives that had no other home."
+links:
+  - { title: README, type: docs, path: README.md }

@@ -38,9 +38,9 @@ load-bearing part of the old scripts — it's what makes SQLite/LMDB
 snapshots consistent — and it stays. The implementation is ONE shared
 pipeline: `lab backup` in `platform/lab/` (stop → `restic backup` → start, with
 the mount, repo and mid-backup restart guards). Per-service variation is
-data — the `backup` section of the service's `ritten.json` — declaring
-what to snapshot: the paths, the excludes, the container to stop (or
-none for a warm snapshot), and the container whose image tags it. No job keeps or prunes anything, because —
+data — each service's backup component (`backup/component.yaml`) — declaring
+what to snapshot: the paths, the excludes, and the component it is part of,
+stopped for the snapshot unless it is warm, whose image tags it. No job keeps or prunes anything, because —
 
 **Retention lives in ONE place:** `lab offsite` (`platform/lab/`, settings in
 `ritten.json`), nightly at 04:35, after every backup has finished:

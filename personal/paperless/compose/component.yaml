@@ -9,5 +9,6 @@ name: server
 kind: app
 workflow: docker
 service: paperless
+requiresVolumes: [/Volumes/Data2]
 description: "Paperless-ngx itself."
 dependsOn: [broker]

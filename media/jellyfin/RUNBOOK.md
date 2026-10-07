@@ -27,7 +27,7 @@ image afterwards will fail.
 cd media/jellyfin/backup && lab backup && cd ../../..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the tick ships it), then
 # either let the jellyfin compose workflow converge it or, by hand:
-cd ~/.local/share/Wolfe.Lab/jellyfin
+cd ~/.local/share/Wolfe.Lab/jellyfin-server
 docker compose pull
 docker compose up -d
 docker compose logs -f           # watch migrations complete

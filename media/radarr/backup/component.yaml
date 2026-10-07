@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "Radarr's database and config."
+partOf: server
+requiresVolumes: [/Volumes/Data1, /Volumes/Data2]
+paths: [~/Docker/radarr/config]
+excludes:
+  - ~/Docker/radarr/config/Backups
+  - ~/Docker/radarr/config/MediaCover
+  - ~/Docker/radarr/config/logs
+  - ~/Docker/radarr/config/logs.db
+  - "~/Docker/radarr/config/logs.db-*"
+verify: [~/Docker/radarr/config/radarr.db]

@@ -1,4 +1,3 @@
 {
-  "workflow": "docker",
-  "release": "mail-bridge"
+  "workflow": "docker"
 }

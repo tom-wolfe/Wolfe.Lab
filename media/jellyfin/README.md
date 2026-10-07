@@ -76,7 +76,7 @@ Forgejo's does — it has to stay where the native app left it.
 ## Day-to-day
 
 ```sh
-cd ~/.local/share/Wolfe.Lab/jellyfin
+cd ~/.local/share/Wolfe.Lab/jellyfin-server
 
 docker compose ps            # status
 docker compose logs -f       # follow logs

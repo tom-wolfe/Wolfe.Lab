@@ -163,7 +163,7 @@ It lives on the Pi, and everything the move changed is in files:
   below it is red, it is the machine, which is the whole point of the move.
 - `compose.yaml` — no `lab` network; paths under `${HOME}` (the runner's
   job environment carries the login user's `HOME`). The project directory
-  is the service's install, `~/.local/share/Wolfe.Lab/gatus`, which
+  is the service's install, `~/.local/share/Wolfe.Lab/gatus-server`, which
   the deploy refreshes it from the checkout every time.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).

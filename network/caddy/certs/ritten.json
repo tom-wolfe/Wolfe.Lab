@@ -13,6 +13,6 @@
   "store": "~/Docker/caddy/lego",
   "caddy": {
     "container": "caddy",
-    "caddyfile": "/etc/caddy/lab/caddy/Caddyfile"
+    "caddyfile": "/etc/caddy/lab/caddy-proxy/Caddyfile"
   }
 }

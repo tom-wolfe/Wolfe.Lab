@@ -23,7 +23,7 @@ lab deploy
 ## Day-to-day
 
 ```sh
-cd ~/.local/share/Wolfe.Lab/forgejo
+cd ~/.local/share/Wolfe.Lab/forgejo-server
 
 docker compose ps            # status
 docker compose logs -f       # follow logs
@@ -254,7 +254,7 @@ $run tofu state list
   out-of-band with a minimal PATCH that omits `wiki_branch` —
 
   ```sh
-  curl -X PATCH -H "Authorization: token $(op read 'op://Wolfe.Lab/forgejo-api-token/credential')" \
+  curl -X PATCH -H "Authorization: token $(op read 'op://Wolfe.Lab/forgejo-server-api-token/credential')" \
     -H 'Content-Type: application/json' -d '{"has_actions":false}' \
     http://macmini.local:3000/api/v1/repos/<owner>/<name>
   ```

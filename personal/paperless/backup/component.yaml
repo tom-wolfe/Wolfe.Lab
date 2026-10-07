@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "Paperless's database, and the documents themselves."
+partOf: server
+requiresVolumes: [/Volumes/Data2]
+paths: [~/Docker/paperless/data, /Volumes/Data2/paperless/media]
+excludes:
+  - ~/Docker/paperless/data/index
+  - ~/Docker/paperless/data/log
+  - /Volumes/Data2/paperless/media/documents/thumbnails
+verify: [~/Docker/paperless/data/db.sqlite3]

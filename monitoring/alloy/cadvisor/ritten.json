@@ -1,4 +1,3 @@
 {
-  "workflow": "docker",
-  "release": "cadvisor"
+  "workflow": "docker"
 }
