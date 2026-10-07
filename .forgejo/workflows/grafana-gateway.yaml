@@ -1,0 +1,32 @@
+name: grafana gateway
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [monitoring/grafana/gateway/**, .forgejo/workflows/grafana-gateway.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - working-directory: monitoring/grafana/gateway
+        run: lab check
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: MacMini
+    timeout-minutes: 20
+    concurrency:
+      group: MacMini
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - working-directory: monitoring/grafana/gateway
+        run: lab deploy --auto-approve

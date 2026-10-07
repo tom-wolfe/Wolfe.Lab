@@ -4,11 +4,12 @@ The lab's telemetry backend (monitoring/README.md): **Loki** for logs, **Tempo**
 for traces, **Prometheus** for metrics, and **Grafana** in front, at
 `grafana.twolfe.dev` — on the tailnet, like every name under the wildcard —
 with the **Alloy gateway** that writes to them (monitoring/alloy/README.md).
-One compose stack on the mini, release `grafana`.
+Two compose stacks on the mini: the stores and Grafana in `compose/`, release
+`grafana`, and the gateway in `gateway/`, release `grafana-gateway`.
 
 | Concern | Handled by |
 | --- | --- |
-| Container | `.forgejo/workflows/grafana-compose.yaml`, on every push that touches `compose/`; the mini's host runner |
+| Containers | `.forgejo/workflows/grafana-compose.yaml` and `grafana-gateway.yaml`, on every push that touches their directory; the mini's host runner |
 | Secrets | `compose/secrets.env`: the admin login (`grafana-admin`), Pushover (`pushover`, shared with Gatus) and the healthchecks.io ping key (`healthchecks-ping-key`, shared with the heartbeat) |
 | Datasources, contact points, alert rules, dashboards | provisioned from `compose/config/grafana/provisioning/` — code, not state |
 | The LLM app | installed at start (`GF_PLUGINS_PREINSTALL_SYNC`, pinned; Renovate bumps it) and configured from `provisioning/plugins/llm.yaml` (below) |
@@ -18,8 +19,8 @@ One compose stack on the mini, release `grafana`.
 
 ## What goes in
 
-Only the gateway writes to the stores, by name on the stack's `telemetry`
-network; none of them publishes a port. Every node's forwarder, the mini's
+Only the gateway writes to the stores, by name on the stores' `telemetry`
+network, which its own stack joins; none of them publishes a port. Every node's forwarder, the mini's
 included, sends to the gateway's `:4417`–`:4419` over the tailnet, never
 through caddy — a broken front door must not hide the evidence of its own
 failure.

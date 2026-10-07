@@ -12,4 +12,4 @@ kind: network
 workflow: docker
 service: tailscale
 description: "Forgejo's own node on the tailnet, git.twolfe.dev."
-dependsOn: [server]
+partOf: server

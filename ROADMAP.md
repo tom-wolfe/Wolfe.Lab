@@ -408,80 +408,15 @@ The first sets, each a starting point rather than a closed argument:
 | `obsidian` | as it is | a component per vault |
 | `restic` | as it is | where backups go: retention, verification, the offsite copy |
 | `tofu`, `caddy-certificates`, `image`, `dotnet-tool`, `chezmoi` | as it is | |
-| `backup` | `sqlite`, `postgres`, `directory`, `lmdb` | state workflows, to come: one per kind of state, operating the parts that hold it (below) |
+| `backup` | as it is | until the state workflows that replace it, planned by the agent (#6) |
 | `garage-layout` | a facet | `layout:` on Garage's component |
-| `heartbeat`, `gatus-health` | facets | a `heartbeat:` or `check:` on what they watch |
-| `caddy-routes` | gone | Caddy renders the published `route` facets |
+| `heartbeat`, `gatus-health` | as it is | until the agent's own alerts (#6) and published `check:` facets (#8) |
+| `caddy-routes` | as it is | until Caddy renders the published `route:` facets (#6, #8) |
 | `immich-import` | not a component | a one-off operation, and a CLI command |
 
 There are no jobs: what looked like one is a declarative kind (a runner,
 a certificate, a repository), a facet of something else, or an operation
 rather than a component.
-
-**Decided: a backup belongs to the component that holds the state, one
-each, a job of its workflow.** A component's parts are components, so
-what used to need a list of typed backups — Sonarr's SQLite and its
-config directory, Paperless's SQLite and its media — is two components,
-each operated by the state workflow that knows how to back it up:
-
-```yaml
-# media/sonarr/compose/component.yaml
-name: app
-kind: app
-workflow: docker
-service: sonarr
----
-name: database
-kind: database
-workflow: sqlite
-partOf: app
-path: config/sonarr.db
----
-name: config
-kind: storage
-workflow: directory
-partOf: app
-path: config
-excludes: [Backups, MediaCover, logs, "logs.db*"]
-```
-
-- **Every state workflow backs up with the same shape — prepare, then
-  verify — and only its implementation differs.** Preparing stops what must be
-  stopped — a `sqlite` file copied while it is written can come back
-  corrupt, so its host, found up `partOf`, is stopped — or nothing: a
-  `postgres` dumps while it runs. Verifying is what the workflow knows how to
-  check after a restore: an integrity check for SQLite, a recent dump for
-  Postgres, the named files for a directory. Garage's LMDB store is one
-  more workflow, not a special case.
-- **`kind: backup` remains for what is only a backup**, as the vaults are.
-- **Paths are relative to where the component is deployed.** What it
-  ships — config, artifacts — to its release, which mirrors its
-  directory in the repository, so in the checkout such a path reads as
-  relative to the YAML file itself. What it keeps — state, and so what a
-  backup holds — to its service's state directory, `${LAB_DATA}/<service>`
-  (the convention already: `~/Docker/sonarr`). An absolute path is for an
-  external drive alone, and must fall under one of the component's
-  `requiresVolumes`. Jellyfin, the one service still keeping state
-  outside its state directory, moves into it first (see "Debt" below).
-
-**Decided: backups are planned by the agent, never scheduled.** No cron
-lines, and no offsets: staggering backups by hand-picked minutes overlaps
-as they grow, puts every new service at the end, and makes "which runs
-last" a search through every schedule. Each component declares only what
-it holds; the agent (#6) plans the night from all of them:
-
-- **What runs together**: every part of a host is taken in one stop of
-  it, so Sonarr's database and config are one consistent moment, tagged
-  together and restored together, and the app is stopped once.
-- **How much at once**: concurrency per disk, so two backups never fight
-  over one drive, rather than minutes apart in the hope they don't.
-- **In what order**: by the service's `lifecycle`, then an optional
-  `priority` on the service — production before experimental, and what
-  matters most first.
-- **When**: nightly, every backup — which is all the lab has ever needed —
-  so nothing declares a schedule until something needs another cadence.
-  Disruption stays inside the night, and the plan says how long each host
-  will be down.
 
 **Decided: a model is a component, served by Ollama agents.** An
 Ollama server is an agent like any other (`agents`), and what it serves
@@ -520,8 +455,8 @@ servedBy: { mini: [embedding], studio: [embedding] }
   agent's, and the mini's `/Volumes/Data2` its `requiresVolumes`.
 
 **Undecided:** whether `servedBy` names agent components or nodes — the
-same until one node runs two Ollamas — and whether the models deploy
-with their server, after its restart, or on a trigger of their own.
+same until one node runs two Ollamas. Until the agent (#6), the models
+deploy with their servers, as they do today.
 
 **Decided: per-node differences are facts of the node, not copies of
 the component.** Tested on the hardest case, Alloy — one package on three
@@ -651,22 +586,9 @@ name: immich
 The agent references no application code: it orchestrates runs of the
 CLI rather than running workflows itself.
 
-**Decided: the agent runs each workflow as a process.** A run of the
-pinned CLI, as a child process — through Ritten's own command runner —
-so a run is pinned to the version it was planned with, a crash ends the
-run and not the agent, and each run's environment carries only its own
-secrets (#8's narrowing). Not a container, at least to begin with: an
-`agent` component's deploy writes launchd units, a machine applies
-chezmoi and a runner registers on the host, and on a Mac a container is a Linux VM
-that can reach none of it — the reason the lab has host runners today.
-Containers can come later, as hardening, for the kinds that need no host.
-
 **Undecided.**
 
 - **Each facet's schema.** Sketched above, settled as each one moves.
-  #8's well-known keys — endpoint, health, route, scrape — are the same
-  facets, published, so they share one schema rather than having one
-  each.
 - **The kinds themselves.** The tables above are a first
   list: whether Loki and Prometheus are `database`s or a kind of their
   own. A part with no face is a `backend`, never a *service*, which is
@@ -680,19 +602,29 @@ and each fact moves once.
 
 1. The design: this item's undecided list, settled and written here.
 2. *Slice* retired from the repository in one mechanical sweep — prose
-   and code alike — so the new files are written in one vocabulary.
+   and code alike — so the new files are written in one vocabulary. *Done.*
 3. The projects: `Wolfe.Lab.Domain`, `Wolfe.Lab.Infrastructure` and
    `Wolfe.Lab.Application` split out of today's one, with the value
-   objects and the component's placement moved into the domain.
+   objects and the component's placement moved into the domain. *Done.*
 4. The pilot: the declaration loader, components as logical parts with
    their workflows' documents read polymorphically, and the first facets, `logs` and
    `metrics`, with typed readers in place of the telemetry checks'
-   key-walking. The services' own metrics ship on it.
+   key-walking. The services' own metrics ship on it. *Done.*
 5. Agents, the largest declarations, with placement and the nodes —
    #6's step 4 in the new files — and the Alloy gateway into Grafana's
-   stack, leaving a forwarder on every node.
-6. The rest, one facet at a time, routes and checks last, where they stop
-   being gathered and start being published (#6, #8).
+   stack, leaving a forwarder on every node. *Done 2026-10-06.*
+6. The deploy options every workflow shares, out of `ritten.json`:
+   `release`, `volumes` (as `requiresVolumes`), `artifacts` and `images`.
+7. Every remaining `ritten.json` a declaration, a workflow at a time,
+   each in a document shape of its own; Ollama's models as components;
+   `layout:` on Garage's component; `immich-import` a command.
+8. `ritten.json` gone: every lab job takes its component from the
+   catalog (`RequiresProject => false`).
+
+What was here and lands with the agent instead: placement for every
+component (#6's step 4), the state workflows and the backup plan (#6),
+and routes and checks, which stop being gathered when they start being
+published (#6, #8). Until then those workflows are declared as they are.
 
 ### 6. CI/CD — a kernel, and an agent that deploys the repo
 
@@ -825,6 +757,71 @@ agent is a controller and a scheduler, not a supervisor:
   per job: an agent that dies is caught by the node's heartbeat and the
   missing telemetry, not by twenty silent pings.
 
+**A backup belongs to the component that holds the state, one
+each, a job of its workflow.** A component's parts are components, so
+what used to need a list of typed backups — Sonarr's SQLite and its
+config directory, Paperless's SQLite and its media — is two components,
+each operated by the state workflow that knows how to back it up:
+
+```yaml
+# media/sonarr/compose/component.yaml
+name: app
+kind: app
+workflow: docker
+service: sonarr
+---
+name: database
+kind: database
+workflow: sqlite
+partOf: app
+path: config/sonarr.db
+---
+name: config
+kind: storage
+workflow: directory
+partOf: app
+path: config
+excludes: [Backups, MediaCover, logs, "logs.db*"]
+```
+
+- **Every state workflow backs up with the same shape — prepare, then
+  verify — and only its implementation differs.** Preparing stops what must be
+  stopped — a `sqlite` file copied while it is written can come back
+  corrupt, so its host, found up `partOf`, is stopped — or nothing: a
+  `postgres` dumps while it runs. Verifying is what the workflow knows how to
+  check after a restore: an integrity check for SQLite, a recent dump for
+  Postgres, the named files for a directory. Garage's LMDB store is one
+  more workflow, not a special case.
+- **`kind: backup` remains for what is only a backup**, as the vaults are.
+- **Paths are relative to where the component is deployed.** What it
+  ships — config, artifacts — to its release, which mirrors its
+  directory in the repository, so in the checkout such a path reads as
+  relative to the YAML file itself. What it keeps — state, and so what a
+  backup holds — to its service's state directory, `${LAB_DATA}/<service>`
+  (the convention already: `~/Docker/sonarr`). An absolute path is for an
+  external drive alone, and must fall under one of the component's
+  `requiresVolumes`. Jellyfin, the one service still keeping state
+  outside its state directory, moves into it first (see "Debt" below).
+
+**Backups are planned by the agent, never scheduled.** No cron
+lines, and no offsets: staggering backups by hand-picked minutes overlaps
+as they grow, puts every new service at the end, and makes "which runs
+last" a search through every schedule. Each component declares only what
+it holds; the agent plans the night from all of them:
+
+- **What runs together**: every part of a host is taken in one stop of
+  it, so Sonarr's database and config are one consistent moment, tagged
+  together and restored together, and the app is stopped once.
+- **How much at once**: concurrency per disk, so two backups never fight
+  over one drive, rather than minutes apart in the hope they don't.
+- **In what order**: by the service's `lifecycle`, then an optional
+  `priority` on the service — production before experimental, and what
+  matters most first.
+- **When**: nightly, every backup — which is all the lab has ever needed —
+  so nothing declares a schedule until something needs another cadence.
+  Disruption stays inside the night, and the plan says how long each host
+  will be down.
+
 **It serves an API: ASP.NET Core.** Tailnet-only and authenticated —
 this is the process that can deploy anything. A standard host brings
 what a hand-built endpoint would not: health checks, OpenTelemetry for
@@ -859,6 +856,16 @@ process that lives:
   one version of `tofu` everywhere — but changing that version takes a
   lock: a job holds its tools for its whole duration, and a new version
   is swapped in only between jobs.
+
+**The agent runs each workflow as a process.** A run of the
+pinned CLI, as a child process — through Ritten's own command runner —
+so a run is pinned to the version it was planned with, a crash ends the
+run and not the agent, and each run's environment carries only its own
+secrets (#8's narrowing). Not a container, at least to begin with: an
+`agent` component's deploy writes launchd units, a machine applies
+chezmoi and a runner registers on the host, and on a Mac a container is a Linux VM
+that can reach none of it — the reason the lab has host runners today.
+Containers can come later, as hardening, for the kinds that need no host.
 
 Two things make it safe to hand deployment over: **it is observable
 from its first reconcile** (each reconcile a trace and each step a
@@ -931,10 +938,14 @@ one. A learning item, not the plan.
 4. Placement in the components' declarations — `runs-on` read from the
    component, while the workflows still deploy.
 5. The lab's agent: one low-stakes service
-   first, then the rest, then caddy's assembled routes.
+   first, then the rest, then routes and checks published (#8) — Caddy's
+   and Gatus's rendered from them, `caddy-routes` and `gatus-health`
+   retired.
 6. Schedules move from Actions cron into the agent's Hangfire, with
-   Grafana rules for failed and missed runs first — backups last, once
-   the rest have run quietly for a while.
+   Grafana rules for failed and missed runs first, retiring the
+   per-job pings (`heartbeat`) — backups last, once the rest have run
+   quietly for a while: Jellyfin's state directory moved, the state
+   workflows in place of `backup`, and the night planned.
 7. Tofu through the agent — plans on pull requests, applies on merge —
    and CI as one workflow.
 8. The trust boundary.
@@ -1041,7 +1052,10 @@ and Alloy's scrape targets are the same pattern. Placement comes free:
 keys are published where a component deploys and removed when it is
 torn down, so the page shows what runs, wherever it runs. The
 well-known keys — endpoint, health, route, scrape — have a small typed
-schema: a contract between services, not free text. And the inverted
+schema: a contract between services, not free text. They are #14's
+facets, published — `route:`, `check:`, `metrics:` — so they share one
+schema rather than having one each, settled here as `route:` and
+`check:` are written into the declarations. And the inverted
 failure mode matters most here, since a check that was never published
 is a status page that says nothing is wrong: a failed deploy leaves its
 keys in place, only teardown removes them, and each renderer reports

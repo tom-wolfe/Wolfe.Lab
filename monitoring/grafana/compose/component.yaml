@@ -26,7 +26,7 @@ description: "The trace store."
 metrics:
   port: 3200
 ---
-name: grafana
+name: server
 kind: app
 workflow: docker
 service: grafana
@@ -37,13 +37,3 @@ dependsOn: [loki, prometheus, tempo]
 metrics:
   port: 3000
   published: 13000
----
-name: gateway
-kind: collector
-workflow: docker
-service: gateway
-displayName: Alloy gateway
-description: "The single entry point for all telemetry."
-dependsOn: [loki, prometheus, tempo]
-metrics:
-  port: 12346

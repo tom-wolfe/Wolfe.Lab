@@ -1,0 +1,33 @@
+name: grafana-gateway
+
+services:
+  gateway:
+    image: grafana/alloy:v1.20.1
+    container_name: alloy-gateway
+    restart: unless-stopped
+    command:
+      - run
+      - /etc/alloy/gateway.alloy
+      - --storage.path=/var/lib/alloy/data
+      # Its own metrics, which the collector scrapes.
+      - --server.http.listen-addr=0.0.0.0:12346
+      - --disable-reporting
+    volumes:
+      - ./config:/etc/alloy:ro
+      - ${HOME}/Docker/grafana/alloy:/var/lib/alloy/data
+    ports:
+      - "4417:4417"
+      - "4418:4418"
+      - "4419:4419"
+    networks:
+      - telemetry
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+networks:
+  # The stores' network, in Grafana's own stack (../compose).
+  telemetry:
+    external: true
+    name: grafana_telemetry
