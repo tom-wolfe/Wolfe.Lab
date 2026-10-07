@@ -271,7 +271,6 @@
               "docker",
               "dotnet-service",
               "agent",
-              "agents",
               "ollama",
               "forgejo-runners",
               "obsidian",
@@ -368,8 +367,7 @@
               "dotnet-tool",
               "chezmoi",
               "backup",
-              "caddy-routes",
-              "agents"
+              "caddy-routes"
             ]
           },
           "name": {
@@ -549,7 +547,6 @@
           "workflow": {
             "enum": [
               "agent",
-              "agents",
               "ollama"
             ]
           }
@@ -599,8 +596,7 @@
               "dotnet-tool",
               "chezmoi",
               "backup",
-              "caddy-routes",
-              "agents"
+              "caddy-routes"
             ]
           },
           "name": {
@@ -849,8 +845,7 @@
               "dotnet-tool",
               "chezmoi",
               "backup",
-              "caddy-routes",
-              "agents"
+              "caddy-routes"
             ]
           },
           "name": {
@@ -991,8 +986,7 @@
               "dotnet-tool",
               "chezmoi",
               "backup",
-              "caddy-routes",
-              "agents"
+              "caddy-routes"
             ]
           },
           "name": {

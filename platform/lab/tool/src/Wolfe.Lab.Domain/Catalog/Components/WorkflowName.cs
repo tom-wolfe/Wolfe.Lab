@@ -29,18 +29,6 @@ public readonly partial struct WorkflowName : IClosedSet<WorkflowName>
     /// </summary>
     public bool IsHost => this == Docker || this == DotNetService || this == Agent || this == Ollama || this == ForgejoRunners;
 
-    /// <summary>
-    /// Names a workflow went by once, each read as the workflow it became until no declaration
-    /// writes it any longer.
-    /// </summary>
-    /// <remarks>Names, built when asked: the instances are made through <see cref="NormalizeInput"/>.</remarks>
-    public static IReadOnlyDictionary<string, string> Formerly => new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["agents"] = "agent"
-    };
-
-    private static string NormalizeInput(string input) => Formerly.GetValueOrDefault(input, input);
-
     private static Validation Validate(string input) =>
         All.Any(workflow => workflow.Value == input)
             ? Validation.Ok

@@ -50,7 +50,6 @@ public static class LabApplication
             .Add<ObsidianWorkflow>()
             .Add<OllamaWorkflow>()
             .Add<AgentWorkflow>()
-            .Add<FormerAgentWorkflow>()
             .Add<ResticWorkflow>()
             .Add<HeartbeatWorkflow>()
             .Add<CaddyCertificatesWorkflow>()

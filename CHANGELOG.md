@@ -14,7 +14,7 @@ rather than versioned — the lab is continuous, not released.
 - **A .NET service's image is named for it.** `lab/<service>-<component>`, built by the deploy and
   written into the override, in place of `ritten.json`'s `images`.
 
-- **The `agents` workflow is `agent`.** `agents` is still read, until no declaration or `ritten.json` names it.
+- **The `agents` workflow is `agent`.** Declarations and `ritten.json` name it so; `agents` is no longer read.
 
 ## 2026-10-07
 
