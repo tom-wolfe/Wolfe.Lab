@@ -25,6 +25,8 @@ rather than versioned — the lab is continuous, not released.
 
 - **Drives are declared.** `requiresVolumes` on any component, in place of `ritten.json`'s `volumes`.
 
+- **Immich 3.3.0.** Including a significantly upgraded ML model.
+
 ### Fixed
 
 - **Tracing no longer hides appsettings.json.** OpenTelemetry's environment-only configuration had replaced the lab's, failing every backup and heartbeat.
