@@ -26,7 +26,7 @@ public class ResolveAgentDeclarationsTests
 
     // The node is the environment's: LAB_NODE.
     private static StepResult<AgentDeclarations> Resolve(ServiceCatalog catalog, string? node) =>
-        new ResolveAgentDeclarations(Resolvers.On(node), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
+        new ResolveAgentDeclarations(Resolvers.On(node), new WorkflowJob("agent", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull());
 
     private static ServiceCatalog Placed(DeploymentTarget runsOn) =>
@@ -80,7 +80,7 @@ public class ResolveAgentDeclarationsTests
 
     [Fact]
     public void Run_RefusesAComponentThatDeclaresNoAgent() =>
-        Resolve(Catalogs.Of(Directory, Catalogs.Definition("forwarder", ComponentKind.Collector, WorkflowName.Agents)), "mini")
+        Resolve(Catalogs.Of(Directory, Catalogs.Definition("forwarder", ComponentKind.Collector, WorkflowName.Agent)), "mini")
             .Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("declares no agent");
 
     [Fact]
@@ -96,7 +96,7 @@ public class ResolveAgentDeclarationsTests
     [Fact]
     public void Run_RefusesANodeThatKeepsTheLabElsewhereThanTheEnvironmentSays()
     {
-        var result = new ResolveAgentDeclarations(Resolvers.On("mini", root: "/elsewhere/root"), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
+        var result = new ResolveAgentDeclarations(Resolvers.On("mini", root: "/elsewhere/root"), new WorkflowJob("agent", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
             .Run(Placed(DeploymentTarget.All), Placed(DeploymentTarget.All).DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull());
 
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message

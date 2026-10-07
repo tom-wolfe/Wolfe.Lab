@@ -15,9 +15,9 @@ public class DeploymentUnitTests
     public void Name_IsItsServicesAndItsHeads()
     {
         var unit = At(Immich,
-            Catalogs.Compose("postgres", "immich-database", ComponentKind.Database),
-            Catalogs.Compose("cache", "immich-redis", ComponentKind.Cache),
-            Catalogs.Compose("server", "immich-server") with { DependsOn = ["postgres", "cache"] }).Value.ShouldNotBeNull();
+            Catalogs.Docker("postgres", "immich-database", ComponentKind.Database),
+            Catalogs.Docker("cache", "immich-redis", ComponentKind.Cache),
+            Catalogs.Docker("server", "immich-server") with { DependsOn = ["postgres", "cache"] }).Value.ShouldNotBeNull();
 
         unit.Head.Name.Value.ShouldBe("server");
         unit.Name.ShouldBe("immich-server");
@@ -27,8 +27,8 @@ public class DeploymentUnitTests
     public void Head_IsNeverAPartOfAnother()
     {
         var unit = At("platform/forgejo/compose",
-            Catalogs.Compose("server", "server"),
-            Catalogs.Compose("tailscale", "tailscale", ComponentKind.Network) with { PartOf = "server" }).Value.ShouldNotBeNull();
+            Catalogs.Docker("server", "server"),
+            Catalogs.Docker("tailscale", "tailscale", ComponentKind.Network) with { PartOf = "server" }).Value.ShouldNotBeNull();
 
         unit.Name.ShouldBe("forgejo-server");
     }
@@ -36,7 +36,7 @@ public class DeploymentUnitTests
     [Fact]
     public void Head_MayBePartOfWhatAnotherDirectoryDeclares()
     {
-        var catalog = Catalogs.Of("media/sonarr/compose", Catalogs.Compose("server", "sonarr"));
+        var catalog = Catalogs.Of("media/sonarr/compose", Catalogs.Docker("server", "sonarr"));
         Catalogs.Add(catalog.Services.Single(), new DocumentSource(RepositoryPath.From("media/sonarr/backup/component.yaml")),
             Catalogs.Backup("config", "server", "/Users/lab/Docker/sonarr/config")).Value.ShouldNotBeNull();
 
@@ -45,7 +45,7 @@ public class DeploymentUnitTests
 
     [Fact]
     public void Create_RefusesSeveralAtTheHead() =>
-        At(Immich, Catalogs.Compose("server", "immich-server"), Catalogs.Compose("machine-learning", "immich-machine-learning", ComponentKind.Model))
+        At(Immich, Catalogs.Docker("server", "immich-server"), Catalogs.Docker("machine-learning", "immich-machine-learning", ComponentKind.Model))
             .Errors.ShouldNotBeNull().ShouldHaveSingleItem().ShouldBeOfType<CatalogError>()
             .Problem.ShouldBe(DeploymentUnitErrors.NotOneHead(RepositoryPath.From(Immich), [ComponentName.From("machine-learning"), ComponentName.From("server")]));
 
@@ -53,8 +53,8 @@ public class DeploymentUnitTests
     public void RequiresVolumes_IsEveryComponentsOnce()
     {
         var catalog = Catalogs.Of(Immich,
-            Catalogs.Compose("machine-learning", "immich-machine-learning", ComponentKind.Model),
-            Catalogs.Compose("server", "immich-server") with { DependsOn = ["machine-learning"] });
+            Catalogs.Docker("machine-learning", "immich-machine-learning", ComponentKind.Model),
+            Catalogs.Docker("server", "immich-server") with { DependsOn = ["machine-learning"] });
         foreach (var component in catalog.Services.Single().Components)
         {
             component.RequiresVolumes = [HostPath.From("/Volumes/Data2")];

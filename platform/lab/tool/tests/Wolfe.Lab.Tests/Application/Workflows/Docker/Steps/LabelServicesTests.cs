@@ -36,12 +36,12 @@ public class LabelServicesTests : IDisposable
 
     // The stack's two services, each its own component; the bridge's named apart from its service.
     private static readonly Catalogs.Declaration[] Plain =
-        [Catalogs.Compose("proton", "bridge", ComponentKind.Backend), Catalogs.Compose("watcher", "watcher", ComponentKind.Backend) with { DependsOn = ["proton"] }];
+        [Catalogs.Docker("proton", "bridge", ComponentKind.Backend), Catalogs.Docker("watcher", "watcher", ComponentKind.Backend) with { DependsOn = ["proton"] }];
 
     private static readonly Catalogs.Declaration[] Declaring =
     [
-        Catalogs.Compose("proton", "bridge", ComponentKind.Backend, metrics: new MetricsEndpoint(Port.From(9090), HttpPath.From("/stats"))),
-        Catalogs.Compose("watcher", "watcher", ComponentKind.Backend, logs: LogTransport.Otlp) with { DependsOn = ["proton"] }
+        Catalogs.Docker("proton", "bridge", ComponentKind.Backend, metrics: new MetricsEndpoint(Port.From(9090), HttpPath.From("/stats"))),
+        Catalogs.Docker("watcher", "watcher", ComponentKind.Backend, logs: LogTransport.Otlp) with { DependsOn = ["proton"] }
     ];
 
     private Task<StepResult<ComposeBindings>> Run(bool dryRun = false, Catalogs.Declaration[]? components = null) =>
@@ -76,6 +76,20 @@ public class LabelServicesTests : IDisposable
     }
 
     [Fact]
+    public async Task Run_NamesTheImageTheDeployBuiltForAComponentFromSource()
+    {
+        Catalogs.Declaration[] built =
+            [Catalogs.Docker("proton", "bridge", ComponentKind.Backend), Catalogs.Docker("watcher", "watcher", ComponentKind.Backend) with { Workflow = WorkflowName.DotNetService, DependsOn = ["proton"] }];
+
+        (await Run(components: built)).Outcome.IsFailure.ShouldBeFalse();
+
+        var services = new DeserializerBuilder().Build()
+            .Deserialize<Dictionary<string, Dictionary<string, Dictionary<string, object>>>>(await File.ReadAllTextAsync(Override, TestContext.Current.CancellationToken))["services"];
+        services["watcher"]["image"].ShouldBe("lab/mail-watcher");
+        services["bridge"].ShouldNotContainKey("image");
+    }
+
+    [Fact]
     public async Task Run_AsksComposeForTheStackInTheCheckout_FoundAsComposeFindsIt()
     {
         await Run();
@@ -106,7 +120,7 @@ public class LabelServicesTests : IDisposable
     [Fact]
     public async Task Run_RefusesAStackItsComponentsDoNotBind()
     {
-        var result = await Run(components: [Catalogs.Compose("watcher", "watcher")]);
+        var result = await Run(components: [Catalogs.Docker("watcher", "watcher")]);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         File.Exists(Override).ShouldBeFalse();

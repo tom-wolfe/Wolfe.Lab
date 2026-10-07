@@ -27,7 +27,7 @@ carry most of the lab: `docker` (a compose stack — check on the pull
 request, deploy on the merge), `tofu` (a root module — plan on the pull
 request, apply on the merge), `backup` (what a snapshot holds, what has
 to be quiet while it is taken, and what a restore must bring back),
-`image`, `dotnet-service` and `agents` (host processes — the node services
+`image`, `dotnet-service` and `agent` (host processes — the node services
 that used to live in chezmoi — placed on the nodes they run on, and
 deployed to each by its own runner, which runs `lab deploy` on the node it converges). Two services with the same shape share a
 workflow and differ only in what they declare. What only one service does
@@ -45,7 +45,7 @@ in `platform/forgejo/runners/`, `init` in `platform/garage/layout/`, `verify` in
 match its component is `deploy` whether the stack is containers, a
 supervised agent, or a root module.
 
-A compose component is installed, not run from the checkout. A runner
+A Docker component is installed, not run from the checkout. A runner
 checks the repository out into a disposable workspace, and a container
 bind-mounts files — config directories, a Caddyfile, route snippets —
 that it goes on reading after the job that started it is gone. So every
@@ -105,35 +105,36 @@ and found by walking up from the root, plus its
 own `secrets.env`; both name secrets by reference, read through Ritten's
 provider as each command starts.
 
-### Artifacts
+### Installs
 
-A deploy publishes files to the node as **artifacts**: a directory of the
-component, mirrored to an output directory, declared in `ritten.json`:
+Every deploy installs its deployment on the node — its directory, mirrored
+to `${LAB_ROOT}/<service>-<head>` — and what runs reads its files from
+there: a compose stack its compose file and config, an agent its
+arguments' files (`{lab.root}/alloy-forwarder/config/forwarder.alloy`).
+Nothing else is published, and nothing declares where to: the deployment's
+name says. The install is a mirror, so what the deployment no longer has
+is deleted from it; `ritten.json` and the run's own output stay behind.
+The run's report has an **Install** section: where it went, the files that
+changed (`+` added, `~` changed, `-` deleted) folded beneath it, and any
+restart that followed — a rehearsal reports the same as what it would do.
 
-```json
-"artifacts": [{ "source": "config", "output": "${LAB_ROOT}/alloy" }]
-```
-
-A compose stack is one already — the deployment itself, published to
-`${LAB_ROOT}/<service>-<head>` — and it may declare more; an agents
-component declares the ones its agents read, and names them in their
-arguments the same way (`"run", "${LAB_ROOT}/alloy/config.alloy"`). An
-output is a mirror, so what its source lacks is deleted: it must lie
-strictly inside `${LAB_ROOT}`, and no two outputs may nest. The run's
-report has an **Artifacts** section: each artifact, where it went, the
-files that changed (`+` added, `~` changed, `-` deleted) folded beneath it,
-and any restart that followed — a rehearsal reports the same as what it
-would do.
-
-A published file is written only when its content changed, so the newest
-write under the outputs says when the artifacts last did, and that moves
-the runtime: an agent's unit carries it (as it carries its binary's), so a
-changed config reloads the agent; a compose stack is restarted, and the
-time it was restarted for is kept in `${LAB_ROOT}/.applied/<service>-<head>`,
-written only once the restart has happened. `up` alone would recreate a
-container whose definition changed, never one whose bind-mounted file did.
-Both read the state of the node rather than of the job, so a restart that
+A file is written only when its content changed, so the newest write
+under the install says when it last did, and that moves the runtime: an
+agent's unit carries it (as it carries its binary's), so a changed config
+reloads the agent; a compose stack is restarted, and the time it was
+restarted for is kept in `${LAB_ROOT}/.applied/<service>-<head>`, written
+only once the restart has happened. `up` alone would recreate a container
+whose definition changed, never one whose bind-mounted file did. Both
+read the state of the node rather than of the job, so a restart that
 failed is still owed on the next deploy.
+
+A `dotnet-service` component is built from source: the deploy builds its
+image from the deployment's directory in the checkout, always, before the
+stack converges — compose only builds an image it cannot find, so left to
+compose a source change would deploy the previous image and say nothing.
+The image is named for the component, `lab/<service>-<component>`
+(`lab/mail-watcher`), and the deploy writes that name into the override,
+so the compose file says only that the service is built (`build: .`).
 
 ### Packages and tools
 
@@ -185,7 +186,7 @@ pair).
 ### Two roots
 
 Every node keeps the lab in two places, declared in `platform/nodes.yaml`
-as its `root`, where components and their artifacts are installed
+as its `root`, where deployments are installed
 (`~/.local/share/Wolfe.Lab`), and its `data`, where services keep their
 state (`~/Docker`). That declaration is their one source. chezmoi
 exports a replica of it for the host runners' jobs and for every shell
@@ -195,9 +196,7 @@ on a node, as `LAB_ROOT` and `LAB_DATA`, looked up by the node's name
 laptop is no node, and has none of the three. An agent deploy still
 refuses a node whose declaration and environment disagree, which is
 only possible between a change to `nodes.yaml` and chezmoi applying it.
-A `ritten.json` artifact output names the roots as `${LAB_ROOT}` and
-`${LAB_DATA}`, and nothing else in one is expanded; a declaration names
-them as `{lab.root}` and `{lab.data}`.
+A declaration names them as `{lab.root}` and `{lab.data}`.
 
 ### Declarations
 
@@ -302,13 +301,13 @@ its drives. Which node a deploy is on is the node's to say —
 `LAB_NODE`, set by chezmoi (see "Two roots") — never an argument to it. They are added to the catalog first, so a component can
 be placed on them.
 
-A component the `agents` workflow operates is one host process, declared
+A component the `agent` workflow operates is one host process, declared
 once for every node it runs on:
 
 ```yaml
 name: forwarder
 kind: collector
-workflow: agents
+workflow: agent
 runsOn: all                  # or 'every server', or [mini, pi]
 agent: alloy                 # its unit is dev.twolfe.alloy, its logs' service_name alloy
 package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
@@ -336,7 +335,7 @@ on every node alike, declared to the collector by the deploy, which
 retires any targets its agents left under an earlier name. A deploy on a
 node the component is not placed on has nothing to do.
 
-An agent's log is kept to a size by `lab rotate`, a job of the agents and
+An agent's log is kept to a size by `lab rotate`, a job of the agent and
 ollama workflows: logrotate, as the lab's user, with the component's own
 configuration and state under `{lab.root}/.logrotate`, rotating past 10 MB
 and keeping five compressed generations. It copies a log and truncates it
@@ -345,8 +344,8 @@ open for as long as the agent runs. chezmoi installs logrotate on the
 Macs, and the Pi's OS ships it; nothing else runs it. A rehearsal is
 logrotate's own debug run, from the run's scratch.
 
-`runsOn`, `agent` and `program` are required of every agents component;
-its `ritten.json` declares only its `artifacts`. An `ollama` component
+`runsOn`, `agent` and `program` are required of every agent component;
+its `ritten.json` names only its workflow. An `ollama` component
 declares its agent the same way, required of it too, placed on its one
 node (`runsOn: [mini]`), while its models and roles stay in its
 `ritten.json`. Its deploy holds `models.store` to the agent's

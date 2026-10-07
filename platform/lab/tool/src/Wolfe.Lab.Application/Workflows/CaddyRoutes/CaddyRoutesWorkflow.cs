@@ -7,7 +7,7 @@ namespace Wolfe.Lab.Application.Workflows.CaddyRoutes;
 /// </summary>
 /// <remarks>
 /// Every component that wants a hostname drops a <c>caddy.caddyfile</c> beside its compose file;
-/// this component is what carries them all to the door. Its own compose component knows nothing
+/// this component is what carries them all to the door. Its own Docker component knows nothing
 /// of them, which is the point: adding a service never edits the front door.
 /// </remarks>
 public sealed class CaddyRoutesWorkflow : IWorkflow

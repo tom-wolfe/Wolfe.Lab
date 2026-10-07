@@ -25,7 +25,7 @@ public sealed record SystemdUnit(
 )
 {
     /// <summary>
-    /// When the agent's artifacts last changed on this node, or null when it publishes none.
+    /// When its deployment's files last changed on this node, or null before it is installed.
     /// </summary>
-    public string? ArtifactsStamped { get; init; }
+    public string? InstallStamped { get; init; }
 }

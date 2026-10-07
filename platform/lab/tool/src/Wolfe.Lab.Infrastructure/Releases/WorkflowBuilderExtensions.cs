@@ -43,25 +43,12 @@ public static class WorkflowBuilderExtensions
         }
 
         /// <summary>
-        /// Adds the installer that mirrors a directory onto the node, and its rehearsal.
+        /// Adds the installer that mirrors a deployment onto the node, its rehearsal, and the
+        /// report it writes what changed into.
         /// </summary>
         public IWorkflowBuilder AddInstaller()
         {
-            builder.AddCommandRunner();
-            builder.Services.TryAddSingleton<IReleaseInstaller, RsyncInstaller>();
-            builder.Decorators.Replace<IReleaseInstaller, DryRunInstaller>();
-            return builder;
-        }
-
-        /// <summary>
-        /// Adds the artifacts a job publishes, and the installer that mirrors them onto the node.
-        /// </summary>
-        /// <param name="artifacts">The component's declarations.</param>
-        /// <param name="installsUnit">Whether the deployment is itself installed, as the first artifact.</param>
-        public IWorkflowBuilder AddArtifacts(IReadOnlyList<ArtifactOptions> artifacts, bool installsUnit = false)
-        {
             builder.AddCommandRunner().AddBuildReporting();
-            builder.Services.AddSingleton(new ArtifactDeclarations(artifacts, installsUnit));
             builder.Services.TryAddSingleton<IReleaseInstaller, RsyncInstaller>();
             builder.Decorators.Replace<IReleaseInstaller, DryRunInstaller>();
             return builder;

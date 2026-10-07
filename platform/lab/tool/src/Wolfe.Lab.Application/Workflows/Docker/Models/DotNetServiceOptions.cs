@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Models;
 /// a compose file in another, which is the coupling this shape exists to remove — and
 /// "an application that ships as a container" is regular enough to deserve a shape.
 /// </remarks>
-public sealed record DotNetServiceOptions : DockerComponentOptions
+public sealed record DotNetServiceOptions : WorkflowSettings
 {
     /// <summary>
     /// The configuration to build and test in.

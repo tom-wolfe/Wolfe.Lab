@@ -6,7 +6,7 @@ using Wolfe.Lab.Infrastructure.Telemetry;
 namespace Wolfe.Lab.Infrastructure.Compose;
 
 /// <summary>
-/// The well-known ways a directory's compose components and its compose stack disagree
+/// The well-known ways a directory's Docker components and its compose stack disagree
 /// (<see cref="ComposeBindings"/>).
 /// </summary>
 public static class ComposeBindingErrors

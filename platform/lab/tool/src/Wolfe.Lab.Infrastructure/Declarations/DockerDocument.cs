@@ -4,11 +4,11 @@ using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
 /// <summary>
-/// A component a compose workflow (<c>docker</c>, <c>dotnet-service</c>) operates, as its file
+/// A component the <c>docker</c> or <c>dotnet-service</c> workflow operates, as its file
 /// writes it: one service of the compose stack beside it.
 /// </summary>
 [AdditionalProperties(false)]
-internal sealed record ComposeDocument : ComponentDocument
+internal sealed record DockerDocument : ComponentDocument
 {
     [Required, Description("The compose service the component runs as, as the compose file names it: the container keeps Docker's unique name, the component the catalog's.")]
     public string Service { get; init; } = "";

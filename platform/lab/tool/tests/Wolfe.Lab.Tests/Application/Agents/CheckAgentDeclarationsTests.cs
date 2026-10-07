@@ -13,7 +13,7 @@ public class CheckAgentDeclarationsTests
     private const string Directory = "monitoring/beszel/agent";
 
     private static StepResult Check(ServiceCatalog catalog) =>
-        new CheckAgentDeclarations(Resolvers.On(), new WorkflowJob("agents", "check", DryRun: false, AutoApprove: false), Substitute.For<IWorkflowLog>())
+        new CheckAgentDeclarations(Resolvers.On(), new WorkflowJob("agent", "check", DryRun: false, AutoApprove: false), Substitute.For<IWorkflowLog>())
             .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull());
 
     private static AgentProcess Beszel(params (string Variable, string Value)[] environment) => new()
@@ -61,6 +61,6 @@ public class CheckAgentDeclarationsTests
 
     [Fact]
     public void Run_RefusesAComponentThatDeclaresNoAgent() =>
-        Check(Catalogs.Of(Directory, Catalogs.Definition("agent", ComponentKind.Collector, WorkflowName.Agents)))
+        Check(Catalogs.Of(Directory, Catalogs.Definition("agent", ComponentKind.Collector, WorkflowName.Agent)))
             .Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("declares no agent");
 }

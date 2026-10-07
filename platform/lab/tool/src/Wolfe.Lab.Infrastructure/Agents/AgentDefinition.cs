@@ -38,7 +38,7 @@ public sealed record AgentDefinition(
     public IReadOnlyList<string> Supersedes { get; init; } = [];
 
     /// <summary>
-    /// When the component's artifacts last changed on this node, or null when it publishes none.
+    /// When its deployment's files last changed on this node, or null before it is installed.
     /// </summary>
-    public DateTimeOffset? ArtifactStamp { get; init; }
+    public DateTimeOffset? InstallStamp { get; init; }
 }

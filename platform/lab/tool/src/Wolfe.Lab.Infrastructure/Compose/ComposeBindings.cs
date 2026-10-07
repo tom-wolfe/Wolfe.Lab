@@ -8,7 +8,7 @@ using Wolfe.Lab.Infrastructure.Telemetry;
 namespace Wolfe.Lab.Infrastructure.Compose;
 
 /// <summary>
-/// A directory's compose components bound to its compose stack's services, exactly: every
+/// A directory's Docker components bound to its compose stack's services, exactly: every
 /// service is one component's, and every component names a service the stack has.
 /// </summary>
 /// <remarks>
@@ -21,7 +21,7 @@ namespace Wolfe.Lab.Infrastructure.Compose;
 public sealed record ComposeBindings(IReadOnlyList<ComposeBinding> Bindings)
 {
     /// <summary>
-    /// <paramref name="unit"/>'s compose components bound to <paramref name="project"/>,
+    /// <paramref name="unit"/>'s Docker components bound to <paramref name="project"/>,
     /// or every way they do not fit it — each a component's problem at its declaration, or a
     /// service no component declares.
     /// </summary>
@@ -34,7 +34,7 @@ public sealed record ComposeBindings(IReadOnlyList<ComposeBinding> Bindings)
         var claimed = new Dictionary<string, Component>(StringComparer.Ordinal);
         foreach (var component in unit.Components)
         {
-            if (component is not ComposeComponent compose)
+            if (component is not DockerComponent compose)
             {
                 continue;
             }
@@ -68,7 +68,7 @@ public sealed record ComposeBindings(IReadOnlyList<ComposeBinding> Bindings)
     /// <summary>
     /// What <paramref name="compose"/>'s facets ask of its service, or null when one cannot be met.
     /// </summary>
-    private static ComposeBinding? Bind(ComposeComponent compose, ComposeService service, Action<string, Error> refused)
+    private static ComposeBinding? Bind(DockerComponent compose, ComposeService service, Action<string, Error> refused)
     {
         var labels = new Dictionary<ContainerLabel, string>();
         var publishes = new List<string>();

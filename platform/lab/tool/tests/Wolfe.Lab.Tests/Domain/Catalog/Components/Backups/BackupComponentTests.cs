@@ -40,7 +40,7 @@ public class BackupComponentTests
     [Fact]
     public void Stops_WhatItIsPartOf_UnlessWarm()
     {
-        var catalog = Catalogs.Of("media/sonarr/compose", Catalogs.Compose("server", "sonarr"));
+        var catalog = Catalogs.Of("media/sonarr/compose", Catalogs.Docker("server", "sonarr"));
         var service = catalog.Services.Single();
         var cold = Catalogs.Add(service, new DocumentSource(RepositoryPath.From("media/sonarr/backup/component.yaml"), 0, 2),
             Catalogs.Backup("config", "server", "/Users/lab/Docker/sonarr/config")).Value.ShouldBeOfType<BackupComponent>();

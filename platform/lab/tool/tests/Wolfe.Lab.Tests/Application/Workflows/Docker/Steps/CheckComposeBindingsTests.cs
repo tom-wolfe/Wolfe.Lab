@@ -19,7 +19,7 @@ public class CheckComposeBindingsTests
 
     private Task<StepResult> Run(string service) =>
         new CheckComposeBindings(_docker, _fileSystem, Substitute.For<IWorkflowLog>())
-            .Run(Catalogs.Unit("personal/immich/compose", Catalogs.Compose("server", service)), TestContext.Current.CancellationToken);
+            .Run(Catalogs.Unit("personal/immich/compose", Catalogs.Docker("server", service)), TestContext.Current.CancellationToken);
 
     [Fact]
     public async Task Run_PassesComponentsThatBindTheWholeStack() =>

@@ -3,7 +3,7 @@ using Wolfe.Lab.Domain.Catalog.Nodes;
 namespace Wolfe.Lab.Domain.Catalog.Components.Agents;
 
 /// <summary>
-/// The well-known problems with an agent component's declaration, and with expanding it on a node.
+/// The well-known problems with an agents component's declaration, and with expanding it on a node.
 /// </summary>
 public static class AgentErrors
 {
