@@ -18,13 +18,4 @@ public class WorkflowNameTests
     [Fact]
     public void All_IsWorkflowsTheCliHas() =>
         WorkflowName.All.Select(workflow => workflow.Value).ShouldBeSubsetOf(Workflows());
-
-    [Fact]
-    public void From_ReadsAFormerNameAsTheWorkflowItBecame() =>
-        WorkflowName.From("agents").ShouldBe(WorkflowName.Agent);
-
-    // A ritten.json still naming a workflow by its former name still runs it.
-    [Fact]
-    public void Formerly_NamesWorkflowsTheCliStillHas() =>
-        WorkflowName.Formerly.Keys.ShouldBeSubsetOf(Workflows());
 }

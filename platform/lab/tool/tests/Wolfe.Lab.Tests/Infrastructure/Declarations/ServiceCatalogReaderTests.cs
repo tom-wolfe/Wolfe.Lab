@@ -501,14 +501,4 @@ public class ServiceCatalogReaderTests : IDisposable
         watcher.Image.ShouldBe("lab/mail-watcher");
         watcher.Logs.ShouldBe(LogTransport.Otlp);
     }
-
-    [Fact]
-    public async Task Read_TakesAWorkflowByTheNameItWentByOnce()
-    {
-        Declare("platform/nodes.yaml", "kind: node\nname: pi\nrole: server\nplatform: linux-arm64\naddress: pi.tailnet.ts.net\nroot: /lab/root\ndata: /lab/data\n");
-        Declare("monitoring/alloy/service.yaml", "kind: service\nname: alloy\ndescription: Telemetry.\n");
-        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: [pi]\nagent: alloy\nprogram: /usr/bin/alloy\n");
-
-        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().Workflow.ShouldBe(WorkflowName.Agent);
-    }
 }

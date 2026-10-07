@@ -170,10 +170,6 @@ public static class LabSchema
     private static string Shape(Type document) =>
         document == typeof(ComponentDocument) ? "common" : document.Name.Replace("Document", "", StringComparison.Ordinal).ToLowerInvariant();
 
-    // Every way a workflow may be written: its name, and any it went by once.
-    private static IEnumerable<string> Written(WorkflowName workflow) =>
-        [workflow.Value, .. WorkflowName.Formerly.Where(former => former.Value == workflow.Value).Select(former => former.Key)];
-
     private static JsonSchema Build()
     {
         var configuration = new SchemaGeneratorConfiguration
@@ -197,7 +193,7 @@ public static class LabSchema
                     .Required("kind", "workflow")
                     .Properties(
                         ("kind", new JsonSchemaBuilder().Enum(kinds)),
-                        ("workflow", new JsonSchemaBuilder().Enum(shape.SelectMany(Written)))))
+                        ("workflow", new JsonSchemaBuilder().Enum(shape.Select(workflow => workflow.Value)))))
                 .Then(new JsonSchemaBuilder()
                     .Id($"{Id}/component/{Shape(shape.Key)}")
                     .FromType(shape.Key, configuration)));
@@ -217,7 +213,7 @@ public static class LabSchema
                 new JsonSchemaBuilder().If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Const("node")))).Then(node),
                 new JsonSchemaBuilder()
                     .If(new JsonSchemaBuilder().Properties(("kind", new JsonSchemaBuilder().Enum(kinds))))
-                    .Then(new JsonSchemaBuilder().Required("workflow").Properties(("workflow", new JsonSchemaBuilder().Enum(WorkflowName.All.SelectMany(Written))))),
+                    .Then(new JsonSchemaBuilder().Required("workflow").Properties(("workflow", new JsonSchemaBuilder().Enum(WorkflowName.All.Select(workflow => workflow.Value))))),
                 .. shapes
             ])
             .Build();

@@ -1,4 +1,3 @@
-using Wolfe.Lab.Domain.Catalog.Components;
 using System.Reflection;
 using Json.Schema;
 using Json.Schema.Generation;
@@ -32,14 +31,6 @@ internal sealed class ClosedSetSchemas : ISchemaGenerator
                 ?.GetValue(null) as System.Collections.IEnumerable
                   ?? throw new InvalidOperationException($"{context.Type.Name} is a closed set with no values.");
         context.Intents.Add(new TypeIntent(SchemaValueType.String));
-        var values = all.Cast<object>().Select(value => value.ToString() ?? "");
-
-        // What a workflow was once called, read as what it is now until no declaration writes it.
-        if (context.Type == typeof(WorkflowName))
-        {
-            values = values.Concat(WorkflowName.Formerly.Keys);
-        }
-
-        context.Intents.Add(new EnumIntent(values));
+        context.Intents.Add(new EnumIntent(all.Cast<object>().Select(value => value.ToString() ?? "")));
     }
 }
