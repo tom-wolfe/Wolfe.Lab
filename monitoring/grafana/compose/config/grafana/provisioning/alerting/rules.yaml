@@ -59,8 +59,10 @@ groups:
             datasourceUid: prometheus
             model:
               refId: A
-              # Averaged over ten minutes: a build is busy, not a problem.
-              expr: 1 - avg by (host_name) (rate(node_cpu_seconds_total{mode="idle"}[10m]))
+               # Averaged over ten minutes: a build is busy, not a problem.
+              expr: >-
+                sum by (host_name) (rate(node_cpu_seconds_total{mode!="idle"}[2m]))
+                  / sum by (host_name) (rate(node_cpu_seconds_total[2m]))
               instant: true
           - refId: B
             datasourceUid: __expr__
@@ -74,11 +76,11 @@ groups:
                     params: [0.9]
         noDataState: OK
         execErrState: Error
-        for: 0s
+        for: 10m
         annotations:
           summary: >-
-            {{ $$labels.host_name }}'s CPU has been
-            {{ humanizePercentage $$values.A.Value }} busy for ten minutes.
+            {{ $$labels.host_name }}'s CPU has been over 90% busy for ten
+            minutes: {{ humanizePercentage $$values.A.Value }}.
 
       - uid: node-memory
         title: Node memory full
