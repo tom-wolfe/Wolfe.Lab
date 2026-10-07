@@ -5,7 +5,7 @@
 // own failure. The gateway's address is the agent's (LAB_GATEWAY, in ritten.json).
 
 import.file "node" {
-	filename = sys.env("LAB_ROOT") + "/alloy/node.alloy"
+	filename = sys.env("LAB_ROOT") + "/alloy-forwarder/config/node.alloy"
 }
 
 node.collect "node" {

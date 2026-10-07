@@ -34,15 +34,15 @@ password and the GitHub token, in the vault.
 
 ## What it watches
 
-| Pins | Where | Notes |
-|---|---|---|
-| Container images | every `compose.yaml`, Dockerfile `FROM` | linuxserver and the mail bridge have their tag shapes spelled out; Immich's server and ML move together |
-| The lab CLI | `.config/dotnet-tools.json` | the one pin; the CI image and chezmoi's `install-lab` script read it. What it moves to passed the CLI's tests before it was published (`platform/lab/README.md`, "Shipping") |
-| Packages from GitHub releases | an agent's `package:` in its component's declaration; every tool in `.config/lab-tools.json` | only the version moves; the checksum is read from the release at install |
-| NuGet packages and the .NET SDK | `platform/lab/tool/`, `personal/mail/watcher/` | grouped by family; a new .NET major waits on the dashboard until asked for |
-| Actions | `.forgejo/workflows/*.yaml` | looked up on github.com; Forgejo's runner fetches the same actions from its own mirror |
-| Tofu providers | every `tofu/` root, with the lock file | |
-| Renovate itself | its workflow's `container:` image | weekly, not on every release |
+| Pins                            | Where                                                                                        | Notes                                                                                                                                                                        |
+|---------------------------------|----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Container images                | every `compose.yaml`, Dockerfile `FROM`                                                      | linuxserver and the mail bridge have their tag shapes spelled out; Immich's server and ML move together                                                                      |
+| The lab CLI                     | `.config/dotnet-tools.json`                                                                  | the one pin; the CI image and chezmoi's `install-lab` script read it. What it moves to passed the CLI's tests before it was published (`platform/lab/README.md`, "Shipping") |
+| Packages from GitHub releases   | an agent's `package:` in its component's declaration; every tool in `.config/lab-tools.json` | only the version moves; the checksum is read from the release at install                                                                                                     |
+| NuGet packages and the .NET SDK | `platform/lab/tool/`, `personal/mail/watcher/`                                               | grouped by family; a new .NET major waits on the dashboard until asked for                                                                                                   |
+| Actions                         | `.forgejo/workflows/*.yaml`                                                                  | looked up on github.com; Forgejo's runner fetches the same actions from its own mirror                                                                                       |
+| Tofu providers                  | every `tofu/` root, with the lock file                                                       |                                                                                                                                                                              |
+| Renovate itself                 | its workflow's `container:` image                                                            | weekly, not on every release                                                                                                                                                 |
 
 The **dependency dashboard** is an issue on Wolfe.Lab that lists
 everything pending, everything held back, and anything Renovate could not
@@ -55,7 +55,6 @@ Deliberately:
 - **Immich's database and cache** (`immich-app/postgres`, `valkey`),
   pinned by digest in Immich's own compose file. They move when Immich's
   release notes say so.
-- **`lab/mail-watcher`**, built on the node, never pulled.
 
 Because Renovate cannot move them safely:
 

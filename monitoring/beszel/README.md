@@ -35,7 +35,7 @@ and runs natively on macOS. That's the pick.
 
 The cost is supervision: a native process needs launchd on a Mac and
 systemd on Linux. The lab declares it rather than scripting it — the
-`agent/` component is an `agents` component, the same shape as ollama's
+`agent/` component is an `agent` component, the same shape as ollama's
 server, and `lab deploy` renders the platform's unit and converges it
 (platform/lab/README.md "Agents"). It reports into a dashboard, so it is
 observable, which was the actual requirement.

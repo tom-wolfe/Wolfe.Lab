@@ -6,15 +6,15 @@ node has and forwards it to the **gateway**, the only thing that writes to
 the telemetry stores — a container of Grafana's service
 (`monitoring/grafana/gateway`), so it moves with them.
 
-| Concern | Handled by |
-| --- | --- |
-| Binary | the agent's `package` in `forwarder/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools") |
-| Process | `forwarder/`, the `agents` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml` |
-| Config | `forwarder/config/`, published as an artifact to `${LAB_ROOT}/alloy`; a change restarts every node's agent (platform/lab/README.md, "Artifacts") |
-| Gateway | `monitoring/grafana/gateway`: a compose stack of its own, `config/gateway.alloy` |
-| A Mac's containers | `cadvisor/`, a compose component on the mini, `.forgejo/workflows/alloy-cadvisor.yaml` (below) |
-| State | `${LAB_DATA}/alloy` — its write-ahead log; disposable |
-| UI | `127.0.0.1:12345` on each node — component health and a live view of each pipeline |
+| Concern            | Handled by                                                                                                                                                    |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Binary             | the agent's `package` in `forwarder/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools")            |
+| Process            | `forwarder/`, the `agent` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml`                             |
+| Config             | `forwarder/config/`, installed with the forwarder to `${LAB_ROOT}/alloy-forwarder`; a change restarts every node's agent (platform/lab/README.md, "Installs") |
+| Gateway            | `monitoring/grafana/gateway`: a compose stack of its own, `config/gateway.alloy`                                                                              |
+| A Mac's containers | `cadvisor/`, a compose component on the mini, `.forgejo/workflows/alloy-cadvisor.yaml` (below)                                                                |
+| State              | `${LAB_DATA}/alloy` — its write-ahead log; disposable                                                                                                         |
+| UI                 | `127.0.0.1:12345` on each node — component health and a live view of each pipeline                                                                            |
 
 ## Why a host process — and why the gateway is not one
 

@@ -389,37 +389,37 @@ permitted pairs.
 
 The first sets, each a starting point rather than a closed argument:
 
-| `kind` — what it is for | |
-| --- | --- |
-| `app` | what people use: Immich's server, Jellyfin, Sonarr, Grafana |
-| `backend` | a part with no face of its own: the mail watcher, the bridge |
-| `database`, `cache`, `queue`, `storage` | what keeps or carries data |
-| `proxy`, `network` | Caddy; gluetun, Forgejo's tailscale |
-| `model`, `collector` | Immich's machine learning, Ollama; Alloy, Beszel's agent |
-| `runner`, `backup`, `repository` | Forgejo's runners; a vault; restic's repositories |
-| `infrastructure`, `certificate`, `package`, `machine` | tofu; `*.twolfe.dev`; an image or tool; a node's profile |
+| `kind` — what it is for                               |                                                              |
+|-------------------------------------------------------|--------------------------------------------------------------|
+| `app`                                                 | what people use: Immich's server, Jellyfin, Sonarr, Grafana  |
+| `backend`                                             | a part with no face of its own: the mail watcher, the bridge |
+| `database`, `cache`, `queue`, `storage`               | what keeps or carries data                                   |
+| `proxy`, `network`                                    | Caddy; gluetun, Forgejo's tailscale                          |
+| `model`, `collector`                                  | Immich's machine learning, Ollama; Alloy, Beszel's agent     |
+| `runner`, `backup`, `repository`                      | Forgejo's runners; a vault; restic's repositories            |
+| `infrastructure`, `certificate`, `package`, `machine` | tofu; `*.twolfe.dev`; an image or tool; a node's profile     |
 
-| Today's workflow | A component's `workflow` | |
-| --- | --- | --- |
-| `docker`, `dotnet-service` | as it is | a component per compose service; `dotnet-service` builds its image first |
-| `agents` | as it is | Ollama's servers too, once their models are components of their own (below) |
-| `ollama` | the models' | a model is a component, served by one or more Ollama agents |
-| `forgejo-runners` | as it is | declarative, so the agent can bootstrap a new node's runner |
-| `obsidian` | as it is | a component per vault |
-| `restic` | as it is | where backups go: retention, verification, the offsite copy |
-| `tofu`, `caddy-certificates`, `image`, `dotnet-tool`, `chezmoi` | as it is | |
-| `backup` | as it is | until the state workflows that replace it, planned by the agent (#6) |
-| `garage-layout` | a facet | `layout:` on Garage's component |
-| `heartbeat`, `gatus-health` | as it is | until the agent's own alerts (#6) and published `check:` facets (#8) |
-| `caddy-routes` | as it is | until Caddy renders the published `route:` facets (#6, #8) |
-| `immich-import` | not a component | a one-off operation, and a CLI command |
+| Today's workflow                                                | A component's `workflow` |                                                                             |
+|-----------------------------------------------------------------|--------------------------|-----------------------------------------------------------------------------|
+| `docker`, `dotnet-service`                                      | as it is                 | a component per compose service; `dotnet-service` builds its image first    |
+| `agent`                                                         | as it is                 | Ollama's servers too, once their models are components of their own (below) |
+| `ollama`                                                        | the models'              | a model is a component, served by one or more Ollama agents                 |
+| `forgejo-runners`                                               | as it is                 | declarative, so the agent can bootstrap a new node's runner                 |
+| `obsidian`                                                      | as it is                 | a component per vault                                                       |
+| `restic`                                                        | as it is                 | where backups go: retention, verification, the offsite copy                 |
+| `tofu`, `caddy-certificates`, `image`, `dotnet-tool`, `chezmoi` | as it is                 |                                                                             |
+| `backup`                                                        | as it is                 | until the state workflows that replace it, planned by the agent (#6)        |
+| `garage-layout`                                                 | a facet                  | `layout:` on Garage's component                                             |
+| `heartbeat`, `gatus-health`                                     | as it is                 | until the agent's own alerts (#6) and published `check:` facets (#8)        |
+| `caddy-routes`                                                  | as it is                 | until Caddy renders the published `route:` facets (#6, #8)                  |
+| `immich-import`                                                 | not a component          | a one-off operation, and a CLI command                                      |
 
 There are no jobs: what looked like one is a declarative kind (a runner,
 a certificate, a repository), a facet of something else, or an operation
 rather than a component.
 
 **Decided: a model is a component, served by Ollama agents.** An
-Ollama server is an agent like any other (`agents`), and what it serves
+Ollama server is an agent like any other (`agent`), and what it serves
 is declared beside it, a component per model, linked to the servers it
 is pulled on as an agent is to its nodes. The `ollama` workflow operates
 the models: it waits for each server, pulls what it serves and points its
@@ -497,7 +497,7 @@ so the design has **no per-node overrides** until something needs one.
 name: forwarder
 description: Each node's collector, forwarding to the gateway.
 kind: collector
-workflow: agents
+workflow: agent
 runsOn: every node
 package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
 program: "alloy-{platform}"
@@ -575,13 +575,13 @@ name: immich
 
 **Decided: five projects, in the classic layers.**
 
-| Project | Holds | References |
-| --- | --- | --- |
-| `Wolfe.Lab.Domain` | the model, its value objects and rules | Ritten's `Result`, `Error`, `IDirectory` and `IFile` |
-| `Wolfe.Lab.Infrastructure` | the readers — declarations, compose — and the clients: Docker, launchd, systemd, the vault | Domain |
-| `Wolfe.Lab.Application` | the Ritten workflows, jobs and steps | Domain, Infrastructure |
-| `Wolfe.Lab` | the CLI, a thin host | Application |
-| `Wolfe.Lab.Agent` | the reconcile loop, schedules and triggers | Domain, Infrastructure |
+| Project                    | Holds                                                                                      | References                                           |
+|----------------------------|--------------------------------------------------------------------------------------------|------------------------------------------------------|
+| `Wolfe.Lab.Domain`         | the model, its value objects and rules                                                     | Ritten's `Result`, `Error`, `IDirectory` and `IFile` |
+| `Wolfe.Lab.Infrastructure` | the readers — declarations, compose — and the clients: Docker, launchd, systemd, the vault | Domain                                               |
+| `Wolfe.Lab.Application`    | the Ritten workflows, jobs and steps                                                       | Domain, Infrastructure                               |
+| `Wolfe.Lab`                | the CLI, a thin host                                                                       | Application                                          |
+| `Wolfe.Lab.Agent`          | the reconcile loop, schedules and triggers                                                 | Domain, Infrastructure                               |
 
 The agent references no application code: it orchestrates runs of the
 CLI rather than running workflows itself.
@@ -727,7 +727,7 @@ agent is a controller and a scheduler, not a supervisor:
 
 - **Daemons stay launchd's and systemd's.** The kernel installs one
   unit, the agent's; the agent reconciles every other daemon into units
-  — what the `agents` workflow does today — and checks they are alive.
+  — what the `agent` workflow does today — and checks they are alive.
   Supervising them itself would not remove launchd or systemd (something
   still keeps the agent up), would tie every daemon's lifecycle to the
   agent's upgrades, and on macOS would make the agent the *responsible
