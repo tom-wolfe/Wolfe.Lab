@@ -6,7 +6,7 @@ namespace Wolfe.Lab.Application.Releases;
 internal static class ReportSections
 {
     /// <summary>
-    /// What a release published, and what it restarted for it.
+    /// What a deploy installed on the node, and what it restarted for it.
     /// </summary>
-    public const string Artifacts = "Artifacts";
+    public const string Install = "Install";
 }

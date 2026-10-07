@@ -291,18 +291,18 @@ public class LaunchdSupervisorTests : IDisposable
     }
 
     [Fact]
-    public void Render_StampsTheUnitWithItsArtifactsSoAChangedConfigRestartsIt()
+    public void Render_StampsTheUnitWithItsInstallSoAChangedConfigRestartsIt()
     {
-        var unit = Supervisor().Render(Agent() with { ArtifactStamp = new DateTimeOffset(2026, 9, 29, 12, 0, 0, TimeSpan.Zero) });
+        var unit = Supervisor().Render(Agent() with { InstallStamp = new DateTimeOffset(2026, 9, 29, 12, 0, 0, TimeSpan.Zero) });
 
-        unit.Content.ShouldContain(" artifacts: 2026-09-29T12:00:00.0000000Z");
+        unit.Content.ShouldContain(" installed: 2026-09-29T12:00:00.0000000Z");
     }
 
     [Fact]
-    public void Render_IsUnchangedForAnAgentWithoutArtifacts()
+    public void Render_IsUnchangedForAnAgentNotYetInstalled()
     {
         // A unit is compared as text: an extra line for agents that publish nothing would
         // restart every one of them on the deploy that shipped this.
-        Supervisor().Render(Agent()).Content.ShouldNotContain("artifacts:");
+        Supervisor().Render(Agent()).Content.ShouldNotContain("installed:");
     }
 }

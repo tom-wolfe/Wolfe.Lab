@@ -2,7 +2,6 @@ using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
-using Wolfe.Lab.Application.Workflows.Agents.Models;
 using Wolfe.Lab.Infrastructure.Logrotate;
 
 namespace Wolfe.Lab.Application.Workflows.Agents.Jobs;
@@ -10,7 +9,7 @@ namespace Wolfe.Lab.Application.Workflows.Agents.Jobs;
 /// <summary>
 /// Rotates this node's logs of the component's agent.
 /// </summary>
-internal sealed class RotateJob : LabJob<AgentsOptions>
+internal sealed class RotateJob : LabJob<DeclaredSettings>
 {
     public override string Name => "rotate";
 
@@ -27,7 +26,7 @@ internal sealed class RotateJob : LabJob<AgentsOptions>
         Step.FromType<RotateAgentLogs>()
     ];
 
-    protected override void Configure(IWorkflowBuilder builder, AgentsOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddLogrotate();

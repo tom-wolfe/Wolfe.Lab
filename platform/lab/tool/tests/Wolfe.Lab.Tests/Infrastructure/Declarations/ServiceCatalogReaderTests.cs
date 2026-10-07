@@ -160,11 +160,11 @@ public class ServiceCatalogReaderTests : IDisposable
 
         var components = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components;
 
-        var server = components.Single(component => component.Name.Value == "server").ShouldBeOfType<ComposeComponent>();
+        var server = components.Single(component => component.Name.Value == "server").ShouldBeOfType<DockerComponent>();
         server.ComposeService.ShouldBe(ComposeServiceName.From("immich-server"));
         server.Logs.ShouldBe(LogTransport.Otlp);
         server.Metrics.ShouldBe([new MetricsEndpoint(Port.From(8081), HttpPath.Metrics)]);
-        components.Single(component => component.Name.Value == "postgres").ShouldBeOfType<ComposeComponent>()
+        components.Single(component => component.Name.Value == "postgres").ShouldBeOfType<DockerComponent>()
             .Metrics.ShouldBe([new MetricsEndpoint(Port.From(9187), HttpPath.From("/stats"))]);
         var database = components.Single(component => component.Name.Value == "database");
         database.GetType().ShouldBe(typeof(Component));
@@ -299,7 +299,7 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("monitoring/alloy/forwarder/component.yaml", """
             name: forwarder
             kind: collector
-            workflow: agents
+            workflow: agent
             runsOn: all
             agent: alloy
             package: { github: grafana/alloy, version: 1.20.1, asset: "alloy-{platform}.zip", checksums: SHA256SUMS }
@@ -323,7 +323,7 @@ public class ServiceCatalogReaderTests : IDisposable
     {
         Declare("platform/nodes.yaml", Nodes);
         Declare("monitoring/alloy/service.yaml", Alloy);
-        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: [pi]\nagent: alloy\nprogram: /usr/bin/alloy\n");
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agent\nrunsOn: [pi]\nagent: alloy\nprogram: /usr/bin/alloy\n");
 
         var component = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
 
@@ -334,7 +334,7 @@ public class ServiceCatalogReaderTests : IDisposable
     public async Task Read_RefusesAnAgentComponentThatDeclaresNoAgent()
     {
         Declare("monitoring/alloy/service.yaml", Alloy);
-        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\n");
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agent\nrunsOn: all\n");
 
         (await Errors()).ShouldBe(["monitoring/alloy/forwarder/component.yaml:2: Required properties [\"agent\",\"program\"] are not present"]);
     }
@@ -344,7 +344,7 @@ public class ServiceCatalogReaderTests : IDisposable
     {
         Declare("platform/nodes.yaml", Nodes);
         Declare("monitoring/alloy/service.yaml", Alloy);
-        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: [studio]\nagent: alloy\nprogram: /usr/bin/alloy\n");
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agent\nrunsOn: [studio]\nagent: alloy\nprogram: /usr/bin/alloy\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldBe("monitoring/alloy/forwarder/component.yaml: runsOn: names the node 'studio', which the lab does not declare.");
     }
@@ -371,7 +371,7 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("platform/nodes.yaml", Nodes);
         Declare("monitoring/alloy/service.yaml", Alloy);
         Declare("monitoring/alloy/forwarder/component.yaml",
-            "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: all\nagent: alloy\nprogram: \"{package}/alloy\"\n"
+            "name: forwarder\nkind: collector\nworkflow: agent\nrunsOn: all\nagent: alloy\nprogram: \"{package}/alloy\"\n"
             + "package: { github: grafana/alloy, version: ../1.20.1, asset: alloy.zip }\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldStartWith("monitoring/alloy/forwarder/component.yaml: package.version: '../1.20.1' is not a version");
@@ -417,7 +417,7 @@ public class ServiceCatalogReaderTests : IDisposable
 
             """);
 
-        var server = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<ComposeComponent>();
+        var server = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<DockerComponent>();
 
         server.Metrics.ShouldBe([
             new MetricsEndpoint(Port.From(8081), HttpPath.Metrics),
@@ -488,5 +488,27 @@ public class ServiceCatalogReaderTests : IDisposable
         (await Errors()).ShouldBe([
             "personal/immich/compose/component.yaml: personal/immich/compose has 2 components at its head (machine-learning, server): exactly one is, every other its dependency or its part, and it names the deployment."
         ]);
+    }
+
+    [Fact]
+    public async Task Read_TakesADotNetServiceAsOneBuiltFromSource()
+    {
+        Declare("personal/mail/service.yaml", "kind: service\nname: mail\ndescription: Mail.\n");
+        Declare("personal/mail/watcher/component.yaml", "name: watcher\nkind: backend\nworkflow: dotnet-service\nservice: watcher\nlogs: otlp\n");
+
+        var watcher = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<DotNetServiceComponent>();
+
+        watcher.Image.ShouldBe("lab/mail-watcher");
+        watcher.Logs.ShouldBe(LogTransport.Otlp);
+    }
+
+    [Fact]
+    public async Task Read_TakesAWorkflowByTheNameItWentByOnce()
+    {
+        Declare("platform/nodes.yaml", "kind: node\nname: pi\nrole: server\nplatform: linux-arm64\naddress: pi.tailnet.ts.net\nroot: /lab/root\ndata: /lab/data\n");
+        Declare("monitoring/alloy/service.yaml", "kind: service\nname: alloy\ndescription: Telemetry.\n");
+        Declare("monitoring/alloy/forwarder/component.yaml", "name: forwarder\nkind: collector\nworkflow: agents\nrunsOn: [pi]\nagent: alloy\nprogram: /usr/bin/alloy\n");
+
+        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().Workflow.ShouldBe(WorkflowName.Agent);
     }
 }

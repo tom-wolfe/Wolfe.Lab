@@ -4,6 +4,18 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-08
+
+### Changed
+
+- **Every deploy installs its deployment.** Agents install their directory as stacks do, in place of
+  `ritten.json`'s `artifacts`; Alloy's forwarder reads its config from `{lab.root}/alloy-forwarder`.
+
+- **A .NET service's image is named for it.** `lab/<service>-<component>`, built by the deploy and
+  written into the override, in place of `ritten.json`'s `images`.
+
+- **The `agents` workflow is `agent`.** `agents` is still read, until no declaration or `ritten.json` names it.
+
 ## 2026-10-07
 
 ### Added

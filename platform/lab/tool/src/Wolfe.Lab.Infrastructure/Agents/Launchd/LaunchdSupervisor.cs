@@ -64,9 +64,9 @@ internal sealed class LaunchdSupervisor(AgentDirectory agents, ICommandRunner co
             $" program: {agent.Program.Value}",
             $" stamped: {Stamp(agent.ProgramStamp)}"
         };
-        if (agent.ArtifactStamp is { } artifacts)
+        if (agent.InstallStamp is { } installed)
         {
-            provenance.Add($" artifacts: {Stamp(artifacts)}");
+            provenance.Add($" installed: {Stamp(installed)}");
         }
 
         return Plist.Document(string.Join('\n', provenance), new XElement("dict", entries));

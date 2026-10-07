@@ -48,7 +48,7 @@ public class InstallAgentPackagesTests : IDisposable
             ["alloy"] = agent ?? new AgentOptions { Package = Alloy, Program = HostPath.From("{package}/alloy-darwin-arm64") }
         });
         return new InstallAgentPackages(_installer, Resolvers.On(), new Wolfe.Lab.Application.Packages.EnvironmentPath(),
-                new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), Report(), Substitute.For<IWorkflowLog>())
+                new WorkflowJob("agent", "deploy", dryRun, AutoApprove: true), Report(), Substitute.For<IWorkflowLog>())
             .Run(declarations, TestContext.Current.CancellationToken);
     }
 

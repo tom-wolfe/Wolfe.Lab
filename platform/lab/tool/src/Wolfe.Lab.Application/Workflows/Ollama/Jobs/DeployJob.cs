@@ -33,10 +33,9 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
         Step.FromType<InstallAgentPackages>(),
         Step.FromType<ResolveAgents>(),
         Step.FromType<CheckVolumes>(),
-        Step.FromType<ResolveArtifacts>(),
         Step.FromType<GateApproval>(),
         Step.FromType<EnsureModelStore>(),
-        Step.FromType<PublishArtifacts>(),
+        Step.FromType<InstallDeployment>(),
         Step.FromType<ConvergeAgents>(),
         Step.FromType<DeclareAgentLogs>(),
         Step.FromType<AwaitServer>(),
@@ -53,7 +52,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
     protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
     {
         base.Configure(builder, options);
-        builder.AddPackages().AddAgents().AddOllama().AddArtifacts([]);
+        builder.AddPackages().AddAgents().AddOllama().AddInstaller();
         builder.Services.AddSingleton(new ModelPlan([.. options.Models.Pull]));
         builder.Services.AddSingleton(RolePlan.From(options.Models.Roles));
         builder.Services.AddSingleton(new DeclaredRoles(options.Models));

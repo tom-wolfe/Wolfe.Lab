@@ -18,10 +18,10 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 [Step("converge stack", StepKind.Publish)]
 internal sealed class ConvergeStack(IDocker docker, IOptions<LabDirectories> options, IWorkflowReport report, WorkflowJob job, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(DeploymentUnit unit, ComposeEnvironment composeEnvironment, PublishedArtifacts artifacts, CancellationToken ct = default)
+    public async Task<StepResult> Run(DeploymentUnit unit, ComposeEnvironment composeEnvironment, Installation installation, CancellationToken ct = default)
     {
-        await docker.ComposeUp(options.Value.DeployedTo(unit), composeEnvironment.Variables, ct);
-        await RestartForChangedFiles(unit, artifacts, ct);
+        await docker.ComposeUp(installation.Directory, composeEnvironment.Variables, ct);
+        await RestartForChangedFiles(unit, installation, ct);
         if (!job.DryRun)
         {
             log.Status($"Converged {unit.Name}.");
@@ -40,9 +40,9 @@ internal sealed class ConvergeStack(IDocker docker, IOptions<LabDirectories> opt
     /// the restart has happened — so a restart that failed is still owed on the next deploy. A
     /// stack with no stamp yet is taken as current: its containers were just created from it.
     /// </remarks>
-    private async Task RestartForChangedFiles(DeploymentUnit unit, PublishedArtifacts artifacts, CancellationToken ct)
+    private async Task RestartForChangedFiles(DeploymentUnit unit, Installation installation, CancellationToken ct)
     {
-        if (artifacts.Stamp is not { } stamp)
+        if (installation.Stamp is not { } stamp)
         {
             return;
         }
@@ -63,7 +63,7 @@ internal sealed class ConvergeStack(IDocker docker, IOptions<LabDirectories> opt
                 : $"Would restart {unit.Name}: its files changed at {current}, after the last restart for them.");
             if (applied is not null)
             {
-                report.Section(ReportSections.Artifacts).Note($"Would restart `{unit.Name}` for its changed files.");
+                report.Section(ReportSections.Install).Note($"Would restart `{unit.Name}` for its changed files.");
             }
 
             return;
@@ -71,10 +71,10 @@ internal sealed class ConvergeStack(IDocker docker, IOptions<LabDirectories> opt
 
         if (applied is not null)
         {
-            await docker.ComposeStop(roots.DeployedTo(unit), ct);
-            await docker.ComposeStart(roots.DeployedTo(unit), ct);
+            await docker.ComposeStop(installation.Directory, ct);
+            await docker.ComposeStart(installation.Directory, ct);
             log.Status($"Restarted {unit.Name} for its changed files.");
-            report.Section(ReportSections.Artifacts).Success($"Restarted `{unit.Name}` for its changed files.");
+            report.Section(ReportSections.Install).Success($"Restarted `{unit.Name}` for its changed files.");
         }
 
         await file.WriteAllText(current, cancellationToken: ct);

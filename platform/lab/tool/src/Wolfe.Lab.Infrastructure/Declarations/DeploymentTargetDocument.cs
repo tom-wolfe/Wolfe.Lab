@@ -8,7 +8,7 @@ using Json.Schema.Generation.Intents;
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
 /// <summary>
-/// Where an agent component runs, as its file writes it: a rule — <c>all</c>,
+/// Where an agents component runs, as its file writes it: a rule — <c>all</c>,
 /// <c>every server</c> — or the nodes it names, <c>[mini]</c>.
 /// </summary>
 /// <param name="Rule">The rule, when it is one.</param>

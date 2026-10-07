@@ -10,7 +10,7 @@ using Wolfe.Lab.Infrastructure.Releases;
 namespace Wolfe.Lab.Application.Agents;
 
 /// <summary>
-/// What the steps that operate agents share: which node this is, what an agent component runs on a
+/// What the steps that operate agents share: which node this is, what an agents component runs on a
 /// node, and a declaration with this node's roots and its package written in.
 /// </summary>
 internal sealed class AgentResolver(IOptions<LabDirectories> options, IOptions<LabNode> here)

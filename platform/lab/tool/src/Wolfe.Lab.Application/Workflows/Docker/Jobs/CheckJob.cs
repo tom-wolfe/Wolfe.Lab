@@ -4,7 +4,6 @@ using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Telemetry;
-using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Jobs;
@@ -12,7 +11,7 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Jobs;
 /// <summary>
 /// Proves the component's stack is sound before anything is deployed from it.
 /// </summary>
-internal sealed class CheckJob<TOptions> : LabJob<TOptions> where TOptions : DockerComponentOptions
+internal sealed class CheckJob<TOptions> : LabJob<TOptions> where TOptions : WorkflowSettings
 {
     public override string Name => "check";
 

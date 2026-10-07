@@ -27,7 +27,7 @@ public class RsyncInstallerIntegrationTests : IDisposable
         _installer.Install(new PhysicalDirectory(Path.Combine(_root.FullName, "component")), new PhysicalDirectory(Output), TestContext.Current.CancellationToken);
 
     private DateTimeOffset? Stamp() =>
-        PublishArtifacts.Stamp([new Artifact(new PhysicalDirectory(Path.Combine(_root.FullName, "component")), new PhysicalDirectory(Output))]);
+        InstallDeployment.Stamp(new PhysicalDirectory(Output));
 
     [Fact]
     public async Task Install_ReportsWhatARealRunChangesAndWritesOnlyThat()

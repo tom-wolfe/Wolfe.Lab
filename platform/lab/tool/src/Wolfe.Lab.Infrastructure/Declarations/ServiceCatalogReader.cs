@@ -234,7 +234,7 @@ public static class ServiceCatalogReader
             return;
         }
 
-        if (document is AgentsDocument agents)
+        if (document is AgentDocument agents)
         {
             AgentPackage? package = null;
             if (agents.Package is { } declaredPackage)
@@ -266,7 +266,7 @@ public static class ServiceCatalogReader
             return;
         }
 
-        if (document is not ComposeDocument compose)
+        if (document is not DockerDocument compose)
         {
             AddTo(catalog, Component.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn), document, source, problems);
             return;
@@ -301,7 +301,9 @@ public static class ServiceCatalogReader
             return;
         }
 
-        var created = ComposeComponent.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn, service.ValueObject);
+        var created = document.Workflow == WorkflowName.DotNetService
+            ? AsCompose(DotNetServiceComponent.Create(source, name, document.Kind, partOf, dependsOn, service.ValueObject))
+            : DockerComponent.Create(source, name, document.Kind, partOf, dependsOn, service.ValueObject);
         if (created.Value is { } component)
         {
             component.Logs = compose.Logs;
@@ -310,6 +312,10 @@ public static class ServiceCatalogReader
 
         AddTo(catalog, created, document, source, problems);
     }
+
+    // A .NET service component as the Docker component it also is: a Result of the derived type is not one of its base.
+    private static Result<DockerComponent> AsCompose(Result<DotNetServiceComponent> created) =>
+        created.Value is { } component ? component : new Result<DockerComponent>(created.Errors ?? []);
 
     // A component made, described as its document says, and added to the service whose directory holds its file.
     private static void AddTo<T>(ServiceCatalog catalog, Result<T> created, ComponentDocument document, DocumentSource source, List<Error> problems) where T : Component

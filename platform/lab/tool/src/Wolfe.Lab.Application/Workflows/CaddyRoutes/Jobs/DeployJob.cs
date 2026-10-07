@@ -15,7 +15,7 @@ namespace Wolfe.Lab.Application.Workflows.CaddyRoutes.Jobs;
 /// </summary>
 /// <remarks>
 /// Snippets arrive through a bind mount and never change compose's config hash, so the door
-/// has to be told; a plain redeploy of the compose component would notice nothing.
+/// has to be told; a plain redeploy of the Docker component would notice nothing.
 /// </remarks>
 internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
 {

@@ -29,9 +29,9 @@ internal sealed class ResolveBackupPlan(IDocker docker, IOptions<LabDirectories>
         string? container = null;
         if (backup.PartOf is not null)
         {
-            if (backup.Host is not ComposeComponent host || catalog.DeploymentUnitAt(host.Directory)?.Value is not { } deployed)
+            if (backup.Host is not DockerComponent host || catalog.DeploymentUnitAt(host.Directory)?.Value is not { } deployed)
             {
-                return new Error($"{backup} is part of {backup.Host?.ToString() ?? backup.PartOf.ToString()}, which is no compose stack's: only a compose component is stopped for a snapshot.");
+                return new Error($"{backup} is part of {backup.Host?.ToString() ?? backup.PartOf.ToString()}, which is no compose stack's: only a Docker component is stopped for a snapshot.");
             }
 
             stack = options.Value.DeployedTo(deployed);

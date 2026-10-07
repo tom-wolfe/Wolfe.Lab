@@ -22,7 +22,7 @@ public class ResolveBackupPlanTests
     // Sonarr's stack, and its backup declared beside it.
     private static ServiceCatalog Catalog(Catalogs.Declaration backup)
     {
-        var catalog = Catalogs.Of("media/sonarr/compose", Catalogs.Compose("server", "sonarr"));
+        var catalog = Catalogs.Of("media/sonarr/compose", Catalogs.Docker("server", "sonarr"));
         Catalogs.Add(catalog.Services.Single(), new DocumentSource(RepositoryPath.From($"{Backup}/component.yaml")), backup).Value.ShouldNotBeNull();
         return catalog;
     }

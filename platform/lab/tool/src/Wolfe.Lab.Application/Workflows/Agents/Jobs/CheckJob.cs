@@ -4,14 +4,13 @@ using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Telemetry;
-using Wolfe.Lab.Application.Workflows.Agents.Models;
 
 namespace Wolfe.Lab.Application.Workflows.Agents.Jobs;
 
 /// <summary>
 /// Proves the component's declarations are sound before any node converges on them.
 /// </summary>
-internal sealed class CheckJob : LabJob<AgentsOptions>
+internal sealed class CheckJob : LabJob<DeclaredSettings>
 {
     public override string Name => "check";
 
@@ -27,7 +26,7 @@ internal sealed class CheckJob : LabJob<AgentsOptions>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, AgentsOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddDocker();

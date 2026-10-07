@@ -5,7 +5,7 @@ using Wolfe.Lab.Infrastructure.Telemetry;
 namespace Wolfe.Lab.Infrastructure.Compose;
 
 /// <summary>
-/// A compose component and the compose service it runs as, with what its declaration asks
+/// A Docker component and the compose service it runs as, with what its declaration asks
 /// of that service, as the deploy writes it into the override.
 /// </summary>
 /// <param name="Component">The component.</param>

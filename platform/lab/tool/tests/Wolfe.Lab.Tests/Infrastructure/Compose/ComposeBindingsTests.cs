@@ -31,8 +31,8 @@ public class ComposeBindingsTests
     public void Of_BindsEachServiceToTheComponentThatNamesIt()
     {
         var bindings = Bind([Service("immich-server"), Service("immich-database")],
-            Catalogs.Compose("server", "immich-server"),
-            Catalogs.Compose("postgres", "immich-database", ComponentKind.Database),
+            Catalogs.Docker("server", "immich-server"),
+            Catalogs.Docker("postgres", "immich-database", ComponentKind.Database),
             Catalogs.Definition("database", ComponentKind.Database, WorkflowName.Restic, partOf: "postgres")).Value.ShouldNotBeNull();
 
         bindings.Bindings.Select(binding => (binding.Service.Name, binding.Component.Name.Value))
@@ -42,12 +42,12 @@ public class ComposeBindingsTests
 
     [Fact]
     public void Of_RefusesAServiceNoComponentDeclares() =>
-        Errors([Service("immich-server"), Service("immich-redis")], Catalogs.Compose("server", "immich-server"))
+        Errors([Service("immich-server"), Service("immich-redis")], Catalogs.Docker("server", "immich-server"))
             .ShouldBe(["the compose stack's service 'immich-redis' is no component's: declare one in personal/immich/compose, with service: immich-redis."]);
 
     [Fact]
     public void Of_RefusesAComponentNamingAServiceTheStackHasNot_AtItsField() =>
-        Bind([Service("immich-server")], Catalogs.Compose("server", "immich-server"), Catalogs.Compose("other", "immich-sever"))
+        Bind([Service("immich-server")], Catalogs.Docker("server", "immich-server"), Catalogs.Docker("other", "immich-sever"))
             .Errors.ShouldNotBeNull().ShouldHaveSingleItem().ShouldBeOfType<CatalogError>()
             .ShouldSatisfyAllConditions(
                 error => error.Field.ShouldBe("service"),
@@ -56,13 +56,13 @@ public class ComposeBindingsTests
 
     [Fact]
     public void Of_RefusesTwoComponentsOfOneService() =>
-        Errors([Service("immich-server")], Catalogs.Compose("server", "immich-server"), Catalogs.Compose("web", "immich-server"))
+        Errors([Service("immich-server")], Catalogs.Docker("server", "immich-server"), Catalogs.Docker("web", "immich-server"))
             .ShouldHaveSingleItem().ShouldContain("'immich-server' is component 'server''s already");
 
     [Fact]
     public void Of_LabelsAComponentThatSendsItsOwnLogs()
     {
-        var binding = Bind([Service("watcher")], Catalogs.Compose("watcher", "watcher", logs: LogTransport.Otlp)).Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
+        var binding = Bind([Service("watcher")], Catalogs.Docker("watcher", "watcher", logs: LogTransport.Otlp)).Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Labels.ShouldBe(new Dictionary<ContainerLabel, string> { [ContainerLabel.Logs] = "otlp" });
     }
@@ -70,7 +70,7 @@ public class ComposeBindingsTests
     [Fact]
     public void Of_PublishesAMetricsPortOnLoopbackWhenTheFileDoesNot()
     {
-        var binding = Bind([Service("immich-server", [new(2283, 2283, null, "tcp")])], Catalogs.Compose("server", "immich-server", metrics: Metrics(8081)))
+        var binding = Bind([Service("immich-server", [new(2283, 2283, null, "tcp")])], Catalogs.Docker("server", "immich-server", metrics: Metrics(8081)))
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Publishes.ShouldBe(["127.0.0.1:8081:8081"]);
@@ -81,7 +81,7 @@ public class ComposeBindingsTests
     [Fact]
     public void Of_ScrapesAPortTheFilePublishesAlreadyWhereItIsPublished()
     {
-        var binding = Bind([Service("garage", [new(3903, 13903, null, "tcp")])], Catalogs.Compose("garage", "garage", metrics: Metrics(3903)))
+        var binding = Bind([Service("garage", [new(3903, 13903, null, "tcp")])], Catalogs.Docker("garage", "garage", metrics: Metrics(3903)))
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Publishes.ShouldBeEmpty();
@@ -90,14 +90,14 @@ public class ComposeBindingsTests
 
     [Fact]
     public void Of_ScrapesAServiceOnTheHostsNetworkOnItsOwnPort() =>
-        Bind([Service("agent", networkMode: "host")], Catalogs.Compose("agent", "agent", metrics: Metrics(9100)))
+        Bind([Service("agent", networkMode: "host")], Catalogs.Docker("agent", "agent", metrics: Metrics(9100)))
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem().Metrics.ShouldBe([new MetricsTarget(Port.From(9100), HttpPath.Metrics)]);
 
     [Fact]
     public void Of_PublishesAMetricsPortWhereTheComponentChooses()
     {
         var binding = Bind([Service("grafana", [new(3000, 3000, null, "tcp")])],
-                Catalogs.Compose("grafana", "grafana", metrics: Metrics(3000) with { Published = Port.From(13000) }))
+                Catalogs.Docker("grafana", "grafana", metrics: Metrics(3000) with { Published = Port.From(13000) }))
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Publishes.ShouldBe(["127.0.0.1:13000:3000"]);
@@ -108,7 +108,7 @@ public class ComposeBindingsTests
     public void Of_PublishesEachOfSeveralEndpoints()
     {
         var binding = Bind([Service("immich-server", [new(2283, 2283, null, "tcp")])],
-                Catalogs.Compose("server", "immich-server", metrics: [Metrics(8081), Metrics(8082)]))
+                Catalogs.Docker("server", "immich-server", metrics: [Metrics(8081), Metrics(8082)]))
             .Value.ShouldNotBeNull().Bindings.ShouldHaveSingleItem();
 
         binding.Publishes.ShouldBe(["127.0.0.1:8081:8081", "127.0.0.1:8082:8082"]);
@@ -117,12 +117,12 @@ public class ComposeBindingsTests
 
     [Fact]
     public void Of_RefusesLogsDeclaredHereAndByTheirLabelToo() =>
-        Errors([Service("watcher", labels: new() { ["lab.logs"] = "otlp" })], Catalogs.Compose("watcher", "watcher", logs: LogTransport.Otlp))
+        Errors([Service("watcher", labels: new() { ["lab.logs"] = "otlp" })], Catalogs.Docker("watcher", "watcher", logs: LogTransport.Otlp))
             .ShouldHaveSingleItem().ShouldContain("logs: the component's logs are declared twice");
 
     [Fact]
     public void Of_RefusesMetricsOnAServiceInAnothersNetwork() =>
         Errors([Service("server"), Service("sidecar", networkMode: "service:server")],
-                Catalogs.Compose("server", "server"), Catalogs.Compose("sidecar", "sidecar", metrics: Metrics(9090)))
+                Catalogs.Docker("server", "server"), Catalogs.Docker("sidecar", "sidecar", metrics: Metrics(9090)))
             .ShouldHaveSingleItem().ShouldContain("metrics: its service runs in service:server's network");
 }

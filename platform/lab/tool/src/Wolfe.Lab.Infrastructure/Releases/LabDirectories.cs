@@ -56,21 +56,6 @@ public sealed class LabDirectories
     }
 
     /// <summary>
-    /// The value with <c>${LAB_ROOT}</c> and <c>${LAB_DATA}</c> replaced. Nothing else is
-    /// expanded: a value is otherwise passed on exactly as written.
-    /// </summary>
-    public string Expand(string value) => value
-        .Replace($"${{{RootVariable}}}", Root.AbsolutePath, StringComparison.Ordinal)
-        .Replace($"${{{DataVariable}}}", Data.AbsolutePath, StringComparison.Ordinal);
-
-    /// <summary>
-    /// Whether the directory lies strictly inside the install root — the one place an artifact may
-    /// be mirrored into, since a mirror deletes whatever its source does not have.
-    /// </summary>
-    public bool Contains(IDirectory directory) =>
-        Root.RelativePath(directory) is var relative && relative != "." && relative != ".." && !relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(relative);
-
-    /// <summary>
     /// Gets where <paramref name="unit"/> is installed on the node.
     /// </summary>
     public IDirectory DeployedTo(DeploymentUnit unit) => Root.GetDirectory(unit.Name);

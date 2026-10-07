@@ -37,7 +37,7 @@ internal sealed class SystemdSupervisor(AgentDirectory agents, ICommandRunner co
             agent.ExitTimeout,
             agent.Log is { } path ? Specifiers(path.Value) : null)
         {
-            ArtifactsStamped = agent.ArtifactStamp?.UtcDateTime.ToString("O", CultureInfo.InvariantCulture)
+            InstallStamped = agent.InstallStamp?.UtcDateTime.ToString("O", CultureInfo.InvariantCulture)
         };
 
         return new AgentUnit(UnitName(agent.Label), UnitTemplate.Fill(Service.Value, unit));

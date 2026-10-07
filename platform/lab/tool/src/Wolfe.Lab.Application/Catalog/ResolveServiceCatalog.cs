@@ -1,6 +1,7 @@
 using Ritten.Git;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Checkout;
 using Wolfe.Lab.Infrastructure.Declarations;
@@ -57,7 +58,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
         // While ritten.json names the directory's workflow too, each component must declare it; a
         // part of another — anything partOf one — names its own.
         var others = catalog.DeploymentUnitAt(placement)?.Value?.Components
-            .Where(component => component.PartOf is null && component.Workflow.Value != workflow)
+            .Where(component => component.PartOf is null && component.Workflow.Value != WorkflowName.Formerly.GetValueOrDefault(workflow, workflow))
             .ToList() ?? [];
         return others.Count == 0
             ? catalog
