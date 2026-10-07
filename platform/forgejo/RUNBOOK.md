@@ -56,7 +56,7 @@ image after that will fail.
 cd platform/forgejo/backup && lab backup && cd ../../..   # snapshot first
 # bump the image tag in compose.yaml (normal PR; the push deploys it), then
 # either let the forgejo compose workflow converge it or, by hand:
-cd ~/.local/share/Wolfe.Lab/forgejo
+cd ~/.local/share/Wolfe.Lab/forgejo-server
 docker compose pull
 docker compose up -d
 docker compose logs -f               # watch migrations complete
@@ -81,7 +81,7 @@ curl -s "https://codeberg.org/api/v1/repos/forgejo/forgejo/releases?limit=5" \
 
 Runs itself: `.forgejo/workflows/forgejo-backup.yaml` snapshots this
 service nightly at 02:25 and drills the restore straight after
-(`backup/ritten.json` declares what). Manual snapshot — run the backup workflow
+(`backup/component.yaml` declares what). Manual snapshot — run the backup workflow
 from the Actions tab, or:
 
 ```sh
@@ -131,7 +131,7 @@ other than the snapshot's.
    are cattle — tofu recreates all of them uniformly):
 
    ```sh
-   export FORGEJO_TOKEN=...   # or op read op://Wolfe.Lab/forgejo-api-token/credential
+   export FORGEJO_TOKEN=...   # or op read op://Wolfe.Lab/forgejo-server-api-token/credential
    curl -s -H "Authorization: token $FORGEJO_TOKEN" \
      'http://macmini.local:3000/api/v1/users/tom-wolfe/repos?limit=50' \
      | jq -r '.[] | select(.mirror) | .name' \

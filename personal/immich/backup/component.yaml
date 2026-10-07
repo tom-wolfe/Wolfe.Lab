@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "The library: originals, and the database dumps Immich keeps beside them."
+partOf: server
+warm: true
+requiresVolumes: [/Volumes/Data2]
+paths: [/Volumes/Data2/immich]
+excludes:
+  - /Volumes/Data2/immich/thumbs
+  - /Volumes/Data2/immich/encoded-video
+verify: [/Volumes/Data2/immich/backups]

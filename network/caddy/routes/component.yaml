@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: routes
+kind: proxy
+workflow: caddy-routes
+description: "Every service's route, gathered for the front door to import."

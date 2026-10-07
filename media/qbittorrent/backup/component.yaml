@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "qBittorrent's settings and torrent state."
+partOf: client
+requiresVolumes: [/Volumes/Data1, /Volumes/Data2]
+paths: [~/Docker/qbittorrent/config]
+verify: [~/Docker/qbittorrent/config/qBittorrent/qBittorrent.conf]

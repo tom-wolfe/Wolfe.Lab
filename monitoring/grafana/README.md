@@ -4,8 +4,8 @@ The lab's telemetry backend (monitoring/README.md): **Loki** for logs, **Tempo**
 for traces, **Prometheus** for metrics, and **Grafana** in front, at
 `grafana.twolfe.dev` — on the tailnet, like every name under the wildcard —
 with the **Alloy gateway** that writes to them (monitoring/alloy/README.md).
-Two compose stacks on the mini: the stores and Grafana in `compose/`, release
-`grafana`, and the gateway in `gateway/`, release `grafana-gateway`.
+Two compose stacks on the mini: the stores and Grafana in `compose/`, installed
+as `grafana-server`, and the gateway in `gateway/`, as `grafana-gateway`.
 
 | Concern | Handled by |
 | --- | --- |

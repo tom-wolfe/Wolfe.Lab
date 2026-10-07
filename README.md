@@ -50,7 +50,7 @@ touching it, runs on the node the service lives on (`runs-on` is placement
 — the mini's host runner or the Pi's), checks the repo out into a
 disposable workspace, and runs `lab deploy` from the component's
 directory. For a compose component that means: install it under its
-release name, `~/.local/share/Wolfe.Lab/<release>` (containers
+deployment's name, `~/.local/share/Wolfe.Lab/<service>-<head>` (containers
 bind-mount files from it after the job is gone), and `docker compose up
 -d` there. `docker compose up -d` is convergent, so a manual run is
 always safe. The same workflow checks the compose file on every pull

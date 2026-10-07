@@ -7,7 +7,7 @@ runs, nothing deploys, and the only job is the backup.
 | | |
 |---|---|
 | Where | `/Volumes/Data2/files` |
-| Backups | restic, nightly, warm (`ritten.json`); offsite with everything else (`platform/restic/README.md`) |
+| Backups | restic, nightly, stopping nothing (`backup/component.yaml`); offsite with everything else (`platform/restic/README.md`) |
 
 ## Why it is backed up
 

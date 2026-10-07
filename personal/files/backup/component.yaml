@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: backup
+workflow: backup
+description: "The personal files: nothing runs from them, so nothing is stopped."
+requiresVolumes: [/Volumes/Data2]
+paths: [/Volumes/Data2/files]
+verify: ["/Volumes/Data2/files/1password/1Password Emergency Kit.pdf"]

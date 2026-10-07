@@ -1,14 +1,3 @@
 {
-  "workflow": "backup",
-  "release": "forgejo",
-  "paths": [
-    "~/Docker/forgejo/data"
-  ],
-  "excludes": [
-    "~/Docker/forgejo/data/gitea/packages"
-  ],
-  "stop": "forgejo",
-  "verify": [
-    "~/Docker/forgejo/data/gitea/forgejo.db"
-  ]
+  "workflow": "backup"
 }

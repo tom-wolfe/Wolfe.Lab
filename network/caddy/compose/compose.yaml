@@ -16,7 +16,7 @@ services:
         "caddy",
         "run",
         "--config",
-        "/etc/caddy/lab/caddy/Caddyfile",
+        "/etc/caddy/lab/caddy-proxy/Caddyfile",
         "--adapter",
         "caddyfile",
       ]

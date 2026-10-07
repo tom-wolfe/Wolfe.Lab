@@ -22,9 +22,9 @@ bootstrap only creates what must exist before the admin API answers.
 
 - `garage.toml` changes are NOT picked up by `docker compose up -d` (the
   daemon reads it once, at start) — after editing, restart:
-  `ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/garage restart"`
+  `ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/garage-server restart"`
 - **The config is mounted as a directory, never as the file.** A deploy
-  replaces the release's files, and a single-file bind mount keeps the
+  replaces the installed files, and a single-file bind mount keeps the
   deleted original until the container is recreated: the daemon carries
   on, and every `garage` command in the container — the health check's
   included — fails with "Unable to read configuration file". Seen after

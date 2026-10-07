@@ -28,7 +28,7 @@ Telemetry is disposable. To drop it all — a store's format changed, or
 the disk is wanted back:
 
 ```
-ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/grafana down"
+ssh macmini "docker compose --project-directory .local/share/Wolfe.Lab/grafana-server down"
 ssh macmini "rm -rf ~/Docker/grafana/{loki,tempo,prometheus}"
 ```
 

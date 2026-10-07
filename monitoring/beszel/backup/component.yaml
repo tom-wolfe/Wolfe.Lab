@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "The hub's database: systems, alert rules and history."
+partOf: hub
+paths: [~/Docker/beszel/data]
+verify: [~/Docker/beszel/data/data.db]

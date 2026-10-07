@@ -16,7 +16,7 @@ reasons are in `README.md`.
 4. **The first document**: drag a PDF into the UI and watch it consume.
    From then on the nightly backup carries an archive, and
    `media/documents/originals` can join the `verify` list in
-   `backup/ritten.json` once it has something in it.
+   `backup/component.yaml` once it has something in it.
 5. **The phone**: install Paperless Mobile or Swift Paperless, server
    `https://paperless.twolfe.dev`, sign in.
 6. **Mail**: in Proton, create a folder named `Paperless` (top level).
@@ -76,7 +76,7 @@ snapshot carries no search index and no thumbnails; regenerate both
 once the stack is up:
 
 ```sh
-cd ~/.local/share/Wolfe.Lab/paperless
+cd ~/.local/share/Wolfe.Lab/paperless-server
 docker compose exec paperless document_index reindex
 docker compose exec paperless document_thumbnails
 ```

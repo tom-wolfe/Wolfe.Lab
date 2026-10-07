@@ -1,4 +1,3 @@
 {
-  "workflow": "docker",
-  "release": "grafana-gateway"
+  "workflow": "docker"
 }

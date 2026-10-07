@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: backup
+kind: storage
+workflow: backup
+description: "Jellyfin's state where the native app left it: its database, config and plugins."
+partOf: server
+requiresVolumes: [/Volumes/Data1, /Volumes/Data2]
+paths: ["~/Library/Application Support/jellyfin"]
+excludes:
+  - "~/Library/Application Support/jellyfin/cache"
+  - "~/Library/Application Support/jellyfin/log"
+  - "~/Library/Application Support/jellyfin/transcodes"
+  - "~/Library/Application Support/jellyfin/data/library.db.old"
+  - "~/Library/Application Support/jellyfin/data/library.db-wal"
+  - "~/Library/Application Support/jellyfin/data/library.db-shm"
+  - "~/Library/Application Support/jellyfin/metadata"
+verify: ["~/Library/Application Support/jellyfin/data/jellyfin.db"]

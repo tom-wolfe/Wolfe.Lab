@@ -10,5 +10,6 @@ name: client
 kind: app
 workflow: docker
 service: qbittorrent
+requiresVolumes: [/Volumes/Data1, /Volumes/Data2]
 description: "Client for handling larger downloads that need supervising."
 dependsOn: [vpn]

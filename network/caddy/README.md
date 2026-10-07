@@ -56,7 +56,7 @@ Everything happens in the service's own directory; this one is never edited.
    of per-name certs, which would list every internal hostname in public
    Certificate Transparency logs.
 3. Nothing: the `caddy routes` workflow fires on any `caddy.caddyfile`
-   anywhere in the repository, gathers every one into the routes release
+   anywhere in the repository, gathers every one into the routes deployment, `caddy-routes`,
    and reloads the door explicitly — snippets arrive via a bind mount and
    never change compose's config hash. Run it from the Actions tab to
    force the gather.
@@ -122,7 +122,7 @@ rewrites the configuration.
   happened: the container was recreated a minute before a re-issued cert
   landed). Now such a name just fails its handshake until the renewal
   runs and force-reloads.
-- `docker exec caddy caddy validate --config /etc/caddy/lab/caddy/Caddyfile`
+- `docker exec caddy caddy validate --config /etc/caddy/lab/caddy-proxy/Caddyfile`
   checks config (including all snippets) without touching the running
   instance. That path — the Caddyfile through the repo mount, not a
   file bind at `/etc/caddy/Caddyfile` — is deliberate: a single-file bind

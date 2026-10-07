@@ -21,6 +21,7 @@ name: server
 kind: app
 workflow: docker
 service: immich-server
+requiresVolumes: [/Volumes/Data2]
 description: "The web app, the API and the phone app's server."
 dependsOn: [postgres, cache, machine-learning]
 # The API's and the background jobs', with IMMICH_TELEMETRY_INCLUDE.

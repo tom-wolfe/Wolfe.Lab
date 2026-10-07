@@ -21,7 +21,7 @@ document whether or not any desktop is awake.
 Paperless supports three databases and defaults to SQLite. This service
 keeps the default: one user, a database that stays small, and a backup
 that is the same stop-snapshot-verify pipeline every SQLite service runs
-(`backup/ritten.json`). Postgres would mean a third container and a dump job
+(`backup/component.yaml`). Postgres would mean a third container and a dump job
 of its own, as immich has, for a concurrency the archive will not see.
 The document exporter is the migration path if that ever changes.
 
@@ -39,8 +39,8 @@ internal disk has no room for an archive that only grows. Everything
 under `media/` is irreplaceable in the way photos are, so it is in
 restic and therefore in the offsite copy.
 
-Data2 has to be mounted before the stack starts. Both `compose/ritten.json`
-and `backup/ritten.json` declare the volume, so a deploy or a backup with the drive missing refuses
+Data2 has to be mounted before the stack starts. Both the server's
+declaration and the backup's require the volume, so a deploy or a backup with the drive missing refuses
 rather than writing to an empty directory on the internal disk.
 
 The snapshot is cold: `lab backup` stops the stack, so nothing is
