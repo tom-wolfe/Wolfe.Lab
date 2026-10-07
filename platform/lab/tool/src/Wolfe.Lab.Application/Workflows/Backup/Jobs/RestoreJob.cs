@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
@@ -7,9 +8,7 @@ using Wolfe.Lab.Application.Restic;
 using Wolfe.Lab.Application.Volumes;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
 using Wolfe.Lab.Application.Workflows.Backup.Steps;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
-using Wolfe.Lab.Infrastructure.Volumes;
 
 namespace Wolfe.Lab.Application.Workflows.Backup.Jobs;
 
@@ -21,7 +20,7 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Jobs;
 /// by moving it back. The stack is held to the image the snapshot was taken under, because a
 /// database written by one version and opened by another is the failure that looks like success.
 /// </remarks>
-internal sealed class RestoreJob : LabJob<BackupOptions>
+internal sealed class RestoreJob : LabJob<DeclaredSettings>
 {
     internal static readonly JobArgument<string> Snapshot = JobArgument.Value<string>(
         "snapshot",
@@ -40,9 +39,11 @@ internal sealed class RestoreJob : LabJob<BackupOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<EnsureTools>(),
-        Step.FromType<ResolveRelease>(),
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveRepository>(),
+        Step.FromType<ResolveBackupPlan>(),
         Step.FromType<ResolveSnapshot>(),
         Step.FromType<ResolveImage>(),
         Step.FromType<CheckImage>(),
@@ -52,19 +53,10 @@ internal sealed class RestoreJob : LabJob<BackupOptions>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<BackupOptions> options) => options
-        .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the name the snapshot is filed under.")
-        .Require(s => s.Paths.Count > 0, "'paths' names nothing to restore.");
-
-    protected override void Configure(IWorkflowBuilder builder, BackupOptions options, JobArguments args)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options, JobArguments args)
     {
         base.Configure(builder, options, args);
-        builder.AddDocker().AddRestic().AddStateDirectories().AddVolumes(options.Volumes);
-        builder.Services.AddSingleton(options.ToPlan());
+        builder.AddDocker().AddRestic().AddStateDirectories();
         builder.Services.AddSingleton(new RestoreRequest(args.Get(Snapshot), args.Get(AnyImage)));
-        if (options.Release is { Length: > 0 } release)
-        {
-            builder.AddReleases(release);
-        }
     }
 }

@@ -40,6 +40,6 @@ public sealed class ComponentResourceDetector(IGit git, IFileSystem fileSystem) 
             return null;
         }
 
-        return (await ServiceCatalogReader.Read(git, root)).TryGetValue(out var catalog, out _) ? catalog.DeploymentUnitAt(path.ValueObject) : null;
+        return (await ServiceCatalogReader.Read(git, root)).TryGetValue(out var catalog, out _) ? catalog.DeploymentUnitAt(path.ValueObject)?.Value : null;
     }
 }

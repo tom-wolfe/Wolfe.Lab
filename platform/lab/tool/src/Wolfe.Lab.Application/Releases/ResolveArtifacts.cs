@@ -1,4 +1,5 @@
 using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Application.Releases;
@@ -14,12 +15,21 @@ namespace Wolfe.Lab.Application.Releases;
 [Step("resolve artifacts", StepKind.Work)]
 internal sealed class ResolveArtifacts(ArtifactDeclarations declarations, IFileSystem fileSystem, IOptions<LabDirectories> options, IWorkflowLog log)
 {
-    public StepResult<Artifacts> Run()
+    public StepResult<Artifacts> Run(DeploymentUnit? unit)
     {
         var roots = options.Value;
         var component = fileSystem.ProjectRoot;
         var resolved = new List<Artifact>();
         var errors = new List<Error>();
+        if (declarations.InstallsUnit)
+        {
+            if (unit is null)
+            {
+                return new Error("Nothing resolved the deployment to install.");
+            }
+
+            resolved.Add(new Artifact(component, roots.DeployedTo(unit)));
+        }
 
         foreach (var artifact in declarations.Artifacts)
         {

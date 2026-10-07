@@ -1,4 +1,3 @@
-using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Heartbeat;
 
 namespace Wolfe.Lab.Application.Workflows.Restic.Models;
@@ -9,11 +8,6 @@ namespace Wolfe.Lab.Application.Workflows.Restic.Models;
 /// </summary>
 public sealed record ResticOptions : WorkflowSettings
 {
-    /// <summary>
-    /// External volumes the local repository lives on.
-    /// </summary>
-    public IReadOnlyList<HostPath> Volumes { get; init; } = [];
-
     /// <summary>
     /// What the nightly prune keeps.
     /// </summary>

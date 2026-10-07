@@ -1,6 +1,7 @@
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
+using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
@@ -29,7 +30,19 @@ internal static class Catalogs
         LogTransport? Logs = null,
         IReadOnlyList<MetricsEndpoint>? Metrics = null,
         DeploymentTarget? RunsOn = null,
-        AgentProcess? Agent = null);
+        AgentProcess? Agent = null,
+        Snapshot? Backup = null);
+
+    /// <summary>
+    /// What a test says a backup snapshots, makes a declaration a backup component.
+    /// </summary>
+    internal sealed record Snapshot(string[] Paths, string[]? Excludes = null, string[]? Verify = null, bool Warm = false);
+
+    /// <summary>
+    /// A backup <paramref name="name"/> of <paramref name="paths"/>, part of <paramref name="partOf"/> when it is part of anything.
+    /// </summary>
+    public static Declaration Backup(string name, string? partOf, params string[] paths) =>
+        new(name, ComponentKind.Backup, WorkflowName.Backup, partOf, Backup: new Snapshot(paths));
 
     /// <summary>
     /// <paramref name="values"/>, as the templates an agent's fields are.
@@ -102,6 +115,13 @@ internal static class Catalogs
         var name = ComponentName.From(declaration.Name);
         var partOf = declaration.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
         IReadOnlyList<ComponentName> dependsOn = [.. (declaration.DependsOn ?? []).Select(ComponentName.From)];
+        if (declaration.Backup is { } snapshot)
+        {
+            var backup = BackupComponent.Create(source, name, declaration.Kind, partOf, dependsOn, [.. snapshot.Paths.Select(HostPath.From)],
+                [.. (snapshot.Excludes ?? []).Select(HostPath.From)], [.. (snapshot.Verify ?? []).Select(HostPath.From)], snapshot.Warm);
+            return backup.Value is { } backupComponent ? service.Add<Component>(backupComponent) : new Result<Component>(backup.Errors ?? []);
+        }
+
         if (declaration is { RunsOn: { } runsOn, Agent: { } agent })
         {
             var placed = AgentComponent.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn, runsOn, agent);
@@ -165,7 +185,7 @@ internal static class Catalogs
     /// What <paramref name="directory"/> declares, as a deploy finds it.
     /// </summary>
     public static DeploymentUnit Unit(string directory, params Declaration[] components) =>
-        Of(directory, components).DeploymentUnitAt(RepositoryPath.From(directory)).ShouldNotBeNull();
+        Of(directory, components).DeploymentUnitAt(RepositoryPath.From(directory)).ShouldNotBeNull().Value.ShouldNotBeNull();
 
     /// <summary>
     /// The one component <paramref name="directory"/> declares.

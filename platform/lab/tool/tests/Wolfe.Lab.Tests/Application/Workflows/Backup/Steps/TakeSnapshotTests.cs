@@ -2,7 +2,6 @@ using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
 using Wolfe.Lab.Application.Workflows.Backup.Steps;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Backup.Steps;
@@ -10,22 +9,25 @@ namespace Wolfe.Lab.Tests.Application.Workflows.Backup.Steps;
 public class TakeSnapshotTests
 {
     private static readonly IDirectory State = new PhysicalDirectory("/Users/lab/Docker/jellyfin");
+    private static readonly IDirectory Stack = new PhysicalDirectory("/Users/lab/.local/share/Wolfe.Lab/jellyfin-server");
     private static readonly ResticRepository Repository = new(new Dictionary<string, string> { ["RESTIC_REPOSITORY"] = "/Volumes/Data2/restic" });
     private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly IRestic _restic = Substitute.For<IRestic>();
-    private readonly Release _release = new("jellyfin", new PhysicalDirectory("/Users/lab/.local/share/Wolfe.Lab/jellyfin"));
 
     public TakeSnapshotTests() =>
         _restic.Backup(Repository, Arg.Any<IReadOnlyList<IDirectory>>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
             .Returns(new Snapshot("0ff3ec5c"));
 
-    private TakeSnapshot Step(string? container, bool dryRun = false) =>
-        new(_docker, _restic, new BackupPlan([State], ["/Users/lab/Docker/jellyfin/cache"], container, container, []), new WorkflowJob("jellyfin", "backup", dryRun), Substitute.For<IWorkflowLog>());
+    private TakeSnapshot Step(bool dryRun = false) =>
+        new(_docker, _restic, new WorkflowJob("jellyfin", "backup", dryRun), Substitute.For<IWorkflowLog>());
+
+    private static BackupPlan Plan(string? container) =>
+        new("jellyfin", [State], ["/Users/lab/Docker/jellyfin/cache"], [], container is null ? null : Stack, container, container);
 
     [Fact]
     public async Task Run_SnapshotsWarmWithoutTouchingDocker()
     {
-        var result = await Step(container: null).Run(_release, Repository, SnapshotImage.None, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan(null), Repository, SnapshotImage.None, TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Id.ShouldBe("0ff3ec5c");
         _docker.ReceivedCalls().ShouldBeEmpty();
@@ -37,14 +39,14 @@ public class TakeSnapshotTests
     {
         _docker.Inspect("jellyfin", Arg.Any<CancellationToken>()).Returns(new ContainerState("jellyfin/jellyfin:12.0", false));
 
-        var result = await Step("jellyfin").Run(_release, Repository, new SnapshotImage("jellyfin/jellyfin:12.0"), TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan("jellyfin"), Repository, new SnapshotImage("jellyfin/jellyfin:12.0"), TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeFalse();
         Received.InOrder(async () =>
         {
-            await _docker.ComposeStop(_release.Directory, Arg.Any<CancellationToken>());
+            await _docker.ComposeStop(Stack, Arg.Any<CancellationToken>());
             await _restic.Backup(Repository, Arg.Any<IReadOnlyList<IDirectory>>(), Arg.Any<IReadOnlyList<string>>(), Arg.Is<IReadOnlyList<string>>(t => t.Contains("image:jellyfin/jellyfin:12.0")), Arg.Any<CancellationToken>());
-            await _docker.ComposeStart(_release.Directory, Arg.Any<CancellationToken>());
+            await _docker.ComposeStart(Stack, Arg.Any<CancellationToken>());
         });
     }
 
@@ -54,9 +56,9 @@ public class TakeSnapshotTests
         _restic.Backup(Repository, Arg.Any<IReadOnlyList<IDirectory>>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
             .Returns<Snapshot>(_ => throw new InvalidOperationException("restic failed"));
 
-        await Should.ThrowAsync<InvalidOperationException>(() => Step("jellyfin").Run(_release, Repository, SnapshotImage.None, TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<InvalidOperationException>(() => Step().Run(Plan("jellyfin"), Repository, SnapshotImage.None, TestContext.Current.CancellationToken));
 
-        await _docker.Received().ComposeStart(_release.Directory, Arg.Any<CancellationToken>());
+        await _docker.Received().ComposeStart(Stack, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -64,17 +66,17 @@ public class TakeSnapshotTests
     {
         _docker.Inspect("jellyfin", Arg.Any<CancellationToken>()).Returns(new ContainerState("jellyfin/jellyfin:12.0", true));
 
-        var result = await Step("jellyfin").Run(_release, Repository, SnapshotImage.None, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan("jellyfin"), Repository, SnapshotImage.None, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         await _restic.Received().Forget(Repository, new Snapshot("0ff3ec5c"), Arg.Any<CancellationToken>());
-        await _docker.Received().ComposeStart(_release.Directory, Arg.Any<CancellationToken>());
+        await _docker.Received().ComposeStart(Stack, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Run_DoesNotJudgeARehearsalByARunningStack()
     {
-        var result = await Step("jellyfin", dryRun: true).Run(_release, Repository, SnapshotImage.None, TestContext.Current.CancellationToken);
+        var result = await Step(dryRun: true).Run(Plan("jellyfin"), Repository, SnapshotImage.None, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeFalse();
         await _docker.DidNotReceiveWithAnyArgs().Inspect(default!, TestContext.Current.CancellationToken);

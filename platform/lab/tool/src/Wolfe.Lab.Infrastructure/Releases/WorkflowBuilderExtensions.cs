@@ -43,14 +43,11 @@ public static class WorkflowBuilderExtensions
         }
 
         /// <summary>
-        /// Adds the name a component is released under, the installer that puts it there, and
-        /// the installer's rehearsal.
+        /// Adds the installer that mirrors a directory onto the node, and its rehearsal.
         /// </summary>
-        /// <param name="name">The name the component's <c>ritten.json</c> declares.</param>
-        public IWorkflowBuilder AddReleases(string name)
+        public IWorkflowBuilder AddInstaller()
         {
             builder.AddCommandRunner();
-            builder.Services.AddSingleton(new ReleaseName(name));
             builder.Services.TryAddSingleton<IReleaseInstaller, RsyncInstaller>();
             builder.Decorators.Replace<IReleaseInstaller, DryRunInstaller>();
             return builder;
@@ -59,11 +56,12 @@ public static class WorkflowBuilderExtensions
         /// <summary>
         /// Adds the artifacts a job publishes, and the installer that mirrors them onto the node.
         /// </summary>
-        /// <param name="artifacts">The component's declarations, and any the workflow adds.</param>
-        public IWorkflowBuilder AddArtifacts(IReadOnlyList<ArtifactOptions> artifacts)
+        /// <param name="artifacts">The component's declarations.</param>
+        /// <param name="installsUnit">Whether the deployment is itself installed, as the first artifact.</param>
+        public IWorkflowBuilder AddArtifacts(IReadOnlyList<ArtifactOptions> artifacts, bool installsUnit = false)
         {
             builder.AddCommandRunner().AddBuildReporting();
-            builder.Services.AddSingleton(new ArtifactDeclarations(artifacts));
+            builder.Services.AddSingleton(new ArtifactDeclarations(artifacts, installsUnit));
             builder.Services.TryAddSingleton<IReleaseInstaller, RsyncInstaller>();
             builder.Decorators.Replace<IReleaseInstaller, DryRunInstaller>();
             return builder;

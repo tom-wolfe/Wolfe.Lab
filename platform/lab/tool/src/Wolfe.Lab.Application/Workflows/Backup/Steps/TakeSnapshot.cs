@@ -1,6 +1,5 @@
 using Ritten.Docker;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
@@ -9,21 +8,19 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
 /// Stop, snapshot, start. The stop is what makes a SQLite or LMDB store consistent on disk.
 /// </summary>
 [Step("snapshot", StepKind.Work)]
-internal sealed class TakeSnapshot(IDocker docker, IRestic restic, BackupPlan plan, WorkflowJob job, IWorkflowLog log)
+internal sealed class TakeSnapshot(IDocker docker, IRestic restic, WorkflowJob job, IWorkflowLog log)
 {
-    public async Task<StepResult<Snapshot>> Run(Release release, ResticRepository repository, SnapshotImage image, CancellationToken ct = default)
+    public async Task<StepResult<Snapshot>> Run(BackupPlan plan, ResticRepository repository, SnapshotImage image, CancellationToken ct = default)
     {
-        // The tag every snapshot has carried since the first: kept, so a restore finds the
-        // history taken before the release was named this way.
-        var tags = new List<string> { $"service:{release.Name}" };
+        var tags = new List<string> { plan.Tag };
         if (image.Tag is { } tag)
         {
             tags.Add($"image:{tag}");
         }
 
-        if (plan.Container is not null)
+        if (plan.Stack is { } stopping)
         {
-            await docker.ComposeStop(release.Directory, ct);
+            await docker.ComposeStop(stopping, ct);
         }
 
         try
@@ -48,10 +45,10 @@ internal sealed class TakeSnapshot(IDocker docker, IRestic restic, BackupPlan pl
         }
         finally
         {
-            if (plan.Container is not null)
+            if (plan.Stack is { } stopped)
             {
                 // Not the job's token: a cancelled backup still owes the service its restart.
-                await docker.ComposeStart(release.Directory, CancellationToken.None);
+                await docker.ComposeStart(stopped, CancellationToken.None);
             }
         }
     }

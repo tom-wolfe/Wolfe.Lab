@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
@@ -17,13 +18,13 @@ public class LabelServicesTests : IDisposable
     private readonly DirectoryInfo _root = Directory.CreateTempSubdirectory("lab-label-");
     private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly DirectoryInfo _release;
+    private readonly DirectoryInfo _installed;
 
     public LabelServicesTests()
     {
         var checkout = _root.CreateSubdirectory("checkout");
         var component = checkout.CreateSubdirectory("personal").CreateSubdirectory("mail").CreateSubdirectory("watcher");
-        _release = _root.CreateSubdirectory("release");
+        _installed = _root.CreateSubdirectory("installed").CreateSubdirectory("mail-watcher");
         _fileSystem.ProjectRoot.Returns(new PhysicalDirectory(component.FullName));
         _docker.ComposeConfig(Arg.Any<IDirectory>(), Arg.Any<IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>()).Returns(new ComposeProject([
             new ComposeService("bridge", new Dictionary<string, string>(), new Dictionary<string, string?>(), [new ComposePort(8080, 8080, null, "tcp")]),
@@ -35,20 +36,21 @@ public class LabelServicesTests : IDisposable
 
     // The stack's two services, each its own component; the bridge's named apart from its service.
     private static readonly Catalogs.Declaration[] Plain =
-        [Catalogs.Compose("watcher", "watcher", ComponentKind.Backend), Catalogs.Compose("proton", "bridge", ComponentKind.Backend)];
+        [Catalogs.Compose("proton", "bridge", ComponentKind.Backend), Catalogs.Compose("watcher", "watcher", ComponentKind.Backend) with { DependsOn = ["proton"] }];
 
     private static readonly Catalogs.Declaration[] Declaring =
     [
-        Catalogs.Compose("watcher", "watcher", ComponentKind.Backend, logs: LogTransport.Otlp),
-        Catalogs.Compose("proton", "bridge", ComponentKind.Backend, metrics: new MetricsEndpoint(Port.From(9090), HttpPath.From("/stats")))
+        Catalogs.Compose("proton", "bridge", ComponentKind.Backend, metrics: new MetricsEndpoint(Port.From(9090), HttpPath.From("/stats"))),
+        Catalogs.Compose("watcher", "watcher", ComponentKind.Backend, logs: LogTransport.Otlp) with { DependsOn = ["proton"] }
     ];
 
     private Task<StepResult<ComposeBindings>> Run(bool dryRun = false, Catalogs.Declaration[]? components = null) =>
-        new LabelServices(_docker, _fileSystem, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(new Release("mail-watcher", new PhysicalDirectory(_release.FullName)), Catalogs.Unit("personal/mail/watcher", components ?? Plain),
+        new LabelServices(_docker, _fileSystem, Options.Create(new LabDirectories { Root = new PhysicalDirectory(Path.Combine(_root.FullName, "installed")) }),
+                new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
+            .Run(Catalogs.Unit("personal/mail/watcher", components ?? Plain),
                 ComposeEnvironment.Empty, TestContext.Current.CancellationToken);
 
-    private string Override => Path.Combine(_release.FullName, LabelServices.OverrideFile);
+    private string Override => Path.Combine(_installed.FullName, LabelServices.OverrideFile);
 
     [Fact]
     public async Task Run_LabelsEachServiceWithWhereItsOwnComponentLives()
