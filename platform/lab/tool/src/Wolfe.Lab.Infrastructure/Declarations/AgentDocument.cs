@@ -6,7 +6,7 @@ namespace Wolfe.Lab.Infrastructure.Declarations;
 /// A component the <c>agents</c> workflow operates: a host process running on a node.
 /// </summary>
 [AdditionalProperties(false)]
-internal sealed record AgentsDocument : ComponentDocument
+internal sealed record AgentDocument : ComponentDocument
 {
     [Required, Description("The nodes it runs on: 'all', 'every <role>', or a list of nodes by name.")]
     public required DeploymentTargetDocument RunsOn { get; init; }

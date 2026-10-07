@@ -13,10 +13,10 @@ internal static class ComponentDocuments
 {
     private static readonly Dictionary<WorkflowName, Type> Shapes = new()
     {
-        [WorkflowName.Docker] = typeof(ComposeDocument),
-        [WorkflowName.DotNetService] = typeof(ComposeDocument),
-        [WorkflowName.Agents] = typeof(AgentsDocument),
-        [WorkflowName.Ollama] = typeof(AgentsDocument),
+        [WorkflowName.Docker] = typeof(DockerDocument),
+        [WorkflowName.DotNetService] = typeof(DockerDocument),
+        [WorkflowName.Agent] = typeof(AgentDocument),
+        [WorkflowName.Ollama] = typeof(AgentDocument),
         [WorkflowName.Backup] = typeof(BackupDocument)
     };
 

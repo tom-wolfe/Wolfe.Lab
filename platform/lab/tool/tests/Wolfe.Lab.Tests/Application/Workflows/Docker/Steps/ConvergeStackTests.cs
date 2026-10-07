@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Ritten.Docker;
 using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
 using Wolfe.Lab.Domain.Catalog;
@@ -15,7 +16,7 @@ public class ConvergeStackTests : IDisposable
     private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly ReportSection _section = new("Artifacts");
     private readonly IWorkflowReport _report = Substitute.For<IWorkflowReport>();
-    private readonly DeploymentUnit _unit = Catalogs.Unit("monitoring/grafana/compose", Catalogs.Compose("server", "grafana"));
+    private readonly DeploymentUnit _unit = Catalogs.Unit("monitoring/grafana/compose", Catalogs.Docker("server", "grafana"));
 
     private static readonly DateTimeOffset Changed = new(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
 
@@ -34,7 +35,7 @@ public class ConvergeStackTests : IDisposable
     private Task<StepResult> Converge(DateTimeOffset? stamp, bool dryRun = false) =>
         new ConvergeStack(_docker, Options.Create(new LabDirectories { Root = new PhysicalDirectory(_root.FullName) }),
                 _report, new WorkflowJob("docker", "deploy", dryRun, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(_unit, new ComposeEnvironment(new Dictionary<string, string>()), new PublishedArtifacts([], stamp), TestContext.Current.CancellationToken);
+            .Run(_unit, new ComposeEnvironment(new Dictionary<string, string>()), new Installation(new PhysicalDirectory(Installed), stamp), TestContext.Current.CancellationToken);
 
     [Fact]
     public async Task Run_TakesAFirstInstallAsCurrentWithoutRestarting()

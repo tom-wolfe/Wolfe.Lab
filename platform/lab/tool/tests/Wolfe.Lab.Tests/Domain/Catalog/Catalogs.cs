@@ -17,8 +17,8 @@ namespace Wolfe.Lab.Tests.Domain.Catalog;
 internal static class Catalogs
 {
     /// <summary>
-    /// What a test says a component declares; a compose service makes it a compose component, a
-    /// placement and an agent an agent component.
+    /// What a test says a component declares; a compose service makes it a Docker component, a
+    /// placement and an agent an agents component.
     /// </summary>
     internal sealed record Declaration(
         string Name,
@@ -65,7 +65,7 @@ internal static class Catalogs
     /// An agent component <paramref name="name"/>, running <paramref name="agent"/> on the nodes of <paramref name="runsOn"/>.
     /// </summary>
     public static Declaration Agent(string name, DeploymentTarget runsOn, AgentProcess agent) =>
-        new(name, ComponentKind.Collector, WorkflowName.Agents, RunsOn: runsOn, Agent: agent);
+        new(name, ComponentKind.Collector, WorkflowName.Agent, RunsOn: runsOn, Agent: agent);
 
     /// <summary>
     /// A node as <c>platform/nodes.yaml</c> would declare it, keeping the lab in <c>/lab/root</c>
@@ -104,7 +104,7 @@ internal static class Catalogs
     /// <summary>
     /// A component <paramref name="name"/> that runs as the compose service <paramref name="service"/>.
     /// </summary>
-    public static Declaration Compose(string name, string service, ComponentKind? kind = null, LogTransport? logs = null, params MetricsEndpoint[] metrics) =>
+    public static Declaration Docker(string name, string service, ComponentKind? kind = null, LogTransport? logs = null, params MetricsEndpoint[] metrics) =>
         new(name, kind ?? ComponentKind.App, WorkflowName.Docker, ComposeService: service, Logs: logs, Metrics: metrics);
 
     /// <summary>
@@ -128,10 +128,14 @@ internal static class Catalogs
             return placed.Value is { } agentComponent ? service.Add<Component>(agentComponent) : new Result<Component>(placed.Errors ?? []);
         }
 
-        var created = declaration.ComposeService is { } composeService
-            ? Created(ComposeComponent.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn, ComposeServiceName.From(composeService)),
-                declaration)
-            : Wolfe.Lab.Domain.Catalog.Components.Component.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn);
+        var created = declaration switch
+        {
+            { ComposeService: { } built, Workflow: var workflow } when workflow == WorkflowName.DotNetService =>
+                Created(DotNetServiceComponent.Create(source, name, declaration.Kind, partOf, dependsOn, ComposeServiceName.From(built)), declaration),
+            { ComposeService: { } composeService } =>
+                Created(DockerComponent.Create(source, name, declaration.Kind, partOf, dependsOn, ComposeServiceName.From(composeService)), declaration),
+            _ => Wolfe.Lab.Domain.Catalog.Components.Component.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn)
+        };
         return created.Value is { } component ? service.Add(component) : created;
     }
 
@@ -145,9 +149,9 @@ internal static class Catalogs
         return service.Value is { } created ? catalog.Add(created) : service;
     }
 
-    // A compose component made, with its logs and metrics as the test says, as a component: a
+    // A Docker component made, with its logs and metrics as the test says, as a component: a
     // Result of the derived type is not one of its base.
-    private static Result<Component> Created(Result<ComposeComponent> made, Declaration declaration)
+    private static Result<Component> Created<T>(Result<T> made, Declaration declaration) where T : DockerComponent
     {
         if (made.Value is not { } component)
         {
@@ -197,5 +201,5 @@ internal static class Catalogs
     /// The one component <paramref name="directory"/> declares: <paramref name="name"/>, run as the
     /// compose service of the same name.
     /// </summary>
-    public static Component Component(string directory, string name) => Component(directory, Compose(name, name));
+    public static Component Component(string directory, string name) => Component(directory, Docker(name, name));
 }

@@ -12,7 +12,7 @@ public class ResolveDeploymentUnitTests : IDisposable
     private readonly DirectoryInfo _checkout = Directory.CreateTempSubdirectory("lab-placement-");
     private readonly IGit _git = Substitute.For<IGit>();
     private readonly IFileSystem _fileSystem = Substitute.For<IFileSystem>();
-    private readonly ServiceCatalog _catalog = Catalogs.Of("ai/ollama/server", Catalogs.Definition("server", ComponentKind.Model, WorkflowName.Agents));
+    private readonly ServiceCatalog _catalog = Catalogs.Of("ai/ollama/server", Catalogs.Definition("server", ComponentKind.Model, WorkflowName.Agent));
 
     public ResolveDeploymentUnitTests() =>
         _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns(new PhysicalDirectory(_checkout.FullName));

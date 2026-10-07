@@ -21,7 +21,7 @@ public class CheckVolumesTests : IDisposable
     // A stack whose server requires the volumes.
     private static DeploymentUnit Unit(params DirectoryInfo[] volumes)
     {
-        var catalog = Catalogs.Of("personal/immich/compose", Catalogs.Compose("server", "immich-server"));
+        var catalog = Catalogs.Of("personal/immich/compose", Catalogs.Docker("server", "immich-server"));
         catalog.Services.Single().Components.Single().RequiresVolumes = [.. volumes.Select(volume => HostPath.From(volume.FullName))];
         return catalog.DeploymentUnitAt(RepositoryPath.From("personal/immich/compose")).ShouldNotBeNull().Value.ShouldNotBeNull();
     }

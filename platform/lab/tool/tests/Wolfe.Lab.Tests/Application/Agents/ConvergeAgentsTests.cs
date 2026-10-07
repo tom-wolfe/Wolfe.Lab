@@ -1,7 +1,8 @@
 using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Agents;
-using Wolfe.Lab.Infrastructure.Releases;
+using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Application.Releases;
 
 namespace Wolfe.Lab.Tests.Application.Agents;
 
@@ -11,9 +12,9 @@ public class ConvergeAgentsTests
     private readonly IWorkflowLog _log = Substitute.For<IWorkflowLog>();
 
     private ConvergeAgents Step(bool dryRun = false) =>
-        new(_supervisor, new WorkflowJob("agents", "deploy", dryRun, AutoApprove: true), _log);
+        new(_supervisor, new WorkflowJob("agent", "deploy", dryRun, AutoApprove: true), _log);
 
-    private static readonly PublishedArtifacts NoArtifacts = new([], null);
+    private static readonly Installation NotInstalled = new(new PhysicalDirectory("/lab/root/ai-ollama"), null);
 
     private static AgentPlan Plan() => new([
         new AgentDefinition(
@@ -34,7 +35,7 @@ public class ConvergeAgentsTests
     {
         _supervisor.Converge(Arg.Any<AgentDefinition>(), Arg.Any<CancellationToken>()).Returns(AgentOutcome.Installed);
 
-        await Step().Run(Plan(), NoArtifacts, TestContext.Current.CancellationToken);
+        await Step().Run(Plan(), NotInstalled, TestContext.Current.CancellationToken);
 
         _log.Received().Status(Arg.Is<string>(m => m.Contains("Installed and started")));
     }
@@ -44,7 +45,7 @@ public class ConvergeAgentsTests
     {
         _supervisor.Converge(Arg.Any<AgentDefinition>(), Arg.Any<CancellationToken>()).Returns(AgentOutcome.Installed);
 
-        await Step(dryRun: true).Run(Plan(), NoArtifacts, TestContext.Current.CancellationToken);
+        await Step(dryRun: true).Run(Plan(), NotInstalled, TestContext.Current.CancellationToken);
 
         _log.DidNotReceiveWithAnyArgs().Status(default!);
     }
@@ -54,7 +55,7 @@ public class ConvergeAgentsTests
     {
         var plan = new AgentPlan([Plan().Agents[0] with { Supersedes = ["sh.brew.ollama"] }]);
 
-        await Step().Run(plan, NoArtifacts, TestContext.Current.CancellationToken);
+        await Step().Run(plan, NotInstalled, TestContext.Current.CancellationToken);
 
         Received.InOrder(() =>
         {
@@ -64,12 +65,12 @@ public class ConvergeAgentsTests
     }
 
     [Fact]
-    public async Task Run_StampsEveryAgentWithWhenItsArtifactsLastChanged()
+    public async Task Run_StampsEveryAgentWithWhenItsInstallLastChanged()
     {
         var stamp = new DateTimeOffset(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
 
-        await Step().Run(Plan(), new PublishedArtifacts([], stamp), TestContext.Current.CancellationToken);
+        await Step().Run(Plan(), new Installation(new PhysicalDirectory("/lab/root/ai-ollama"), stamp), TestContext.Current.CancellationToken);
 
-        await _supervisor.Received().Converge(Arg.Is<AgentDefinition>(agent => agent.ArtifactStamp == stamp), Arg.Any<CancellationToken>());
+        await _supervisor.Received().Converge(Arg.Is<AgentDefinition>(agent => agent.InstallStamp == stamp), Arg.Any<CancellationToken>());
     }
 }

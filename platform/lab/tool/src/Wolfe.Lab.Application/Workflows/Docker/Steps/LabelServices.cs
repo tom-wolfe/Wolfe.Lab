@@ -2,6 +2,7 @@ using Ritten.Docker;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Telemetry;
 using Wolfe.Lab.Infrastructure.Compose;
 using Wolfe.Lab.Infrastructure.Releases;
@@ -67,6 +68,13 @@ internal sealed class LabelServices(IDocker docker, IFileSystem fileSystem, IOpt
                     definition["ports"] = binding.Publishes;
                 }
 
+                // Built by the deploy, under the name the catalog gives it: the stack's compose
+                // file says only that it is built.
+                if (binding.Component is DotNetServiceComponent built)
+                {
+                    definition["image"] = built.Image;
+                }
+
                 return definition;
             })
         };
@@ -78,7 +86,8 @@ internal sealed class LabelServices(IDocker docker, IFileSystem fileSystem, IOpt
     private const string Header = """
         # Written by `lab deploy` from the components declared beside this stack: on each service,
         # where its component lives, and what the component declares — the collector's labels,
-        # and the ports it scrapes on (platform/lab/README.md). Rewritten on every deploy.
+        # the ports it scrapes on, and the image the deploy built for it (platform/lab/README.md).
+        # Rewritten on every deploy.
 
         """;
 
