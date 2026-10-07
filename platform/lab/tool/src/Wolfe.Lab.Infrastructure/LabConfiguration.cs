@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Wolfe.Lab.Infrastructure;
@@ -37,7 +38,8 @@ public static class LabConfiguration
         /// </summary>
         public IWorkflowBuilder AddLabConfiguration()
         {
-            builder.Services.TryAddSingleton(Current);
+            // Replaced, not tried: OpenTelemetry registers an environment-only IConfiguration first.
+            builder.Services.Replace(ServiceDescriptor.Singleton(Current));
             return builder;
         }
     }
