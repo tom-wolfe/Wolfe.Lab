@@ -14,7 +14,7 @@ public class CheckAgentDeclarationsTests
 
     private static StepResult Check(ServiceCatalog catalog) =>
         new CheckAgentDeclarations(Resolvers.On(), new WorkflowJob("agents", "check", DryRun: false, AutoApprove: false), Substitute.For<IWorkflowLog>())
-            .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
+            .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull());
 
     private static AgentProcess Beszel(params (string Variable, string Value)[] environment) => new()
     {

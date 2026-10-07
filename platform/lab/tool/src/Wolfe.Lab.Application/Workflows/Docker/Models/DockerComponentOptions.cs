@@ -1,4 +1,3 @@
-using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Models;
@@ -13,20 +12,6 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Models;
 public record DockerComponentOptions : WorkflowSettings
 {
     /// <summary>
-    /// The name the component is installed under on the node.
-    /// </summary>
-    /// <remarks>
-    /// Components are installed by name into one flat root, and every service's compose component
-    /// is called <c>compose</c> — so each names its release, and names it after its service.
-    /// </remarks>
-    public string? Release { get; init; }
-
-    /// <summary>
-    /// External volumes the stack binds.
-    /// </summary>
-    public IReadOnlyList<HostPath> Volumes { get; init; } = [];
-
-    /// <summary>
     /// Images built from source before the stack is converged.
     /// </summary>
     /// <remarks>
@@ -37,7 +22,7 @@ public record DockerComponentOptions : WorkflowSettings
     public IReadOnlyList<ImageOptions> Images { get; init; } = [];
 
     /// <summary>
-    /// Directories published to the node beside the release, which is itself one.
+    /// Directories published to the node beside the stack, which is itself installed as one.
     /// </summary>
     public IReadOnlyList<ArtifactOptions> Artifacts { get; init; } = [];
 }

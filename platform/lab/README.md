@@ -17,7 +17,7 @@ from a component's directory, `lab` offers exactly that workflow's jobs
 as commands, each option of which is a job argument the job declared. A
 workflow is a class here: its jobs, each job's ordered steps, and the
 options shape its `ritten.json` must satisfy, judged before anything
-runs. Steps hand each other typed values (a `Release`, say) rather than
+runs. Steps hand each other typed values (a `DeploymentUnit`, say) rather than
 sharing state, and reach outside the working directory only through a
 client that has a dry-run twin, so `--dry-run` rehearses any job
 without a side effect.
@@ -49,23 +49,28 @@ A compose component is installed, not run from the checkout. A runner
 checks the repository out into a disposable workspace, and a container
 bind-mounts files — config directories, a Caddyfile, route snippets —
 that it goes on reading after the job that started it is gone. So every
-docker component names a `release`, is rsync'd under that name into one
-flat root (`~/.local/share/Wolfe.Lab/<release>`), and is converged from
-there with its `secrets.env` resolved into the environment of that one
-`compose up`. Ritten's own compose steps read the component in the
+compose stack is rsync'd into one flat root under its deployment's name,
+`<service>-<head>` (`~/.local/share/Wolfe.Lab/immich-server`), and is
+converged from there with its `secrets.env` resolved into the environment
+of that one `compose up`. A directory's components are one deployment,
+and exactly one of them is at its head: the one none of the others
+depends on and none of them holds as a part — Immich's `server`, which
+needs its database, cache and machine learning. The catalog refuses a
+directory with none or several, so what a deployment is called never
+depends on what its directory is called. Ritten's own compose steps read the component in the
 checkout, which is right for the check and wrong for the deploy; the
 one step that differs is owned here, the rest are a `using`.
 
 Every container says where in the lab it lives. The component's path is
 `<area>/<service>/<component>`, which is the label schema
 (monitoring/README.md) already, so the deploy writes a `compose.override.yaml` into the
-release — compose merges it by itself — putting `lab.area`,
+installed stack — compose merges it by itself — putting `lab.area`,
 `lab.service` and `lab.component` on every service as Docker labels,
 which the collector reads a container's logs under, and as
 `OTEL_RESOURCE_ATTRIBUTES`, which an application sending its own
 telemetry reads. No compose file in the repository carries them, so none
 can disagree with where it sits; the file is the deploy's, so the
-release's mirror leaves it in place. Each service of the stack is a
+install's mirror leaves it in place. Each service of the stack is a
 component of its own, labelled with its own name: the deploy finds the
 components its directory declares in the catalog, so a stack whose
 services are not all declared — with their service — fails the deploy
@@ -80,16 +85,15 @@ when there is one, the area and service a stack's share otherwise. The
 node's collector adds the node, as it does to everything it forwards.
 
 `network/caddy/routes` is the one component that reads other components, and
-deliberately: it gathers every `caddy.caddyfile` in the checkout into a
-release of its own that the door's Caddyfile imports, so adding a
+deliberately: it gathers every `caddy.caddyfile` in the checkout and
+installs them as its own deployment, `caddy-routes`, which the door's
+Caddyfile imports, so adding a
 service never edits the front door, and a route added in the same push
 as its stack does not depend on which workflow the runner reached first.
 
-A backup component snapshots a release's state. Its `ritten.json` names
-the release (the snapshot's tag and, when a container is named in
-`stop`, the installed stack that is stopped for the duration), the
-paths, the excludes, and the `verify` paths a restore must bring back.
-The repositories themselves are the restic service's to define: every
+A backup component snapshots a component's state, and is declared as
+part of it (Declarations, below). Its snapshots are tagged with its
+service's name. The repositories themselves are the restic service's to define: every
 backup component reads `platform/restic/restic.env` (or `sftp.env` on a Linux
 node) by walking up to the checkout — the one file a component reads
 outside its own directory, because a copy in every component would be a
@@ -110,8 +114,8 @@ component, mirrored to an output directory, declared in `ritten.json`:
 "artifacts": [{ "source": "config", "output": "${LAB_ROOT}/alloy" }]
 ```
 
-A compose component's release is one already — the component itself,
-published to `${LAB_ROOT}/<release>` — and it may declare more; an agents
+A compose stack is one already — the deployment itself, published to
+`${LAB_ROOT}/<service>-<head>` — and it may declare more; an agents
 component declares the ones its agents read, and names them in their
 arguments the same way (`"run", "${LAB_ROOT}/alloy/config.alloy"`). An
 output is a mirror, so what its source lacks is deleted: it must lie
@@ -125,7 +129,7 @@ A published file is written only when its content changed, so the newest
 write under the outputs says when the artifacts last did, and that moves
 the runtime: an agent's unit carries it (as it carries its binary's), so a
 changed config reloads the agent; a compose stack is restarted, and the
-time it was restarted for is kept in `${LAB_ROOT}/.applied/<release>`,
+time it was restarted for is kept in `${LAB_ROOT}/.applied/<service>-<head>`,
 written only once the restart has happened. `up` alone would recreate a
 container whose definition changed, never one whose bind-mounted file did.
 Both read the state of the node rather than of the job, so a restart that
@@ -348,6 +352,40 @@ node (`runsOn: [mini]`), while its models and roles stay in its
 `ritten.json`. Its deploy holds `models.store` to the agent's
 `OLLAMA_MODELS`.
 
+Any component may say which external drives it needs, by mount point:
+
+```yaml
+requiresVolumes: [/Volumes/Data1, /Volumes/Data2]
+```
+
+A job refuses to run while one is unmounted — an unmounted drive on a Mac
+is an empty directory on the internal disk, and a stack started against
+it runs happily on nothing — so every job that touches a drive checks its
+deployment's first, by the sentinel file only the real drive has: the
+deployment holds what a job needs, and nothing else says which drives.
+
+A component the `backup` workflow operates is state snapshotted into
+restic, declared as part of the component whose state it is:
+
+```yaml
+name: config
+kind: storage
+workflow: backup
+partOf: server               # stopped while the snapshot is taken
+paths: [~/Docker/sonarr/config]
+excludes: [~/Docker/sonarr/config/logs]
+verify: [~/Docker/sonarr/config/sonarr.db]   # what the drill asserts came back
+```
+
+What it is part of is found up `partOf`, to the nearest component the lab
+runs: its stack, installed on the node, is stopped for the snapshot and
+started after it, and its container's image tags the snapshot, so a
+restore pairs with the version that wrote it. `warm: true` takes the
+snapshot while it runs — files nothing writes to mid-snapshot, or a
+database keeping its own dumps — still tagged with its image. A backup
+part of nothing stops nothing. What it leaves out or verifies must lie in
+what it snapshots.
+
 ## Layout
 
 `tool/src/` holds four projects, in layers (ROADMAP.md #14), and the
@@ -414,7 +452,7 @@ The other line is between this project and Ritten. A client for a tool
 with no lab policy in it — Docker, git, the .NET SDK, OpenTofu — is a
 Ritten package, consumed as one, and so are its steps. A step copied
 from Ritten is owned here only when it has been changed for the lab
-(`ConvergeRelease`, which converges from the release with the resolved
+(`ConvergeStack`, which converges from the installed stack with the resolved
 secrets); a copy that would be identical is not a copy, it is a `using`.
 
 ## Clients

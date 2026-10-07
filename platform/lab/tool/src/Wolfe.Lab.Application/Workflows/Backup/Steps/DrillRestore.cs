@@ -1,5 +1,4 @@
 using Wolfe.Lab.Application.Workflows.Backup.Models;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
@@ -9,18 +8,18 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
 /// into a scratch directory, only the paths that prove it, and each is asserted non-empty.
 /// </summary>
 [Step("drill restore", StepKind.Check)]
-internal sealed class DrillRestore(IRestic restic, BackupPlan plan, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+internal sealed class DrillRestore(IRestic restic, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(Release release, ResticRepository repository, CancellationToken ct = default)
+    public async Task<StepResult> Run(BackupPlan plan, ResticRepository repository, CancellationToken ct = default)
     {
-        var tag = $"service:{release.Name}";
+        var tag = plan.Tag;
         var snapshot = await restic.FindSnapshot(repository, tag, null, ct);
         if (snapshot is null)
         {
             return new Error($"{repository.Location} holds no snapshot tagged {tag}.");
         }
 
-        var scratch = fileSystem.CreateTempDirectory($"lab-drill-{release.Name}-");
+        var scratch = fileSystem.CreateTempDirectory($"lab-drill-{plan.Service}-");
         try
         {
             await restic.Restore(repository, snapshot.Id, scratch, plan.Verify, ct);

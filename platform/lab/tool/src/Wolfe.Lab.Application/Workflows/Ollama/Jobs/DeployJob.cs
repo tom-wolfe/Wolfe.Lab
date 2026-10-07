@@ -11,7 +11,6 @@ using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Ollama;
 using Wolfe.Lab.Infrastructure.Packages;
 using Wolfe.Lab.Infrastructure.Releases;
-using Wolfe.Lab.Infrastructure.Volumes;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Jobs;
 
@@ -54,7 +53,7 @@ internal sealed class DeployJob : LabJob<OllamaOptions>
     protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
     {
         base.Configure(builder, options);
-        builder.AddPackages().AddAgents().AddOllama().AddVolumes(options.Volumes).AddArtifacts([]);
+        builder.AddPackages().AddAgents().AddOllama().AddArtifacts([]);
         builder.Services.AddSingleton(new ModelPlan([.. options.Models.Pull]));
         builder.Services.AddSingleton(RolePlan.From(options.Models.Roles));
         builder.Services.AddSingleton(new DeclaredRoles(options.Models));

@@ -1,4 +1,5 @@
 using Ritten.Git;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Checkout;
@@ -24,12 +25,17 @@ internal sealed class ResolveDeploymentUnit(IGit git, IFileSystem fileSystem, IW
             return RepositoryErrors.OutsideTheCheckout(dir, repository);
         }
 
-        if (catalog.DeploymentUnitAt(path.ValueObject) is not { } unit)
+        if (catalog.DeploymentUnitAt(path.ValueObject) is not { } declared)
         {
             return DeploymentUnitErrors.NothingDeclared(path.ValueObject);
         }
 
-        log.Detail($"{unit} deploys {string.Join(", ", unit.Components.Select(component => component.Name))} of {unit.Service}.");
+        if (!declared.TryGetValue(out var unit, out var errors))
+        {
+            return StepResult.Failed(errors);
+        }
+
+        log.Detail($"{unit} deploys {string.Join(", ", unit.Components.Select(component => component.Name))} of {unit.Service}, as {unit.Name}.");
         return unit;
     }
 }

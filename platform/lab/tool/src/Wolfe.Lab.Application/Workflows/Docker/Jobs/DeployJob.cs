@@ -7,7 +7,6 @@ using Wolfe.Lab.Application.Volumes;
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Application.Workflows.Docker.Steps;
 using Wolfe.Lab.Infrastructure.Releases;
-using Wolfe.Lab.Infrastructure.Volumes;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Jobs;
 
@@ -28,7 +27,6 @@ internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : Do
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<ResolveRelease>(),
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<CheckVolumes>(),
@@ -38,27 +36,20 @@ internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : Do
         Step.FromType<ResolveComposeSecrets>(),
         Step.FromType<GateApproval>(),
         Step.FromType<LabelServices>(),
-        Step.FromType<ConvergeRelease>(),
+        Step.FromType<ConvergeStack>(),
         Step.FromType<DeclareMetrics>()
     ];
 
     public override JobKind Kind => JobKind.Deploy;
 
     protected override void ValidateSettings(SettingsValidator<TOptions> options) => options
-        .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the name the component is installed under.")
         .Require(s => s.Images.All(image => image.ToImage() is not null), "every entry in 'images' needs a 'tag' and a 'context'.");
 
     protected override void Configure(IWorkflowBuilder builder, TOptions options)
     {
         base.Configure(builder, options);
-        builder.AddDocker([.. options.Images.Select(image => image.ToImage()).OfType<DockerImage>()]).AddVolumes(options.Volumes);
-        if (options.Release is { Length: > 0 } release)
-        {
-            // The release is the first artifact: the component, where the stack runs from.
-            builder.AddReleases(release).AddArtifacts([
-                new ArtifactOptions { Source = ".", Output = $"${{{LabDirectories.RootVariable}}}/{release}" },
-                .. options.Artifacts
-            ]);
-        }
+
+        // The deployment is the first artifact: where the stack runs from.
+        builder.AddDocker([.. options.Images.Select(image => image.ToImage()).OfType<DockerImage>()]).AddArtifacts(options.Artifacts, installsUnit: true);
     }
 }

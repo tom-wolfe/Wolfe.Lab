@@ -9,9 +9,9 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
 /// version that wrote it.
 /// </summary>
 [Step("resolve image", StepKind.Work)]
-internal sealed class ResolveImage(IDocker docker, BackupPlan plan, IWorkflowLog log)
+internal sealed class ResolveImage(IDocker docker, IWorkflowLog log)
 {
-    public async Task<StepResult<SnapshotImage>> Run(CancellationToken ct = default)
+    public async Task<StepResult<SnapshotImage>> Run(BackupPlan plan, CancellationToken ct = default)
     {
         if (plan.Image is null)
         {

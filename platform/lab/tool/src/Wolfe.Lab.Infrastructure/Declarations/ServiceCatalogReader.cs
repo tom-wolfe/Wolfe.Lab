@@ -5,6 +5,7 @@ using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
+using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
@@ -84,6 +85,12 @@ public static class ServiceCatalogReader
             {
                 AddComponent(catalog, source, document, problems);
             }
+        }
+
+        // Only once every component is in: the head is the one none of the others names.
+        if (problems.Count == 0)
+        {
+            problems.AddRange(catalog.DeploymentUnits.SelectMany(unit => unit.Errors ?? []));
         }
 
         return problems.Count == 0 ? catalog : problems;
@@ -211,6 +218,22 @@ public static class ServiceCatalogReader
         var name = ComponentName.From(document.Name);
         var partOf = document.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
         IReadOnlyList<ComponentName> dependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
+        if (document is BackupDocument backup)
+        {
+            var unpathed = new List<Error>();
+            var paths = HostPaths("paths", backup.Paths, unpathed);
+            var excludes = HostPaths("excludes", backup.Excludes, unpathed);
+            var verify = HostPaths("verify", backup.Verify, unpathed);
+            if (unpathed.Count > 0)
+            {
+                problems.AddRange(unpathed.Select(error => CatalogError.In(source, error)));
+                return;
+            }
+
+            AddTo(catalog, BackupComponent.Create(source, name, document.Kind, partOf, dependsOn, paths, excludes, verify, backup.Warm ?? false), document, source, problems);
+            return;
+        }
+
         if (document is AgentsDocument agents)
         {
             AgentPackage? package = null;
@@ -239,13 +262,13 @@ public static class ServiceCatalogReader
                 return;
             }
 
-            AddTo(catalog, AgentComponent.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn, runsOn, declared), document, problems);
+            AddTo(catalog, AgentComponent.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn, runsOn, declared), document, source, problems);
             return;
         }
 
         if (document is not ComposeDocument compose)
         {
-            AddTo(catalog, Component.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn), document, problems);
+            AddTo(catalog, Component.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn), document, source, problems);
             return;
         }
 
@@ -285,20 +308,29 @@ public static class ServiceCatalogReader
             component.Metrics = metrics;
         }
 
-        AddTo(catalog, created, document, problems);
+        AddTo(catalog, created, document, source, problems);
     }
 
     // A component made, described as its document says, and added to the service whose directory holds its file.
-    private static void AddTo<T>(ServiceCatalog catalog, Result<T> created, ComponentDocument document, List<Error> problems) where T : Component
+    private static void AddTo<T>(ServiceCatalog catalog, Result<T> created, ComponentDocument document, DocumentSource source, List<Error> problems) where T : Component
     {
+        var unmounted = new List<Error>();
+        var volumes = HostPaths("requiresVolumes", document.RequiresVolumes, unmounted);
+        problems.AddRange(unmounted.Select(error => CatalogError.In(source, error)));
         if (!created.TryGetValue(out var component, out var refused))
         {
             problems.AddRange(refused);
             return;
         }
 
+        if (unmounted.Count > 0)
+        {
+            return;
+        }
+
         component.DisplayName = document.DisplayName;
         component.Description = document.Description;
+        component.RequiresVolumes = volumes;
         if (!catalog.ServiceDeclaring(component.Source).TryGetValue(out var owner, out var unowned))
         {
             problems.AddRange(unowned);
@@ -329,6 +361,26 @@ public static class ServiceCatalogReader
             ? errors
             : new AgentPackage(repository.ValueObject, version.ValueObject, Template.From(document.Asset),
                 document.Checksums is { } checksums ? Template.From(checksums) : null);
+    }
+
+    // Paths on the node, each judged by the domain: a field's problems are added to errors, by index.
+    private static IReadOnlyList<HostPath> HostPaths(string field, IReadOnlyList<string>? written, List<Error> errors)
+    {
+        var paths = new List<HostPath>();
+        foreach (var (path, index) in (written ?? []).Select((path, index) => (path, index)))
+        {
+            var read = HostPath.TryFrom(path);
+            if (read.IsSuccess)
+            {
+                paths.Add(read.ValueObject);
+            }
+            else
+            {
+                errors.Add(new FieldError($"{field}.{index}", DeclarationErrors.Schema(read.Error.ErrorMessage)));
+            }
+        }
+
+        return paths;
     }
 
     // The schema holds a rule to "all" or "every <word>" and a list to strings; the domain judges each.

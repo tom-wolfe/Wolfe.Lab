@@ -27,7 +27,7 @@ public class ResolveAgentDeclarationsTests
     // The node is the environment's: LAB_NODE.
     private static StepResult<AgentDeclarations> Resolve(ServiceCatalog catalog, string? node) =>
         new ResolveAgentDeclarations(Resolvers.On(node), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
+            .Run(catalog, catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull());
 
     private static ServiceCatalog Placed(DeploymentTarget runsOn) =>
         Catalogs.Of(Catalogs.Nodes(Catalogs.Node("mini", NodeRole.Server, docker: "unix:///var/run/docker.sock"), Catalogs.Node("studio", NodeRole.Hybrid)),
@@ -97,7 +97,7 @@ public class ResolveAgentDeclarationsTests
     public void Run_RefusesANodeThatKeepsTheLabElsewhereThanTheEnvironmentSays()
     {
         var result = new ResolveAgentDeclarations(Resolvers.On("mini", root: "/elsewhere/root"), new WorkflowJob("agents", "deploy", DryRun: false, AutoApprove: true), Substitute.For<IWorkflowLog>())
-            .Run(Placed(DeploymentTarget.All), Placed(DeploymentTarget.All).DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull());
+            .Run(Placed(DeploymentTarget.All), Placed(DeploymentTarget.All).DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull());
 
         result.Outcome.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message
             .ShouldBe("mini keeps the lab in /lab/root and /lab/data by platform/nodes.yaml, but LAB_ROOT and LAB_DATA here say /elsewhere/root and /lab/data: make them one place.");

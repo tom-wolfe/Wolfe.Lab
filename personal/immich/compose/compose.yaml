@@ -12,7 +12,7 @@ name: immich
 
 services:
   immich-server:
-    image: ghcr.io/immich-app/immich-server:v3.2.4
+    image: ghcr.io/immich-app/immich-server:v3.3.0
     container_name: immich-server
     restart: unless-stopped
     user: "501:20"
@@ -51,7 +51,7 @@ services:
       disable: false
 
   immich-machine-learning:
-    image: ghcr.io/immich-app/immich-machine-learning:v3.2.4
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.0
     container_name: immich-machine-learning
     restart: unless-stopped
     user: "501:20"
@@ -62,6 +62,7 @@ services:
 
     environment:
       TZ: Europe/London
+      MACHINE_LEARNING_MODEL_REVISION: v2
 
     volumes:
       - /Users/tomwolfe/Docker/immich/model-cache:/cache

@@ -1,4 +1,4 @@
-using Wolfe.Lab.Infrastructure.Volumes;
+using Wolfe.Lab.Domain.Catalog;
 
 namespace Wolfe.Lab.Application.Volumes;
 
@@ -7,13 +7,14 @@ namespace Wolfe.Lab.Application.Volumes;
 /// <c>/Volumes</c> path is just a directory on the internal disk.
 /// </summary>
 [Step("guard volumes", StepKind.Check)]
-internal sealed class CheckVolumes(RequiredVolumes volumes, IWorkflowLog log)
+internal sealed class CheckVolumes(IWorkflowLog log)
 {
     internal const string Sentinel = ".lab-volume";
 
-    public StepResult Run()
+    public StepResult Run(DeploymentUnit unit)
     {
-        var missing = volumes.Directories.Where(v => !v.GetFile(Sentinel).Exists).ToList();
+        var volumes = unit.RequiresVolumes.Select(volume => volume.Directory).ToList();
+        var missing = volumes.Where(v => !v.GetFile(Sentinel).Exists).ToList();
         if (missing.Count > 0)
         {
             return StepResult.Failed(missing.Select(v => new Error(
@@ -21,7 +22,7 @@ internal sealed class CheckVolumes(RequiredVolumes volumes, IWorkflowLog log)
                 "Refusing to converge onto a shadow path.")));
         }
 
-        log.Detail(volumes.Directories.Count == 0 ? "No external volumes to check." : "Every required volume is mounted.");
+        log.Detail(volumes.Count == 0 ? "No external volumes to check." : "Every required volume is mounted.");
         return StepResult.Successful;
     }
 }

@@ -46,7 +46,7 @@ public class ResolveServiceCatalogTests : IDisposable
         Declare("personal/immich/compose/component.yaml", declaration);
 
         (await Check("personal/immich/compose", workflow)).Value.ShouldNotBeNull()
-            .DeploymentUnitAt(RepositoryPath.From("personal/immich/compose")).ShouldNotBeNull().Components.ShouldHaveSingleItem().Name.Value.ShouldBe("server");
+            .DeploymentUnitAt(RepositoryPath.From("personal/immich/compose")).ShouldNotBeNull().Value.ShouldNotBeNull().Components.ShouldHaveSingleItem().Name.Value.ShouldBe("server");
     }
 
     [Fact]

@@ -14,11 +14,11 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 /// Annotates the compose file with the service tags.
 /// </summary>
 [Step("label services", StepKind.Publish)]
-internal sealed class LabelServices(IDocker docker, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+internal sealed class LabelServices(IDocker docker, IFileSystem fileSystem, IOptions<LabDirectories> options, WorkflowJob job, IWorkflowLog log)
 {
     internal const string OverrideFile = "compose.override.yaml";
 
-    public async Task<StepResult<ComposeBindings>> Run(Release release, DeploymentUnit unit, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
+    public async Task<StepResult<ComposeBindings>> Run(DeploymentUnit unit, ComposeEnvironment composeEnvironment, CancellationToken ct = default)
     {
         if (!(await docker.ComposeConfig(fileSystem.ProjectRoot, composeEnvironment.Variables, ct)).TryGetValue(out var project, out var unreadable))
         {
@@ -33,12 +33,12 @@ internal sealed class LabelServices(IDocker docker, IFileSystem fileSystem, Work
         var content = Render(bindings);
         if (job.DryRun)
         {
-            log.Skipped($"Would label {Labelled(bindings)} of {release.Name}{Asked(bindings)}.");
+            log.Skipped($"Would label {Labelled(bindings)} of {unit.Name}{Asked(bindings)}.");
             return bindings;
         }
 
-        await release.Directory.GetFile(OverrideFile).WriteAllText(content, cancellationToken: ct);
-        log.Status($"Labelled {Labelled(bindings)} of {release.Name}{Asked(bindings)}.");
+        await options.Value.DeployedTo(unit).GetFile(OverrideFile).WriteAllText(content, cancellationToken: ct);
+        log.Status($"Labelled {Labelled(bindings)} of {unit.Name}{Asked(bindings)}.");
         return bindings;
     }
 

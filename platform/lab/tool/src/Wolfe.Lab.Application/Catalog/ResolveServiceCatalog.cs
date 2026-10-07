@@ -26,7 +26,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
             return StepResult.Failed(errors);
         }
 
-        log.Detail(Placed(repository, directory) is { } placement && catalog.DeploymentUnitAt(placement) is { } unit
+        log.Detail(Placed(repository, directory) is { } placement && catalog.DeploymentUnitAt(placement)?.Value is { } unit
             ? $"{unit} declares {string.Join(", ", unit.Components.Select(component => $"{component.Name} ({component.Kind}, {component.Workflow})"))}, and each holds."
             : "The directory declares no components yet.");
         return catalog;
@@ -56,7 +56,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
 
         // While ritten.json names the directory's workflow too, each component must declare it; a
         // part of another — anything partOf one — names its own.
-        var others = catalog.DeploymentUnitAt(placement)?.Components
+        var others = catalog.DeploymentUnitAt(placement)?.Value?.Components
             .Where(component => component.PartOf is null && component.Workflow.Value != workflow)
             .ToList() ?? [];
         return others.Count == 0
