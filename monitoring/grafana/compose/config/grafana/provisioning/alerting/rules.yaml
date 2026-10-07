@@ -41,8 +41,7 @@ groups:
 
   # The nodes, from their collectors (monitoring/alloy/README.md): Beszel's
   # thresholds, on every node, and a server gone quiet. A sleeping Studio
-  # sends nothing, and nothing is not a problem. A template's $$ is its $:
-  # Grafana fills in the environment's variables in what it provisions.
+  # sends nothing, and nothing is not a problem.
   - orgId: 1
     name: nodes
     folder: Lab
@@ -79,8 +78,8 @@ groups:
         for: 10m
         annotations:
           summary: >-
-            {{ $$labels.host_name }}'s CPU has been over 90% busy for ten
-            minutes: {{ humanizePercentage $$values.A.Value }}.
+            {{ $labels.host_name }}'s CPU has been over 90% busy for ten
+            minutes: {{ humanizePercentage $values.A.Value }}.
 
       - uid: node-memory
         title: Node memory full
@@ -118,8 +117,8 @@ groups:
         for: 10m
         annotations:
           summary: >-
-            {{ $$labels.host_name }}'s memory has been over 90% used for ten
-            minutes: {{ humanizePercentage $$values.A.Value }}.
+            {{ $labels.host_name }}'s memory has been over 90% used for ten
+            minutes: {{ humanizePercentage $values.A.Value }}.
 
       - uid: node-disk
         title: Node disk full
@@ -155,8 +154,8 @@ groups:
         for: 10m
         annotations:
           summary: >-
-            {{ $$labels.mountpoint }} on {{ $$labels.host_name }} is
-            {{ humanizePercentage $$values.A.Value }} full.
+            {{ $labels.mountpoint }} on {{ $labels.host_name }} is
+            {{ humanizePercentage $values.A.Value }} full.
 
       # A server's collector that reported in the last day and has not for
       # ten minutes: the node is down, or its collector is. The mini's
@@ -191,5 +190,5 @@ groups:
         for: 5m
         annotations:
           summary: >-
-            {{ $$labels.host_name }} has sent nothing for ten minutes: the node
+            {{ $labels.host_name }} has sent nothing for ten minutes: the node
             or its collector is down.

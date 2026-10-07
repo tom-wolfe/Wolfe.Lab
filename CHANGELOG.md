@@ -14,6 +14,8 @@ rather than versioned — the lab is continuous, not released.
 ### Fixed
 
 - **A sleeping Mac no longer looks busy.** CPU busy is now busy time over the time the counters counted.
+  
+- **Alert summaries name the node and the value.** Grafana doesn't substitute variables in rules, so `$` needs no escaping.
 
 ## 2026-10-06
 
