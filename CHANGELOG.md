@@ -13,6 +13,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Fixed
 
+- **Tracing no longer hides appsettings.json.** OpenTelemetry's environment-only configuration had replaced the lab's, failing every backup and heartbeat.
+
 - **A sleeping Mac no longer looks busy.** CPU busy is now busy time over the time the counters counted.
   
 - **Alert summaries name the node and the value.** Grafana doesn't substitute variables in rules, so `$` needs no escaping.
