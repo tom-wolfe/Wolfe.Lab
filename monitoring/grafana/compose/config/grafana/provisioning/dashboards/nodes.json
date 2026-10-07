@@ -65,7 +65,7 @@
     {
       "type": "timeseries",
       "title": "CPU busy",
-      "description": "Every core's busy time, as the alert reads it.",
+      "description": "Every core's busy time.",
       "id": 2,
       "datasource": {
         "type": "prometheus",
@@ -125,7 +125,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "1 - avg by (host_name) (rate(node_cpu_seconds_total{mode=\"idle\", host_name=~\"$host\"}[$__rate_interval]))",
+          "expr": "sum by (host_name) (rate(node_cpu_seconds_total{mode!=\"idle\", host_name=~\"$host\"}[$__rate_interval])) / sum by (host_name) (rate(node_cpu_seconds_total{host_name=~\"$host\"}[$__rate_interval]))",
           "legendFormat": "{{host_name}}",
           "range": true
         }

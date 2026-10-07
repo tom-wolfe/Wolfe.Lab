@@ -11,6 +11,12 @@ rather than versioned — the lab is continuous, not released.
 - **The lab's CLI traces its runs.** Wherever an OTLP endpoint is set, each run is a trace in Tempo,
   labelled with the component it ran for; Ritten 0.21.0 traces the job, its steps and commands.
 
+### Fixed
+
+- **A sleeping Mac no longer looks busy.** CPU busy is now busy time over the time the counters counted.
+  
+- **Alert summaries name the node and the value.** Grafana doesn't substitute variables in rules, so `$` needs no escaping.
+
 ## 2026-10-06
 
 ### Added
