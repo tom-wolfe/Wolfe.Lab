@@ -118,6 +118,11 @@ public class Component : IEquatable<Component>
     public IReadOnlyList<ComponentName> DependsOn { get; init; } = [];
 
     /// <summary>
+    /// The external drives the component relies on.
+    /// </summary>
+    public IReadOnlyList<HostPath> RequiresVolumes { get; set; } = [];
+
+    /// <summary>
     /// Where it is declared.
     /// </summary>
     public required DocumentSource Source { get; init; }

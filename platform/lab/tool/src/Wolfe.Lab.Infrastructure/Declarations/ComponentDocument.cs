@@ -29,4 +29,7 @@ internal record ComponentDocument
 
     [Pattern(LabSchema.NamePattern, GenericParameter = 0), UniqueItems(true), Description("The components of this service this one needs, by name.")]
     public List<string>? DependsOn { get; init; }
+
+    [UniqueItems(true), Description("The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place.")]
+    public List<string>? RequiresVolumes { get; init; }
 }

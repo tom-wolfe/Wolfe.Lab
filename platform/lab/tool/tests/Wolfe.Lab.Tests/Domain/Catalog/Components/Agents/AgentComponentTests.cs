@@ -30,7 +30,7 @@ public class AgentComponentTests
     private static AgentComponent Placed(AgentProcess agent, DeploymentTarget? runsOn = null, params Node[] nodes)
     {
         var catalog = Catalogs.Of(Catalogs.Nodes(nodes.Length > 0 ? nodes : [Mini, Pi]), Directory, Catalogs.Agent("forwarder", runsOn ?? DeploymentTarget.All, agent));
-        return catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
+        return catalog.DeploymentUnitAt(RepositoryPath.From(Directory)).ShouldNotBeNull().Value.ShouldNotBeNull().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
     }
 
     private static IReadOnlyList<string> Refused(AgentProcess agent, DeploymentTarget? runsOn = null, params Node[] nodes)

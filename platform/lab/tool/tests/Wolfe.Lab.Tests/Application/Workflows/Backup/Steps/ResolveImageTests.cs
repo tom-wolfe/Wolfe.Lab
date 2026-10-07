@@ -9,13 +9,14 @@ public class ResolveImageTests
 {
     private readonly IDocker _docker = Substitute.For<IDocker>();
 
-    private ResolveImage Step(string? container) =>
-        new(_docker, new BackupPlan([new PhysicalDirectory("/Volumes/Data2/files")], [], container, container, []), Substitute.For<IWorkflowLog>());
+    private ResolveImage Step() => new(_docker, Substitute.For<IWorkflowLog>());
+
+    private static BackupPlan Plan(string? container) => new("files", [new PhysicalDirectory("/Volumes/Data2/files")], [], [], null, container, container);
 
     [Fact]
     public async Task Run_PairsNothingWithAWarmSnapshot()
     {
-        var result = await Step(container: null).Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan(null), TestContext.Current.CancellationToken);
 
         result.Value.ShouldBe(SnapshotImage.None);
         _docker.ReceivedCalls().ShouldBeEmpty();
@@ -25,9 +26,10 @@ public class ResolveImageTests
     public async Task Run_TagsAWarmSnapshotWithTheImageNamedForIt()
     {
         _docker.Inspect("immich-server", Arg.Any<CancellationToken>()).Returns(new ContainerState("ghcr.io/immich-app/immich-server:v3.2.2", true));
-        var step = new ResolveImage(_docker, new BackupPlan([new PhysicalDirectory("/Volumes/Data2/immich")], [], null, "immich-server", []), Substitute.For<IWorkflowLog>());
+        var step = Step();
+        var plan = new BackupPlan("immich", [new PhysicalDirectory("/Volumes/Data2/immich")], [], [], null, null, "immich-server");
 
-        var result = await step.Run(TestContext.Current.CancellationToken);
+        var result = await step.Run(plan, TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Tag.ShouldBe("ghcr.io/immich-app/immich-server:v3.2.2");
     }
@@ -37,7 +39,7 @@ public class ResolveImageTests
     {
         _docker.Inspect("jellyfin", Arg.Any<CancellationToken>()).Returns(new ContainerState("jellyfin/jellyfin:12.0", true));
 
-        var result = await Step("jellyfin").Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan("jellyfin"), TestContext.Current.CancellationToken);
 
         result.Value.ShouldNotBeNull().Tag.ShouldBe("jellyfin/jellyfin:12.0");
     }

@@ -104,10 +104,18 @@ public sealed class ServiceCatalog
     }
 
     /// <summary>
-    /// What <paramref name="directory"/> declares, deployed together; null when it declares nothing.
+    /// What <paramref name="directory"/> declares, deployed together, or why it cannot be; null
+    /// when it declares nothing.
     /// </summary>
-    public DeploymentUnit? DeploymentUnitAt(RepositoryPath directory) =>
+    public Result<DeploymentUnit>? DeploymentUnitAt(RepositoryPath directory) =>
         _services.FirstOrDefault(service => service.Components.Any(component => component.Directory == directory)) is { } owner
-            ? new DeploymentUnit(owner, directory, [.. owner.Components.Where(component => component.Directory == directory)])
+            ? DeploymentUnit.Create(owner, directory, [.. owner.Components.Where(component => component.Directory == directory)])
             : null;
+
+    /// <summary>
+    /// What each directory declares, deployed together, or why it cannot be.
+    /// </summary>
+    public IEnumerable<Result<DeploymentUnit>> DeploymentUnits =>
+        _services.SelectMany(service => service.Components.GroupBy(component => component.Directory)
+            .Select(directory => DeploymentUnit.Create(service, directory.Key, [.. directory])));
 }

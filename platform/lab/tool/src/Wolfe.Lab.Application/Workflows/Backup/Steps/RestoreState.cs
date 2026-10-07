@@ -1,7 +1,6 @@
 using Ritten.Docker;
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
@@ -12,16 +11,16 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
 /// comes up, so the service never boots onto a half-written directory.
 /// </summary>
 [Step("restore", StepKind.Publish)]
-internal sealed class RestoreState(IDocker docker, IRestic restic, IStateDirectories directories, BackupPlan plan, IWorkflowLog log)
+internal sealed class RestoreState(IDocker docker, IRestic restic, IStateDirectories directories, IWorkflowLog log)
 {
     internal const string Root = "/";
 
-    public async Task<StepResult> Run(Release release, ResticRepository repository, RestorePoint point, CancellationToken ct = default)
+    public async Task<StepResult> Run(BackupPlan plan, ResticRepository repository, RestorePoint point, CancellationToken ct = default)
     {
         var suffix = $".bak-{DateTimeOffset.Now:yyyyMMdd-HHmmss}";
-        if (plan.Container is not null)
+        if (plan.Stack is { } stopping)
         {
-            await docker.ComposeStop(release.Directory, ct);
+            await docker.ComposeStop(stopping, ct);
         }
 
         try
@@ -57,9 +56,9 @@ internal sealed class RestoreState(IDocker docker, IRestic restic, IStateDirecto
         }
         finally
         {
-            if (plan.Container is not null)
+            if (plan.Stack is { } stopped)
             {
-                await docker.ComposeStart(release.Directory, CancellationToken.None);
+                await docker.ComposeStart(stopped, CancellationToken.None);
             }
         }
     }

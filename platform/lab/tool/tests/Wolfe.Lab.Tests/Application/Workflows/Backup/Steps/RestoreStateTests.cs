@@ -3,7 +3,6 @@ using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Backup;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
 using Wolfe.Lab.Application.Workflows.Backup.Steps;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Backup.Steps;
@@ -16,25 +15,26 @@ public class RestoreStateTests
     private readonly IDocker _docker = Substitute.For<IDocker>();
     private readonly IRestic _restic = Substitute.For<IRestic>();
     private readonly IStateDirectories _directories = Substitute.For<IStateDirectories>();
-    private readonly Release _release = new("forgejo", new PhysicalDirectory("/lab/release/forgejo"));
+    private static readonly IDirectory Stack = new PhysicalDirectory("/lab/root/forgejo-server");
 
     public RestoreStateTests() => _directories.Move(Arg.Any<IDirectory>(), Arg.Any<IDirectory>()).Returns(true);
 
-    private RestoreState Step(string? container) =>
-        new(_docker, _restic, _directories, new BackupPlan([State], [], container, container, []), Substitute.For<IWorkflowLog>());
+    private RestoreState Step() => new(_docker, _restic, _directories, Substitute.For<IWorkflowLog>());
+
+    private static BackupPlan Plan(string? container) => new("forgejo", [State], [], [], container is null ? null : Stack, container, container);
 
     [Fact]
     public async Task Run_StopsSetsAsideRestoresToTheRootAndStarts()
     {
-        var result = await Step("forgejo").Run(_release, Repository, Point, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan("forgejo"), Repository, Point, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         Received.InOrder(async () =>
         {
-            await _docker.ComposeStop(_release.Directory, Arg.Any<CancellationToken>());
+            await _docker.ComposeStop(Stack, Arg.Any<CancellationToken>());
             _directories.Move(Arg.Is<IDirectory>(d => d.AbsolutePath == State.AbsolutePath), Arg.Is<IDirectory>(d => d.AbsolutePath.StartsWith(State.AbsolutePath + ".bak-")));
             await _restic.Restore(Repository, "0ff3ec5c", Arg.Is<IDirectory>(d => d.AbsolutePath == Path.GetFullPath(RestoreState.Root)), Arg.Is<IReadOnlyList<string>>(i => i.Count == 0), Arg.Any<CancellationToken>());
-            await _docker.ComposeStart(_release.Directory, Arg.Any<CancellationToken>());
+            await _docker.ComposeStart(Stack, Arg.Any<CancellationToken>());
         });
     }
 
@@ -44,16 +44,16 @@ public class RestoreStateTests
         _restic.Restore(Repository, "0ff3ec5c", Arg.Any<IDirectory>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("restic failed"));
 
-        await Should.ThrowAsync<InvalidOperationException>(() => Step("forgejo").Run(_release, Repository, Point, TestContext.Current.CancellationToken));
+        await Should.ThrowAsync<InvalidOperationException>(() => Step().Run(Plan("forgejo"), Repository, Point, TestContext.Current.CancellationToken));
 
         _directories.Received().Move(Arg.Is<IDirectory>(d => d.AbsolutePath.StartsWith(State.AbsolutePath + ".bak-")), Arg.Is<IDirectory>(d => d.AbsolutePath == State.AbsolutePath));
-        await _docker.Received().ComposeStart(_release.Directory, Arg.Any<CancellationToken>());
+        await _docker.Received().ComposeStart(Stack, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Run_LeavesDockerAloneForAWarmSnapshot()
     {
-        var result = await Step(container: null).Run(_release, Repository, Point, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan(null), Repository, Point, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         _docker.ReceivedCalls().ShouldBeEmpty();

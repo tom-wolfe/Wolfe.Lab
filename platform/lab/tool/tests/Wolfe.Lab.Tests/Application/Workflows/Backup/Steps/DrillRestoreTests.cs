@@ -1,7 +1,6 @@
 using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.Backup.Models;
 using Wolfe.Lab.Application.Workflows.Backup.Steps;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Backup.Steps;
@@ -12,12 +11,14 @@ public class DrillRestoreTests : IDisposable
     private static readonly ResticSnapshot Latest = new("0ff3ec5c", DateTimeOffset.UnixEpoch, ["service:forgejo"], []);
     private readonly DirectoryInfo _scratch = Directory.CreateTempSubdirectory("lab-proof-");
     private readonly IRestic _restic = Substitute.For<IRestic>();
-    private readonly Release _release = new("forgejo", new PhysicalDirectory("/lab/release/forgejo"));
 
     public void Dispose() => _scratch.Delete(recursive: true);
 
-    private DrillRestore Step(IReadOnlyList<string> verify, bool dryRun = false) =>
-        new(_restic, new BackupPlan([new PhysicalDirectory("/Users/lab/Docker/forgejo/data")], [], "forgejo", "forgejo", verify), ScratchFileSystem.Create(), new WorkflowJob("forgejo", "restore-drill", dryRun), Substitute.For<IWorkflowLog>());
+    private DrillRestore Step(bool dryRun = false) =>
+        new(_restic, ScratchFileSystem.Create(), new WorkflowJob("forgejo", "restore-drill", dryRun), Substitute.For<IWorkflowLog>());
+
+    private static BackupPlan Plan(IReadOnlyList<string> verify) =>
+        new("forgejo", [new PhysicalDirectory("/Users/lab/Docker/forgejo/data")], [], verify, new PhysicalDirectory("/lab/root/forgejo-server"), "forgejo", "forgejo");
 
     [Fact]
     public async Task Run_PassesWhenTheProofComesBackNonEmpty()
@@ -31,7 +32,7 @@ public class DrillRestoreTests : IDisposable
             File.WriteAllText(restored, "sqlite");
         }), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
 
-        var result = await Step([proof]).Run(_release, Repository, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan([proof]), Repository, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         await _restic.Received().Restore(Repository, "0ff3ec5c", Arg.Any<IDirectory>(), Arg.Is<IReadOnlyList<string>>(i => i.Single() == proof), Arg.Any<CancellationToken>());
@@ -42,7 +43,7 @@ public class DrillRestoreTests : IDisposable
     {
         _restic.FindSnapshot(Repository, "service:forgejo", null, Arg.Any<CancellationToken>()).Returns(Latest);
 
-        var result = await Step(["/nowhere/forgejo.db", "/nowhere/app.ini"]).Run(_release, Repository, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan(["/nowhere/forgejo.db", "/nowhere/app.ini"]), Repository, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().Count.ShouldBe(2);
@@ -53,7 +54,7 @@ public class DrillRestoreTests : IDisposable
     {
         _restic.FindSnapshot(Repository, "service:forgejo", null, Arg.Any<CancellationToken>()).Returns((ResticSnapshot?)null);
 
-        var result = await Step(["/nowhere/forgejo.db"]).Run(_release, Repository, TestContext.Current.CancellationToken);
+        var result = await Step().Run(Plan(["/nowhere/forgejo.db"]), Repository, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         await _restic.DidNotReceiveWithAnyArgs().Restore(default!, default!, default!, default!, TestContext.Current.CancellationToken);
@@ -64,7 +65,7 @@ public class DrillRestoreTests : IDisposable
     {
         _restic.FindSnapshot(Repository, "service:forgejo", null, Arg.Any<CancellationToken>()).Returns(Latest);
 
-        var result = await Step(["/nowhere/forgejo.db"], dryRun: true).Run(_release, Repository, TestContext.Current.CancellationToken);
+        var result = await Step(dryRun: true).Run(Plan(["/nowhere/forgejo.db"]), Repository, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
     }

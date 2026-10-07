@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
 using Wolfe.Lab.Application.Caddy;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.CaddyRoutes.Models;
@@ -24,8 +25,9 @@ internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<GatherRoutes>(),
-        Step.FromType<ResolveRelease>(),
         Step.FromType<GateApproval>(),
         Step.FromType<InstallRoutes>(),
         Step.FromType<ReloadCaddy>()
@@ -34,20 +36,15 @@ internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
     public override JobKind Kind => JobKind.Deploy;
 
     protected override void ValidateSettings(SettingsValidator<CaddyRoutesOptions> options) => options
-        .Require(s => s.Caddy.ToInstance() is not null, "'caddy.container' and 'caddy.caddyfile' must both be set in ritten.json: the caddy this reloads.")
-        .Require(s => s.Release is { Length: > 0 }, "'release' not set in ritten.json: the directory the Caddyfile imports routes from.");
+        .Require(s => s.Caddy.ToInstance() is not null, "'caddy.container' and 'caddy.caddyfile' must both be set in ritten.json: the caddy this reloads.");
 
     protected override void Configure(IWorkflowBuilder builder, CaddyRoutesOptions options)
     {
         base.Configure(builder, options);
-        builder.AddDocker();
+        builder.AddDocker().AddInstaller();
         if (options.Caddy.ToInstance() is { } caddy)
         {
             builder.Services.AddSingleton(caddy);
-        }
-        if (options.Release is { Length: > 0 } release)
-        {
-            builder.AddReleases(release);
         }
     }
 }

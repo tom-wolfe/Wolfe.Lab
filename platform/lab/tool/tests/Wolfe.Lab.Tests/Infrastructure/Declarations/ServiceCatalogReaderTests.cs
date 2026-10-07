@@ -2,6 +2,7 @@ using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
+using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
@@ -141,6 +142,7 @@ public class ServiceCatalogReaderTests : IDisposable
             kind: app
             workflow: docker
             service: immich-server
+            dependsOn: [postgres]
             logs: otlp
             metrics: { port: 8081 }
             ---
@@ -420,6 +422,71 @@ public class ServiceCatalogReaderTests : IDisposable
         server.Metrics.ShouldBe([
             new MetricsEndpoint(Port.From(8081), HttpPath.Metrics),
             new MetricsEndpoint(Port.From(8082), HttpPath.From("/stats")) { Published = Port.From(18082) }
+        ]);
+    }
+
+    [Fact]
+    public async Task Read_TakesABackupAsPartOfWhatItStops_WithTheVolumesItRequires()
+    {
+        Declare("media/sonarr/service.yaml", "kind: service\nname: sonarr\ndescription: TV.\n");
+        Declare("media/sonarr/compose/component.yaml", "name: server\nkind: app\nworkflow: docker\nservice: sonarr\nrequiresVolumes: [/Volumes/Data1]\n");
+        Declare("media/sonarr/backup/component.yaml", """
+            name: config
+            kind: storage
+            workflow: backup
+            partOf: server
+            paths: [/Users/lab/Docker/sonarr/config]
+            excludes: [/Users/lab/Docker/sonarr/config/logs]
+            verify: [/Users/lab/Docker/sonarr/config/sonarr.db]
+            """);
+
+        var service = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem();
+
+        var backup = service.FindComponent(ComponentName.From("config")).ShouldBeOfType<BackupComponent>();
+        backup.Paths.ShouldBe([HostPath.From("/Users/lab/Docker/sonarr/config")]);
+        backup.Excludes.ShouldBe([HostPath.From("/Users/lab/Docker/sonarr/config/logs")]);
+        backup.Verify.ShouldBe([HostPath.From("/Users/lab/Docker/sonarr/config/sonarr.db")]);
+        backup.Warm.ShouldBeFalse();
+        backup.Stops.ShouldBeSameAs(service.FindComponent(ComponentName.From("server")));
+        service.FindComponent(ComponentName.From("server")).ShouldNotBeNull().RequiresVolumes.ShouldBe([HostPath.From("/Volumes/Data1")]);
+    }
+
+    [Fact]
+    public async Task Read_RefusesABackupThatSnapshotsNothing()
+    {
+        Declare("personal/files/service.yaml", "kind: service\nname: files\ndescription: Files.\n");
+        Declare("personal/files/backup/component.yaml", "name: files\nkind: backup\nworkflow: backup\npaths: []\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldStartWith("personal/files/backup/component.yaml:");
+    }
+
+    [Fact]
+    public async Task Read_RefusesAVolumeThatIsNoPath()
+    {
+        Declare("personal/immich/service.yaml", Immich);
+        Declare("personal/immich/compose/component.yaml", "name: server\nkind: app\nworkflow: docker\nservice: server\nrequiresVolumes: [Data2]\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("requiresVolumes.0: ");
+    }
+
+    [Fact]
+    public async Task Read_RefusesAStackWithSeveralAtItsHead()
+    {
+        Declare("personal/immich/service.yaml", Immich);
+        Declare("personal/immich/compose/component.yaml", """
+            name: server
+            kind: app
+            workflow: docker
+            service: immich-server
+            ---
+            name: machine-learning
+            kind: model
+            workflow: docker
+            service: immich-machine-learning
+            """);
+
+        (await Errors()).ShouldBe([
+            "personal/immich/compose/component.yaml: personal/immich/compose has 2 components at its head (machine-learning, server): exactly one is, every other its dependency or its part, and it names the deployment."
         ]);
     }
 }

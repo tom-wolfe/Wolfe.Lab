@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 
 namespace Wolfe.Lab.Infrastructure.Releases;
@@ -70,13 +71,17 @@ public sealed class LabDirectories
         Root.RelativePath(directory) is var relative && relative != "." && relative != ".." && !relative.StartsWith("../", StringComparison.Ordinal) && !Path.IsPathRooted(relative);
 
     /// <summary>
-    /// Where a compose release records the artifact stamp its stack was last restarted for:
-    /// beside the releases, never inside one, so writing it changes no release.
+    /// Gets where <paramref name="unit"/> is installed on the node.
     /// </summary>
-    public IFile AppliedStamp(string release) => Applied.GetFile(release);
+    public IDirectory DeployedTo(DeploymentUnit unit) => Root.GetDirectory(unit.Name);
 
     /// <summary>
-    /// Where every compose release's restart stamp is kept.
+    /// Gets the stamp file for the given deployment unit.
+    /// </summary>
+    public IFile AppliedStamp(DeploymentUnit unit) => Applied.GetFile(unit.Name);
+
+    /// <summary>
+    /// Where every compose stack's restart stamp is kept.
     /// </summary>
     public IDirectory Applied => Root.GetDirectory(".applied");
 

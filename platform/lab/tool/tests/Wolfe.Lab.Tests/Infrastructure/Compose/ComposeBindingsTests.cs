@@ -17,8 +17,10 @@ public class ComposeBindingsTests
     private static ComposeService Service(string name, ComposePort[]? ports = null, string? networkMode = null, Dictionary<string, string>? labels = null) =>
         new(name, labels ?? [], new Dictionary<string, string?>(), ports ?? [], networkMode);
 
+    // The stack's components, the first at their head: it depends on each of the others that is no part.
     private static Result<ComposeBindings> Bind(ComposeService[] services, params Catalogs.Declaration[] components) =>
-        ComposeBindings.Of(Catalogs.Unit(Immich, components), new ComposeProject(services));
+        ComposeBindings.Of(Catalogs.Unit(Immich, [.. components[1..], components[0] with { DependsOn = [.. components[1..].Where(component => component.PartOf is null).Select(component => component.Name)] }]),
+            new ComposeProject(services));
 
     private static IReadOnlyList<string> Errors(ComposeService[] services, params Catalogs.Declaration[] components) =>
         [.. Bind(services, components).Errors.ShouldNotBeNull().Select(error => error.Message)];
@@ -50,7 +52,7 @@ public class ComposeBindingsTests
             .ShouldSatisfyAllConditions(
                 error => error.Field.ShouldBe("service"),
                 error => error.Problem.ShouldBe(ComposeBindingErrors.NotInTheStack(ComposeServiceName.From("immich-sever"), ["immich-server"])),
-                error => error.Source.Index.ShouldBe(1));
+                error => error.Source.Index.ShouldBe(0)); // declared ahead of the head (Bind)
 
     [Fact]
     public void Of_RefusesTwoComponentsOfOneService() =>

@@ -16,7 +16,8 @@ internal static class ComponentDocuments
         [WorkflowName.Docker] = typeof(ComposeDocument),
         [WorkflowName.DotNetService] = typeof(ComposeDocument),
         [WorkflowName.Agents] = typeof(AgentsDocument),
-        [WorkflowName.Ollama] = typeof(AgentsDocument)
+        [WorkflowName.Ollama] = typeof(AgentsDocument),
+        [WorkflowName.Backup] = typeof(BackupDocument)
     };
 
     /// <summary>

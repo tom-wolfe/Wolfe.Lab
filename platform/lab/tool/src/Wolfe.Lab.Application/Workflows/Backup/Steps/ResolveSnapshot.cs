@@ -1,5 +1,4 @@
 using Wolfe.Lab.Application.Workflows.Backup.Models;
-using Wolfe.Lab.Infrastructure.Releases;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
@@ -10,9 +9,9 @@ namespace Wolfe.Lab.Application.Workflows.Backup.Steps;
 [Step("resolve snapshot", StepKind.Work)]
 internal sealed class ResolveSnapshot(IRestic restic, RestoreRequest request, IWorkflowLog log)
 {
-    public async Task<StepResult<RestorePoint>> Run(Release release, ResticRepository repository, CancellationToken ct = default)
+    public async Task<StepResult<RestorePoint>> Run(BackupPlan plan, ResticRepository repository, CancellationToken ct = default)
     {
-        var tag = $"service:{release.Name}";
+        var tag = plan.Tag;
         var snapshot = await restic.FindSnapshot(repository, tag, request.SnapshotId, ct);
         if (snapshot is null)
         {
