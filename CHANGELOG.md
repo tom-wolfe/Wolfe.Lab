@@ -11,6 +11,13 @@ rather than versioned — the lab is continuous, not released.
 - **The lab's CLI traces its runs.** Wherever an OTLP endpoint is set, each run is a trace in Tempo,
   labelled with the component it ran for; Ritten 0.21.0 traces the job, its steps and commands.
 
+### Changed
+
+- **The Alloy gateway is a stack of its own.** `monitoring/grafana/gateway` deploys it beside the stores, joining their network.
+
+- **Each deployment's components have one at their head.** Grafana's is `server`, Immich's server depends on its
+  machine learning, and Forgejo's tailscale is part of its server.
+
 ### Fixed
 
 - **Tracing no longer hides appsettings.json.** OpenTelemetry's environment-only configuration had replaced the lab's, failing every backup and heartbeat.

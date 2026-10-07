@@ -115,36 +115,9 @@ services:
       retries: 3
       start_period: 30s
 
-  gateway:
-    image: grafana/alloy:v1.20.1
-    container_name: alloy-gateway
-    restart: unless-stopped
-    command:
-      - run
-      - /etc/alloy/gateway.alloy
-      - --storage.path=/var/lib/alloy/data
-      # Its own metrics, which the collector scrapes.
-      - --server.http.listen-addr=0.0.0.0:12346
-      - --disable-reporting
-    volumes:
-      - ./config/alloy:/etc/alloy:ro
-      - ${HOME}/Docker/grafana/alloy:/var/lib/alloy/data
-    ports:
-      - "4417:4417"
-      - "4418:4418"
-      - "4419:4419"
-    networks:
-      - telemetry
-    depends_on:
-      - loki
-      - prometheus
-      - tempo
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-
 networks:
   lab:
     external: true
+  # Named, so the gateway's stack (../gateway) can join it.
   telemetry:
+    name: grafana_telemetry

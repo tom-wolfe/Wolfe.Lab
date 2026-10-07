@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: gateway
+kind: collector
+workflow: docker
+service: gateway
+displayName: Alloy gateway
+description: "The single entry point for all telemetry."
+dependsOn: [loki, prometheus, tempo]
+metrics:
+  port: 12346
