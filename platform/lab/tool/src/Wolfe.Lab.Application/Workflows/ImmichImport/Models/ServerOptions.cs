@@ -1,5 +1,5 @@
+using Wolfe.Lab.Domain.Secrets;
 using Wolfe.Lab.Domain.Services;
-using Wolfe.Lab.Infrastructure.Secrets;
 
 namespace Wolfe.Lab.Application.Workflows.ImmichImport.Models;
 

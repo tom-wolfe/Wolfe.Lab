@@ -1,5 +1,5 @@
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Models;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
 

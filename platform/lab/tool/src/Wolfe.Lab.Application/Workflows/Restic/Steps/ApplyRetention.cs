@@ -1,4 +1,4 @@
-using Wolfe.Lab.Domain.Backups;
+using Wolfe.Lab.Domain.Catalog.Components.Restic;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Restic.Steps;
@@ -8,10 +8,15 @@ namespace Wolfe.Lab.Application.Workflows.Restic.Steps;
 /// Snapshots group by host and path, so each service thins out on its own.
 /// </summary>
 [Step("apply retention", StepKind.Work)]
-internal sealed class ApplyRetention(IRestic restic, RetentionPolicy policy, WorkflowJob job, IWorkflowLog log)
+internal sealed class ApplyRetention(IRestic restic, WorkflowJob job, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(ResticRepository local, OffsiteRepository offsite, CancellationToken ct = default)
+    public async Task<StepResult> Run(ResticComponent repositories, ResticRepository local, OffsiteRepository offsite, CancellationToken ct = default)
     {
+        if (repositories.Retention is not { } policy)
+        {
+            return new Error($"{repositories} declares no retention.");
+        }
+
         await restic.Prune(local, policy, ct);
         await restic.Prune(offsite.Repository, policy, ct);
         if (!job.DryRun)

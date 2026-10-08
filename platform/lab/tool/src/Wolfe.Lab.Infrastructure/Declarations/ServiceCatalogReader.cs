@@ -1,19 +1,24 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Ritten.Git;
 using Wolfe.Lab.Domain;
+using Wolfe.Lab.Domain.Backups;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Restic;
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Packages;
 using Wolfe.Lab.Domain.Paths;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
@@ -225,6 +230,7 @@ public static class ServiceCatalogReader
         {
             ModelDocument model => Model(source, name, model, errors),
             BackupDocument backup => Backup(source, name, backup, errors),
+            ResticDocument restic => Restic(source, name, restic, errors),
             AgentDocument agent => Agent(source, name, agent, errors),
             DockerDocument docker => Docker(source, name, docker, errors),
             _ => Component.Create(source, name, document.Kind, document.Workflow)
@@ -275,6 +281,56 @@ public static class ServiceCatalogReader
             created.Verify = verify;
             created.Warm = document.Warm ?? false;
         });
+    }
+
+    // The repositories: what a prune keeps of them, and how much of the offsite copy a check reads back.
+    private static Result<Component>? Restic(DocumentSource source, ComponentName name, ResticDocument document, List<Error> errors)
+    {
+        var retention = document.Retention is { } written ? Retention(written, errors) : null;
+        var sample = document.Verify is { } verify ? Sample(verify.ReadDataSubset, errors) : null;
+        return errors.Count > 0 ? null : Widen(ResticComponent.Create(source, name, document.Kind), created =>
+        {
+            created.Retention = retention;
+            created.VerifySample = sample;
+        });
+    }
+
+    // A retention policy: each count a count, and the policy one that keeps something.
+    private static RetentionPolicy? Retention(RetentionDocument written, List<Error> errors)
+    {
+        var counts = new[] { ("daily", written.Daily), ("weekly", written.Weekly), ("monthly", written.Monthly) }
+            .Select(count => (Field: count.Item1, Count: SnapshotCount.TryFrom(count.Item2)))
+            .ToList();
+        foreach (var (field, count) in counts.Where(count => !count.Count.IsSuccess))
+        {
+            errors.Add(new FieldError($"retention.{field}", DeclarationErrors.Schema(count.Error.ErrorMessage)));
+        }
+
+        if (errors.Count > 0)
+        {
+            return null;
+        }
+
+        if (!RetentionPolicy.Create(counts[0].Count.ValueObject, counts[1].Count.ValueObject, counts[2].Count.ValueObject).TryGetValue(out var policy, out var keepsNothing))
+        {
+            errors.AddRange(keepsNothing);
+            return null;
+        }
+
+        return policy with { KeepTags = written.KeepTags ?? [] };
+    }
+
+    // A share of data read back, as restic spells it: 5%.
+    private static Percentage? Sample(string written, List<Error> errors)
+    {
+        var share = int.TryParse(written.TrimEnd('%'), CultureInfo.InvariantCulture, out var percent) ? Percentage.TryFrom(percent) : null;
+        if (share is { IsSuccess: true })
+        {
+            return share.ValueObject;
+        }
+
+        errors.Add(new FieldError("verify.readDataSubset", DeclarationErrors.Schema(share?.Error.ErrorMessage ?? $"'{written}' is no percentage.")));
+        return null;
     }
 
     // An agent: the process it runs, and the nodes it runs on.
@@ -377,6 +433,29 @@ public static class ServiceCatalogReader
         return tag.ValueObject;
     }
 
+    // A heartbeat, or null when none is written; a slug or a key that is none is a problem at its field.
+    private static HeartbeatCheck? Heartbeat(HeartbeatDocument? written, List<Error> errors)
+    {
+        if (written is null)
+        {
+            return null;
+        }
+
+        var slug = HeartbeatSlug.TryFrom(written.Check);
+        var key = SecretReference.TryFrom(written.Key);
+        if (!slug.IsSuccess)
+        {
+            errors.Add(new FieldError("heartbeat.check", DeclarationErrors.Schema(slug.Error.ErrorMessage)));
+        }
+
+        if (!key.IsSuccess)
+        {
+            errors.Add(new FieldError("heartbeat.key", DeclarationErrors.Schema(key.Error.ErrorMessage)));
+        }
+
+        return slug.IsSuccess && key.IsSuccess ? new HeartbeatCheck(slug.ValueObject, key.ValueObject) : null;
+    }
+
     // A context length, or null when none is written; one that is no length is a problem at its field.
     private static ContextLength? Context(string field, int? written, List<Error> errors)
     {
@@ -400,6 +479,7 @@ public static class ServiceCatalogReader
     {
         var unmounted = new List<Error>();
         var volumes = HostPaths("requiresVolumes", document.RequiresVolumes, unmounted);
+        var heartbeat = Heartbeat(document.Heartbeat, unmounted);
         problems.AddRange(unmounted.Select(error => CatalogError.In(source, error)));
         if (!created.TryGetValue(out var component, out var refused))
         {
@@ -417,6 +497,7 @@ public static class ServiceCatalogReader
         component.PartOf = document.PartOf is { } whole ? ComponentName.From(whole) : null;
         component.DependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
         component.RequiresVolumes = volumes;
+        component.Heartbeat = heartbeat;
         if (!catalog.ServiceDeclaring(component.Source).TryGetValue(out var owner, out var unowned))
         {
             problems.AddRange(unowned);

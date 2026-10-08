@@ -1,5 +1,5 @@
 using Wolfe.Lab.Domain.Git;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Application.Workflows.Obsidian.Models;
 

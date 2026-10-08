@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 using Wolfe.Lab.Infrastructure.Heartbeat;
 
 namespace Wolfe.Lab.Application.Heartbeat;
@@ -7,9 +8,9 @@ namespace Wolfe.Lab.Application.Heartbeat;
 /// succeeded, so the ping is the job's own word that it ran.
 /// </summary>
 [Step("heartbeat", StepKind.Work)]
-internal sealed class PingHeartbeat(IHeartbeat heartbeat, HeartbeatCheck check, WorkflowJob job, IWorkflowLog log)
+internal sealed class PingHeartbeat(IHeartbeat heartbeat, WorkflowJob job, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(CancellationToken ct = default)
+    public async Task<StepResult> Run(HeartbeatCheck check, CancellationToken ct = default)
     {
         await heartbeat.Ping(check, ct);
         if (!job.DryRun)

@@ -1,7 +1,7 @@
 using Wolfe.Lab.Application.Packages;
+using Wolfe.Lab.Domain.Secrets;
 using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Packages;
-using Wolfe.Lab.Infrastructure.Secrets;
 
 namespace Wolfe.Lab.Application.Agents;
 

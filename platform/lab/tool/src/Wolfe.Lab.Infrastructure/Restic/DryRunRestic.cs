@@ -12,7 +12,7 @@ internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands, Re
     /// <summary>
     /// What the rehearsal hands back in a snapshot's place.
     /// </summary>
-    internal static Snapshot Rehearsed { get; } = new("rehearsed");
+    private static Snapshot Rehearsed { get; } = new("rehearsed");
 
     /// <inheritdoc />
     public async Task<Snapshot> Backup(ResticRepository repository, IReadOnlyList<IDirectory> paths, IReadOnlyList<string> excludes, IReadOnlyList<string> tags, CancellationToken ct = default)
@@ -61,7 +61,7 @@ internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands, Re
         // costs download, and a rehearsal is not the night to spend it.
         if (readDataSubset is { } sample)
         {
-            log.Skipped($"Would read {sample.Value}% of {repository.Location}'s pack data back; checking its structure only.");
+            log.Skipped($"Would read {sample.ToString()} of {repository.Location}'s pack data back; checking its structure only.");
         }
 
         await commands.Run(ResticClient.CheckCommand(repository, readDataSubset: null), ct);

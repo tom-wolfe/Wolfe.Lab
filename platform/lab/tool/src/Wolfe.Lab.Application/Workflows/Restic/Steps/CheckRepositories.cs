@@ -1,4 +1,4 @@
-using Wolfe.Lab.Application.Workflows.Restic.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Restic;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Restic.Steps;
@@ -8,14 +8,14 @@ namespace Wolfe.Lab.Application.Workflows.Restic.Steps;
 /// sample of pack data back, which over a year covers most of the repository for pennies.
 /// </summary>
 [Step("check repositories", StepKind.Check)]
-internal sealed class CheckRepositories(IRestic restic, VerifyOptions options, IWorkflowLog log)
+internal sealed class CheckRepositories(IRestic restic, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(ResticRepository local, OffsiteRepository offsite, CancellationToken ct = default)
+    public async Task<StepResult> Run(ResticComponent repositories, ResticRepository local, OffsiteRepository offsite, CancellationToken ct = default)
     {
         await restic.Check(local, readDataSubset: null, ct);
         log.Status($"{local.Location} checks out.");
-        await restic.Check(offsite.Repository, options.ReadDataSubset, ct);
-        log.Status($"{offsite.Repository.Location} checks out, {options.ReadDataSubset} of its data read back.");
+        await restic.Check(offsite.Repository, repositories.VerifySample, ct);
+        log.Status($"{offsite.Repository.Location} checks out, {repositories.VerifySample?.Value}% of its data read back.");
         return StepResult.Successful;
     }
 }

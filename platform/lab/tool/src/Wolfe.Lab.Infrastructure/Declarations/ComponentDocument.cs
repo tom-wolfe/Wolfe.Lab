@@ -32,4 +32,7 @@ internal record ComponentDocument
 
     [UniqueItems(true), Description("The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place.")]
     public List<string>? RequiresVolumes { get; init; }
+
+    [Description("The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops.")]
+    public HeartbeatDocument? Heartbeat { get; init; }
 }

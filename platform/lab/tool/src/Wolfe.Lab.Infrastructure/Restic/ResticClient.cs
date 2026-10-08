@@ -107,7 +107,7 @@ internal sealed partial class ResticClient(ICommandRunner commands) : IRestic
         var command = Command.Create("restic").WithArguments("check");
         if (readDataSubset is { } sample)
         {
-            command = command.AndArguments($"--read-data-subset={sample}");
+            command = command.AndArguments($"--read-data-subset={sample.ToString()}");
         }
 
         return command.WithEnvironmentVariables(repository.Environment).ThrowOnError();
