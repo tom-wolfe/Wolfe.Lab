@@ -4,14 +4,13 @@ using Ritten.DotNet;
 using Ritten.DotNet.Steps;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
-using Wolfe.Lab.Application.Workflows.Docker.Models;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Jobs;
 
 /// <summary>
 /// Proves the component is sound before anything is built or deployed from it.
 /// </summary>
-internal sealed class DotNetCheckJob : LabJob<DotNetServiceOptions>
+internal sealed class DotNetCheckJob : LabJob<DeclaredSettings>
 {
     public override string Name => "check";
 
@@ -30,9 +29,9 @@ internal sealed class DotNetCheckJob : LabJob<DotNetServiceOptions>
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void Configure(IWorkflowBuilder builder, DotNetServiceOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
-        builder.AddDocker().AddBuildReporting().AddDotNet([], options.Configuration);
+        builder.AddDocker().AddBuildReporting().AddDotNet([], "Release");
     }
 }

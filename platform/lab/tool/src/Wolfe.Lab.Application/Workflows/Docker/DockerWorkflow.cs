@@ -13,14 +13,14 @@ namespace Wolfe.Lab.Application.Workflows.Docker;
 /// components: the regular part gets one workflow, and what is genuinely the service's own gets a
 /// component and a workflow of its own beside it.
 /// </remarks>
-public sealed class DockerWorkflow : IWorkflow
+public sealed class DockerWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "docker";
+    public override string Name => "docker";
 
     /// <inheritdoc />
-    public string Label => "docker";
+    public override string Label => "docker";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DeclaredSettings>(), new DeployJob<DeclaredSettings>()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DeclaredSettings>(), new DeployJob<DeclaredSettings>()];
 }

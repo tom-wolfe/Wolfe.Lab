@@ -10,14 +10,14 @@ namespace Wolfe.Lab.Application.Workflows.CaddyRoutes;
 /// this component is what carries them all to the door. Its own Docker component knows nothing
 /// of them, which is the point: adding a service never edits the front door.
 /// </remarks>
-public sealed class CaddyRoutesWorkflow : IWorkflow
+public sealed class CaddyRoutesWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "caddy-routes";
+    public override string Name => "caddy-routes";
 
     /// <inheritdoc />
-    public string Label => "caddy routes";
+    public override string Label => "caddy routes";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new DeployJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new DeployJob()];
 }

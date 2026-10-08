@@ -8,8 +8,10 @@ it can be typed, rehearsed and tested.
 
 ## How a component opts in
 
-A directory the CLI serves carries a `ritten.json` naming its workflow
-— `"workflow": "docker"` — plus that workflow's options. That directory
+A directory the CLI serves declares components, and the workflow they
+run — `workflow: docker` — is the one `lab` runs there. A workflow whose
+options are not declared yet still reads them from a `ritten.json`
+beside them, which names the workflow too. That directory
 is a *component*: a service is the folder that groups its
 components (`media/sonarr/compose/`, `media/sonarr/backup/`, `platform/forgejo/tofu/`,
 `platform/forgejo/runners/`), and never carries a declaration of its own. Run
@@ -251,8 +253,8 @@ service has not got. References stay names, found through
 `ServiceCatalog.FindService` and `Service.FindComponent`. A catalog is valid from
 empty and stays so. The reader only chooses an order a valid catalog can
 be built in — a service after the services it depends on, a component
-after what it is part of or depends on. While a component has a
-`ritten.json` as well, the directory's components must declare the
+after what it is part of or depends on. Where a directory has a
+`ritten.json` as well, its components must declare the
 workflow it names — `workflow: docker` beside a `"workflow": "docker"` —
 but for a part of one (`partOf`), which names its own.
 The CLI's own tests hold the whole repository's declarations, a service's
@@ -344,8 +346,8 @@ open for as long as the agent runs. chezmoi installs logrotate on the
 Macs, and the Pi's OS ships it; nothing else runs it. A rehearsal is
 logrotate's own debug run, from the run's scratch.
 
-`runsOn`, `agent` and `program` are required of every agent component;
-its `ritten.json` names only its workflow. A model server is one such
+`runsOn`, `agent` and `program` are required of every agent component,
+and it has no `ritten.json`. A model server is one such
 agent, placed on its one node (`runsOn: [mini]`).
 
 A component the `ollama` workflow operates is a model, declared by what

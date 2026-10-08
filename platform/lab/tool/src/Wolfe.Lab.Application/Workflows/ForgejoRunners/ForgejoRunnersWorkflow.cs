@@ -5,14 +5,14 @@ namespace Wolfe.Lab.Application.Workflows.ForgejoRunners;
 /// <summary>
 /// Forgejo's Actions runners: <c>"workflow": "forgejo-runners"</c>.
 /// </summary>
-public sealed class ForgejoRunnersWorkflow : IWorkflow
+public sealed class ForgejoRunnersWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "forgejo-runners";
+    public override string Name => "forgejo-runners";
 
     /// <inheritdoc />
-    public string Label => "forgejo runners";
+    public override string Label => "forgejo runners";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new RegisterJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new RegisterJob()];
 }

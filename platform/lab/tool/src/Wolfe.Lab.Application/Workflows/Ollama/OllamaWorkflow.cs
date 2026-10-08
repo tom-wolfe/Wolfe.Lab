@@ -5,14 +5,14 @@ namespace Wolfe.Lab.Application.Workflows.Ollama;
 /// <summary>
 /// The models the lab's servers serve, by what each is used for: <c>"workflow": "ollama"</c>.
 /// </summary>
-public sealed class OllamaWorkflow : IWorkflow
+public sealed class OllamaWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "ollama";
+    public override string Name => "ollama";
 
     /// <inheritdoc />
-    public string Label => "ollama";
+    public override string Label => "ollama";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob()];
 }

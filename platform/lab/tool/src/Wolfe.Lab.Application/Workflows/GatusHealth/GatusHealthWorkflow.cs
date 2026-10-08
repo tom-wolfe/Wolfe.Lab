@@ -8,14 +8,14 @@ namespace Wolfe.Lab.Application.Workflows.GatusHealth;
 /// <remarks>
 /// A dead status page looks like one you haven't opened, so the mini asks it on a schedule.
 /// </remarks>
-public sealed class GatusHealthWorkflow : IWorkflow
+public sealed class GatusHealthWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "gatus-health";
+    public override string Name => "gatus-health";
 
     /// <inheritdoc />
-    public string Label => "gatus health";
+    public override string Label => "gatus health";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new ProbeJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new ProbeJob()];
 }

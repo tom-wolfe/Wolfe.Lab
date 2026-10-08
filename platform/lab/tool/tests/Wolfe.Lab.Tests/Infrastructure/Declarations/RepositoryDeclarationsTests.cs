@@ -25,4 +25,25 @@ public class RepositoryDeclarationsTests
     public async Task TheRepositorysDeclarationsHold() =>
         (await ServiceCatalogReader.Read(RealClients.Git, new PhysicalDirectory(Checkout()), TestContext.Current.CancellationToken))
             .Errors?.Select(problem => problem.Message).ShouldBeNull();
+
+    // Each directory that declares components is recognised as the workflow its deployment runs,
+    // so it needs no ritten.json to name it.
+    [Fact]
+    public async Task EachDeclaredDirectoryIsRecognisedAsItsWorkflow()
+    {
+        var checkout = Checkout();
+        var catalog = (await ServiceCatalogReader.Read(RealClients.Git, new PhysicalDirectory(checkout), TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var mismatched = new List<string>();
+        foreach (var directory in catalog.Services.SelectMany(service => service.Components).Select(component => component.Directory).Distinct())
+        {
+            var runs = catalog.DeploymentUnitAt(directory).ShouldNotBeNull().Value.ShouldNotBeNull().Head.Workflow.Value;
+            var recognised = await DeclarationFiles.WorkflowOf(new PhysicalDirectory(Path.Combine(checkout, directory.Value)), TestContext.Current.CancellationToken);
+            if (recognised != runs)
+            {
+                mismatched.Add($"{directory}: runs {runs}, recognised as {recognised ?? "nothing"}");
+            }
+        }
+
+        mismatched.ShouldBeEmpty();
+    }
 }

@@ -10,14 +10,14 @@ namespace Wolfe.Lab.Application.Workflows.Garage;
 /// The docker workflow, and then the cluster's layout: a new node is not done when the container
 /// is up, but when Garage knows it stores something.
 /// </remarks>
-public sealed class GarageWorkflow : IWorkflow
+public sealed class GarageWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "garage";
+    public override string Name => "garage";
 
     /// <inheritdoc />
-    public string Label => "garage";
+    public override string Label => "garage";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DeclaredSettings>(), new Jobs.DeployJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new CheckJob<DeclaredSettings>(), new Jobs.DeployJob()];
 }

@@ -6,14 +6,14 @@ namespace Wolfe.Lab.Application.Workflows.Heartbeat;
 /// The dead man's switch: the one signal that can report "the lab is off" comes from a ping the
 /// lab sends out, and stops sending when it dies.
 /// </summary>
-public sealed class HeartbeatWorkflow : IWorkflow
+public sealed class HeartbeatWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "heartbeat";
+    public override string Name => "heartbeat";
 
     /// <inheritdoc />
-    public string Label => "heartbeat";
+    public override string Label => "heartbeat";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new PingJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new PingJob()];
 }

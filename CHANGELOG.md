@@ -8,6 +8,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **A directory's components name its workflow.** A job whose settings are all declared runs without a `ritten.json`.
+
 - **Garage declares its layout.** `layout:` on its server component; `platform/garage/layout` and its workflow are gone.
 
 - **Garage's deploy converges its layout.** A `workflow: garage` component declares its node's `layout:`

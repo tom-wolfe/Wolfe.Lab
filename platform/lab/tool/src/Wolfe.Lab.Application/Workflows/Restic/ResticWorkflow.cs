@@ -6,14 +6,14 @@ namespace Wolfe.Lab.Application.Workflows.Restic;
 /// <summary>
 /// The backup mechanism's own jobs.
 /// </summary>
-public sealed class ResticWorkflow : IWorkflow
+public sealed class ResticWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "restic";
+    public override string Name => "restic";
 
     /// <inheritdoc />
-    public string Label => "restic";
+    public override string Label => "restic";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new OffsiteJob(), new VerifyJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new OffsiteJob(), new VerifyJob()];
 }

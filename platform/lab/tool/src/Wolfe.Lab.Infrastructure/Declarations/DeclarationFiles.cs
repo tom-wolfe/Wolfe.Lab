@@ -1,5 +1,7 @@
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Ritten.Git;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Paths;
 
@@ -66,6 +68,32 @@ public sealed partial record DeclarationFiles(IReadOnlyList<DeclarationFile> Fil
 
         return new DeclarationFiles(files, problems);
     }
+
+    /// <summary>
+    /// The workflow the components declared in <paramref name="directory"/> run — each that is not
+    /// part of another of them names the same one — or null when they name none, or several.
+    /// </summary>
+    public static async Task<string?> WorkflowOf(IDirectory directory, CancellationToken ct = default)
+    {
+        var components = new List<JsonNode>();
+        foreach (var file in directory.GetFiles("*.yaml").Concat(directory.GetFiles("*.yml")))
+        {
+            if (await file.ReadAllTextIfExists(ct) is { } text && SchemaLine().IsMatch(text) && YamlDocuments.Parse(text).TryGetValue(out var yaml, out _))
+            {
+                components.AddRange(yaml.Documents.Select(document => document.Root).OfType<JsonNode>().Where(root => root["workflow"] is not null));
+            }
+        }
+
+        var names = components.Select(component => Text(component["name"])).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        var workflows = components
+            .Where(component => Text(component["partOf"]) is not { } whole || !names.Contains(whole))
+            .Select(component => Text(component["workflow"]))
+            .Distinct()
+            .ToList();
+        return workflows is [{ } only] ? only : null;
+    }
+
+    private static string? Text(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
 
     /// <summary>
     /// The line a declaration starts with, for a file at <paramref name="path"/>.

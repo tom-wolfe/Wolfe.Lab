@@ -39,7 +39,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
     /// <param name="git">What lists the checkout's files.</param>
     /// <param name="root">The checkout's root.</param>
     /// <param name="directory">The directory the workflow runs in.</param>
-    /// <param name="workflow">The workflow its <c>ritten.json</c> names, which is running this check.</param>
+    /// <param name="workflow">The workflow running this check: the one its <c>ritten.json</c> names, or its components declare.</param>
     /// <param name="ct">A token to monitor for cancellation.</param>
     internal static async Task<Result<ServiceCatalog>> Check(IGit git, IDirectory root, IDirectory directory, string workflow, CancellationToken ct = default)
     {
@@ -54,7 +54,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
             return catalog;
         }
 
-        // While ritten.json names the directory's workflow too, each component must declare it; a
+        // Where a ritten.json names the directory's workflow too, each component must declare it; a
         // part of another — anything partOf one — names its own.
         var others = catalog.DeploymentUnitAt(placement)?.Value?.Components
             .Where(component => component.PartOf is null && component.Workflow.Value != workflow)
