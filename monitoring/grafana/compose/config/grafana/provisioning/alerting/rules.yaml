@@ -192,3 +192,44 @@ groups:
           summary: >-
             {{ $labels.host_name }} has sent nothing for ten minutes: the node
             or its collector is down.
+
+  # The components' declared metrics endpoints (their `metrics:`), from each
+  # node's collector: one that stops answering while its collector runs is a
+  # component down. A node down sends nothing at all, which node-silent
+  # catches. Gatus is one of them: a status page cannot report itself.
+  - orgId: 1
+    name: components
+    folder: Lab
+    interval: 1m
+    rules:
+      - uid: component-unanswering
+        title: Component not answering
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: up{lab_component!=""}
+              instant: true
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: >-
+            {{ $labels.lab_service }}'s {{ $labels.lab_component }} on
+            {{ $labels.host_name }} has not answered its metrics scrape
+            ({{ $labels.instance }}) for five minutes.

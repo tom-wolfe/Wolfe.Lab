@@ -392,8 +392,8 @@ Bring-up is in `RUNBOOK.md` "The mini's runner".
 Everything scheduled on the mini is a cron workflow on this runner:
 each service's `<service>-backup.yaml`, `restic-offsite.yaml`,
 `restic-verify.yaml`, the two `obsidian-*.yaml`, `caddy-certs.yaml`,
-`heartbeat.yaml` and `gatus-health.yaml`. Its capacity is 3 so the heartbeat, the syncs and the
-probe never queue behind a long job; stateful jobs serialise through the
+and `heartbeat.yaml`. Its capacity is 3 so the heartbeat and the syncs
+never queue behind a long job; stateful jobs serialise through the
 `MacMini` concurrency group.
 
 ### The Studio's runner

@@ -113,8 +113,8 @@ asks `/api/health` every two minutes, three failures page). This is the
 failure Beszel structurally cannot report: a hub that isn't running sends
 no alerts, and it looks exactly like a healthy lab, because the deploy is
 a convergent no-op that stays green regardless. Gatus is on the other
-machine, and Gatus itself is probed from the mini (`gatus-health.yaml`),
-so the chain has no self-reference.
+machine, and Gatus itself is scraped by Grafana on the mini, which alerts
+when it stops answering, so the chain has no self-reference.
 
 Note what that check is *not*: it isn't reading `compose.yaml`'s Docker
 healthcheck. Docker healthchecks are inert in this lab — nothing reads them

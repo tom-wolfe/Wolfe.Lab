@@ -4,6 +4,12 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-09
+
+### Added
+
+- **Grafana pages for a component that stops answering.** `component-unanswering`: a declared metrics endpoint unscraped for five minutes while its collector runs. It watches Gatus in place of the `gatus-health` probe, which is gone.
+
 ## 2026-10-08
 
 ### Fixed
