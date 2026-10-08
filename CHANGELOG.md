@@ -36,6 +36,10 @@ rather than versioned — the lab is continuous, not released.
 
 - **The `agents` workflow is `agent`.** Declarations and `ritten.json` name it so; `agents` is no longer read.
 
+### Removed
+
+- **Immich's Takeout import is gone.** A one-off migration, not something the lab runs; it is in the history.
+
 ## 2026-10-07
 
 ### Added

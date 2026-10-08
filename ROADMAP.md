@@ -412,7 +412,6 @@ The first sets, each a starting point rather than a closed argument:
 | `garage-layout`                                                 | a facet                  | `layout:` on Garage's component                                             |
 | `heartbeat`, `gatus-health`                                     | as it is                 | until the agent's own alerts (#6) and published `check:` facets (#8)        |
 | `caddy-routes`                                                  | as it is                 | until Caddy renders the published `route:` facets (#6, #8)                  |
-| `immich-import`                                                 | not a component          | a one-off operation, and a CLI command                                      |
 
 There are no jobs: what looked like one is a declarative kind (a runner,
 a certificate, a repository), a facet of something else, or an operation
@@ -611,7 +610,7 @@ and each fact moves once.
    `release`, `volumes` (as `requiresVolumes`), `artifacts` and `images`.
 7. Every remaining `ritten.json` a declaration, a workflow at a time,
    each in a document shape of its own; Ollama's models as components;
-   `layout:` on Garage's component; `immich-import` a command.
+   `layout:` on Garage's component.
 8. `ritten.json` gone: every lab job takes its component from the
    catalog (`RequiresProject => false`).
 

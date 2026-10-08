@@ -32,7 +32,7 @@ that used to live in chezmoi — placed on the nodes they run on, and
 deployed to each by its own runner, which runs `lab deploy` on the node it converges). Two services with the same shape share a
 workflow and differ only in what they declare. What only one service does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
-`network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`, `personal/immich/import`,
+`network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`,
 `monitoring/gatus/health` — named for the service and the thing, so a `ritten.json`
 reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each

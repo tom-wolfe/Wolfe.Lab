@@ -63,8 +63,7 @@ Because Renovate cannot move them safely:
   bump one without the other. The Beszel hub's pull request carries a
   note to move the Pi's agent with it (`monitoring/beszel/RUNBOOK.md`, "Two pins").
 - **Build arguments with a twin elsewhere**: `NODE_VERSION` in
-  `platform/ci/image/Dockerfile` tracks the nodes, and immich-go's
-  `VERSION` carries its checksum.
+  `platform/ci/image/Dockerfile` tracks the nodes.
 - **The Brewfile** is unpinned, and **ollama's models** have no registry
   Renovate reads.
 

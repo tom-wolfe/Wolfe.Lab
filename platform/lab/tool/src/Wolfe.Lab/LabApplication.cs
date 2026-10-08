@@ -16,7 +16,6 @@ using Wolfe.Lab.Application.Workflows.ForgejoRunners;
 using Wolfe.Lab.Application.Workflows.GarageLayout;
 using Wolfe.Lab.Application.Workflows.GatusHealth;
 using Wolfe.Lab.Application.Workflows.Heartbeat;
-using Wolfe.Lab.Application.Workflows.ImmichImport;
 using Wolfe.Lab.Application.Workflows.Obsidian;
 using Wolfe.Lab.Application.Workflows.Ollama;
 using Wolfe.Lab.Application.Workflows.Restic;
@@ -56,8 +55,7 @@ public static class LabApplication
             .Add<CaddyRoutesWorkflow>()
             .Add<ForgejoRunnersWorkflow>()
             .Add<GarageLayoutWorkflow>()
-            .Add<GatusHealthWorkflow>()
-            .Add<ImmichImportWorkflow>();
+            .Add<GatusHealthWorkflow>();
 
         builder.Runtimes
             .Add<LabRuntime>();
