@@ -25,7 +25,6 @@ lab network/caddy/certs renew
 lab network/caddy/compose deploy
 lab network/caddy/routes deploy
 lab platform/garage/compose deploy
-lab platform/garage/layout init
 lab platform/forgejo/compose deploy
 lab media/jellyfin/compose deploy
 lab media/sonarr/compose deploy

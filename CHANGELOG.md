@@ -8,6 +8,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Garage declares its layout.** `layout:` on its server component; `platform/garage/layout` and its workflow are gone.
+
 - **Garage's deploy converges its layout.** A `workflow: garage` component declares its node's `layout:`
   (zone and capacity), applied as the next version whenever it differs; the `garage-layout` workflow is gone.
 
