@@ -33,7 +33,7 @@ public sealed class AgentComponent : Component
     /// <summary>
     /// Creates a new agent component.
     /// </summary>
-    public static Result<AgentComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, WorkflowName workflow, DeploymentTarget runsOn, AgentProcess agent)
+    public static Result<AgentComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, DeploymentTarget runsOn, AgentProcess agent)
     {
         var errors = Validate(source, out var directory);
         errors.AddRange(Problems(agent).Select(Error (problem) => CatalogError.In(source, problem)));
@@ -48,7 +48,7 @@ public sealed class AgentComponent : Component
             Directory = directory,
             Name = name,
             Kind = kind,
-            Workflow = workflow,
+            Workflow = WorkflowName.Agent,
             RunsOn = runsOn,
             Agent = agent
         };

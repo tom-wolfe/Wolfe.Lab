@@ -302,7 +302,7 @@ public static class ServiceCatalogReader
             Environment = (document.Environment ?? []).ToDictionary(variable => variable.Key, variable => Template.From(variable.Value), StringComparer.Ordinal),
             Supersedes = document.Supersedes ?? []
         };
-        return Widen(AgentComponent.Create(source, name, document.Kind, document.Workflow, runsOn, process), _ => { });
+        return Widen(AgentComponent.Create(source, name, document.Kind, runsOn, process), _ => { });
     }
 
     // A compose service: the service it runs as, and how it reports.

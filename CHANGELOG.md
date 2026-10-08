@@ -8,6 +8,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Ollama's servers are only agents.** A `workflow: ollama` declaration is a model; a server declared as one is refused.
+
 - **Models are declared by their use.** `ai/ollama/interactive`, `background` and `embedding`, each with a
   model and context per server; the servers are agents, and `ollama-models.yaml` deploys the uses.
 

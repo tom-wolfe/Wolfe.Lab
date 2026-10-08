@@ -170,28 +170,6 @@ public static class LabSchema
     private static string Shape(Type document) =>
         document == typeof(ComponentDocument) ? "common" : document.Name.Replace("Document", "", StringComparison.Ordinal).ToLowerInvariant();
 
-    // The documents a shape's branch judges: those whose workflow is written as it. Until every
-    // Ollama server declares workflow: agent, one declaring workflow: ollama with an agent is an
-    // agent's, and only an ollama document without one is a model's.
-    private static JsonSchemaBuilder Selects(Type shape, IEnumerable<WorkflowName> workflows, IReadOnlyList<string> kinds)
-    {
-        var written = new JsonSchemaBuilder()
-            .Required("kind", "workflow")
-            .Properties(
-                ("kind", new JsonSchemaBuilder().Enum(kinds)),
-                ("workflow", new JsonSchemaBuilder().Enum(workflows.Select(workflow => workflow.Value))));
-        if (shape == typeof(AgentDocument))
-        {
-            return new JsonSchemaBuilder().AnyOf(written, new JsonSchemaBuilder()
-                .Required("kind", "workflow", "agent")
-                .Properties(("kind", new JsonSchemaBuilder().Enum(kinds)), ("workflow", new JsonSchemaBuilder().Const(WorkflowName.Ollama.Value))));
-        }
-
-        return shape == typeof(ModelDocument)
-            ? written.Not(new JsonSchemaBuilder().Required("agent"))
-            : written;
-    }
-
     private static JsonSchema Build()
     {
         var configuration = new SchemaGeneratorConfiguration
@@ -211,7 +189,11 @@ public static class LabSchema
         var shapes = WorkflowName.All
             .GroupBy(ComponentDocuments.For)
             .Select(shape => new JsonSchemaBuilder()
-                .If(Selects(shape.Key, shape, kinds))
+                .If(new JsonSchemaBuilder()
+                    .Required("kind", "workflow")
+                    .Properties(
+                        ("kind", new JsonSchemaBuilder().Enum(kinds)),
+                        ("workflow", new JsonSchemaBuilder().Enum(shape.Select(workflow => workflow.Value)))))
                 .Then(new JsonSchemaBuilder()
                     .Id($"{Id}/component/{Shape(shape.Key)}")
                     .FromType(shape.Key, configuration)));
