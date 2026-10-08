@@ -8,6 +8,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Garage's deploy converges its layout.** A `workflow: garage` component declares its node's `layout:`
+  (zone and capacity), applied as the next version whenever it differs; the `garage-layout` workflow is gone.
+
 - **Restic's settings and the heartbeat ping are declared.** Their `ritten.json` now names only the workflow.
 
 - **The repositories declare their retention.** With the verify sample and the offsite heartbeat;

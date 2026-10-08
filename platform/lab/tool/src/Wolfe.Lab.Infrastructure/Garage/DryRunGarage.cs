@@ -1,3 +1,5 @@
+using Wolfe.Lab.Domain.Catalog.Components.Garage;
+
 namespace Wolfe.Lab.Infrastructure.Garage;
 
 /// <summary>
@@ -9,15 +11,15 @@ internal sealed class DryRunGarage(IWorkflowLog log, GarageClient inner) : IGara
     public Task<bool> AwaitReady(CancellationToken ct = default) => inner.AwaitReady(ct);
 
     /// <inheritdoc />
-    public Task<int> LayoutVersion(CancellationToken ct = default) => inner.LayoutVersion(ct);
+    public Task<ClusterLayout> Layout(CancellationToken ct = default) => inner.Layout(ct);
 
     /// <inheritdoc />
     public Task<string> NodeId(CancellationToken ct = default) => inner.NodeId(ct);
 
     /// <inheritdoc />
-    public Task AssignLayout(string nodeId, string zone, string capacity, CancellationToken ct = default)
+    public Task AssignLayout(string nodeId, GarageLayout layout, CancellationToken ct = default)
     {
-        log.Skipped($"Would assign node {nodeId} to zone {zone} with capacity {capacity}.");
+        log.Skipped($"Would assign node {nodeId} to zone {layout.Zone.Value} with a capacity of {layout.Capacity.Value} bytes.");
         return Task.CompletedTask;
     }
 

@@ -409,7 +409,7 @@ The first sets, each a starting point rather than a closed argument:
 | `restic`                                                        | as it is                 | where backups go: retention, verification, the offsite copy                 |
 | `tofu`, `caddy-certificates`, `image`, `dotnet-tool`, `chezmoi` | as it is                 |                                                                             |
 | `backup`                                                        | as it is                 | until the state workflows that replace it, planned by the agent (#6)        |
-| `garage-layout`                                                 | a facet                  | `layout:` on Garage's component                                             |
+| `garage-layout`                                                 | `garage`                 | `layout:` on Garage's component, converged by its deploy                    |
 | `heartbeat`, `gatus-health`                                     | as it is                 | until the agent's own alerts (#6) and published `check:` facets (#8)        |
 | `caddy-routes`                                                  | as it is                 | until Caddy renders the published `route:` facets (#6, #8)                  |
 

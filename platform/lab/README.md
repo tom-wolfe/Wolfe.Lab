@@ -32,7 +32,7 @@ that used to live in chezmoi — placed on the nodes they run on, and
 deployed to each by its own runner, which runs `lab deploy` on the node it converges). Two services with the same shape share a
 workflow and differ only in what they declare. What only one service does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
-`network/caddy/routes`, `platform/forgejo/runners`, `platform/garage/layout`,
+`network/caddy/routes`, `platform/forgejo/runners`,
 `monitoring/gatus/health` — named for the service and the thing, so a `ritten.json`
 reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each
@@ -40,7 +40,7 @@ workflow lists it for itself.
 
 A job's name has to read from inside the component it runs in, because
 that is all the context there is: `renew` in `network/caddy/certs/`, `register`
-in `platform/forgejo/runners/`, `init` in `platform/garage/layout/`, `verify` in
+in `platform/forgejo/runners/`, `verify` in
 `platform/restic/repositories/`. One intent gets one verb, too: making a node
 match its component is `deploy` whether the stack is containers, a
 supervised agent, or a root module.

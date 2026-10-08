@@ -8,7 +8,7 @@ namespace Wolfe.Lab.Infrastructure.Declarations;
 /// writes it: one service of the compose stack beside it.
 /// </summary>
 [AdditionalProperties(false)]
-internal sealed record DockerDocument : ComponentDocument
+internal record DockerDocument : ComponentDocument
 {
     [Required, Description("The compose service the component runs as, as the compose file names it: the container keeps Docker's unique name, the component the catalog's.")]
     public string Service { get; init; } = "";

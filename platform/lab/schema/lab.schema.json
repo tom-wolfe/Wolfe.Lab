@@ -270,6 +270,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",
@@ -357,6 +358,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",
@@ -572,6 +574,281 @@
           },
           "workflow": {
             "enum": [
+              "garage"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/garage",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runners",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "service": {
+            "type": "string",
+            "description": "The compose service the component runs as, as the compose file names it: the container keeps Docker's unique name, the component the catalog's."
+          },
+          "logs": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "enum": [
+              "otlp",
+              null
+            ],
+            "description": "How the component's logs reach the lab, when not as its output: otlp, when it sends its own."
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "The port the service serves its metrics on, in its own container."
+                  },
+                  "path": {
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "description": "The path it serves them on: /metrics unless it says otherwise."
+                  },
+                  "published": {
+                    "type": [
+                      "null",
+                      "integer"
+                    ],
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "The node's port to publish it on, when another service already holds the container's own number there."
+                  }
+                },
+                "required": [
+                  "port"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "port": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "description": "The port the service serves its metrics on, in its own container."
+                    },
+                    "path": {
+                      "type": [
+                        "null",
+                        "string"
+                      ],
+                      "description": "The path it serves them on: /metrics unless it says otherwise."
+                    },
+                    "published": {
+                      "type": [
+                        "null",
+                        "integer"
+                      ],
+                      "minimum": 1,
+                      "maximum": 65535,
+                      "description": "The node's port to publish it on, when another service already holds the container's own number there."
+                    }
+                  },
+                  "required": [
+                    "port"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1
+              }
+            ],
+            "description": "Where the component serves Prometheus metrics, in its own container: an endpoint, or a list when it serves more than one."
+          },
+          "layout": {
+            "description": "The node's role in the cluster layout, brought into line on every deploy.",
+            "type": "object",
+            "properties": {
+              "zone": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The zone the node stands in."
+              },
+              "capacity": {
+                "type": "string",
+                "description": "How much the node stores, as Garage spells it: 500G is decimal, 500GiB binary."
+              }
+            },
+            "required": [
+              "zone",
+              "capacity"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "service",
+          "layout"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
               "agent"
             ]
           }
@@ -610,6 +887,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",
@@ -876,6 +1154,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",
@@ -1091,6 +1370,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",
@@ -1257,6 +1537,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",
@@ -1480,6 +1761,7 @@
             "enum": [
               "docker",
               "dotnet-service",
+              "garage",
               "agent",
               "ollama",
               "forgejo-runners",

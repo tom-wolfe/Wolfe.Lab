@@ -15,6 +15,7 @@ internal static class ComponentDocuments
     {
         [WorkflowName.Docker] = typeof(DockerDocument),
         [WorkflowName.DotNetService] = typeof(DockerDocument),
+        [WorkflowName.Garage] = typeof(GarageDocument),
         [WorkflowName.Agent] = typeof(AgentDocument),
         [WorkflowName.Ollama] = typeof(ModelDocument),
         [WorkflowName.Backup] = typeof(BackupDocument),
