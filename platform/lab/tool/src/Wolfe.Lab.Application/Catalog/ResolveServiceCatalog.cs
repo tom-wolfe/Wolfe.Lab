@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Application.Catalog;
 /// Resolves and verifies the component's catalog definition against the rest of the lab.
 /// </summary>
 [Step("resolve service catalog", StepKind.Check)]
-internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, SelectedWorkflow selected, IWorkflowLog log)
 {
     public async Task<StepResult<ServiceCatalog>> Run(CancellationToken ct = default)
     {
@@ -21,7 +21,8 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
         }
 
         var directory = fileSystem.ProjectRoot;
-        if (!(await Check(git, repository, directory, job.Workflow, ct)).TryGetValue(out var catalog, out var errors))
+        // The workflow's name, as a declaration writes it: its label is how a run prints it.
+        if (!(await Check(git, repository, directory, selected.Workflow.Name, ct)).TryGetValue(out var catalog, out var errors))
         {
             return StepResult.Failed(errors);
         }

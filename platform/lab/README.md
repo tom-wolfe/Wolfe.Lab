@@ -585,9 +585,9 @@ client's `HttpStandardResilienceOptions` (`Packages:Http`),
 the services it calls (`Alerts:Endpoint`, `Heartbeat:Endpoint`,
 `Packages:Releases` and `Packages:Api`) and the vault's service account
 (`OnePassword:ServiceAccountTokenFile`) — where a component's
-declaration holds what the component is, including a fact another
-component defines and it needs, such as the Caddy it reloads (`reloads`,
-naming the Docker component Caddy runs as). What stays in code is the contract the
+declaration holds what the component is, and what it is part of: Caddy's
+certificate and routes are `partOf: proxy`, so their jobs reload that
+Caddy, from the Caddyfile its deployment carries. What stays in code is the contract the
 repository is written against — `secrets.env`, `lab-tools.json`, the
 `.lab-volume` sentinel — where a setting would only be a way for a node
 to disagree with the repository. Environment

@@ -27,6 +27,7 @@ internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
     [
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
+        Step.FromType<ResolveCaddy>(),
         Step.FromType<GatherRoutes>(),
         Step.FromType<GateApproval>(),
         Step.FromType<InstallRoutes>(),
@@ -35,16 +36,12 @@ internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<CaddyRoutesOptions> options) => options
-        .Require(s => s.Caddy.ToInstance() is not null, "'caddy.container' and 'caddy.caddyfile' must both be set in ritten.json: the caddy this reloads.");
+    public override bool RequiresProject => false;
 
     protected override void Configure(IWorkflowBuilder builder, CaddyRoutesOptions options)
     {
         base.Configure(builder, options);
         builder.AddDocker().AddInstaller();
-        if (options.Caddy.ToInstance() is { } caddy)
-        {
-            builder.Services.AddSingleton(caddy);
-        }
+        builder.Services.AddSingleton(options.Caddy);
     }
 }

@@ -61,6 +61,12 @@ public sealed class LabDirectories
     public IDirectory DeployedTo(DeploymentUnit unit) => Root.GetDirectory(unit.Name);
 
     /// <summary>
+    /// Gets where <paramref name="unit"/> is installed as a container that reads deployments sees
+    /// it: such a container mounts the install root, as a directory, at <c>/lab</c>.
+    /// </summary>
+    public string MountedAt(DeploymentUnit unit) => $"/lab/{unit.Name}";
+
+    /// <summary>
     /// Gets the stamp file for the given deployment unit.
     /// </summary>
     public IFile AppliedStamp(DeploymentUnit unit) => Applied.GetFile(unit.Name);

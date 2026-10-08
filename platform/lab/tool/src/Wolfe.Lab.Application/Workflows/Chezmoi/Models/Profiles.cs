@@ -1,7 +1,9 @@
+using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
+
 namespace Wolfe.Lab.Application.Workflows.Chezmoi.Models;
 
 /// <summary>
-/// The profiles to render, as the step consumes them.
+/// The profiles a check renders.
 /// </summary>
-/// <param name="Names">The profile names, in declaration order.</param>
-public sealed record Profiles(IReadOnlyList<string> Names);
+/// <param name="Names">Their names.</param>
+public sealed record Profiles(IReadOnlyList<ChezmoiProfile> Names);

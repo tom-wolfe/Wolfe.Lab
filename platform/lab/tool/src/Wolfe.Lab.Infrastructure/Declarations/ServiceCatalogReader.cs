@@ -27,7 +27,6 @@ using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Packages;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Domain.Secrets;
-using Wolfe.Lab.Domain.Services;
 
 namespace Wolfe.Lab.Infrastructure.Declarations;
 
@@ -245,7 +244,6 @@ public static partial class ServiceCatalogReader
             ChezmoiDocument chezmoi => Chezmoi(source, name, chezmoi, errors),
             ImageDocument image => Image(source, name, image, errors),
             CaddyCertificatesDocument certificates => CaddyCertificates(source, name, certificates, errors),
-            CaddyRoutesDocument routes => CaddyRoutes(source, name, routes, errors),
             ObsidianDocument vault => Obsidian(source, name, vault, errors),
             ForgejoRunnerDocument runners => Widen(ForgejoRunnerComponent.Create(source, name, runners.Kind, runners.Vault, runners.Repository, runners.Image), _ => { }),
             _ => Component.Create(source, name, document.Kind, document.Workflow)
@@ -415,7 +413,7 @@ public static partial class ServiceCatalogReader
         });
     }
 
-    // A certificate: what it covers, what issues it, and the Caddy that serves it.
+    // A certificate: what it covers, and what issues it.
     private static Result<Component>? CaddyCertificates(DocumentSource source, ComponentName name, CaddyCertificatesDocument document, List<Error> errors)
     {
         var written = document.Issuer;
@@ -429,21 +427,13 @@ public static partial class ServiceCatalogReader
             }
         }
 
-        var reloads = Reload(document.Reloads, errors);
-        if (errors.Count > 0 || store is null || reloads is null)
+        if (errors.Count > 0 || store is null)
         {
             return null;
         }
 
         var issuer = new CertificateIssuer(written.Image, written.Email, written.Dns, store.Value) { Environment = environment, PropagationWait = written.PropagationWait };
-        return Widen(CaddyCertificatesComponent.Create(source, name, document.Kind, document.Domains, issuer, reloads), _ => { });
-    }
-
-    // The routes, and the Caddy that imports them when the declaration names it.
-    private static Result<Component>? CaddyRoutes(DocumentSource source, ComponentName name, CaddyRoutesDocument document, List<Error> errors)
-    {
-        var reloads = document.Reloads is { } written ? Reload(written, errors) : null;
-        return errors.Count > 0 ? null : Widen(CaddyRoutesComponent.Create(source, name, document.Kind), created => created.Reloads = reloads);
+        return Widen(CaddyCertificatesComponent.Create(source, name, document.Kind, document.Domains, issuer), _ => { });
     }
 
     // A vault: where it is checked out, where it is pushed, and as whom.
@@ -460,10 +450,6 @@ public static partial class ServiceCatalogReader
 
         return Widen(ObsidianComponent.Create(source, name, document.Kind, at, url, new PushCredential(user, secret)), created => created.Exclude = document.Exclude ?? []);
     }
-
-    // The Caddy a component reloads: the schema has judged the component's name already.
-    private static CaddyReload? Reload(CaddyReloadDocument written, List<Error> errors) =>
-        Value("reloads.component", ComponentName.TryFrom(written.Component), errors) is { } component ? new CaddyReload(component, written.Caddyfile) : null;
 
     // A value as the domain reads it, or null and the problem at its field.
     private static T? Value<T>(string field, Vogen.ValueObjectOrError<T> read, List<Error> errors) where T : struct

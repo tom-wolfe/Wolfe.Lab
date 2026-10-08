@@ -15,20 +15,20 @@ internal sealed class ImageCheckJob : LabJob<ImageComponentOptions>
 
     public override string Description => "Checks the component's images each have a Dockerfile and a tag naming their registry.";
 
-    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<GatePathFilter>(), Step.FromType<ResolveServiceCatalog>(), Step.FromType<CheckImages>()];
+    public override IReadOnlyList<Step> Steps { get; } = [
+        Step.FromType<GatePathFilter>(),
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveImages>(),
+        Step.FromType<CheckImages>()
+    ];
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<ImageComponentOptions> options) => options
-        .Require(s => s.Images.Count > 0, "an image component needs at least one entry in 'images'.")
-        .Require(s => s.Images.All(image => image is { Tag.Length: > 0, Context.Length: > 0 }), "every entry in 'images' needs a 'tag' and a 'context'.");
+    public override bool RequiresProject => false;
 
     protected override void Configure(IWorkflowBuilder builder, ImageComponentOptions options)
     {
         base.Configure(builder, options);
-        builder.Services.AddSingleton(new ComponentImages([.. options.Images.SelectMany(IEnumerable<ComponentImage> (image) =>
-            image is { Tag: { Length: > 0 } tag, Context: { Length: > 0 } context }
-                ? [new ComponentImage(tag, context, image.Dockerfile ?? CheckImages.Dockerfile)]
-                : [])]));
+        builder.Services.AddSingleton(options);
     }
 }

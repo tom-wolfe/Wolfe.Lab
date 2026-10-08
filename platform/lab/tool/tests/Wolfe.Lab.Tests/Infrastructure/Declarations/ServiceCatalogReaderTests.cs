@@ -22,7 +22,6 @@ using Wolfe.Lab.Domain.Git;
 using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Domain.Secrets;
-using Wolfe.Lab.Domain.Services;
 using Wolfe.Lab.Infrastructure.Declarations;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Declarations;
@@ -668,7 +667,7 @@ public class ServiceCatalogReaderTests : IDisposable
     }
 
     [Fact]
-    public async Task Read_TakesACertificateItsIssuerAndTheCaddyItReloads()
+    public async Task Read_TakesACertificateAndItsIssuer()
     {
         var certificate = (await Only("network/caddy", "network/caddy/certs/component.yaml", """
             name: certs
@@ -682,21 +681,12 @@ public class ServiceCatalogReaderTests : IDisposable
               store: /lab/lego
               environment: { NETLIFY_TOKEN: op://Wolfe.Lab/netlify-pat/credential }
               propagationWait: 90s
-            reloads: { component: proxy, caddyfile: /etc/caddy/lab/caddy-proxy/Caddyfile }
             """)).ShouldBeOfType<CaddyCertificatesComponent>();
 
         certificate.Domains.ShouldBe(["*.twolfe.dev"]);
         certificate.Issuer.Store.ShouldBe(HostPath.From("/lab/lego"));
         certificate.Issuer.Environment["NETLIFY_TOKEN"].ShouldBe(SecretReference.From("op://Wolfe.Lab/netlify-pat/credential"));
         certificate.Issuer.PropagationWait.ShouldBe("90s");
-        certificate.Reloads.ShouldBe(new CaddyReload(ComponentName.From("proxy"), "/etc/caddy/lab/caddy-proxy/Caddyfile"));
-    }
-
-    [Fact]
-    public async Task Read_TakesRoutesWithOrWithoutTheCaddyTheyReload()
-    {
-        (await Only("network/caddy", "network/caddy/routes/component.yaml", "name: routes\nkind: proxy\nworkflow: caddy-routes\n"))
-            .ShouldBeOfType<CaddyRoutesComponent>().Reloads.ShouldBeNull();
     }
 
     [Fact]

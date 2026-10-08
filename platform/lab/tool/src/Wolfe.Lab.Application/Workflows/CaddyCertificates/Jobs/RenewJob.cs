@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
 using Wolfe.Lab.Application.Caddy;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Workflows.CaddyCertificates.Models;
 using Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
@@ -24,6 +25,9 @@ internal sealed class RenewJob : LabJob<CaddyCertificatesOptions>
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveCertificate>(),
+        Step.FromType<ResolveCaddy>(),
         Step.FromType<EnsureCertificateStore>(),
         Step.FromType<GateApproval>(),
         Step.FromType<IssueCertificate>(),
@@ -32,25 +36,13 @@ internal sealed class RenewJob : LabJob<CaddyCertificatesOptions>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<CaddyCertificatesOptions> options) => options
-        .Require(s => s.Caddy.ToInstance() is not null, "'caddy.container' and 'caddy.caddyfile' must both be set in ritten.json: the caddy this reloads.")
-        .Require(s => s.Image is { Length: > 0 }, "'image' not set in ritten.json.")
-        .Require(s => s.Email is { Length: > 0 }, "'email' not set in ritten.json.")
-        .Require(s => s.Domains.Count > 0, "'domains' names nothing in ritten.json.")
-        .Require(s => s.Dns is { Length: > 0 }, "'dns' not set in ritten.json.")
-        .Require(s => s.Store is not null, "'store' not set in ritten.json.");
+    public override bool RequiresProject => false;
 
     protected override void Configure(IWorkflowBuilder builder, CaddyCertificatesOptions options)
     {
         base.Configure(builder, options);
         builder.AddDocker();
-        if (options.Caddy.ToInstance() is { } caddy)
-        {
-            builder.Services.AddSingleton(caddy);
-        }
-        if (options.ToRequest() is { } request)
-        {
-            builder.Services.AddSingleton(request);
-        }
+        builder.Services.AddSingleton(options);
+        builder.Services.AddSingleton(options.Caddy);
     }
 }

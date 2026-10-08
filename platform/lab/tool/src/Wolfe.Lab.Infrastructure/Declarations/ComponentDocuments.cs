@@ -19,7 +19,12 @@ internal static class ComponentDocuments
         [WorkflowName.Agent] = typeof(AgentDocument),
         [WorkflowName.Ollama] = typeof(ModelDocument),
         [WorkflowName.Backup] = typeof(BackupDocument),
-        [WorkflowName.Restic] = typeof(ResticDocument)
+        [WorkflowName.Restic] = typeof(ResticDocument),
+        [WorkflowName.Chezmoi] = typeof(ChezmoiDocument),
+        [WorkflowName.Image] = typeof(ImageDocument),
+        [WorkflowName.CaddyCertificates] = typeof(CaddyCertificatesDocument),
+        [WorkflowName.Obsidian] = typeof(ObsidianDocument),
+        [WorkflowName.ForgejoRunner] = typeof(ForgejoRunnerDocument)
     };
 
     /// <summary>

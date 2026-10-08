@@ -14,9 +14,9 @@ namespace Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
 /// node. The listing is the review aid — what each machine gets — and goes to the detailed log.
 /// </remarks>
 [Step("render profiles", StepKind.Check)]
-internal sealed class RenderProfiles(IChezmoi chezmoi, Profiles profiles, IFileSystem fileSystem, IGit git, IWorkflowLog log)
+internal sealed class RenderProfiles(IChezmoi chezmoi, IFileSystem fileSystem, IGit git, IWorkflowLog log)
 {
-    public async Task<StepResult<RenderedProfiles>> Run(CancellationToken ct = default)
+    public async Task<StepResult<RenderedProfiles>> Run(Profiles profiles, CancellationToken ct = default)
     {
         if (await git.RepositoryRoot(ct) is not { } source)
         {
@@ -25,7 +25,7 @@ internal sealed class RenderProfiles(IChezmoi chezmoi, Profiles profiles, IFileS
 
         var scratch = fileSystem.CreateTempDirectory("lab-render-");
         var rendered = new List<RenderedProfile>();
-        foreach (var profile in profiles.Names)
+        foreach (var profile in profiles.Names.Select(name => name.Value))
         {
             var destination = scratch.GetDirectory(profile);
             var files = await chezmoi.Render(source, profile, destination, ct);

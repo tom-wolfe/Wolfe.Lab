@@ -17,11 +17,11 @@ namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 /// Netlify's fleet propagates in seconds, so a fixed wait is deterministic where the check is not.
 /// </remarks>
 [Step("issue certificate", StepKind.Publish)]
-internal sealed class IssueCertificate(IDocker docker, ISecretProvider secrets, CertificateRequest request, IWorkflowLog log)
+internal sealed class IssueCertificate(IDocker docker, ISecretProvider secrets, IWorkflowLog log)
 {
     internal const string MountPoint = "/state";
 
-    public async Task<StepResult> Run(CancellationToken ct = default)
+    public async Task<StepResult> Run(CertificateRequest request, CancellationToken ct = default)
     {
         var environment = new Dictionary<string, string>();
         foreach (var (name, value) in request.Environment)
