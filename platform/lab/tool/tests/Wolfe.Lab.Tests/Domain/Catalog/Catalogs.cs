@@ -3,6 +3,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Garage;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
@@ -33,7 +34,8 @@ internal static class Catalogs
         DeploymentTarget? RunsOn = null,
         AgentProcess? Agent = null,
         Snapshot? Backup = null,
-        Use? Serving = null);
+        Use? Serving = null,
+        GarageLayout? Layout = null);
 
     /// <summary>
     /// What a test says a model serves, makes a declaration a model component: its defaults, and
@@ -122,6 +124,12 @@ internal static class Catalogs
         new(name, kind ?? ComponentKind.App, WorkflowName.Docker, ComposeService: service, Logs: logs, Metrics: metrics);
 
     /// <summary>
+    /// Garage's component <paramref name="name"/>, run as the compose service <paramref name="service"/>, its node given <paramref name="layout"/>.
+    /// </summary>
+    public static Declaration Garage(string name, string service, GarageLayout layout) =>
+        new(name, ComponentKind.Storage, WorkflowName.Garage, ComposeService: service, Layout: layout);
+
+    /// <summary>
     /// Adds <paramref name="declaration"/> to <paramref name="service"/>, declared at <paramref name="source"/>.
     /// </summary>
     public static Result<Component> Add(Service service, DocumentSource source, Declaration declaration)
@@ -143,6 +151,8 @@ internal static class Catalogs
                 backup.Warm = snapshot.Warm;
             }),
             { RunsOn: { } runsOn, Agent: { } agent } => Made(AgentComponent.Create(source, name, declaration.Kind, runsOn, agent), _ => { }),
+            { ComposeService: { } stored, Layout: { } layout } =>
+                Made(GarageComponent.Create(source, name, declaration.Kind, ComposeServiceName.From(stored), layout), docker => Reports(docker, declaration)),
             { ComposeService: { } built } when declaration.Workflow == WorkflowName.DotNetService =>
                 Made(DotNetServiceComponent.Create(source, name, declaration.Kind, ComposeServiceName.From(built)), docker => Reports(docker, declaration)),
             { ComposeService: { } composeService } =>

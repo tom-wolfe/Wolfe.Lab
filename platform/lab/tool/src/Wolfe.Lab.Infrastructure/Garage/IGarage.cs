@@ -1,3 +1,5 @@
+using Wolfe.Lab.Domain.Catalog.Components.Garage;
+
 namespace Wolfe.Lab.Infrastructure.Garage;
 
 /// <summary>
@@ -11,19 +13,19 @@ public interface IGarage
     Task<bool> AwaitReady(CancellationToken ct = default);
 
     /// <summary>
-    /// The current cluster layout version; zero before any layout has been applied.
+    /// The cluster's current layout.
     /// </summary>
-    Task<int> LayoutVersion(CancellationToken ct = default);
+    Task<ClusterLayout> Layout(CancellationToken ct = default);
 
     /// <summary>
-    /// This node's id, as the layout commands take it.
+    /// This node's id.
     /// </summary>
     Task<string> NodeId(CancellationToken ct = default);
 
     /// <summary>
     /// Stages a role for the node: which zone it is in, how much it stores.
     /// </summary>
-    Task AssignLayout(string nodeId, string zone, string capacity, CancellationToken ct = default);
+    Task AssignLayout(string nodeId, GarageLayout layout, CancellationToken ct = default);
 
     /// <summary>
     /// Applies the staged layout as the given version.

@@ -6,6 +6,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Garage;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Components.Restic;
 using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
@@ -585,5 +586,45 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("platform/restic/repositories/component.yaml", "name: repositories\nkind: repository\nworkflow: restic\nretention: { daily: 0, weekly: 0, monthly: 0 }\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldContain("retention: keeps nothing");
+    }
+
+    private const string Garage = "kind: service\nname: garage\ndescription: Object storage.\n";
+
+    [Theory]
+    [InlineData("500G", 500_000_000_000)]
+    [InlineData("500GB", 500_000_000_000)]
+    [InlineData("1T", 1_000_000_000_000)]
+    [InlineData("512Mi", 536_870_912)]
+    [InlineData("2GiB", 2_147_483_648)]
+    public async Task Read_TakesGaragesLayoutWithItsCapacityInBytes(string capacity, long bytes)
+    {
+        Declare("platform/garage/service.yaml", Garage);
+        Declare("platform/garage/compose/component.yaml", $"name: server\nkind: storage\nworkflow: garage\nservice: garage\nlayout: {{ zone: home, capacity: {capacity} }}\n");
+
+        var server = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<GarageComponent>();
+
+        server.Layout.ShouldBe(new GarageLayout(GarageZone.From("home"), StorageCapacity.From(bytes)));
+        server.ComposeService.ShouldBe(ComposeServiceName.From("garage"));
+    }
+
+    [Theory]
+    [InlineData("lots")]
+    [InlineData("500X")]
+    [InlineData("0G")]
+    public async Task Read_RefusesACapacityGarageCouldNotRead(string capacity)
+    {
+        Declare("platform/garage/service.yaml", Garage);
+        Declare("platform/garage/compose/component.yaml", $"name: server\nkind: storage\nworkflow: garage\nservice: garage\nlayout: {{ zone: home, capacity: {capacity} }}\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("layout.capacity:");
+    }
+
+    [Fact]
+    public async Task Read_RequiresGarageToDeclareItsLayout()
+    {
+        Declare("platform/garage/service.yaml", Garage);
+        Declare("platform/garage/compose/component.yaml", "name: server\nkind: storage\nworkflow: garage\nservice: garage\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("layout");
     }
 }

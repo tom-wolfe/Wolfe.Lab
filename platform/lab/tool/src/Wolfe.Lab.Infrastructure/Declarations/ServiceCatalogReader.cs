@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Ritten.Git;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Backups;
@@ -9,6 +10,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Garage;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Components.Restic;
 using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
@@ -25,7 +27,7 @@ namespace Wolfe.Lab.Infrastructure.Declarations;
 /// <summary>
 /// Reads the service catalog from a Git repository.
 /// </summary>
-public static class ServiceCatalogReader
+public static partial class ServiceCatalogReader
 {
     private static readonly JsonSerializerOptions Serializer = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -388,6 +390,7 @@ public static class ServiceCatalogReader
             }
         }
 
+        var layout = document is GarageDocument garage ? Layout(garage.Layout, errors) : null;
         if (errors.Count > 0)
         {
             return null;
@@ -399,10 +402,57 @@ public static class ServiceCatalogReader
             created.Metrics = metrics;
         }
 
-        return document.Workflow == WorkflowName.DotNetService
-            ? Widen(DotNetServiceComponent.Create(source, name, document.Kind, service.ValueObject), Reports)
-            : Widen(DockerComponent.Create(source, name, document.Kind, service.ValueObject), Reports);
+        return layout is not null
+            ? Widen(GarageComponent.Create(source, name, document.Kind, service.ValueObject, layout), Reports)
+            : document.Workflow == WorkflowName.DotNetService
+                ? Widen(DotNetServiceComponent.Create(source, name, document.Kind, service.ValueObject), Reports)
+                : Widen(DockerComponent.Create(source, name, document.Kind, service.ValueObject), Reports);
     }
+
+    // A Garage node's role: the zone it stands in, and what it stores in bytes.
+    private static GarageLayout? Layout(LayoutDocument written, List<Error> errors)
+    {
+        var zone = GarageZone.TryFrom(written.Zone);
+        if (!zone.IsSuccess)
+        {
+            errors.Add(new FieldError("layout.zone", DeclarationErrors.Schema(zone.Error.ErrorMessage)));
+        }
+
+        var capacity = Capacity(written.Capacity, errors);
+        return zone.IsSuccess && capacity is { } bytes ? new GarageLayout(zone.ValueObject, bytes) : null;
+    }
+
+    // A size as Garage reads one: 500G is decimal, 500GiB binary.
+    private static StorageCapacity? Capacity(string written, List<Error> errors)
+    {
+        var problem = $"'{written}' is no capacity: a number of K, M, G, T or P (decimal) or Ki … Pi (binary), a B optional.";
+        var match = CapacitySpelling().Match(written);
+        if (!match.Success)
+        {
+            errors.Add(new FieldError("layout.capacity", DeclarationErrors.Schema(problem)));
+            return null;
+        }
+
+        var power = "KMGTP".IndexOf(char.ToUpperInvariant(match.Groups["unit"].Value is { Length: > 0 } unit ? unit[0] : ' '), StringComparison.Ordinal) + 1;
+        var size = match.Groups["binary"].Success ? 1024m : 1000m;
+        var bytes = decimal.Parse(match.Groups["count"].Value, CultureInfo.InvariantCulture);
+        for (var at = 0; at < power; at++)
+        {
+            bytes *= size;
+        }
+
+        var capacity = bytes <= long.MaxValue ? StorageCapacity.TryFrom((long)bytes) : null;
+        if (capacity is not { IsSuccess: true })
+        {
+            errors.Add(new FieldError("layout.capacity", DeclarationErrors.Schema(capacity?.Error.ErrorMessage ?? problem)));
+            return null;
+        }
+
+        return capacity.ValueObject;
+    }
+
+    [GeneratedRegex("^(?<count>[0-9]{1,15}) ?((?<unit>[KkMmGgTtPp])(?<binary>[Ii])?)?[Bb]?$")]
+    private static partial Regex CapacitySpelling();
 
     // A component made and given what its document declares beyond what it is made with, as the
     // component it also is: a Result of the derived type is not one of its base.

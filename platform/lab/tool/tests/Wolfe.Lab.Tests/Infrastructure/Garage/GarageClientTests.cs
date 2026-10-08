@@ -1,4 +1,5 @@
 using Ritten.Docker;
+using Wolfe.Lab.Domain.Catalog.Components.Garage;
 using Wolfe.Lab.Infrastructure.Garage;
 using Wolfe.Lab.Tests.Infrastructure.Resilience;
 
@@ -10,35 +11,62 @@ public class GarageClientTests
 
     private static readonly CommandFailedException Refused = new("connection refused", new CommandResult(1, "", "connection refused"));
 
-    [Fact]
-    public async Task LayoutVersion_ReadsTheCurrentVersionLine()
-    {
-        _docker.Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>())
-            .Returns(new CommandResult(0, "==== CURRENT CLUSTER LAYOUT ====\nID  Zone  Capacity\n\nCurrent cluster layout version: 4\n", ""));
+    private const string Node = "7c31591e8b67225a0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f";
 
-        (await Client().LayoutVersion(TestContext.Current.CancellationToken)).ShouldBe(4);
+    [Fact]
+    public async Task Layout_ReadsEachStoringNodesRoleInBytes()
+    {
+        _docker.Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, $$"""
+            {
+              "version": 3,
+              "roles": [
+                { "id": "{{Node}}", "zone": "home", "tags": [], "capacity": 500000000000, "storedPartitions": 256 },
+                { "id": "gateway", "zone": "home", "tags": [], "capacity": null }
+              ],
+              "partitionSize": 1953125000,
+              "stagedRoleChanges": []
+            }
+            """, ""));
+
+        var layout = await Client().Layout(TestContext.Current.CancellationToken);
+
+        layout.Version.ShouldBe(3);
+        layout.RoleOf(Node).ShouldBe(new GarageLayout(GarageZone.From("home"), StorageCapacity.From(500_000_000_000)));
+        layout.RoleOf("gateway").ShouldBeNull();
         var exec = _docker.ReceivedCalls().Select(call => call.GetArguments()[0]).OfType<ContainerExec>().Single();
         exec.Container.ShouldBe("garage");
-        exec.Arguments.ShouldBe(["/garage", "layout", "show"]);
+        exec.Arguments.ShouldBe(["/garage", "json-api", "GetClusterLayout"]);
         exec.IsReadOnly.ShouldBeTrue();
     }
 
     [Fact]
-    public async Task NodeId_TakesThePrefixTheLayoutCommandsAccept()
+    public async Task Layout_IsVersionZeroWithNoRolesOnANewCluster()
     {
         _docker.Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>())
-            .Returns(new CommandResult(0, "7c31591e8b67225a0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f\n", ""));
+            .Returns(new CommandResult(0, """{ "version": 0, "roles": [], "partitionSize": 0, "stagedRoleChanges": [] }""", ""));
 
-        (await Client().NodeId(TestContext.Current.CancellationToken)).ShouldBe("7c31591e8b67225a");
+        var layout = await Client().Layout(TestContext.Current.CancellationToken);
+
+        layout.Version.ShouldBe(0);
+        layout.RoleOf(Node).ShouldBeNull();
     }
 
     [Fact]
-    public async Task AssignLayout_ChangesTheLayout_SoARehearsalSkipsIt()
+    public async Task NodeId_IsTheIdWithoutItsAddress()
     {
-        await Client().AssignLayout("7c31591e8b67225a", "mini", "1T", TestContext.Current.CancellationToken);
+        _docker.Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>())
+            .Returns(new CommandResult(0, $"{Node}@127.0.0.1:3901\n", ""));
+
+        (await Client().NodeId(TestContext.Current.CancellationToken)).ShouldBe(Node);
+    }
+
+    [Fact]
+    public async Task AssignLayout_StagesTheCapacityInBytes_SoARehearsalSkipsIt()
+    {
+        await Client().AssignLayout(Node, new GarageLayout(GarageZone.From("home"), StorageCapacity.From(500_000_000_000)), TestContext.Current.CancellationToken);
 
         await _docker.Received().Exec(
-            Arg.Is<ContainerExec>(exec => !exec.IsReadOnly && exec.Arguments.SequenceEqual(new[] { "/garage", "layout", "assign", "-z", "mini", "-c", "1T", "7c31591e8b67225a" })),
+            Arg.Is<ContainerExec>(exec => !exec.IsReadOnly && exec.Arguments.SequenceEqual(new[] { "/garage", "layout", "assign", "-z", "home", "-c", "500000000000", Node })),
             Arg.Any<CancellationToken>());
     }
 

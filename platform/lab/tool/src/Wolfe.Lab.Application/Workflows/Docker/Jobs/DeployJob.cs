@@ -17,7 +17,7 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Jobs;
 /// built from the checkout first, because a build context is source and the installer does not
 /// carry source onto the node.
 /// </remarks>
-internal sealed class DeployJob<TOptions> : LabJob<TOptions> where TOptions : WorkflowSettings
+internal class DeployJob<TOptions> : LabJob<TOptions> where TOptions : WorkflowSettings
 {
     public override string Name => "deploy";
 
