@@ -12,11 +12,7 @@ internal sealed class ApplyRetention(IRestic restic, WorkflowJob job, IWorkflowL
 {
     public async Task<StepResult> Run(ResticComponent repositories, ResticRepository local, OffsiteRepository offsite, CancellationToken ct = default)
     {
-        if (repositories.Retention is not { } policy)
-        {
-            return new Error($"{repositories} declares no retention.");
-        }
-
+        var policy = repositories.Retention;
         await restic.Prune(local, policy, ct);
         await restic.Prune(offsite.Repository, policy, ct);
         if (!job.DryRun)

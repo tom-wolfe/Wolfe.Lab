@@ -11,20 +11,20 @@ public sealed class ResticComponent : Component
     private ResticComponent() { }
 
     /// <summary>
-    /// What the nightly prune keeps; its <c>ritten.json</c>'s, until it declares one.
+    /// What the nightly prune keeps.
     /// </summary>
-    public RetentionPolicy? Retention { get; set; }
+    public required RetentionPolicy Retention { get; init; }
 
     /// <summary>
     /// The share of the offsite copy's data the weekly check reads back: over a year a small one
-    /// covers most of the repository, for pennies. Its <c>ritten.json</c>'s, until it declares one.
+    /// covers most of the repository, for pennies.
     /// </summary>
-    public Percentage? VerifySample { get; set; }
+    public Percentage VerifySample { get; set; } = Percentage.From(5);
 
     /// <summary>
-    /// Creates a new restic component.
+    /// Creates a new restic component, pruned by <paramref name="retention"/>.
     /// </summary>
-    public static Result<ResticComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind)
+    public static Result<ResticComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, RetentionPolicy retention)
     {
         var errors = Validate(source, out var directory);
         if (errors.Count != 0)
@@ -32,6 +32,6 @@ public sealed class ResticComponent : Component
             return errors;
         }
 
-        return new ResticComponent { Source = source, Directory = directory, Name = name, Kind = kind, Workflow = WorkflowName.Restic };
+        return new ResticComponent { Source = source, Directory = directory, Name = name, Kind = kind, Workflow = WorkflowName.Restic, Retention = retention };
     }
 }

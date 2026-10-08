@@ -286,12 +286,14 @@ public static class ServiceCatalogReader
     // The repositories: what a prune keeps of them, and how much of the offsite copy a check reads back.
     private static Result<Component>? Restic(DocumentSource source, ComponentName name, ResticDocument document, List<Error> errors)
     {
-        var retention = document.Retention is { } written ? Retention(written, errors) : null;
+        var retention = Retention(document.Retention, errors);
         var sample = document.Verify is { } verify ? Sample(verify.ReadDataSubset, errors) : null;
-        return errors.Count > 0 ? null : Widen(ResticComponent.Create(source, name, document.Kind), created =>
+        return errors.Count > 0 || retention is null ? null : Widen(ResticComponent.Create(source, name, document.Kind, retention), created =>
         {
-            created.Retention = retention;
-            created.VerifySample = sample;
+            if (sample is { } read)
+            {
+                created.VerifySample = read;
+            }
         });
     }
 

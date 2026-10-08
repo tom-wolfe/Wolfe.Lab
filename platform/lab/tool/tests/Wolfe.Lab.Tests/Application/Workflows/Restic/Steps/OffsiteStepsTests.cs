@@ -21,8 +21,7 @@ public class OffsiteStepsTests
     private static ResticComponent Declared()
     {
         var repositories = ResticComponent.Create(new DocumentSource(RepositoryPath.From("platform/restic/repositories/component.yaml")),
-            ComponentName.From("repositories"), ComponentKind.Repository).Value.ShouldNotBeNull();
-        repositories.Retention = Policy;
+            ComponentName.From("repositories"), ComponentKind.Repository, Policy).Value.ShouldNotBeNull();
         repositories.VerifySample = Percentage.From(5);
         return repositories;
     }

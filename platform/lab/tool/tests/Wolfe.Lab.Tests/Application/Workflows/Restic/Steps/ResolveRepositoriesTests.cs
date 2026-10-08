@@ -1,4 +1,3 @@
-using Wolfe.Lab.Application.Workflows.Restic.Models;
 using Wolfe.Lab.Application.Workflows.Restic.Steps;
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Backups;
@@ -12,46 +11,37 @@ namespace Wolfe.Lab.Tests.Application.Workflows.Restic.Steps;
 
 public class ResolveRepositoriesTests
 {
-    // The repositories as declared, then given what a test says they declare.
-    private static DeploymentUnit Unit(Action<ResticComponent> declares)
+    private static readonly RetentionPolicy Policy = RetentionPolicy.Create(SnapshotCount.From(7), SnapshotCount.From(5), SnapshotCount.From(12)).Value.ShouldNotBeNull();
+
+    // The repositories, as declared.
+    private static DeploymentUnit Unit(Percentage? sample = null)
     {
         var catalog = new ServiceCatalog();
         var service = Catalogs.AddService(catalog, "platform/restic").Value.ShouldNotBeNull();
         var repositories = ResticComponent.Create(new DocumentSource(RepositoryPath.From("platform/restic/repositories/component.yaml")),
-            ComponentName.From("repositories"), ComponentKind.Repository).Value.ShouldNotBeNull();
-        declares(repositories);
+            ComponentName.From("repositories"), ComponentKind.Repository, Policy).Value.ShouldNotBeNull();
+        if (sample is { } declared)
+        {
+            repositories.VerifySample = declared;
+        }
+
         service.Add(repositories).Value.ShouldNotBeNull();
         return catalog.DeploymentUnitAt(RepositoryPath.From("platform/restic/repositories")).ShouldNotBeNull().Value.ShouldNotBeNull();
     }
 
-    private static readonly ResticOptions Former = new()
-    {
-        Retention = new RetentionOptions { Daily = 3, Weekly = 2, Monthly = 1 },
-        Verify = new VerifyOptions { ReadDataSubset = "10%" }
-    };
-
-    private static ResticComponent Resolve(Action<ResticComponent> declares) =>
-        new ResolveRepositories(Former, Substitute.For<IWorkflowLog>()).Run(Unit(declares)).Value.ShouldNotBeNull();
+    private static ResticComponent Resolve(DeploymentUnit unit) =>
+        new ResolveRepositories(Substitute.For<IWorkflowLog>()).Run(unit).Value.ShouldNotBeNull();
 
     [Fact]
     public void Run_TakesWhatTheRepositoriesDeclare()
     {
-        var repositories = Resolve(declared =>
-        {
-            declared.Retention = RetentionPolicy.Create(SnapshotCount.From(7), SnapshotCount.From(5), SnapshotCount.From(12)).Value;
-            declared.VerifySample = Percentage.From(5);
-        });
+        var repositories = Resolve(Unit(Percentage.From(10)));
 
-        repositories.Retention.ShouldNotBeNull().Daily.ShouldBe(SnapshotCount.From(7));
-        repositories.VerifySample.ShouldBe(Percentage.From(5));
+        repositories.Retention.ShouldBe(Policy);
+        repositories.VerifySample.ShouldBe(Percentage.From(10));
     }
 
     [Fact]
-    public void Run_TakesItsRittenJsonsUntilTheyDeclareIt()
-    {
-        var repositories = Resolve(_ => { });
-
-        repositories.Retention.ShouldNotBeNull().Daily.ShouldBe(SnapshotCount.From(3));
-        repositories.VerifySample.ShouldBe(Percentage.From(10));
-    }
+    public void Run_ReadsFivePercentBackWhenTheyDeclareNoSample() =>
+        Resolve(Unit()).VerifySample.ShouldBe(Percentage.From(5));
 }

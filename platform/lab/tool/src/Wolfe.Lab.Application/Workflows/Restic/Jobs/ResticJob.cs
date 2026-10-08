@@ -1,5 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
-using Wolfe.Lab.Application.Workflows.Restic.Models;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Infrastructure.Restic;
 
 namespace Wolfe.Lab.Application.Workflows.Restic.Jobs;
@@ -7,15 +6,11 @@ namespace Wolfe.Lab.Application.Workflows.Restic.Jobs;
 /// <summary>
 /// What every restic job registers: the client.
 /// </summary>
-internal abstract class ResticJob : LabJob<ResticOptions>
+internal abstract class ResticJob : LabJob<DeclaredSettings>
 {
-    protected override void Configure(IWorkflowBuilder builder, ResticOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddRestic();
-
-        // Until the repositories declare these, their ritten.json says them.
-        builder.Services.AddSingleton(options);
-        builder.Services.AddSingleton(options.Heartbeat);
     }
 }
