@@ -8,10 +8,11 @@ models beside it. The phone app talks to `immich.twolfe.dev`, the
 tailnet twin of the front-door name, and its background upload is what
 replaces Google Photos as the place a photo lands after it is taken.
 
-Three components, each a job through the CLI in `platform/lab/`: `compose/`
-(`lab deploy` installs the stack and converges it), `backup/` (what
-restic keeps of the library) and `import/` (`lab import` brings the
-Google Takeout in, with immich-go built from the Dockerfile beside it).
+Two deployments, each a job through the CLI in `platform/lab/`: `compose/`
+(`lab deploy` installs the stack and converges it) and `backup/` (what
+restic keeps of the library). The library came in from a Google Takeout
+through immich-go, once; that import is in the repository's history, not
+in the lab.
 
 ## What is backed up, and what is not
 
@@ -28,22 +29,6 @@ taken at 02:00 before the 03:00 pass and the documented restore path;
 the Postgres directory is not what a restore uses. `thumbs/` and
 `encoded-video/` are excluded: Immich regenerates them from the
 originals, as Jellyfin regenerates its artwork.
-
-## The import
-
-The Google Takeout — five zip parts on Data2 — goes in through
-immich-go, the tool that understands Takeout's JSON sidecars and puts
-back the dates, places, albums and favourites the zips carry beside the
-files. It ships as a binary, not an image, so `immich-go/Dockerfile`
-builds one from the pinned release and its checksum, and the job runs it
-as a throwaway container on the lab network, the Takeout mounted
-read-only, the server and API key handed over as immich-go's own
-environment variables. Server jobs pause for the duration; the session
-is tagged. A run cut short is resumed by running it again: what the
-server already holds is skipped.
-
-The zips stay where they are until the library has reached the offsite
-copy and a weekly verify has passed. Until then they are the backup.
 
 ## Machine learning
 

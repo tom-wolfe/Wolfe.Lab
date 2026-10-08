@@ -19,27 +19,20 @@ reasons are in `README.md`.
 4. **The admin account.** The first visitor to
    `https://immich.twolfe.dev` creates it: do that straight after
    the deploy goes green. Item `immich-admin` in the vault, a Login item.
-5. **The API key** for the import: Account settings → API keys → New,
-   named `lab import`. Item `immich-api-key`, key in `credential`.
-6. **Import.** Actions → "immich import" → Run workflow. Hours, and it
-   can be re-run if the job is cut short. Watch it in the Actions log;
-   the counts at the end are what to compare against Google's.
-7. **Let machine learning catch up** — Administration → Jobs shows the
+5. **Let machine learning catch up** — Administration → Jobs shows the
    queues draining over a day or two.
-8. **The backup needs nothing turned on.** Its job in
+6. **The backup needs nothing turned on.** Its job in
    `.forgejo/workflows/immich-backup.yaml` runs nightly from the merge, and a
-   warm snapshot of a half-imported library is just a smaller snapshot;
+   warm snapshot of a library still filling is just a smaller snapshot;
    retention prunes it. The job has its own three-hour timeout for the
    first pass over the finished library, which is the long one.
-9. **The offsite seed** takes several nights: the nightly copy ships as
+7. **The offsite seed** takes several nights: the nightly copy ships as
    much as fits its window and resumes. It is done when
    `restic snapshots` on the offsite side lists the immich snapshot and
    the Sunday verify has passed.
-10. **Then, and only then, delete the Takeout zips** from
-    `/Volumes/Data2/photos/google`.
-11. **The phone**: install the Immich app, server
-    `https://immich.twolfe.dev`, sign in, turn on background backup.
-    Turn off Google Photos backup.
+8. **The phone**: install the Immich app, server
+   `https://immich.twolfe.dev`, sign in, turn on background backup.
+   Turn off Google Photos backup.
 
 ## Upgrading
 
