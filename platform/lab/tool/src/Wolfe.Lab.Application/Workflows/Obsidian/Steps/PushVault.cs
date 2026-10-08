@@ -7,7 +7,7 @@ namespace Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 /// Pushes what the checkout has that Forgejo doesn't.
 /// </summary>
 [Step("push vault", StepKind.Publish)]
-internal sealed class PushVault(IGit git, ISecretProvider secrets, PushCredential credential, IWorkflowLog log)
+internal sealed class PushVault(IGit git, ISecretProvider secrets, IWorkflowLog log)
 {
     public async Task<StepResult> Run(Vault vault, CancellationToken ct = default)
     {
@@ -24,11 +24,11 @@ internal sealed class PushVault(IGit git, ISecretProvider secrets, PushCredentia
             return StepResult.Successful;
         }
 
-        var token = await secrets.Resolve(credential.Token.Value, ct);
+        var token = await secrets.Resolve(vault.Push.Token.Value, ct);
         await repository.Push(
             "origin",
             branch,
-            new GitCredential(credential.Username.Value, token),
+            new GitCredential(vault.Push.Username.Value, token),
             setUpstream: upstream is null,
             ct
         );
