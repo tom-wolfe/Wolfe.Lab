@@ -67,8 +67,8 @@ public class LabSchemaTests
 
     [Fact]
     public void Judge_RefusesAWorkflowThatOperatesNoComponent() =>
-        Judge("kind: app\nworkflow: gatus-health\n").ShouldHaveSingleItem()
-            .ShouldStartWith("2: workflow: 'gatus-health' is not a workflow that operates components (docker, dotnet-service, garage, agent,");
+        Judge("kind: app\nworkflow: garage-layout\n").ShouldHaveSingleItem()
+            .ShouldStartWith("2: workflow: 'garage-layout' is not a workflow that operates components (docker, dotnet-service, garage, agent,");
 
     // Kind and workflow are independent: any usage, operated by any workflow.
     [Theory]

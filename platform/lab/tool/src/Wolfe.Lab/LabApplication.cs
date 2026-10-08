@@ -12,7 +12,7 @@ using Wolfe.Lab.Application.Workflows.CaddyRoutes;
 using Wolfe.Lab.Application.Workflows.Chezmoi;
 using Wolfe.Lab.Application.Workflows.Docker;
 using Wolfe.Lab.Application.Workflows.DotNetTool;
-using Wolfe.Lab.Application.Workflows.ForgejoRunners;
+using Wolfe.Lab.Application.Workflows.ForgejoRunner;
 using Wolfe.Lab.Application.Workflows.Garage;
 using Wolfe.Lab.Application.Workflows.GatusHealth;
 using Wolfe.Lab.Application.Workflows.Heartbeat;
@@ -53,7 +53,7 @@ public static class LabApplication
             .Add<HeartbeatWorkflow>()
             .Add<CaddyCertificatesWorkflow>()
             .Add<CaddyRoutesWorkflow>()
-            .Add<ForgejoRunnersWorkflow>()
+            .Add<ForgejoRunnerWorkflow>()
             .Add<GarageWorkflow>()
             .Add<GatusHealthWorkflow>();
 

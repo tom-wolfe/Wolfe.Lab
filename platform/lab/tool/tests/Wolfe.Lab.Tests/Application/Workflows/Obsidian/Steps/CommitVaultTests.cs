@@ -3,6 +3,7 @@ using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.Obsidian.Models;
 using Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 using Wolfe.Lab.Domain.Git;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Obsidian.Steps;
 
@@ -15,7 +16,8 @@ public class CommitVaultTests : IDisposable
 
     public CommitVaultTests()
     {
-        _vault = new Vault("main", new PhysicalDirectory(_checkout.FullName), RepositoryUrl.From("http://forgejo/obsidian-main.git"));
+        _vault = new Vault("main", new PhysicalDirectory(_checkout.FullName), RepositoryUrl.From("http://forgejo/obsidian-main.git"),
+            new PushCredential(GitUsername.From("tom-wolfe"), SecretReference.From("op://Wolfe.Lab/forgejo-obsidian-token/credential")), []);
         _git.InRepository(Arg.Any<IDirectory>()).Returns(_repository);
         _repository.IsRepository(Arg.Any<CancellationToken>()).Returns(false);
         _repository.GetRemoteUrl("origin", Arg.Any<CancellationToken>()).Returns("http://forgejo/obsidian-main.git");
@@ -24,8 +26,7 @@ public class CommitVaultTests : IDisposable
 
     public void Dispose() => _checkout.Delete(recursive: true);
 
-    private CommitVault Step(params string[] excludes) =>
-        new(_git, new VaultExcludes(excludes), Substitute.For<IWorkflowLog>());
+    private CommitVault Step() => new(_git, Substitute.For<IWorkflowLog>());
 
     /// <summary>
     /// The client says it is a repository; the directory exists for the exclude file's sake.
@@ -50,7 +51,7 @@ public class CommitVaultTests : IDisposable
     {
         MakeRepository();
 
-        await Step(".DS_Store", ".trash/").Run(_vault, TestContext.Current.CancellationToken);
+        await Step().Run(_vault with { Excludes = [".DS_Store", ".trash/"] }, TestContext.Current.CancellationToken);
 
         var exclude = await File.ReadAllLinesAsync(Path.Combine(_checkout.FullName, ".git", "info", "exclude"), TestContext.Current.CancellationToken);
         exclude.ShouldContain(".DS_Store");

@@ -17,17 +17,17 @@ public class CheckImagesTests : IDisposable
 
     public void Dispose() => _component.Delete(recursive: true);
 
-    private CheckImages Step(params ComponentImage[] images) =>
-        new(new ComponentImages(images), _fileSystem, Substitute.For<IWorkflowLog>());
+    private StepResult Check(params ComponentImage[] images) =>
+        new CheckImages(_fileSystem, Substitute.For<IWorkflowLog>()).Run(new ComponentImages(images));
 
     [Fact]
     public void Run_PassesAnImageWhoseTagNamesItsRegistry() =>
-        Step(new ComponentImage("code.twolfe.dev/tom-wolfe/ci", ".", CheckImages.Dockerfile)).Run().IsFailure.ShouldBeFalse();
+        Check(new ComponentImage("code.twolfe.dev/tom-wolfe/ci", ".", CheckImages.Dockerfile)).IsFailure.ShouldBeFalse();
 
     [Fact]
     public void Run_FailsATagThatWouldMeanDockerHub()
     {
-        var result = Step(new ComponentImage("lab/ci", ".", CheckImages.Dockerfile)).Run();
+        var result = Check(new ComponentImage("lab/ci", ".", CheckImages.Dockerfile));
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("Docker Hub");
@@ -38,7 +38,7 @@ public class CheckImagesTests : IDisposable
     {
         Directory.CreateDirectory(Path.Combine(_component.FullName, "empty"));
 
-        var result = Step(new ComponentImage("code.twolfe.dev/tom-wolfe/thing", "empty", CheckImages.Dockerfile)).Run();
+        var result = Check(new ComponentImage("code.twolfe.dev/tom-wolfe/thing", "empty", CheckImages.Dockerfile));
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("no Dockerfile in 'empty'");
@@ -53,7 +53,7 @@ public class CheckImagesTests : IDisposable
         var dockerfile = Path.Combine(root.CreateSubdirectory("ci").CreateSubdirectory("image").FullName, CheckImages.Dockerfile);
         File.WriteAllText(dockerfile, "FROM scratch");
 
-        Step(new ComponentImage("code.twolfe.dev/tom-wolfe/ci", "root", "ci/image/Dockerfile")).Run().IsFailure.ShouldBeFalse();
+        Check(new ComponentImage("code.twolfe.dev/tom-wolfe/ci", "root", "ci/image/Dockerfile")).IsFailure.ShouldBeFalse();
     }
 
     [Theory]

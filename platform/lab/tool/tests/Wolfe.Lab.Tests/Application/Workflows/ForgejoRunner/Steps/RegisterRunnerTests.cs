@@ -1,9 +1,9 @@
 using Ritten.Docker;
-using Wolfe.Lab.Application.Workflows.ForgejoRunners.Models;
-using Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
+using Wolfe.Lab.Application.Workflows.ForgejoRunner.Models;
+using Wolfe.Lab.Application.Workflows.ForgejoRunner.Steps;
 using Wolfe.Lab.Domain.Secrets;
 
-namespace Wolfe.Lab.Tests.Application.Workflows.ForgejoRunners.Steps;
+namespace Wolfe.Lab.Tests.Application.Workflows.ForgejoRunner.Steps;
 
 public class RegisterRunnerTests
 {

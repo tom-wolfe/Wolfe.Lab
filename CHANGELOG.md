@@ -6,7 +6,13 @@ rather than versioned — the lab is continuous, not released.
 
 ## 2026-10-08
 
+### Fixed
+
+- **Caddy's routes deploy again.** The catalog check held a declaration to the workflow's label, so `caddy-routes` failed once it was declared.
+
 ### Changed
+
+- **The remaining workflows can be declared.** Chezmoi's profiles, the CI image, Gatus's health, Caddy's certificate and routes, a vault each and the runners read their component, and `ritten.json` until they have one.
 
 - **A directory's components name its workflow.** A job whose settings are all declared runs without a `ritten.json`.
 

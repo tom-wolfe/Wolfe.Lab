@@ -5,17 +5,25 @@ using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
+using Wolfe.Lab.Domain.Catalog.Components.Caddy;
+using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Forgejo;
 using Wolfe.Lab.Domain.Catalog.Components.Garage;
+using Wolfe.Lab.Domain.Catalog.Components.Gatus;
+using Wolfe.Lab.Domain.Catalog.Components.Images;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
 using Wolfe.Lab.Domain.Catalog.Components.Restic;
 using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
+using Wolfe.Lab.Domain.Git;
 using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Domain.Secrets;
+using Wolfe.Lab.Domain.Services;
 using Wolfe.Lab.Infrastructure.Declarations;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Declarations;
@@ -94,7 +102,7 @@ public class ServiceCatalogReaderTests : IDisposable
     public async Task Read_PointsEachProblemAtItsFileDocumentAndLine()
     {
         Declare("personal/immich/service.yaml", Immich);
-        Declare("personal/immich/vaults.yaml", "kind: backup\nworkflow: obsidian\nname: main\n---\nkind: backup\nworkflow: obsidian\nname: Main\n");
+        Declare("personal/immich/vaults.yaml", "kind: backup\nworkflow: heartbeat\nname: main\n---\nkind: backup\nworkflow: heartbeat\nname: Main\n");
 
         (await Errors()).ShouldHaveSingleItem().ShouldStartWith("personal/immich/vaults.yaml#2:8: name: 'Main' is not a name");
     }
@@ -627,4 +635,96 @@ public class ServiceCatalogReaderTests : IDisposable
 
         (await Errors()).ShouldHaveSingleItem().ShouldContain("layout");
     }
+
+    // Each workflow's own shape, read whole: the declarations step 7 of ROADMAP #14 moves out of ritten.json.
+    private async Task<Component> Only(string service, string path, string yaml)
+    {
+        Declare($"{service}/service.yaml", $"kind: service\nname: {service.Split('/')[^1]}\ndescription: A service.\n");
+        Declare(path, yaml);
+        return (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public async Task Read_TakesChezmoisProfiles() =>
+        (await Only("platform/chezmoi", "platform/chezmoi/profiles/component.yaml", "name: profiles\nkind: machine\nworkflow: chezmoi\nprofiles: [macbook, pi-node]\n"))
+            .ShouldBeOfType<ChezmoiComponent>().Profiles.ShouldBe([ChezmoiProfile.From("macbook"), ChezmoiProfile.From("pi-node")]);
+
+    [Fact]
+    public async Task Read_TakesAnImageWithItsBuildDefaults()
+    {
+        var image = (await Only("platform/ci", "platform/ci/image/component.yaml", "name: image\nkind: package\nworkflow: image\ntag: code.twolfe.dev/tom-wolfe/ci\ncontext: ../../..\n"))
+            .ShouldBeOfType<ImageComponent>();
+
+        image.Tag.Registry.ShouldBe("code.twolfe.dev");
+        (image.Context, image.Dockerfile).ShouldBe(("../../..", "Dockerfile"));
+    }
+
+    [Fact]
+    public async Task Read_RefusesAnImageThatNamesNoRegistry()
+    {
+        Declare("platform/ci/service.yaml", "kind: service\nname: ci\ndescription: A service.\n");
+        Declare("platform/ci/image/component.yaml", "name: image\nkind: package\nworkflow: image\ntag: lab/ci\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("tag: 'lab/ci' names no registry host");
+    }
+
+    [Fact]
+    public async Task Read_TakesGatusHealthsEndpoint() =>
+        (await Only("monitoring/gatus", "monitoring/gatus/health/component.yaml", "name: health\nkind: backend\nworkflow: gatus-health\nurl: http://pi:8280/health\n"))
+            .ShouldBeOfType<GatusHealthComponent>().Url.ShouldBe(ServiceUrl.From("http://pi:8280/health"));
+
+    [Fact]
+    public async Task Read_TakesACertificateItsIssuerAndTheCaddyItReloads()
+    {
+        var certificate = (await Only("network/caddy", "network/caddy/certs/component.yaml", """
+            name: certs
+            kind: certificate
+            workflow: caddy-certificates
+            domains: ["*.twolfe.dev"]
+            issuer:
+              image: goacme/lego:v5.4.0
+              email: tom@twolfe.dev
+              dns: netlify
+              store: /lab/lego
+              environment: { NETLIFY_TOKEN: op://Wolfe.Lab/netlify-pat/credential }
+              propagationWait: 90s
+            reloads: { component: proxy, caddyfile: /etc/caddy/lab/caddy-proxy/Caddyfile }
+            """)).ShouldBeOfType<CaddyCertificatesComponent>();
+
+        certificate.Domains.ShouldBe(["*.twolfe.dev"]);
+        certificate.Issuer.Store.ShouldBe(HostPath.From("/lab/lego"));
+        certificate.Issuer.Environment["NETLIFY_TOKEN"].ShouldBe(SecretReference.From("op://Wolfe.Lab/netlify-pat/credential"));
+        certificate.Issuer.PropagationWait.ShouldBe("90s");
+        certificate.Reloads.ShouldBe(new CaddyReload(ComponentName.From("proxy"), "/etc/caddy/lab/caddy-proxy/Caddyfile"));
+    }
+
+    [Fact]
+    public async Task Read_TakesRoutesWithOrWithoutTheCaddyTheyReload()
+    {
+        (await Only("network/caddy", "network/caddy/routes/component.yaml", "name: routes\nkind: proxy\nworkflow: caddy-routes\n"))
+            .ShouldBeOfType<CaddyRoutesComponent>().Reloads.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Read_TakesAVault()
+    {
+        var vault = (await Only("personal/obsidian", "personal/obsidian/main/component.yaml", """
+            name: main
+            kind: backup
+            workflow: obsidian
+            path: /vaults/main
+            repository: http://forgejo/Obsidian/Wolfe.Main.git
+            push: { username: tom-wolfe, token: op://Wolfe.Lab/forgejo-obsidian-token/credential }
+            exclude: [.DS_Store]
+            """)).ShouldBeOfType<ObsidianComponent>();
+
+        vault.Repository.ShouldBe(RepositoryUrl.From("http://forgejo/Obsidian/Wolfe.Main.git"));
+        vault.Push.ShouldBe(new PushCredential(GitUsername.From("tom-wolfe"), SecretReference.From("op://Wolfe.Lab/forgejo-obsidian-token/credential")));
+        vault.Exclude.ShouldBe([".DS_Store"]);
+    }
+
+    [Fact]
+    public async Task Read_TakesTheRunnersDefaults() =>
+        (await Only("platform/forgejo", "platform/forgejo/runners/component.yaml", "name: runners\nkind: runner\nworkflow: forgejo-runner\nvault: Wolfe.Lab\nrepository: tom-wolfe/Wolfe.Lab\nimage: node:22-bookworm\n"))
+            .ShouldBeOfType<ForgejoRunnerComponent>().Repository.ShouldBe("tom-wolfe/Wolfe.Lab");
 }

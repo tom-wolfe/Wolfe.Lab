@@ -273,7 +273,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -283,7 +283,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           }
         }
@@ -361,7 +362,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -371,7 +372,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -615,7 +617,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -625,7 +627,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -890,7 +893,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -900,7 +903,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -1157,7 +1161,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -1167,7 +1171,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -1324,21 +1329,13 @@
           },
           "workflow": {
             "enum": [
-              "forgejo-runners",
-              "obsidian",
-              "tofu",
-              "caddy-certificates",
-              "image",
-              "dotnet-tool",
-              "chezmoi",
-              "caddy-routes",
-              "heartbeat"
+              "forgejo-runner"
             ]
           }
         }
       },
       "then": {
-        "$id": "https://lab.twolfe.dev/schema/component/common",
+        "$id": "https://lab.twolfe.dev/schema/component/forgejorunner",
         "type": "object",
         "properties": {
           "kind": {
@@ -1373,7 +1370,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -1383,7 +1380,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -1459,12 +1457,240 @@
             ],
             "additionalProperties": false,
             "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "vault": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The 1Password vault each runner's registration secret is kept in."
+          },
+          "repository": {
+            "type": "string",
+            "pattern": "^[^/\\s]+/[^/\\s]+$",
+            "description": "The repository a host runner is scoped to: tom-wolfe/Wolfe.Lab."
+          },
+          "image": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The image a Docker runner's jobs run in by default: node:22-bookworm."
           }
         },
         "required": [
           "kind",
           "workflow",
-          "name"
+          "name",
+          "vault",
+          "repository",
+          "image"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "obsidian"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/obsidian",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "path": {
+            "type": "string",
+            "description": "Where the vault is checked out on the node: absolute, or from ~/."
+          },
+          "repository": {
+            "type": "string",
+            "description": "The git repository it is pushed to."
+          },
+          "push": {
+            "description": "What the push authenticates with.",
+            "type": "object",
+            "properties": {
+              "username": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The account the push authenticates as."
+              },
+              "token": {
+                "type": "string",
+                "description": "An op:// reference to the token it pushes with."
+              }
+            },
+            "required": [
+              "username",
+              "token"
+            ],
+            "additionalProperties": false
+          },
+          "exclude": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "What a commit leaves out, as git's exclude patterns: .DS_Store, .trash/."
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "path",
+          "repository",
+          "push"
         ],
         "additionalProperties": false
       }
@@ -1540,7 +1766,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -1550,7 +1776,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -1723,6 +1950,790 @@
           },
           "workflow": {
             "enum": [
+              "tofu",
+              "dotnet-tool",
+              "heartbeat"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/common",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "caddy-certificates"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/caddycertificates",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "domains": {
+            "uniqueItems": true,
+            "description": "The names the certificate covers: *.twolfe.dev.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issuer": {
+            "description": "What issues and renews it.",
+            "type": "object",
+            "properties": {
+              "image": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The lego image it runs: goacme/lego:v5.4.0."
+              },
+              "email": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The ACME account's address."
+              },
+              "dns": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The DNS provider the challenge is answered through, as lego names it: netlify."
+              },
+              "store": {
+                "type": "string",
+                "description": "Where lego keeps its account and the certificates on the node: absolute, or from ~/."
+              },
+              "environment": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "additionalProperties": {
+                  "type": "string",
+                  "description": "The provider's credentials, each a variable lego reads and an op:// reference to it."
+                },
+                "description": "The provider's credentials, each a variable lego reads and an op:// reference to it."
+              },
+              "propagationWait": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "description": "How long lego waits for the challenge record to propagate, as lego spells it: 90s."
+              }
+            },
+            "required": [
+              "image",
+              "email",
+              "dns",
+              "store"
+            ],
+            "additionalProperties": false
+          },
+          "reloads": {
+            "description": "The Caddy that serves it, reloaded once it is renewed.",
+            "type": "object",
+            "properties": {
+              "component": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The Docker component Caddy runs as, in the same service."
+              },
+              "caddyfile": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The Caddyfile it reloads from, as its container sees it."
+              }
+            },
+            "required": [
+              "component",
+              "caddyfile"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "domains",
+          "issuer",
+          "reloads"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "image"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/image",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "tag": {
+            "type": "string",
+            "description": "Where the image is pushed, its registry's host first: code.twolfe.dev/tom-wolfe/ci."
+          },
+          "context": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The build's context, from the component's directory: . when not written."
+          },
+          "dockerfile": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The Dockerfile, from the context: Dockerfile when not written."
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "tag"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "chezmoi"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/chezmoi",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "profiles": {
+            "uniqueItems": true,
+            "description": "The profiles a check renders the source for, each a machine chezmoi is applied to.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "profiles"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
               "backup"
             ]
           }
@@ -1764,7 +2775,7 @@
               "garage",
               "agent",
               "ollama",
-              "forgejo-runners",
+              "forgejo-runner",
               "obsidian",
               "restic",
               "tofu",
@@ -1774,7 +2785,8 @@
               "chezmoi",
               "backup",
               "caddy-routes",
-              "heartbeat"
+              "heartbeat",
+              "gatus-health"
             ]
           },
           "name": {
@@ -1894,6 +2906,371 @@
           "workflow",
           "name",
           "paths"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "caddy-routes"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/caddyroutes",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "reloads": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "component": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The Docker component Caddy runs as, in the same service."
+              },
+              "caddyfile": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The Caddyfile it reloads from, as its container sees it."
+              }
+            },
+            "required": [
+              "component",
+              "caddyfile"
+            ],
+            "additionalProperties": false,
+            "description": "The Caddy that imports the routes, reloaded once they are installed."
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "enum": [
+              "gatus-health"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$id": "https://lab.twolfe.dev/schema/component/gatushealth",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "description": "What the component is used for: the icon it would have on a diagram.",
+            "type": "string",
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
+          },
+          "workflow": {
+            "description": "The workflow that operates the component, whatever it is used for; it decides what else the document declares.",
+            "type": "string",
+            "enum": [
+              "docker",
+              "dotnet-service",
+              "garage",
+              "agent",
+              "ollama",
+              "forgejo-runner",
+              "obsidian",
+              "restic",
+              "tofu",
+              "caddy-certificates",
+              "image",
+              "dotnet-tool",
+              "chezmoi",
+              "backup",
+              "caddy-routes",
+              "heartbeat",
+              "gatus-health"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component's name within its service."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name people read, when the name is not it."
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the component is, in a sentence."
+          },
+          "partOf": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "description": "The component of this service this one lives inside: an app's SQLite database is part of the app."
+          },
+          "dependsOn": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "uniqueItems": true,
+            "description": "The components of this service this one needs, by name."
+          },
+          "requiresVolumes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true,
+            "description": "The external drives it needs mounted, by mount point: a job refuses to run against one that is not, rather than write to the empty directory left in its place."
+          },
+          "heartbeat": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$",
+                "description": "The check's slug, as its URL names it."
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^op://[^/]+/[^/]+/[^/]+$",
+                "description": "Where the account's ping key is: op://<vault>/<item>/<field>."
+              }
+            },
+            "required": [
+              "check",
+              "key"
+            ],
+            "additionalProperties": false,
+            "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
+          },
+          "url": {
+            "type": "string",
+            "description": "Gatus's own health endpoint, as the probe reaches it: http://wolfe-pi5.tailf823b8.ts.net:8280/health."
+          }
+        },
+        "required": [
+          "kind",
+          "workflow",
+          "name",
+          "url"
         ],
         "additionalProperties": false
       }

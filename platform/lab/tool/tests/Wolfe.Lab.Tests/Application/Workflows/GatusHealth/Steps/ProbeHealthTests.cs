@@ -15,7 +15,7 @@ public class ProbeHealthTests
     {
         _gatus.Health(Probe.Url, Arg.Any<CancellationToken>()).Returns(new GatusStatus("UP"));
 
-        var result = await new ProbeHealth(_gatus, Probe, Substitute.For<IWorkflowLog>()).Run(TestContext.Current.CancellationToken);
+        var result = await new ProbeHealth(_gatus, Substitute.For<IWorkflowLog>()).Run(Probe, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
     }
@@ -25,7 +25,7 @@ public class ProbeHealthTests
     {
         _gatus.Health(Probe.Url, Arg.Any<CancellationToken>()).Returns(new GatusStatus("DOWN"));
 
-        var result = await new ProbeHealth(_gatus, Probe, Substitute.For<IWorkflowLog>()).Run(TestContext.Current.CancellationToken);
+        var result = await new ProbeHealth(_gatus, Substitute.For<IWorkflowLog>()).Run(Probe, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeTrue();
         result.Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("DOWN");

@@ -2,6 +2,7 @@ using Ritten.Engine.FileSystem;
 using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
+using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 using Wolfe.Lab.Infrastructure.Chezmoi;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Chezmoi.Steps;
@@ -21,7 +22,9 @@ public class RenderProfilesTests : IDisposable
 
     public void Dispose() => _checkout.Delete(recursive: true);
 
-    private RenderProfiles Step() => new(_chezmoi, new Profiles(["macbook", "pi-node"]), _fileSystem, _git, Substitute.For<IWorkflowLog>());
+    private static readonly Profiles Profiles = new([ChezmoiProfile.From("macbook"), ChezmoiProfile.From("pi-node")]);
+
+    private RenderProfiles Step() => new(_chezmoi, _fileSystem, _git, Substitute.For<IWorkflowLog>());
 
     [Fact]
     public async Task Run_RendersEveryProfileFromTheCheckoutIntoItsOwnDirectory()
@@ -31,7 +34,7 @@ public class RenderProfilesTests : IDisposable
         _chezmoi.Render(Arg.Any<IDirectory>(), Arg.Any<string>(), Arg.Any<IDirectory>(), Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<string>>(call => [$".zshrc-{call.Arg<string>()}"]);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Profiles, TestContext.Current.CancellationToken);
 
         var rendered = result.Value.ShouldNotBeNull().Profiles;
         rendered.Select(p => p.Profile).ShouldBe(["macbook", "pi-node"]);
@@ -45,7 +48,7 @@ public class RenderProfilesTests : IDisposable
     {
         _git.RepositoryRoot(Arg.Any<CancellationToken>()).Returns((IDirectory?)null);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Profiles, TestContext.Current.CancellationToken);
 
         result.Outcome.IsFailure.ShouldBeTrue();
         await _chezmoi.DidNotReceiveWithAnyArgs().Render(default!, default!, default!, TestContext.Current.CancellationToken);
