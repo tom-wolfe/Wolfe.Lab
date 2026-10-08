@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: renovate
+displayName: Renovate
+description: "Knowing what's stale: a pull request for every pin that is behind."
+links:
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }

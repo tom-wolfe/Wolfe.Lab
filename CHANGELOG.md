@@ -8,6 +8,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Tofu roots are declared.** Each is its service's `infrastructure` component, and its plan and apply find it in the catalog.
+
 - **Every deploy installs its deployment.** Agents install their directory as stacks do, in place of
   `ritten.json`'s `artifacts`; Alloy's forwarder reads its config from `{lab.root}/alloy-forwarder`.
 

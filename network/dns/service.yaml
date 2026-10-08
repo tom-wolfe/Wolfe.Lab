@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: dns
+displayName: DNS
+description: "The twolfe.dev zone's own records, which belong to the domain rather than to a service."
+links:
+  - { title: README, type: docs, path: README.md }

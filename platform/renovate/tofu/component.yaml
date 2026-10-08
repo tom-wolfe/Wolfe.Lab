@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: infrastructure
+kind: infrastructure
+workflow: tofu
+description: "Renovate's Forgejo token, and the secrets its workflow reads it from."

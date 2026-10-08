@@ -385,6 +385,11 @@ database keeping its own dumps — still tagged with its image. A backup
 part of nothing stops nothing. What it leaves out or verifies must lie in
 what it snapshots.
 
+A component the `tofu` workflow operates is a root module, and declares
+nothing beyond what every component does: each is its service's
+`infrastructure`, of `kind: infrastructure`. Its plan and apply find it
+in the catalog, so a root nobody declared is refused rather than planned.
+
 ## Layout
 
 `tool/src/` holds four projects, in layers (ROADMAP.md #14), and the
