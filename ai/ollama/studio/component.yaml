@@ -7,7 +7,7 @@ runsOn: [studio]
 agent: ollama
 package:
   github: ollama/ollama
-  version: 0.40.0
+  version: 0.40.1
   asset: ollama-darwin.tgz
   checksums: sha256sum.txt
 program: "{package}/ollama"
