@@ -1,4 +1,5 @@
 using Polly.Registry;
+using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Infrastructure.Resilience;
 
 namespace Wolfe.Lab.Infrastructure.Ollama;
@@ -8,7 +9,7 @@ namespace Wolfe.Lab.Infrastructure.Ollama;
 /// that reaches here has already converged the agent — and a server that is up but not
 /// answering fails the job loudly rather than silently serving nothing.
 /// </summary>
-internal sealed class OllamaClient(ICommandRunner commands, ResiliencePipelineProvider<string> pipelines) : IOllama
+internal sealed class OllamaClient(ICommandRunner commands, IFileSystem fileSystem, ResiliencePipelineProvider<string> pipelines) : IOllama
 {
     /// <summary>
     /// The wait for a server to answer, configured under <c>Ollama:Serving</c>.
@@ -25,17 +26,33 @@ internal sealed class OllamaClient(ICommandRunner commands, ResiliencePipelinePr
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyDictionary<OllamaModel, string>> Identities(CancellationToken ct = default)
+    public async Task<OllamaModelfile?> Describe(OllamaModel model, CancellationToken ct = default)
     {
-        var result = await commands.Run(
-            Command.Create("ollama").WithArguments("list").QuietOutput().ThrowOnError(), ct);
-
-        return ParseIdentities(result.StandardOutput);
+        var result = await commands.Run(Command.Create("ollama").WithArguments("show", model.Value, "--modelfile").QuietOutput(), ct);
+        return result.ExitCode == 0 ? OllamaModelfile.Parse(result.StandardOutput) : null;
     }
 
     /// <inheritdoc />
-    public async Task Copy(OllamaModel source, OllamaModel destination, CancellationToken ct = default) =>
-        await commands.Run(Command.Create("ollama").WithArguments("cp", source.Value, destination.Value).QuietOutput().ThrowOnError(), ct);
+    public async Task Create(OllamaModel name, OllamaModel from, ContextLength? context, CancellationToken ct = default)
+    {
+        var scratch = fileSystem.CreateTempDirectory("lab-modelfile-");
+        try
+        {
+            var modelfile = scratch.GetFile("Modelfile");
+            await modelfile.WriteAllText(Modelfile(from, context), cancellationToken: ct);
+            await commands.Run(Command.Create("ollama").WithArguments("create", name.Value, "-f", modelfile.AbsolutePath).QuietOutput().ThrowOnError(), ct);
+        }
+        finally
+        {
+            scratch.Delete();
+        }
+    }
+
+    /// <summary>
+    /// The Modelfile of a model built from <paramref name="from"/>, running with <paramref name="context"/> when given.
+    /// </summary>
+    internal static string Modelfile(OllamaModel from, ContextLength? context) =>
+        context is { } length ? $"FROM {from.Value}\nPARAMETER num_ctx {length.Value}\n" : $"FROM {from.Value}\n";
 
     /// <inheritdoc />
     public async Task Remove(OllamaModel model, CancellationToken ct = default) =>
@@ -61,15 +78,4 @@ internal sealed class OllamaClient(ICommandRunner commands, ResiliencePipelinePr
         output.Split('\n')
             .Select(line => OllamaModel.TryParse(line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()))
             .OfType<OllamaModel>();
-
-    /// <summary>
-    /// The same table, keeping the ID column beside each name.
-    /// </summary>
-    internal static IReadOnlyDictionary<OllamaModel, string> ParseIdentities(string output) =>
-        output.Split('\n')
-            .Select(line => line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
-            .Where(columns => columns.Length >= 2)
-            .SelectMany(IEnumerable<KeyValuePair<OllamaModel, string>> (columns) =>
-                OllamaModel.TryParse(columns[0]) is { } model ? [KeyValuePair.Create(model, columns[1])] : [])
-            .ToDictionary();
 }

@@ -33,10 +33,9 @@ public sealed class AgentComponent : Component
     /// <summary>
     /// Creates a new agent component.
     /// </summary>
-    public static Result<AgentComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, WorkflowName workflow, ComponentName? partOf,
-        IReadOnlyList<ComponentName> dependsOn, DeploymentTarget runsOn, AgentProcess agent)
+    public static Result<AgentComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, WorkflowName workflow, DeploymentTarget runsOn, AgentProcess agent)
     {
-        var errors = Validate(source, name, partOf, dependsOn, out var directory);
+        var errors = Validate(source, out var directory);
         errors.AddRange(Problems(agent).Select(Error (problem) => CatalogError.In(source, problem)));
         if (errors.Count != 0)
         {
@@ -50,8 +49,6 @@ public sealed class AgentComponent : Component
             Name = name,
             Kind = kind,
             Workflow = workflow,
-            PartOf = partOf,
-            DependsOn = dependsOn,
             RunsOn = runsOn,
             Agent = agent
         };

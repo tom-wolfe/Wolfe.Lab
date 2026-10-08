@@ -7,17 +7,22 @@ namespace Wolfe.Lab.Application.Workflows.Ollama.Steps;
 /// Works out which declared models the node is missing.
 /// </summary>
 [Step("resolve models", StepKind.Work)]
-internal sealed class ResolveModels(ModelPlan plan, IOllama ollama, IWorkflowLog log)
+internal sealed class ResolveModels(IOllama ollama, IWorkflowLog log)
 {
-    public async Task<StepResult<ModelPlan>> Run(CancellationToken ct = default)
+    public async Task<StepResult<ModelPlan>> Run(ServerPlan plan, CancellationToken ct = default)
     {
+        if (plan.Server is null)
+        {
+            return new ModelPlan([]);
+        }
+
         var installed = await ollama.Installed(ct);
         var missing = plan.Models.Where(model => !installed.Contains(model)).ToList();
 
         // Present but undeclared: reported, never removed. A model is several gigabytes that
         // somebody pulled on purpose, and a config file is a poor reason to delete one.
-        // A role's alias is a name, not a model, and is the next step's business.
-        var extra = installed.Where(model => !plan.Models.Contains(model) && !RolePlan.IsAlias(model)).ToList();
+        // A use's name is a name, not a model, and is the next step's business.
+        var extra = installed.Where(model => !plan.Models.Contains(model) && !ServerPlan.IsUse(model)).ToList();
         if (extra.Count > 0)
         {
             log.Detail($"Also on the node, undeclared: {string.Join(", ", extra.Select(m => m.Value))}.");

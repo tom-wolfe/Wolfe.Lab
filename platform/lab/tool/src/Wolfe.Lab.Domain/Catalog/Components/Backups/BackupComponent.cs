@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Paths;
 
 namespace Wolfe.Lab.Domain.Catalog.Components.Backups;
@@ -17,18 +18,18 @@ public sealed class BackupComponent : Component
     /// <summary>
     /// What it leaves out of them: caches, logs, anything the service regenerates.
     /// </summary>
-    public IReadOnlyList<HostPath> Excludes { get; init; } = [];
+    public IReadOnlyList<HostPath> Excludes { get; set; } = [];
 
     /// <summary>
     /// What a restore must bring back non-empty.
     /// </summary>
-    public IReadOnlyList<HostPath> Verify { get; init; } = [];
+    public IReadOnlyList<HostPath> Verify { get; set; } = [];
 
     /// <summary>
     /// Whether it is taken while what it is part of runs: files nothing writes to mid-snapshot,
     /// or a database that keeps its own dumps.
     /// </summary>
-    public bool Warm { get; init; }
+    public bool Warm { get; set; }
 
     /// <summary>
     /// What is stopped while it is taken, if anything: what it is part of, unless it is warm.
@@ -36,53 +37,45 @@ public sealed class BackupComponent : Component
     public Component? Stops => Warm ? null : Host;
 
     /// <summary>
-    /// Creates a new backup component.
+    /// Creates a new backup component of <paramref name="paths"/>.
     /// </summary>
-    public static Result<BackupComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, ComponentName? partOf, IReadOnlyList<ComponentName> dependsOn,
-        IReadOnlyList<HostPath> paths, IReadOnlyList<HostPath> excludes, IReadOnlyList<HostPath> verify, bool warm)
+    public static Result<BackupComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, IReadOnlyList<HostPath> paths)
     {
-        var errors = Validate(source, name, partOf, dependsOn, out var directory);
-        errors.AddRange(Problems(paths, excludes, verify, warm, partOf).Select(Error (problem) => CatalogError.In(source, problem)));
+        var errors = Validate(source, out var directory);
+        if (paths.Count == 0)
+        {
+            errors.Add(CatalogError.In(source, new FieldError("paths", BackupErrors.NothingToSnapshot)));
+        }
+
         if (errors.Count != 0)
         {
             return errors;
         }
 
-        return new BackupComponent
-        {
-            Source = source,
-            Directory = directory,
-            Name = name,
-            Kind = kind,
-            Workflow = WorkflowName.Backup,
-            PartOf = partOf,
-            DependsOn = dependsOn,
-            Paths = paths,
-            Excludes = excludes,
-            Verify = verify,
-            Warm = warm
-        };
+        return new BackupComponent { Source = source, Directory = directory, Name = name, Kind = kind, Workflow = WorkflowName.Backup, Paths = paths };
     }
 
-    private static IEnumerable<Error> Problems(IReadOnlyList<HostPath> paths, IReadOnlyList<HostPath> excludes, IReadOnlyList<HostPath> verify, bool warm, ComponentName? partOf)
+    /// <inheritdoc />
+    /// <remarks>
+    /// What it leaves out or verifies must lie in what it snapshots, and only a backup part of
+    /// something is taken warm.
+    /// </remarks>
+    internal override IReadOnlyList<Error> SetService(Service service)
     {
-        if (paths.Count == 0)
+        var problems = new List<Error>();
+        foreach (var (field, written) in new[] { ("excludes", Excludes), ("verify", Verify) })
         {
-            yield return new FieldError("paths", BackupErrors.NothingToSnapshot);
+            problems.AddRange(written.Select((path, index) => (path, index))
+                .Where(path => !Paths.Any(root => Under(path.path, root)))
+                .Select(Error (path) => new FieldError($"{field}.{path.index}", BackupErrors.OutsideThePaths(path.path))));
         }
 
-        foreach (var (field, written) in new[] { ("excludes", excludes), ("verify", verify) })
+        if (Warm && PartOf is null)
         {
-            foreach (var (path, index) in written.Select((path, index) => (path, index)).Where(path => !paths.Any(root => Under(path.path, root))))
-            {
-                yield return new FieldError($"{field}.{index}", BackupErrors.OutsideThePaths(path));
-            }
+            problems.Add(new FieldError("warm", BackupErrors.WarmOfNothing));
         }
 
-        if (warm && partOf is null)
-        {
-            yield return new FieldError("warm", BackupErrors.WarmOfNothing);
-        }
+        return problems.Count > 0 ? problems : base.SetService(service);
     }
 
     private static bool Under(HostPath path, HostPath root) =>

@@ -1,3 +1,4 @@
+using Wolfe.Lab.Application.Workflows.Ollama.Models;
 using Wolfe.Lab.Infrastructure.Ollama;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Steps;
@@ -8,8 +9,13 @@ namespace Wolfe.Lab.Application.Workflows.Ollama.Steps;
 [Step("await server", StepKind.Work)]
 internal sealed class AwaitServer(IOllama ollama, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(CancellationToken ct = default)
+    public async Task<StepResult> Run(ServerPlan plan, CancellationToken ct = default)
     {
+        if (plan.Server is null)
+        {
+            return StepResult.Successful;
+        }
+
         if (!await ollama.AwaitServing(ct))
         {
             return new Error("The server did not answer after being converged: see its log.");

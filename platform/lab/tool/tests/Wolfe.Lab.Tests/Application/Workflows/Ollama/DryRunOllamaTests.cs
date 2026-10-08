@@ -8,7 +8,7 @@ public class DryRunOllamaTests
     private readonly ICommandRunner _commands = Substitute.For<ICommandRunner>();
 
     private DryRunOllama Rehearsal() => new(Substitute.For<IWorkflowLog>(),
-        new OllamaClient(_commands, Pipelines.Polling(OllamaClient.Serving, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(1))));
+        new OllamaClient(_commands, Substitute.For<IFileSystem>(), Pipelines.Polling(OllamaClient.Serving, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(1))));
 
     [Fact]
     public async Task AwaitServing_WaitsForNothingOnARehearsal()

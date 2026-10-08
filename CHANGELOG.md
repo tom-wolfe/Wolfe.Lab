@@ -8,6 +8,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Models are declared by their use.** A `workflow: ollama` component per use, with a model and context
+  per server; Ollama's servers are agents.
+
 - **Tofu roots are declared.** Each is its service's `infrastructure` component, and its plan and apply find it in the catalog.
 
 - **Every deploy installs its deployment.** Agents install their directory as stacks do, in place of

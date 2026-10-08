@@ -7,6 +7,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
@@ -81,16 +82,19 @@ public static class ServiceCatalogReader
         foreach (var service in components.GroupBy(component => Owner(component.Source)))
         {
             foreach (var (source, document) in InOrder([.. service], component => component.Document.Name,
-                         component => [.. component.Document.PartOf is { } whole ? [whole] : Array.Empty<string>(), .. component.Document.DependsOn ?? []]))
+                         component => [.. component.Document.PartOf is { } whole ? [whole] : Array.Empty<string>(), .. component.Document.DependsOn ?? [],
+                             .. (component.Document as ModelDocument)?.ServedBy.Keys ?? Enumerable.Empty<string>()]))
             {
                 AddComponent(catalog, source, document, problems);
             }
         }
 
-        // Only once every component is in: the head is the one none of the others names.
+        // Only once every component is in: the head is the one none of the others names, and a
+        // model is served by every server any of its service's models names.
         if (problems.Count == 0)
         {
             problems.AddRange(catalog.DeploymentUnits.SelectMany(unit => unit.Errors ?? []));
+            problems.AddRange(catalog.Services.SelectMany(ModelComponent.Unserved));
         }
 
         return problems.Count == 0 ? catalog : problems;
@@ -215,72 +219,103 @@ public static class ServiceCatalogReader
 
     private static void AddComponent(ServiceCatalog catalog, DocumentSource source, ComponentDocument document, List<Error> problems)
     {
-        var name = ComponentName.From(document.Name);
-        var partOf = document.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
-        IReadOnlyList<ComponentName> dependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
-        if (document is BackupDocument backup)
-        {
-            var unpathed = new List<Error>();
-            var paths = HostPaths("paths", backup.Paths, unpathed);
-            var excludes = HostPaths("excludes", backup.Excludes, unpathed);
-            var verify = HostPaths("verify", backup.Verify, unpathed);
-            if (unpathed.Count > 0)
-            {
-                problems.AddRange(unpathed.Select(error => CatalogError.In(source, error)));
-                return;
-            }
-
-            AddTo(catalog, BackupComponent.Create(source, name, document.Kind, partOf, dependsOn, paths, excludes, verify, backup.Warm ?? false), document, source, problems);
-            return;
-        }
-
-        if (document is AgentDocument agents)
-        {
-            AgentPackage? package = null;
-            if (agents.Package is { } declaredPackage)
-            {
-                if (!Package(declaredPackage).TryGetValue(out package, out var unpackaged))
-                {
-                    problems.AddRange(unpackaged.Select(error => CatalogError.In(source, error)));
-                    return;
-                }
-            }
-
-            var declared = new AgentProcess
-            {
-                Name = AgentName.From(agents.Agent),
-                Package = package,
-                Program = Template.From(agents.Program),
-                Arguments = [.. (agents.Arguments ?? []).Select(Template.From)],
-                Environment = (agents.Environment ?? []).ToDictionary(variable => variable.Key, variable => Template.From(variable.Value), StringComparer.Ordinal),
-                Supersedes = agents.Supersedes ?? []
-            };
-
-            if (!Placed(agents.RunsOn).TryGetValue(out var runsOn, out var unplaced))
-            {
-                problems.AddRange(unplaced.Select(error => CatalogError.In(source, new FieldError("runsOn", error))));
-                return;
-            }
-
-            AddTo(catalog, AgentComponent.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn, runsOn, declared), document, source, problems);
-            return;
-        }
-
-        if (document is not DockerDocument compose)
-        {
-            AddTo(catalog, Component.Create(source, name, document.Kind, document.Workflow, partOf, dependsOn), document, source, problems);
-            return;
-        }
-
         var errors = new List<Error>();
-        var service = ComposeServiceName.TryFrom(compose.Service);
+        var name = ComponentName.From(document.Name);
+        var created = document switch
+        {
+            ModelDocument model => Model(source, name, model, errors),
+            BackupDocument backup => Backup(source, name, backup, errors),
+            AgentDocument agent => Agent(source, name, agent, errors),
+            DockerDocument docker => Docker(source, name, docker, errors),
+            _ => Component.Create(source, name, document.Kind, document.Workflow)
+        };
+
+        if (errors.Count > 0)
+        {
+            problems.AddRange(errors.Select(error => CatalogError.In(source, error)));
+            return;
+        }
+
+        AddTo(catalog, created!, document, source, problems);
+    }
+
+    // A model: each server's overrides, and the defaults, read as the domain's values.
+    private static Result<Component>? Model(DocumentSource source, ComponentName name, ModelDocument document, List<Error> errors)
+    {
+        var servedBy = new Dictionary<ComponentName, ModelServing>();
+        foreach (var (server, serving) in document.ServedBy)
+        {
+            if (!ComponentName.TryFrom(server).IsSuccess)
+            {
+                errors.Add(new FieldError("servedBy", DeclarationErrors.NotAName(server)));
+                continue;
+            }
+
+            servedBy[ComponentName.From(server)] = new ModelServing(Tag($"servedBy.{server}.model", serving?.Model, errors), Context($"servedBy.{server}.context", serving?.Context, errors));
+        }
+
+        var model = Tag("model", document.Model, errors);
+        var context = Context("context", document.Context, errors);
+        return errors.Count > 0 ? null : Widen(ModelComponent.Create(source, name, document.Kind, servedBy), created =>
+        {
+            created.Model = model;
+            created.Context = context;
+        });
+    }
+
+    // A backup: what it snapshots, and what it leaves out and verifies of that.
+    private static Result<Component>? Backup(DocumentSource source, ComponentName name, BackupDocument document, List<Error> errors)
+    {
+        var paths = HostPaths("paths", document.Paths, errors);
+        var excludes = HostPaths("excludes", document.Excludes, errors);
+        var verify = HostPaths("verify", document.Verify, errors);
+        return errors.Count > 0 ? null : Widen(BackupComponent.Create(source, name, document.Kind, paths), created =>
+        {
+            created.Excludes = excludes;
+            created.Verify = verify;
+            created.Warm = document.Warm ?? false;
+        });
+    }
+
+    // An agent: the process it runs, and the nodes it runs on.
+    private static Result<Component>? Agent(DocumentSource source, ComponentName name, AgentDocument document, List<Error> errors)
+    {
+        AgentPackage? package = null;
+        if (document.Package is { } declaredPackage && !Package(declaredPackage).TryGetValue(out package, out var unpackaged))
+        {
+            errors.AddRange(unpackaged);
+            return null;
+        }
+
+        if (!Placed(document.RunsOn).TryGetValue(out var runsOn, out var unplaced))
+        {
+            errors.AddRange(unplaced.Select(error => new FieldError("runsOn", error)));
+            return null;
+        }
+
+        var process = new AgentProcess
+        {
+            Name = AgentName.From(document.Agent),
+            Package = package,
+            Program = Template.From(document.Program),
+            Arguments = [.. (document.Arguments ?? []).Select(Template.From)],
+            Environment = (document.Environment ?? []).ToDictionary(variable => variable.Key, variable => Template.From(variable.Value), StringComparer.Ordinal),
+            Supersedes = document.Supersedes ?? []
+        };
+        return Widen(AgentComponent.Create(source, name, document.Kind, document.Workflow, runsOn, process), _ => { });
+    }
+
+    // A compose service: the service it runs as, and how it reports.
+    private static Result<Component>? Docker(DocumentSource source, ComponentName name, DockerDocument document, List<Error> errors)
+    {
+        var service = ComposeServiceName.TryFrom(document.Service);
         if (!service.IsSuccess)
         {
-            errors.Add(new FieldError("service", ComponentErrors.NotAComposeService(compose.Service)));
+            errors.Add(new FieldError("service", ComponentErrors.NotAComposeService(document.Service)));
         }
 
         var metrics = new List<MetricsEndpoint>();
-        var endpoints = compose.Metrics?.Endpoints ?? [];
+        var endpoints = document.Metrics?.Endpoints ?? [];
         foreach (var (written, index) in endpoints.Select((written, index) => (written, index)))
         {
             // As it is written: one endpoint is the facet itself, several each have an index.
@@ -297,28 +332,71 @@ public static class ServiceCatalogReader
 
         if (errors.Count > 0)
         {
-            problems.AddRange(errors.Select(error => CatalogError.In(source, error)));
-            return;
+            return null;
         }
 
-        var created = document.Workflow == WorkflowName.DotNetService
-            ? AsCompose(DotNetServiceComponent.Create(source, name, document.Kind, partOf, dependsOn, service.ValueObject))
-            : DockerComponent.Create(source, name, document.Kind, partOf, dependsOn, service.ValueObject);
-        if (created.Value is { } component)
+        void Reports(DockerComponent created)
         {
-            component.Logs = compose.Logs;
-            component.Metrics = metrics;
+            created.Logs = document.Logs;
+            created.Metrics = metrics;
         }
 
-        AddTo(catalog, created, document, source, problems);
+        return document.Workflow == WorkflowName.DotNetService
+            ? Widen(DotNetServiceComponent.Create(source, name, document.Kind, service.ValueObject), Reports)
+            : Widen(DockerComponent.Create(source, name, document.Kind, service.ValueObject), Reports);
     }
 
-    // A .NET service component as the Docker component it also is: a Result of the derived type is not one of its base.
-    private static Result<DockerComponent> AsCompose(Result<DotNetServiceComponent> created) =>
-        created.Value is { } component ? component : new Result<DockerComponent>(created.Errors ?? []);
+    // A component made and given what its document declares beyond what it is made with, as the
+    // component it also is: a Result of the derived type is not one of its base.
+    private static Result<Component> Widen<T>(Result<T> created, Action<T> declares) where T : Component
+    {
+        if (created.Value is not { } component)
+        {
+            return new Result<Component>(created.Errors ?? []);
+        }
+
+        declares(component);
+        return component;
+    }
+
+    // A model's tag, or null when none is written; one that is no tag is a problem at its field.
+    private static ModelTag? Tag(string field, string? written, List<Error> errors)
+    {
+        if (written is null)
+        {
+            return null;
+        }
+
+        var tag = ModelTag.TryFrom(written);
+        if (!tag.IsSuccess)
+        {
+            errors.Add(new FieldError(field, DeclarationErrors.Schema(tag.Error.ErrorMessage)));
+            return null;
+        }
+
+        return tag.ValueObject;
+    }
+
+    // A context length, or null when none is written; one that is no length is a problem at its field.
+    private static ContextLength? Context(string field, int? written, List<Error> errors)
+    {
+        if (written is not { } tokens)
+        {
+            return null;
+        }
+
+        var context = ContextLength.TryFrom(tokens);
+        if (!context.IsSuccess)
+        {
+            errors.Add(new FieldError(field, DeclarationErrors.Schema(context.Error.ErrorMessage)));
+            return null;
+        }
+
+        return context.ValueObject;
+    }
 
     // A component made, described as its document says, and added to the service whose directory holds its file.
-    private static void AddTo<T>(ServiceCatalog catalog, Result<T> created, ComponentDocument document, DocumentSource source, List<Error> problems) where T : Component
+    private static void AddTo(ServiceCatalog catalog, Result<Component> created, ComponentDocument document, DocumentSource source, List<Error> problems)
     {
         var unmounted = new List<Error>();
         var volumes = HostPaths("requiresVolumes", document.RequiresVolumes, unmounted);
@@ -336,6 +414,8 @@ public static class ServiceCatalogReader
 
         component.DisplayName = document.DisplayName;
         component.Description = document.Description;
+        component.PartOf = document.PartOf is { } whole ? ComponentName.From(whole) : null;
+        component.DependsOn = [.. (document.DependsOn ?? []).Select(ComponentName.From)];
         component.RequiresVolumes = volumes;
         if (!catalog.ServiceDeclaring(component.Source).TryGetValue(out var owner, out var unowned))
         {

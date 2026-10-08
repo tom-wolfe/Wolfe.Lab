@@ -29,9 +29,9 @@ public class DockerComponent : Component
     /// <summary>
     /// Creates a new Docker component.
     /// </summary>
-    public static Result<DockerComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, ComponentName? partOf, IReadOnlyList<ComponentName> dependsOn, ComposeServiceName composeService)
+    public static Result<DockerComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, ComposeServiceName composeService)
     {
-        var errors = Validate(source, name, partOf, dependsOn, out var directory);
+        var errors = Validate(source, out var directory);
         if (errors.Count != 0)
         {
             return errors;
@@ -44,8 +44,6 @@ public class DockerComponent : Component
             Name = name,
             Kind = kind,
             Workflow = WorkflowName.Docker,
-            PartOf = partOf,
-            DependsOn = dependsOn,
             ComposeService = composeService
         };
     }

@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog.Components.Models;
 
 namespace Wolfe.Lab.Infrastructure.Ollama;
 
@@ -20,13 +21,13 @@ internal sealed class DryRunOllama(IWorkflowLog log, OllamaClient inner) : IOlla
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyDictionary<OllamaModel, string>> Identities(CancellationToken ct = default) =>
-        await inner.IsServing(ct) ? await inner.Identities(ct) : new Dictionary<OllamaModel, string>();
+    public async Task<OllamaModelfile?> Describe(OllamaModel model, CancellationToken ct = default) =>
+        await inner.IsServing(ct) ? await inner.Describe(model, ct) : null;
 
     /// <inheritdoc />
-    public Task Copy(OllamaModel source, OllamaModel destination, CancellationToken ct = default)
+    public Task Create(OllamaModel name, OllamaModel from, ContextLength? context, CancellationToken ct = default)
     {
-        log.Skipped($"Would point {destination.Value} at {source.Value}.");
+        log.Skipped($"Would make {name.Value} from {from.Value}{(context is { } length ? $", with a context of {length.Value}" : "")}.");
         return Task.CompletedTask;
     }
 

@@ -115,12 +115,21 @@ public sealed class Service : IEquatable<Service>
             problems.Add(ComponentErrors.DeclaredAlready(component.Name, taken.Source));
         }
 
-        if (component.PartOf is { } whole && FindComponent(whole) is null)
+        if (component.PartOf == component.Name)
+        {
+            problems.Add(ComponentErrors.PartOfItself(component.Name));
+        }
+        else if (component.PartOf is { } whole && FindComponent(whole) is null)
         {
             problems.Add(ComponentErrors.PartOfUndeclared(whole));
         }
 
-        problems.AddRange(component.DependsOn.Where(needed => FindComponent(needed) is null).Select(ComponentErrors.DependsOnUndeclared));
+        if (component.DependsOn.Contains(component.Name))
+        {
+            problems.Add(ComponentErrors.DependsOnItself(component.Name));
+        }
+
+        problems.AddRange(component.DependsOn.Where(needed => needed != component.Name && FindComponent(needed) is null).Select(ComponentErrors.DependsOnUndeclared));
         if (problems.Count == 0)
         {
             problems.AddRange(component.SetService(this));

@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog.Components.Models;
 
 namespace Wolfe.Lab.Infrastructure.Ollama;
 
@@ -20,18 +21,22 @@ public interface IOllama
     Task Pull(OllamaModel model, CancellationToken ct = default);
 
     /// <summary>
-    /// What each model on the node is, by the id ollama lists it with.
+    /// What a model on the node is made of, or null when the node does not hold it.
     /// </summary>
+    /// <param name="model">The model.</param>
     /// <param name="ct">The cancellation token.</param>
-    Task<IReadOnlyDictionary<OllamaModel, string>> Identities(CancellationToken ct = default);
+    Task<OllamaModelfile?> Describe(OllamaModel model, CancellationToken ct = default);
 
     /// <summary>
-    /// Points a second name at a model the node holds, replacing whatever that name pointed at.
+    /// Makes <paramref name="name"/> a model built from <paramref name="from"/>, with
+    /// <paramref name="context"/> when given: a manifest, sharing the weights, replacing whatever
+    /// the name was.
     /// </summary>
-    /// <param name="source">The model to name.</param>
-    /// <param name="destination">The name to give it.</param>
+    /// <param name="name">The name to make.</param>
+    /// <param name="from">The model it is built from.</param>
+    /// <param name="context">The context it runs with; the model's own when null.</param>
     /// <param name="ct">The cancellation token.</param>
-    Task Copy(OllamaModel source, OllamaModel destination, CancellationToken ct = default);
+    Task Create(OllamaModel name, OllamaModel from, ContextLength? context, CancellationToken ct = default);
 
     /// <summary>
     /// Removes a name. Layers another name still uses stay.
