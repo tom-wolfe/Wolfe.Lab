@@ -25,7 +25,7 @@ public class AgentComponentTests
 
     private static Result<AgentComponent> Create(AgentProcess agent, DeploymentTarget? runsOn = null) =>
         AgentComponent.Create(new DocumentSource(RepositoryPath.From($"{Directory}/component.yaml")), ComponentName.From("forwarder"),
-            ComponentKind.Collector, WorkflowName.Agent, runsOn ?? DeploymentTarget.All, agent);
+            ComponentKind.Collector, runsOn ?? DeploymentTarget.All, agent);
 
     private static AgentComponent Placed(AgentProcess agent, DeploymentTarget? runsOn = null, params Node[] nodes)
     {

@@ -381,17 +381,13 @@ public class ServiceCatalogReaderTests : IDisposable
     private const string Ollama = "kind: service\nname: ollama\ndescription: The model endpoint.\n";
 
     [Fact]
-    public async Task Read_PlacesAnOllamaComponentThatDeclaresItsAgent()
+    public async Task Read_RefusesAServerDeclaredAsOllama_ForWhichItIsAnAgent()
     {
         Declare("platform/nodes.yaml", Nodes);
         Declare("ai/ollama/service.yaml", Ollama);
-        Declare("ai/ollama/mini/component.yaml",
-            "name: mini\nkind: model\nworkflow: ollama\nrunsOn: [mini]\nagent: ollama\nprogram: \"{package}/ollama\"\narguments: [serve]\n");
+        Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\nrunsOn: [mini]\nagent: ollama\nprogram: \"{package}/ollama\"\n");
 
-        var component = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
-
-        component.RunsOn.Named.ShouldBe([NodeName.From("mini")]);
-        component.Agent.Name.Value.ShouldBe("ollama");
+        (await Errors()).ShouldNotBeEmpty();
     }
 
     // The service's two servers, each an agent placed on its node.
@@ -451,16 +447,6 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("ai/ollama/interactive/component.yaml", "name: interactive\nkind: model\nworkflow: ollama\nmodel: \"qwen3.5:9b\"\nservedBy: { mini: {}, pi: {}, studio: {} }\n");
 
         (await Errors()).ShouldContain(error => error.Contains("'studio' is not one of its service's servers"));
-    }
-
-    [Fact]
-    public async Task Read_StillTakesAServerDeclaredAsOllama_AsTheAgentItIs()
-    {
-        Declare("platform/nodes.yaml", Nodes);
-        Declare("ai/ollama/service.yaml", Ollama);
-        Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\nrunsOn: [mini]\nagent: ollama\nprogram: \"{package}/ollama\"\n");
-
-        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
     }
 
     [Fact]

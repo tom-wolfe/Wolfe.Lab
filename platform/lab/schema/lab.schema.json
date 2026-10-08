@@ -518,75 +518,38 @@
     },
     {
       "if": {
-        "anyOf": [
-          {
-            "required": [
-              "kind",
-              "workflow"
-            ],
-            "properties": {
-              "kind": {
-                "enum": [
-                  "app",
-                  "backend",
-                  "database",
-                  "cache",
-                  "queue",
-                  "storage",
-                  "proxy",
-                  "network",
-                  "model",
-                  "collector",
-                  "runner",
-                  "backup",
-                  "repository",
-                  "infrastructure",
-                  "certificate",
-                  "package",
-                  "machine"
-                ]
-              },
-              "workflow": {
-                "enum": [
-                  "agent"
-                ]
-              }
-            }
+        "required": [
+          "kind",
+          "workflow"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "app",
+              "backend",
+              "database",
+              "cache",
+              "queue",
+              "storage",
+              "proxy",
+              "network",
+              "model",
+              "collector",
+              "runner",
+              "backup",
+              "repository",
+              "infrastructure",
+              "certificate",
+              "package",
+              "machine"
+            ]
           },
-          {
-            "required": [
-              "kind",
-              "workflow",
+          "workflow": {
+            "enum": [
               "agent"
-            ],
-            "properties": {
-              "kind": {
-                "enum": [
-                  "app",
-                  "backend",
-                  "database",
-                  "cache",
-                  "queue",
-                  "storage",
-                  "proxy",
-                  "network",
-                  "model",
-                  "collector",
-                  "runner",
-                  "backup",
-                  "repository",
-                  "infrastructure",
-                  "certificate",
-                  "package",
-                  "machine"
-                ]
-              },
-              "workflow": {
-                "const": "ollama"
-              }
-            }
+            ]
           }
-        ]
+        }
       },
       "then": {
         "$id": "https://lab.twolfe.dev/schema/component/agent",
@@ -827,11 +790,6 @@
               "ollama"
             ]
           }
-        },
-        "not": {
-          "required": [
-            "agent"
-          ]
         }
       },
       "then": {

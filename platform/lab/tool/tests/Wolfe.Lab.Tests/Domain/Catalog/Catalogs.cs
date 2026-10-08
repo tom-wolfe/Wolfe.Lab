@@ -142,7 +142,7 @@ internal static class Catalogs
                 backup.Verify = [.. (snapshot.Verify ?? []).Select(HostPath.From)];
                 backup.Warm = snapshot.Warm;
             }),
-            { RunsOn: { } runsOn, Agent: { } agent } => Made(AgentComponent.Create(source, name, declaration.Kind, declaration.Workflow, runsOn, agent), _ => { }),
+            { RunsOn: { } runsOn, Agent: { } agent } => Made(AgentComponent.Create(source, name, declaration.Kind, runsOn, agent), _ => { }),
             { ComposeService: { } built } when declaration.Workflow == WorkflowName.DotNetService =>
                 Made(DotNetServiceComponent.Create(source, name, declaration.Kind, ComposeServiceName.From(built)), docker => Reports(docker, declaration)),
             { ComposeService: { } composeService } =>

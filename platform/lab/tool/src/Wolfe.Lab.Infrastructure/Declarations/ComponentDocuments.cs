@@ -32,16 +32,7 @@ internal static class ComponentDocuments
     public static ComponentDocument Read(JsonNode? node, JsonSerializerOptions options)
     {
         var workflow = WorkflowName.From(node?["workflow"]?.GetValue<string>() ?? "");
-        var shape = IsFormerServer(node) ? typeof(AgentDocument) : For(workflow);
-        return node.Deserialize(shape, options) as ComponentDocument
+        return node.Deserialize(For(workflow), options) as ComponentDocument
                ?? throw new InvalidOperationException($"A {workflow} component the schema passed did not deserialize.");
     }
-
-    /// <summary>
-    /// Whether <paramref name="node"/> is an Ollama server as it was declared before the models
-    /// were: <c>workflow: ollama</c>, with an agent. Read as the agent it is, until every server
-    /// declares <c>workflow: agent</c>.
-    /// </summary>
-    public static bool IsFormerServer(JsonNode? node) =>
-        node?["workflow"]?.GetValue<string>() == WorkflowName.Ollama.Value && node["agent"] is not null;
 }
