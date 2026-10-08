@@ -4,3 +4,13 @@ kind: repository
 workflow: restic
 description: "The local repository on Data2 and its offsite copy."
 requiresVolumes: [/Volumes/Data2]
+retention:
+  daily: 7
+  weekly: 5
+  monthly: 12
+  keepTags: [pre-upgrade]
+verify:
+  readDataSubset: 5%
+heartbeat:
+  check: lab-restic-offsite
+  key: op://Wolfe.Lab/healthchecks-ping-key/credential

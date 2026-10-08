@@ -43,13 +43,13 @@ what to snapshot: the paths, the excludes, and the component it is part of,
 stopped for the snapshot unless it is warm, whose image tags it. No job keeps or prunes anything, because —
 
 **Retention lives in ONE place:** `lab offsite` (`platform/lab/`, settings in
-`ritten.json`), nightly at 04:35, after every backup has finished:
+`repositories/component.yaml`), nightly at 04:35, after every backup has finished:
 
 1. `restic copy` — ship every snapshot B2 doesn't have. This is
    *idempotent catch-up*, not a timed hand-off: a missed night ships on
    the next run, and a failed service backup just means one less snapshot
    to copy. No step here depends on another step's timing.
-2. `restic forget --prune` with the policy in `ritten.json` (7 daily, 5
+2. `restic forget --prune` with the declared `retention` (7 daily, 5
    weekly, 12 monthly, `pre-upgrade` forever) — the same policy applied
    to both repos, after the copy so nothing is pruned before it's offsite.
    Snapshots group by path (per service) automatically; `pre-upgrade`

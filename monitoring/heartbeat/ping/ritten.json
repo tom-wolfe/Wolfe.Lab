@@ -1,7 +1,3 @@
 {
-  "workflow": "heartbeat",
-  "heartbeat": {
-    "check": "lab-chezmoi-update",
-    "key": "op://Wolfe.Lab/healthchecks-ping-key/credential"
-  }
+  "workflow": "heartbeat"
 }

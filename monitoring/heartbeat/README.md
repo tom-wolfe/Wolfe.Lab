@@ -9,7 +9,7 @@ the pings stop. It is the only observer outside the building.
 
 | What | Where |
 | --- | --- |
-| The ping | `ritten.json` names the check and the project ping key; the job is one HTTP call |
+| The ping | `ping/component.yaml` declares the check and the project ping key (`heartbeat`); the job is one HTTP call |
 | The check | `tofu/checks.tf` — its schedule, grace period, description and notification channels, declared rather than clicked |
 | The workflow | every 15 minutes from the mini's runner, with no concurrency group, so it never queues behind a long job |
 
@@ -38,7 +38,7 @@ plan.
 
 **Every watched job carries the same section.** A scheduled job that
 must not silently stop pings its own check as its last step, declared
-under `heartbeat` in its component's `ritten.json` the way
+as its component's `heartbeat` the way
 `platform/restic/repositories/` does; the check itself goes in that service's `tofu/`. None of them collect in
 a shared root: a check belongs beside the thing it watches, and this
 service's is the scheduler itself.
