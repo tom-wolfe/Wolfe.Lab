@@ -40,7 +40,7 @@ internal sealed class ResolveAgents(ISecretProvider secrets, AgentResolver agent
 
             if (options.Program is not { } program)
             {
-                errors.Add(new Error($"Agent '{name}' names no 'program' in ritten.json."));
+                errors.Add(new Error($"Agent '{name}' names no 'program' in its declaration."));
                 continue;
             }
 

@@ -1,10 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
 using Wolfe.Lab.Application.Caddy;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Releases;
-using Wolfe.Lab.Application.Workflows.CaddyRoutes.Models;
 using Wolfe.Lab.Application.Workflows.CaddyRoutes.Steps;
 using Wolfe.Lab.Infrastructure.Releases;
 
@@ -17,7 +15,7 @@ namespace Wolfe.Lab.Application.Workflows.CaddyRoutes.Jobs;
 /// Snippets arrive through a bind mount and never change compose's config hash, so the door
 /// has to be told; a plain redeploy of the Docker component would notice nothing.
 /// </remarks>
-internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
+internal sealed class DeployJob : LabJob<DeclaredSettings>
 {
     public override string Name => "deploy";
 
@@ -36,12 +34,9 @@ internal sealed class DeployJob : LabJob<CaddyRoutesOptions>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    public override bool RequiresProject => false;
-
-    protected override void Configure(IWorkflowBuilder builder, CaddyRoutesOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddDocker().AddInstaller();
-        builder.Services.AddSingleton(options.Caddy);
     }
 }

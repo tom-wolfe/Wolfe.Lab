@@ -12,6 +12,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **No workflow reads `ritten.json` but `dotnet-tool`.** Chezmoi, the image check, Caddy's certificate and routes, the vaults and the runners take their component from the deployment unit; `lab sync` has no `--vault`.
+
 - **Every component is declared; `ritten.json` is gone.** Chezmoi's profiles, the CI image, Caddy's certificate and routes, the vaults and the runners have their `component.yaml`, and only the CLI's own `tool/ritten.json` remains.
 
 - **A vault per directory.** `personal/obsidian/main` and `dnd`, each a component; `lab sync` takes no `--vault`.

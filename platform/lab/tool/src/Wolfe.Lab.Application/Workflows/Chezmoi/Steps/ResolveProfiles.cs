@@ -1,27 +1,25 @@
-using Wolfe.Lab.Application.Catalog;
-using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 
 namespace Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
 
 /// <summary>
-/// The profiles the component declares, or its <c>ritten.json</c> names while it declares none.
+/// The profiles the component declares.
 /// </summary>
 [Step("resolve profiles", StepKind.Work)]
-internal sealed class ResolveProfiles(DeclaredComponents declared, ChezmoiOptions legacy, IWorkflowLog log)
+internal sealed class ResolveProfiles(IWorkflowLog log)
 {
-    public async Task<StepResult<Profiles>> Run(ServiceCatalog catalog, CancellationToken ct = default)
+    public StepResult<ChezmoiComponent> Run(DeploymentUnit unit)
     {
-        var profiles = await declared.Find<ChezmoiComponent>(catalog, ct) is { } component
-            ? component.Profiles
-            : legacy.Profiles.Select(ChezmoiProfile.From).ToList();
-        if (profiles.Count == 0)
+        if (!unit.ByWorkflow(WorkflowName.Chezmoi).TryGetValue(out var declared, out var errors))
         {
-            return new Error("The component declares no profiles.");
+            return StepResult.Failed(errors);
         }
 
-        log.Detail($"Renders {string.Join(", ", profiles.Select(profile => profile.Value))}.");
-        return new Profiles(profiles);
+        var profiles = (ChezmoiComponent)declared;
+        log.Detail($"Renders {string.Join(", ", profiles.Profiles.Select(profile => profile.Value))}.");
+        return profiles;
     }
 }

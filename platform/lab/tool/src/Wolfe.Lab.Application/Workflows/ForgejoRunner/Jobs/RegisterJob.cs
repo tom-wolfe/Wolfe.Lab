@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.ForgejoRunner.Models;
 using Wolfe.Lab.Application.Workflows.ForgejoRunner.Steps;
 
@@ -15,7 +16,7 @@ namespace Wolfe.Lab.Application.Workflows.ForgejoRunner.Jobs;
 /// node's runner still holds its secret and polls with it. Same secret, same UUID: the node side
 /// needs no change.
 /// </remarks>
-internal sealed class RegisterJob : LabJob<ForgejoRunnerOptions>
+internal sealed class RegisterJob : LabJob<DeclaredSettings>
 {
     private static readonly JobArgument<string> Node = JobArgument.Value<string>(
         "node",
@@ -38,6 +39,7 @@ internal sealed class RegisterJob : LabJob<ForgejoRunnerOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<ResolveRunner>(),
         Step.FromType<GateApproval>(),
         Step.FromType<RegisterRunner>()
@@ -48,13 +50,10 @@ internal sealed class RegisterJob : LabJob<ForgejoRunnerOptions>
     private static Result<RunnerKind> ParseKind(string text) =>
         Enum.TryParse<RunnerKind>(text, ignoreCase: true, out var kind) ? kind : new Error($"'{text}' is not a runner kind; host or docker.");
 
-    public override bool RequiresProject => false;
-
-    protected override void Configure(IWorkflowBuilder builder, ForgejoRunnerOptions options, JobArguments args)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options, JobArguments args)
     {
         base.Configure(builder, options, args);
         builder.AddDocker();
         builder.Services.AddSingleton(new RunnerRequest(args.Get(Node) ?? "", args.Get(RunnerKindArgument)));
-        builder.Services.AddSingleton(options);
     }
 }

@@ -2,7 +2,10 @@ using Ritten.Engine.FileSystem;
 using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
+using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
+using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Infrastructure.Chezmoi;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Chezmoi.Steps;
@@ -22,7 +25,8 @@ public class RenderProfilesTests : IDisposable
 
     public void Dispose() => _checkout.Delete(recursive: true);
 
-    private static readonly Profiles Profiles = new([ChezmoiProfile.From("macbook"), ChezmoiProfile.From("pi-node")]);
+    private static readonly ChezmoiComponent Profiles = ChezmoiComponent.Create(new DocumentSource(RepositoryPath.From("platform/chezmoi/profiles/component.yaml")),
+        ComponentName.From("profiles"), ComponentKind.Machine, [ChezmoiProfile.From("macbook"), ChezmoiProfile.From("pi-node")]).Value.ShouldNotBeNull();
 
     private RenderProfiles Step() => new(_chezmoi, _fileSystem, _git, Substitute.For<IWorkflowLog>());
 

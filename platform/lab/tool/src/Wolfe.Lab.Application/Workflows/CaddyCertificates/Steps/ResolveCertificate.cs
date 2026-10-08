@@ -1,26 +1,25 @@
-using Wolfe.Lab.Application.Catalog;
-using Wolfe.Lab.Application.Workflows.CaddyCertificates.Models;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Caddy;
 
 namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 
 /// <summary>
-/// The certificate the component declares, or its <c>ritten.json</c> describes while it declares none.
+/// The certificate the component declares.
 /// </summary>
 [Step("resolve certificate", StepKind.Work)]
-internal sealed class ResolveCertificate(DeclaredComponents declared, CaddyCertificatesOptions legacy)
+internal sealed class ResolveCertificate(IWorkflowLog log)
 {
-    public async Task<StepResult<CertificateRequest>> Run(ServiceCatalog catalog, CancellationToken ct = default)
+    public StepResult<CaddyCertificatesComponent> Run(DeploymentUnit unit)
     {
-        if (await declared.Find<CaddyCertificatesComponent>(catalog, ct) is { } certificate)
+        if (!unit.ByWorkflow(WorkflowName.CaddyCertificates).TryGetValue(out var declared, out var errors))
         {
-            var issuer = certificate.Issuer;
-            return new CertificateRequest(issuer.Image, issuer.Email, certificate.Domains, issuer.Dns,
-                issuer.Environment.ToDictionary(variable => variable.Key, variable => variable.Value.Value, StringComparer.Ordinal),
-                issuer.PropagationWait, issuer.Store.Directory);
+            return StepResult.Failed(errors);
         }
 
-        return legacy.ToRequest() is { } request ? request : new Error("The component declares no certificate.");
+        var certificate = (CaddyCertificatesComponent)declared;
+        log.Detail($"Covers {string.Join(", ", certificate.Domains)}, issued by {certificate.Issuer.Image} through {certificate.Issuer.Dns}.");
+        return certificate;
     }
 }

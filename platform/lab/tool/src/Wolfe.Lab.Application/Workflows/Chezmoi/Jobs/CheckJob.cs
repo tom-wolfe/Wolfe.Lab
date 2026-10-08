@@ -1,8 +1,7 @@
-using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
 using Wolfe.Lab.Application.Packages;
-using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
 using Wolfe.Lab.Infrastructure.Chezmoi;
 using Wolfe.Lab.Infrastructure.Packages;
@@ -12,7 +11,7 @@ namespace Wolfe.Lab.Application.Workflows.Chezmoi.Jobs;
 /// <summary>
 /// Proves the source renders for every machine and that what it renders is valid shell.
 /// </summary>
-internal sealed class CheckJob : LabJob<ChezmoiOptions>
+internal sealed class CheckJob : LabJob<DeclaredSettings>
 {
     public override string Name => "check";
 
@@ -22,6 +21,7 @@ internal sealed class CheckJob : LabJob<ChezmoiOptions>
     [
         Step.FromType<GatePathFilter>(),
         Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<EnsureTools>(),
         Step.FromType<ResolveProfiles>(),
         Step.FromType<RenderProfiles>(),
@@ -30,12 +30,9 @@ internal sealed class CheckJob : LabJob<ChezmoiOptions>
 
     public override JobKind Kind => JobKind.Check;
 
-    public override bool RequiresProject => false;
-
-    protected override void Configure(IWorkflowBuilder builder, ChezmoiOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddChezmoi().AddTools("shellcheck");
-        builder.Services.AddSingleton(options);
     }
 }
