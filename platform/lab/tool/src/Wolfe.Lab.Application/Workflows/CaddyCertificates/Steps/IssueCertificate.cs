@@ -1,5 +1,5 @@
 using Ritten.Docker;
-using Wolfe.Lab.Application.Workflows.CaddyCertificates.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Caddy;
 
 namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 
@@ -21,32 +21,33 @@ internal sealed class IssueCertificate(IDocker docker, ISecretProvider secrets, 
 {
     internal const string MountPoint = "/state";
 
-    public async Task<StepResult> Run(CertificateRequest request, CancellationToken ct = default)
+    public async Task<StepResult> Run(CaddyCertificatesComponent certificate, CancellationToken ct = default)
     {
+        var issuer = certificate.Issuer;
         var environment = new Dictionary<string, string>();
-        foreach (var (name, value) in request.Environment)
+        foreach (var (name, reference) in issuer.Environment)
         {
-            environment[name] = await secrets.Resolve(value, ct);
+            environment[name] = await secrets.Resolve(reference.Value, ct);
         }
 
         var run = new ContainerRun(
-            request.Image,
+            issuer.Image,
             [
                 "--log.format", "text",
                 "run",
                 "--accept-tos",
-                "--email", request.Email,
-                "--dns", request.Dns,
-                .. request.Domains.SelectMany(domain => new[] { "--domains", domain }),
+                "--email", issuer.Email,
+                "--dns", issuer.Dns,
+                .. certificate.Domains.SelectMany(domain => new[] { "--domains", domain }),
                 "--path", MountPoint,
-                .. request.PropagationWait is { } wait ? new[] { "--dns.propagation.wait", wait } : []
+                .. issuer.PropagationWait is { } wait ? new[] { "--dns.propagation.wait", wait } : []
             ])
         {
-            Mounts = [new BindMount(request.Store, MountPoint)],
+            Mounts = [new BindMount(issuer.Store.Directory, MountPoint)],
             Environment = environment
         };
 
-        log.Status($"Issuing or renewing {string.Join(", ", request.Domains)} through {request.Dns}.");
+        log.Status($"Issuing or renewing {string.Join(", ", certificate.Domains)} through {issuer.Dns}.");
         await docker.Run(run, ct);
         return StepResult.Successful;
     }

@@ -1,5 +1,5 @@
 using Ritten.Git;
-using Wolfe.Lab.Application.Workflows.Obsidian.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
 
 namespace Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 
@@ -9,12 +9,12 @@ namespace Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 [Step("push vault", StepKind.Publish)]
 internal sealed class PushVault(IGit git, ISecretProvider secrets, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(Vault vault, CancellationToken ct = default)
+    public async Task<StepResult> Run(ObsidianComponent vault, CancellationToken ct = default)
     {
-        var repository = git.InRepository(vault.Directory);
+        var repository = git.InRepository(vault.Path.Directory);
         if (await repository.CurrentBranch(ct) is not { } branch)
         {
-            return new Error($"{vault.Directory.AbsolutePath} has no branch checked out.");
+            return new Error($"{vault.Path.Directory.AbsolutePath} has no branch checked out.");
         }
 
         var upstream = await repository.Upstream(ct);

@@ -1,4 +1,4 @@
-using Wolfe.Lab.Application.Workflows.Obsidian.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
 using Wolfe.Lab.Infrastructure.Obsidian;
 
 namespace Wolfe.Lab.Application.Workflows.Obsidian.Steps;
@@ -9,10 +9,10 @@ namespace Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 [Step("sync vault", StepKind.Work)]
 internal sealed class SyncVault(IObsidian obsidian, IWorkflowLog log)
 {
-    public async Task<StepResult> Run(Vault vault, CancellationToken ct = default)
+    public async Task<StepResult> Run(ObsidianComponent vault, CancellationToken ct = default)
     {
-        log.Status($"Syncing {vault.Name} into {vault.Directory.AbsolutePath}.");
-        await obsidian.Sync(vault.Directory, ct);
+        log.Status($"Syncing {vault.Name} into {vault.Path.Directory.AbsolutePath}.");
+        await obsidian.Sync(vault.Path.Directory, ct);
         return StepResult.Successful;
     }
 }

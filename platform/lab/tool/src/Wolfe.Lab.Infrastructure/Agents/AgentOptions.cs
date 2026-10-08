@@ -4,7 +4,7 @@ using Wolfe.Lab.Infrastructure.Packages;
 namespace Wolfe.Lab.Infrastructure.Agents;
 
 /// <summary>
-/// One entry of the <c>agents</c> section of a service's <c>ritten.json</c>.
+/// An agent as its supervisor renders it, made from the agent component's declaration.
 /// </summary>
 public sealed record AgentOptions
 {

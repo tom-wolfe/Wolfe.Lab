@@ -1,4 +1,4 @@
-using Wolfe.Lab.Application.Workflows.CaddyCertificates.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Caddy;
 
 namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 
@@ -8,22 +8,23 @@ namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 [Step("ensure certificate store", StepKind.Work)]
 internal sealed class EnsureCertificateStore(WorkflowJob job, IWorkflowLog log)
 {
-    public StepResult Run(CertificateRequest request)
+    public StepResult Run(CaddyCertificatesComponent certificate)
     {
-        if (request.Store.Exists)
+        var store = certificate.Issuer.Store.Directory;
+        if (store.Exists)
         {
-            log.Detail($"{request.Store.AbsolutePath} is there.");
+            log.Detail($"{store.AbsolutePath} is there.");
             return StepResult.Successful;
         }
 
         if (job.DryRun)
         {
-            log.Skipped($"Would create {request.Store.AbsolutePath}.");
+            log.Skipped($"Would create {store.AbsolutePath}.");
             return StepResult.Successful;
         }
 
-        request.Store.Create();
-        log.Status($"Created {request.Store.AbsolutePath}.");
+        store.Create();
+        log.Status($"Created {store.AbsolutePath}.");
         return StepResult.Successful;
     }
 }

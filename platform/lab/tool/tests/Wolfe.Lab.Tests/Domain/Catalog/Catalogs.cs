@@ -5,10 +5,13 @@ using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Components.Garage;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
+using Wolfe.Lab.Domain.Git;
 using Wolfe.Lab.Domain.Paths;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Tests.Domain.Catalog;
 
@@ -227,6 +230,27 @@ internal static class Catalogs
     /// </summary>
     public static DeploymentUnit Unit(string directory, params Declaration[] components) =>
         Of(directory, components).DeploymentUnitAt(RepositoryPath.From(directory)).ShouldNotBeNull().Value.ShouldNotBeNull();
+
+    /// <summary>
+    /// The vault <c>main</c>, checked out at <paramref name="path"/>, pushing to <paramref name="repository"/> as tom-wolfe.
+    /// </summary>
+    public static ObsidianComponent Vault(string path, string repository = "http://forgejo/obsidian-main.git") =>
+        ObsidianComponent.Create(new DocumentSource(RepositoryPath.From("personal/obsidian/main/component.yaml")), ComponentName.From("main"), ComponentKind.Backup,
+            HostPath.From(path), RepositoryUrl.From(repository),
+            new PushCredential(GitUsername.From("tom-wolfe"), SecretReference.From("op://Wolfe.Lab/forgejo-obsidian-token/credential"))).Value.ShouldNotBeNull();
+
+    /// <summary>
+    /// The unit of <paramref name="made"/>, a component alone in its directory, of the service the
+    /// directory above it is.
+    /// </summary>
+    public static DeploymentUnit UnitOf<T>(Result<T> made) where T : Wolfe.Lab.Domain.Catalog.Components.Component
+    {
+        var component = made.Value.ShouldNotBeNull();
+        var directory = component.Source.File.Parent.ShouldNotBeNull();
+        var catalog = new ServiceCatalog();
+        AddService(catalog, directory.Parent.ShouldNotBeNull().Value).Value.ShouldNotBeNull().Add(component).Value.ShouldNotBeNull();
+        return catalog.DeploymentUnitAt(directory).ShouldNotBeNull().Value.ShouldNotBeNull();
+    }
 
     /// <summary>
     /// The one component <paramref name="directory"/> declares.

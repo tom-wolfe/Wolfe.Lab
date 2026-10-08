@@ -1,5 +1,6 @@
 using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.Chezmoi.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 using Wolfe.Lab.Infrastructure.Chezmoi;
 
 namespace Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
@@ -16,7 +17,7 @@ namespace Wolfe.Lab.Application.Workflows.Chezmoi.Steps;
 [Step("render profiles", StepKind.Check)]
 internal sealed class RenderProfiles(IChezmoi chezmoi, IFileSystem fileSystem, IGit git, IWorkflowLog log)
 {
-    public async Task<StepResult<RenderedProfiles>> Run(Profiles profiles, CancellationToken ct = default)
+    public async Task<StepResult<RenderedProfiles>> Run(ChezmoiComponent profiles, CancellationToken ct = default)
     {
         if (await git.RepositoryRoot(ct) is not { } source)
         {
@@ -25,7 +26,7 @@ internal sealed class RenderProfiles(IChezmoi chezmoi, IFileSystem fileSystem, I
 
         var scratch = fileSystem.CreateTempDirectory("lab-render-");
         var rendered = new List<RenderedProfile>();
-        foreach (var profile in profiles.Names.Select(name => name.Value))
+        foreach (var profile in profiles.Profiles.Select(name => name.Value))
         {
             var destination = scratch.GetDirectory(profile);
             var files = await chezmoi.Render(source, profile, destination, ct);

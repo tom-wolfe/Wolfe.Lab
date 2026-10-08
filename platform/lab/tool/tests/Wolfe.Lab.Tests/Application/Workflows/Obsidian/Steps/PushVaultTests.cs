@@ -1,9 +1,9 @@
 using Ritten.Engine.FileSystem;
 using Ritten.Git;
-using Wolfe.Lab.Application.Workflows.Obsidian.Models;
 using Wolfe.Lab.Application.Workflows.Obsidian.Steps;
-using Wolfe.Lab.Domain.Git;
+using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
 using Wolfe.Lab.Domain.Secrets;
+using Wolfe.Lab.Tests.Domain.Catalog;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Obsidian.Steps;
 
@@ -12,7 +12,7 @@ public class PushVaultTests
     private static readonly SecretReference Token = SecretReference.From("op://Wolfe.Lab/forgejo-obsidian-token/credential");
     private readonly IGit _repository = Substitute.For<IGit>();
     private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
-    private readonly Vault _vault = new("main", new PhysicalDirectory("/tmp/vault"), RepositoryUrl.From("http://forgejo/obsidian-main.git"), new PushCredential(GitUsername.From("tom-wolfe"), Token), []);
+    private readonly ObsidianComponent _vault = Catalogs.Vault("/tmp/vault");
     private readonly PushVault _step;
 
     public PushVaultTests()

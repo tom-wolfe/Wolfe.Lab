@@ -1,43 +1,31 @@
-using Wolfe.Lab.Application.Workflows.Docker.Models;
+using Wolfe.Lab.Domain;
+using Wolfe.Lab.Domain.Catalog;
+using Wolfe.Lab.Domain.Catalog.Components;
+using Wolfe.Lab.Domain.Catalog.Components.Images;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 
 /// <summary>
-/// Fails an image whose Dockerfile is missing, or whose tag would push to Docker Hub.
+/// Checks the image the component declares has its Dockerfile; its tag names a registry already,
+/// or it would not have been read.
 /// </summary>
 [Step("check images", StepKind.Check)]
 internal sealed class CheckImages(IFileSystem fileSystem, IWorkflowLog log)
 {
-    internal const string Dockerfile = "Dockerfile";
-
-    public StepResult Run(ComponentImages component)
+    public StepResult Run(DeploymentUnit unit)
     {
-        List<string> problems = [];
-        foreach (var image in component.Images)
+        if (!unit.ByWorkflow(WorkflowName.Image).TryGetValue(out var declared, out var errors))
         {
-            if (!fileSystem.ProjectRoot.GetDirectory(image.Context).GetFile(image.Dockerfile).Exists)
-            {
-                problems.Add($"{image.Tag}: no {image.Dockerfile} in '{image.Context}'.");
-            }
-
-            if (Registry(image.Tag) is null)
-            {
-                problems.Add($"{image.Tag}: the tag names no registry host, so the push would go to Docker Hub.");
-            }
+            return StepResult.Failed(errors);
         }
 
-        if (problems.Count > 0)
+        var image = (ImageComponent)declared;
+        if (!fileSystem.ProjectRoot.GetDirectory(image.Context).GetFile(image.Dockerfile).Exists)
         {
-            return StepResult.Failed(string.Join(" ", problems));
+            return new Error($"{image.Tag}: no {image.Dockerfile} in '{image.Context}'.");
         }
 
-        log.Detail($"{component.Images.Count} image(s) ready to build and push.");
+        log.Detail($"{image.Tag} is ready to build and push, to {image.Tag.Registry}.");
         return StepResult.Successful;
     }
-
-    /// <summary>
-    /// The registry host a tag names, or null for a bare name that would mean Docker Hub.
-    /// </summary>
-    internal static string? Registry(string tag) =>
-        tag.Split('/') is [var host, _, ..] && (host.Contains('.') || host.Contains(':')) ? host : null;
 }

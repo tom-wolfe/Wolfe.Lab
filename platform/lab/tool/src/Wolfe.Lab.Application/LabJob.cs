@@ -29,6 +29,5 @@ public abstract class LabJob<TOptions> : Job<TOptions> where TOptions : Workflow
         builder.AddLabNode();
         builder.Services.TryAddSingleton<AgentResolver>();
         builder.Services.TryAddSingleton<EnvironmentPath>();
-        builder.Services.TryAddSingleton<DeclaredComponents>();
     }
 }

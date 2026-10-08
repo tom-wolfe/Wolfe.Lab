@@ -1,9 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using Ritten.Docker;
 using Wolfe.Lab.Application.Caddy;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
-using Wolfe.Lab.Application.Workflows.CaddyCertificates.Models;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 
 namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Jobs;
@@ -17,7 +16,7 @@ namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Jobs;
 /// caddy DNS module for Netlify is dead upstream, lego's in-tree provider is maintained, and a
 /// renewal that fails is a red run instead of a log line nobody reads.
 /// </remarks>
-internal sealed class RenewJob : LabJob<CaddyCertificatesOptions>
+internal sealed class RenewJob : LabJob<DeclaredSettings>
 {
     public override string Name => "renew";
 
@@ -26,6 +25,7 @@ internal sealed class RenewJob : LabJob<CaddyCertificatesOptions>
     public override IReadOnlyList<Step> Steps { get; } =
     [
         Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<ResolveCertificate>(),
         Step.FromType<ResolveCaddy>(),
         Step.FromType<EnsureCertificateStore>(),
@@ -36,13 +36,9 @@ internal sealed class RenewJob : LabJob<CaddyCertificatesOptions>
 
     public override JobKind Kind => JobKind.Deploy;
 
-    public override bool RequiresProject => false;
-
-    protected override void Configure(IWorkflowBuilder builder, CaddyCertificatesOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddDocker();
-        builder.Services.AddSingleton(options);
-        builder.Services.AddSingleton(options.Caddy);
     }
 }
