@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Vogen;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
-namespace Wolfe.Lab.Tests.Infrastructure.Secrets;
+namespace Wolfe.Lab.Tests.Domain.Secrets;
 
 public class SecretReferenceTests
 {

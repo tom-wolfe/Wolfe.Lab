@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Backups;
 
 namespace Wolfe.Lab.Infrastructure.Restic;
@@ -40,7 +41,7 @@ internal sealed partial class ResticClient(ICommandRunner commands) : IRestic
         await commands.Run(PruneCommand(repository, policy, dryRun: false), ct);
 
     /// <inheritdoc />
-    public async Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default) =>
+    public async Task Check(ResticRepository repository, Percentage? readDataSubset, CancellationToken ct = default) =>
         await commands.Run(CheckCommand(repository, readDataSubset), ct);
 
     /// <inheritdoc />
@@ -85,9 +86,9 @@ internal sealed partial class ResticClient(ICommandRunner commands) : IRestic
         var arguments = new List<string>
         {
             "forget",
-            "--keep-daily", policy.Daily.ToString(CultureInfo.InvariantCulture),
-            "--keep-weekly", policy.Weekly.ToString(CultureInfo.InvariantCulture),
-            "--keep-monthly", policy.Monthly.ToString(CultureInfo.InvariantCulture)
+            "--keep-daily", policy.Daily.Value.ToString(CultureInfo.InvariantCulture),
+            "--keep-weekly", policy.Weekly.Value.ToString(CultureInfo.InvariantCulture),
+            "--keep-monthly", policy.Monthly.Value.ToString(CultureInfo.InvariantCulture)
         };
         foreach (var tag in policy.KeepTags)
         {
@@ -101,12 +102,12 @@ internal sealed partial class ResticClient(ICommandRunner commands) : IRestic
     /// <summary>
     /// The check invocation.
     /// </summary>
-    internal static Command CheckCommand(ResticRepository repository, string? readDataSubset)
+    internal static Command CheckCommand(ResticRepository repository, Percentage? readDataSubset)
     {
         var command = Command.Create("restic").WithArguments("check");
-        if (readDataSubset is not null)
+        if (readDataSubset is { } sample)
         {
-            command = command.AndArguments($"--read-data-subset={readDataSubset}");
+            command = command.AndArguments($"--read-data-subset={sample}");
         }
 
         return command.WithEnvironmentVariables(repository.Environment).ThrowOnError();

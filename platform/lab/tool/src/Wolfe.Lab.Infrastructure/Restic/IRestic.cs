@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Backups;
 
 namespace Wolfe.Lab.Infrastructure.Restic;
@@ -45,9 +46,9 @@ public interface IRestic
     /// against the index.
     /// </summary>
     /// <param name="repository">The repository checked.</param>
-    /// <param name="readDataSubset">The share of pack data read, as restic spells it, or null for a structural check only.</param>
+    /// <param name="readDataSubset">The share of pack data read back, or null for a structural check only.</param>
     /// <param name="ct">A token to monitor for cancellation requests.</param>
-    Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default);
+    Task Check(ResticRepository repository, Percentage? readDataSubset, CancellationToken ct = default);
 
     /// <summary>
     /// Finds one snapshot: the one with the id, or the latest carrying the tag.

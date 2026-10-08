@@ -3,7 +3,7 @@ using Ritten.Git;
 using Wolfe.Lab.Application.Workflows.Obsidian.Models;
 using Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 using Wolfe.Lab.Domain.Git;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.Obsidian.Steps;
 

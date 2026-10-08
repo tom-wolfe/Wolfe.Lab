@@ -1,7 +1,8 @@
 using System.Net;
 using Microsoft.Extensions.Options;
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
+using Wolfe.Lab.Domain.Secrets;
 using Wolfe.Lab.Infrastructure.Heartbeat;
-using Wolfe.Lab.Infrastructure.Secrets;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Heartbeat;
 
@@ -18,7 +19,7 @@ public class HealthchecksHeartbeatTests
         }
     }
 
-    private static readonly HeartbeatCheck Check = new("lab-restic-offsite", SecretReference.From("op://Wolfe.Lab/healthchecks-ping-key/credential"));
+    private static readonly HeartbeatCheck Check = new(HeartbeatSlug.From("lab-restic-offsite"), SecretReference.From("op://Wolfe.Lab/healthchecks-ping-key/credential"));
     private readonly ISecretProvider _secrets = Substitute.For<ISecretProvider>();
 
     public HealthchecksHeartbeatTests() => _secrets.Resolve(Check.Key.Value, Arg.Any<CancellationToken>()).Returns("ping-key");

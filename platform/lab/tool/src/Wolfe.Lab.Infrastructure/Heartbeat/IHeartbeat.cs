@@ -1,3 +1,5 @@
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
+
 namespace Wolfe.Lab.Infrastructure.Heartbeat;
 
 /// <summary>

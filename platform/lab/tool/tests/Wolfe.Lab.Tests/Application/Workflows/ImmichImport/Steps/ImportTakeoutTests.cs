@@ -3,7 +3,7 @@ using Ritten.Engine.FileSystem;
 using Wolfe.Lab.Application.Workflows.ImmichImport.Models;
 using Wolfe.Lab.Application.Workflows.ImmichImport.Steps;
 using Wolfe.Lab.Domain.Services;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.ImmichImport.Steps;
 
