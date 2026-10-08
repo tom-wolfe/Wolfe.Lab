@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Heartbeat;
+using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.Heartbeat.Models;
 using Wolfe.Lab.Infrastructure.Heartbeat;
 
@@ -15,20 +17,23 @@ internal sealed class PingJob : LabJob<HeartbeatOptions>
 
     public override string Description => "Pings the lab's healthchecks.io check: proof the scheduler is alive.";
 
-    public override IReadOnlyList<Step> Steps { get; } = [Step.FromType<PingHeartbeat>()];
+    public override IReadOnlyList<Step> Steps { get; } =
+    [
+        Step.FromType<ResolveServiceCatalog>(),
+        Step.FromType<ResolveDeploymentUnit>(),
+        Step.FromType<ResolveHeartbeat>(),
+        Step.FromType<PingHeartbeat>()
+    ];
 
     public override JobKind Kind => JobKind.Work;
 
-    protected override void ValidateSettings(SettingsValidator<HeartbeatOptions> options) => options
-        .Require(s => s.Heartbeat.ToCheck() is not null, "'heartbeat.check' and 'heartbeat.key' must both be set in ritten.json.");
 
     protected override void Configure(IWorkflowBuilder builder, HeartbeatOptions options)
     {
         base.Configure(builder, options);
         builder.AddHeartbeat();
-        if (options.Heartbeat.ToCheck() is { } check)
-        {
-            builder.Services.AddSingleton(check);
-        }
+
+        // Until the ping declares its heartbeat, its ritten.json says it.
+        builder.Services.AddSingleton(options.Heartbeat);
     }
 }

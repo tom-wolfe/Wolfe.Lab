@@ -1,7 +1,7 @@
 using Ritten.Docker;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Models;
 using Wolfe.Lab.Application.Workflows.ForgejoRunners.Steps;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Tests.Application.Workflows.ForgejoRunners.Steps;
 

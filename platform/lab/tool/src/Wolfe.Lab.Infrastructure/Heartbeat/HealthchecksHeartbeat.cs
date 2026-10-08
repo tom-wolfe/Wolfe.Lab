@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 
 namespace Wolfe.Lab.Infrastructure.Heartbeat;
 

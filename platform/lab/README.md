@@ -410,6 +410,28 @@ database keeping its own dumps — still tagged with its image. A backup
 part of nothing stops nothing. What it leaves out or verifies must lie in
 what it snapshots.
 
+A component the `restic` workflow operates is where the backups go: the
+local repository and its offsite copy. It declares what the nightly prune
+keeps of both, and how much of the offsite copy the weekly check reads back:
+
+```yaml
+retention: { daily: 7, weekly: 5, monthly: 12, keepTags: [pre-upgrade] }
+verify: { readDataSubset: 5% }
+```
+
+A retention that keeps nothing is refused: it would prune every snapshot.
+
+Any component may declare the healthchecks.io check it pings when its
+work is done, the dead man's switch that pages when it stops:
+
+```yaml
+heartbeat: { check: lab-restic-offsite, key: op://Wolfe.Lab/healthchecks-ping-key/credential }
+```
+
+The offsite copy pings it after a green run, and the lab's own heartbeat
+(`monitoring/heartbeat/ping`) every fifteen minutes. Until a component
+declares these, its `ritten.json` still says them.
+
 A component the `tofu` workflow operates is a root module, and declares
 nothing beyond what every component does: each is its service's
 `infrastructure`, of `kind: infrastructure`. Its plan and apply find it

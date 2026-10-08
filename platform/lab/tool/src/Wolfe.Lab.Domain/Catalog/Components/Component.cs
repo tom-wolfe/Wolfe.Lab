@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Paths;
 using Wolfe.Lab.Domain.Telemetry;
@@ -105,6 +106,11 @@ public class Component : IEquatable<Component>
     /// The components of its own service it needs, by name (<see cref="Services.Service.FindComponent"/>).
     /// </summary>
     public IReadOnlyList<ComponentName> DependsOn { get; set; } = [];
+
+    /// <summary>
+    /// The healthchecks.io check the component pings when its work is done, if it has one.
+    /// </summary>
+    public HeartbeatCheck? Heartbeat { get; set; }
 
     /// <summary>
     /// The external drives the component relies on.

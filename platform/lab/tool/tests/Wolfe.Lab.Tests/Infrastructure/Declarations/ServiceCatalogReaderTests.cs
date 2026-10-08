@@ -1,15 +1,20 @@
 using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Domain;
+using Wolfe.Lab.Domain.Backups;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Restic;
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
 using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Paths;
+using Wolfe.Lab.Domain.Secrets;
 using Wolfe.Lab.Infrastructure.Declarations;
 
 namespace Wolfe.Lab.Tests.Infrastructure.Declarations;
@@ -155,7 +160,7 @@ public class ServiceCatalogReaderTests : IDisposable
             ---
             name: database
             kind: database
-            workflow: restic
+            workflow: tofu
             partOf: postgres
             """);
 
@@ -547,5 +552,38 @@ public class ServiceCatalogReaderTests : IDisposable
 
         watcher.Image.ShouldBe("lab/mail-watcher");
         watcher.Logs.ShouldBe(LogTransport.Otlp);
+    }
+
+    private const string Restic = "kind: service\nname: restic\ndescription: Where backups go.\n";
+
+    [Fact]
+    public async Task Read_TakesTheRepositoriesRetentionSampleAndHeartbeat()
+    {
+        Declare("platform/restic/service.yaml", Restic);
+        Declare("platform/restic/repositories/component.yaml", """
+            name: repositories
+            kind: repository
+            workflow: restic
+            retention: { daily: 7, weekly: 5, monthly: 12, keepTags: [pre-upgrade] }
+            verify: { readDataSubset: 5% }
+            heartbeat: { check: lab-restic-offsite, key: op://Wolfe.Lab/healthchecks-ping-key/credential }
+            """);
+
+        var repositories = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<ResticComponent>();
+
+        var retention = repositories.Retention.ShouldNotBeNull();
+        (retention.Daily, retention.Weekly, retention.Monthly).ShouldBe((SnapshotCount.From(7), SnapshotCount.From(5), SnapshotCount.From(12)));
+        retention.KeepTags.ShouldBe(["pre-upgrade"]);
+        repositories.VerifySample.ShouldBe(Percentage.From(5));
+        repositories.Heartbeat.ShouldBe(new HeartbeatCheck(HeartbeatSlug.From("lab-restic-offsite"), SecretReference.From("op://Wolfe.Lab/healthchecks-ping-key/credential")));
+    }
+
+    [Fact]
+    public async Task Read_RefusesARetentionThatKeepsNothing()
+    {
+        Declare("platform/restic/service.yaml", Restic);
+        Declare("platform/restic/repositories/component.yaml", "name: repositories\nkind: repository\nworkflow: restic\nretention: { daily: 0, weekly: 0, monthly: 0 }\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("retention: keeps nothing");
     }
 }

@@ -1,8 +1,8 @@
 using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
+using Wolfe.Lab.Domain.Secrets;
 using Wolfe.Lab.Infrastructure.Agents;
-using Wolfe.Lab.Infrastructure.Secrets;
 
 namespace Wolfe.Lab.Application.Agents;
 

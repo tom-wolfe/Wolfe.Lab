@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Infrastructure.Alerts;
 

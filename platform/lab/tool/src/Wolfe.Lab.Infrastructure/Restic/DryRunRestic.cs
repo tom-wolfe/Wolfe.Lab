@@ -1,3 +1,4 @@
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Backups;
 
 namespace Wolfe.Lab.Infrastructure.Restic;
@@ -11,7 +12,7 @@ internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands, Re
     /// <summary>
     /// What the rehearsal hands back in a snapshot's place.
     /// </summary>
-    internal static Snapshot Rehearsed { get; } = new("rehearsed");
+    private static Snapshot Rehearsed { get; } = new("rehearsed");
 
     /// <inheritdoc />
     public async Task<Snapshot> Backup(ResticRepository repository, IReadOnlyList<IDirectory> paths, IReadOnlyList<string> excludes, IReadOnlyList<string> tags, CancellationToken ct = default)
@@ -54,13 +55,13 @@ internal sealed class DryRunRestic(IWorkflowLog log, ICommandRunner commands, Re
     }
 
     /// <inheritdoc />
-    public async Task Check(ResticRepository repository, string? readDataSubset, CancellationToken ct = default)
+    public async Task Check(ResticRepository repository, Percentage? readDataSubset, CancellationToken ct = default)
     {
         // The structural check is a read and goes through; the data sample is the part that
         // costs download, and a rehearsal is not the night to spend it.
-        if (readDataSubset is not null)
+        if (readDataSubset is { } sample)
         {
-            log.Skipped($"Would read {readDataSubset} of {repository.Location}'s pack data back; checking its structure only.");
+            log.Skipped($"Would read {sample.ToString()} of {repository.Location}'s pack data back; checking its structure only.");
         }
 
         await commands.Run(ResticClient.CheckCommand(repository, readDataSubset: null), ct);

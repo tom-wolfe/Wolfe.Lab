@@ -1,6 +1,6 @@
 using Wolfe.Lab.Application.Workflows.Docker.Models;
 using Wolfe.Lab.Domain;
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 

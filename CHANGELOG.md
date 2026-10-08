@@ -8,6 +8,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **The repositories declare their retention.** With the verify sample and the offsite heartbeat;
+  any component may declare a `heartbeat`, and `ritten.json` still says them until it does.
+
 - **Ollama's servers are only agents.** A `workflow: ollama` declaration is a model; a server declared as one is refused.
 
 - **Models are declared by their use.** `ai/ollama/interactive`, `background` and `embedding`, each with a

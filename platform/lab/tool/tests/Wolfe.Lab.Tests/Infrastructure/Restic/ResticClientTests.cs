@@ -1,4 +1,5 @@
 using Ritten.Engine.FileSystem;
+using Wolfe.Lab.Domain;
 using Wolfe.Lab.Domain.Backups;
 using Wolfe.Lab.Infrastructure.Restic;
 
@@ -6,6 +7,9 @@ namespace Wolfe.Lab.Tests.Infrastructure.Restic;
 
 public class ResticClientTests
 {
+    private static RetentionPolicy Policy(IReadOnlyList<string> keepTags) =>
+        RetentionPolicy.Create(SnapshotCount.From(7), SnapshotCount.From(5), SnapshotCount.From(12)).Value.ShouldNotBeNull() with { KeepTags = keepTags };
+
     private static readonly ResticRepository Repository = new(new Dictionary<string, string>
     {
         ["RESTIC_REPOSITORY"] = "/Volumes/Data2/restic",
@@ -88,7 +92,7 @@ public class ResticClientTests
         Command? ran = null;
         _commands.Run(Arg.Do<Command>(c => ran = c), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
 
-        await new ResticClient(_commands).Prune(Repository, new RetentionPolicy(7, 5, 12, ["pre-upgrade"]), TestContext.Current.CancellationToken);
+        await new ResticClient(_commands).Prune(Repository, Policy(["pre-upgrade"]), TestContext.Current.CancellationToken);
 
         ran.ShouldNotBeNull().Arguments.ShouldBe(["forget", "--keep-daily", "7", "--keep-weekly", "5", "--keep-monthly", "12", "--keep-tag", "pre-upgrade", "--prune"]);
     }
@@ -96,7 +100,7 @@ public class ResticClientTests
     [Fact]
     public void PruneCommand_RehearsesWithResticsOwnDryRun()
     {
-        var command = ResticClient.PruneCommand(Repository, new RetentionPolicy(7, 5, 12, []), dryRun: true);
+        var command = ResticClient.PruneCommand(Repository, Policy([]), dryRun: true);
 
         command.Arguments.ShouldNotContain("--prune");
         command.Arguments.Last().ShouldBe("--dry-run");
@@ -109,7 +113,7 @@ public class ResticClientTests
         _commands.Run(Arg.Do<Command>(ran.Add), Arg.Any<CancellationToken>()).Returns(new CommandResult(0, "", ""));
 
         await new ResticClient(_commands).Check(Repository, null, TestContext.Current.CancellationToken);
-        await new ResticClient(_commands).Check(Repository, "5%", TestContext.Current.CancellationToken);
+        await new ResticClient(_commands).Check(Repository, Percentage.From(5), TestContext.Current.CancellationToken);
 
         ran[0].Arguments.ShouldBe(["check"]);
         ran[1].Arguments.ShouldBe(["check", "--read-data-subset=5%"]);

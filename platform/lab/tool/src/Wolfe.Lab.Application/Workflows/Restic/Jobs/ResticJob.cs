@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Workflows.Restic.Models;
 using Wolfe.Lab.Infrastructure.Restic;
 
@@ -12,5 +13,9 @@ internal abstract class ResticJob : LabJob<ResticOptions>
     {
         base.Configure(builder, options);
         builder.AddRestic();
+
+        // Until the repositories declare these, their ritten.json says them.
+        builder.Services.AddSingleton(options);
+        builder.Services.AddSingleton(options.Heartbeat);
     }
 }

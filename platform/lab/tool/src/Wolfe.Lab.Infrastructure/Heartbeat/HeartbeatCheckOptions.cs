@@ -1,9 +1,10 @@
-using Wolfe.Lab.Infrastructure.Secrets;
+using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
+using Wolfe.Lab.Domain.Secrets;
 
 namespace Wolfe.Lab.Infrastructure.Heartbeat;
 
 /// <summary>
-/// The healthchecks.io check that hears about a green offsite copy.
+/// A <c>ritten.json</c>'s healthchecks.io check, read until the component declares its <c>heartbeat</c>.
 /// </summary>
 public sealed record HeartbeatCheckOptions
 {
@@ -21,5 +22,5 @@ public sealed record HeartbeatCheckOptions
     /// The check as the steps consume it, or null while either half is missing — the one
     /// question validation asks and registration answers.
     /// </summary>
-    public HeartbeatCheck? ToCheck() => Check is { Length: > 0 } slug && Key is { } key ? new HeartbeatCheck(slug, key) : null;
+    public HeartbeatCheck? ToCheck() => Check != null && HeartbeatSlug.TryFrom(Check) is { IsSuccess: true } valid && Key is { } key ? new HeartbeatCheck(valid.ValueObject, key) : null;
 }

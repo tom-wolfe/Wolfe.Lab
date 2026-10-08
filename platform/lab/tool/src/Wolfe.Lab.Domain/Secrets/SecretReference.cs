@@ -1,6 +1,4 @@
-using Vogen;
-
-namespace Wolfe.Lab.Infrastructure.Secrets;
+namespace Wolfe.Lab.Domain.Secrets;
 
 /// <summary>
 /// A 1Password reference — <c>op://vault/item/field</c>.

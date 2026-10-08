@@ -1,11 +1,8 @@
-using System.Text.RegularExpressions;
-using Microsoft.Extensions.DependencyInjection;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Restic;
 using Wolfe.Lab.Application.Volumes;
-using Wolfe.Lab.Application.Workflows.Restic.Models;
 using Wolfe.Lab.Application.Workflows.Restic.Steps;
 
 namespace Wolfe.Lab.Application.Workflows.Restic.Jobs;
@@ -13,7 +10,7 @@ namespace Wolfe.Lab.Application.Workflows.Restic.Jobs;
 /// <summary>
 /// The weekly integrity check of both repositories.
 /// </summary>
-internal sealed partial class VerifyJob : ResticJob
+internal sealed class VerifyJob : ResticJob
 {
     public override string Name => "verify";
 
@@ -24,6 +21,7 @@ internal sealed partial class VerifyJob : ResticJob
         Step.FromType<EnsureTools>(),
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
+        Step.FromType<ResolveRepositories>(),
         Step.FromType<CheckVolumes>(),
         Step.FromType<ResolveRepository>(),
         Step.FromType<ResolveOffsite>(),
@@ -32,15 +30,6 @@ internal sealed partial class VerifyJob : ResticJob
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<ResticOptions> options) => options
-        .Require(s => Subset().IsMatch(s.Verify.ReadDataSubset), "'verify.readDataSubset' must be a percentage the way restic spells it, such as 5%.");
 
-    protected override void Configure(IWorkflowBuilder builder, ResticOptions options)
-    {
-        base.Configure(builder, options);
-        builder.Services.AddSingleton(options.Verify);
-    }
 
-    [GeneratedRegex(@"^(100|[1-9]?\d)%$")]
-    private static partial Regex Subset();
 }
