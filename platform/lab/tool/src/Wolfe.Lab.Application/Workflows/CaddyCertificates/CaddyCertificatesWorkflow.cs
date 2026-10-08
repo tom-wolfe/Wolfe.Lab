@@ -5,14 +5,14 @@ namespace Wolfe.Lab.Application.Workflows.CaddyCertificates;
 /// <summary>
 /// The front door's certificate: <c>"workflow": "caddy-certificates"</c>.
 /// </summary>
-public sealed class CaddyCertificatesWorkflow : IWorkflow
+public sealed class CaddyCertificatesWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "caddy-certificates";
+    public override string Name => "caddy-certificates";
 
     /// <inheritdoc />
-    public string Label => "caddy certificates";
+    public override string Label => "caddy certificates";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new RenewJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new RenewJob()];
 }

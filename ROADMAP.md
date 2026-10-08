@@ -410,7 +410,8 @@ The first sets, each a starting point rather than a closed argument:
 | `tofu`, `caddy-certificates`, `image`, `dotnet-tool`, `chezmoi` | as it is                 |                                                                             |
 | `backup`                                                        | as it is                 | until the state workflows that replace it, planned by the agent (#6)        |
 | `garage-layout`                                                 | `garage`                 | `layout:` on Garage's component, converged by its deploy                    |
-| `heartbeat`, `gatus-health`                                     | as it is                 | until the agent's own alerts (#6) and published `check:` facets (#8)        |
+| `heartbeat`                                                     | as it is                 | until the agent's own alerts (#6) and published `check:` facets (#8)        |
+| `gatus-health`                                                  | gone                     | Grafana scrapes Gatus, and alerts when it stops answering                   |
 | `caddy-routes`                                                  | as it is                 | until Caddy renders the published `route:` facets (#6, #8)                  |
 
 There are no jobs: what looked like one is a declarative kind (a runner,
@@ -612,7 +613,10 @@ and each fact moves once.
    each in a document shape of its own; Ollama's models as components;
    `layout:` on Garage's component.
 8. `ritten.json` gone: every lab job takes its component from the
-   catalog (`RequiresProject => false`).
+   catalog (`RequiresProject => false`). A job whose settings are all
+   declared needs none, and its directory is recognised by the workflow
+   its components declare: the files that name only a workflow go,
+   and the rest with step 7.
 
 What was here and lands with the agent instead: placement for every
 component (#6's step 4), the state workflows and the backup plan (#6),
@@ -932,8 +936,7 @@ one. A learning item, not the plan.
    component, while the workflows still deploy.
 5. The lab's agent: one low-stakes service
    first, then the rest, then routes and checks published (#8) — Caddy's
-   and Gatus's rendered from them, `caddy-routes` and `gatus-health`
-   retired.
+   and Gatus's rendered from them, `caddy-routes` retired.
 6. Schedules move from Actions cron into the agent's Hangfire, with
    Grafana rules for failed and missed runs first, retiring the
    per-job pings (`heartbeat`) — backups last, once the rest have run

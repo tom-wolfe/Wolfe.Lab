@@ -10,14 +10,14 @@ namespace Wolfe.Lab.Application.Workflows.Agents;
 /// like any other: declared per node, checked on the pull request, and deployed to each node by
 /// its own runner, launchd on a Mac and systemd on Linux.
 /// </remarks>
-public sealed class AgentWorkflow : IWorkflow
+public sealed class AgentWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "agent";
+    public override string Name => "agent";
 
     /// <inheritdoc />
-    public string Label => "agent";
+    public override string Label => "agent";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob(), new RotateJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob(), new RotateJob()];
 }

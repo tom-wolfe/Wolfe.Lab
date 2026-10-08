@@ -8,7 +8,6 @@ using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Agents.Launchd;
 using Wolfe.Lab.Infrastructure.Alerts;
 using Wolfe.Lab.Infrastructure.Garage;
-using Wolfe.Lab.Infrastructure.Gatus;
 using Wolfe.Lab.Infrastructure.Heartbeat;
 using Wolfe.Lab.Infrastructure.Ollama;
 using Wolfe.Lab.Infrastructure.Packages;
@@ -28,7 +27,7 @@ public class LabConfigurationTests
         services.AddSingleton(LabConfiguration.Current);
         services.AddSingleton(Substitute.For<IWorkflowLog>());
         services.AddSingleton(Substitute.For<ICommandRunner>());
-        builder.AddGarage().AddOllama().AddPackages().AddGatus().AddAgents().AddAlerts().AddHeartbeat();
+        builder.AddGarage().AddOllama().AddPackages().AddAgents().AddAlerts().AddHeartbeat();
         return services.BuildServiceProvider();
     }
 
@@ -52,7 +51,6 @@ public class LabConfigurationTests
         using var services = Services();
 
         Should.NotThrow(() => services.GetRequiredService<IHttpClientFactory>().CreateClient("packages"));
-        Should.NotThrow(() => services.GetRequiredService<IGatus>());
     }
 
     [Fact]

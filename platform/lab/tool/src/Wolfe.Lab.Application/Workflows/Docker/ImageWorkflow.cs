@@ -9,14 +9,14 @@ namespace Wolfe.Lab.Application.Workflows.Docker;
 /// <remarks>
 /// The docker workflow's smaller sibling, for a component that ships an image and no stack.
 /// </remarks>
-public sealed class ImageWorkflow : IWorkflow
+public sealed class ImageWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "image";
+    public override string Name => "image";
 
     /// <inheritdoc />
-    public string Label => "image";
+    public override string Label => "image";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new ImageCheckJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new ImageCheckJob()];
 }

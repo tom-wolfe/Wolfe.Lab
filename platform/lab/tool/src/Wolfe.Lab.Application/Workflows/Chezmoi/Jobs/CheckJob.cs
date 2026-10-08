@@ -23,19 +23,19 @@ internal sealed class CheckJob : LabJob<ChezmoiOptions>
         Step.FromType<GatePathFilter>(),
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<EnsureTools>(),
+        Step.FromType<ResolveProfiles>(),
         Step.FromType<RenderProfiles>(),
         Step.FromType<CheckScripts>()
     ];
 
     public override JobKind Kind => JobKind.Check;
 
-    protected override void ValidateSettings(SettingsValidator<ChezmoiOptions> options) => options
-        .Require(s => s.Profiles.Count > 0, "'profiles' names nothing in ritten.json.");
+    public override bool RequiresProject => false;
 
     protected override void Configure(IWorkflowBuilder builder, ChezmoiOptions options)
     {
         base.Configure(builder, options);
         builder.AddChezmoi().AddTools("shellcheck");
-        builder.Services.AddSingleton(new Profiles(options.Profiles));
+        builder.Services.AddSingleton(options);
     }
 }

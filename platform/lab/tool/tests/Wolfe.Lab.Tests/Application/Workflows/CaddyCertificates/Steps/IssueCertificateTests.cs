@@ -27,7 +27,7 @@ public class IssueCertificateTests
     [Fact]
     public async Task Run_StartsLegoWithTheStateMountedAndTheProviderInItsEnvironment()
     {
-        var result = await new IssueCertificate(_docker, _secrets, Request(), Substitute.For<IWorkflowLog>()).Run(TestContext.Current.CancellationToken);
+        var result = await new IssueCertificate(_docker, _secrets, Substitute.For<IWorkflowLog>()).Run(Request(), TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         var run = (ContainerRun)_docker.ReceivedCalls().Single().GetArguments()[0]!;
@@ -42,7 +42,7 @@ public class IssueCertificateTests
     [Fact]
     public async Task Run_LeavesLegoToItsOwnDnsCheckWhenNoWaitIsDeclared()
     {
-        await new IssueCertificate(_docker, _secrets, Request(wait: null), Substitute.For<IWorkflowLog>()).Run(TestContext.Current.CancellationToken);
+        await new IssueCertificate(_docker, _secrets, Substitute.For<IWorkflowLog>()).Run(Request(wait: null), TestContext.Current.CancellationToken);
 
         var run = (ContainerRun)_docker.ReceivedCalls().Single().GetArguments()[0]!;
         run.Arguments.ShouldNotContain("--dns.propagation.wait");

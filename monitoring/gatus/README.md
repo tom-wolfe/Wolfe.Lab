@@ -19,7 +19,7 @@ traffic perfectly, and nothing noticed, because nothing asked.
 | **The checks** (`config/*.yaml`) | **this repo.** Bound read-only into the container; Gatus reloads on change, so a merged edit is live on the next tick without a deploy |
 | Pushover credentials | `secrets.env` names the existing `pushover` vault item; the deploy resolves both fields into the container's environment |
 | History (`~/Docker/gatus/data`) | disposable — **no backup flow**, see "Nothing to back up" |
-| Gatus's own liveness | `.forgejo/workflows/gatus-health.yaml`, from the mini — a status page cannot show itself being down, and the watcher is on the other machine |
+| Gatus's own liveness | Grafana, on the mini, which scrapes Gatus's metrics and alerts when they stop answering (`component-unanswering`) — a status page cannot show itself being down, and the watcher is on the other machine |
 | Route (`status.twolfe.dev`) | `caddy.caddyfile`, imported by the front door on the mini; upstream is the Pi's address |
 | The `status.twolfe.dev` record | `tofu/` — a root born for one CNAME, applied by `.forgejo/workflows/gatus-tofu.yaml` on push, drift-checked by the same workflow daily |
 
@@ -85,8 +85,8 @@ Two consequences of that convenience, both loud rather than silent:
 
 - **An invalid config makes Gatus exit** (upstream's default, and the
   right one — the alternative is running on stale config while looking
-  healthy). Docker restarts it, it exits again, and `gatus-health.yaml`
-  goes red within fifteen minutes with `alert: high`. So a bad merge to
+  healthy). Docker restarts it, it exits again, and Grafana's
+  `component-unanswering` fires within five minutes. So a bad merge to
   `config/` is a paged incident, not a quiet one. Check YAML before
   merging; `yq . monitoring/gatus/compose/config/*.yaml` from the repo root is the cheap
   syntax pass, and `docker compose --project-directory gatus config`
@@ -103,17 +103,18 @@ the full table.
 
 ## Who watches the watcher
 
-`.forgejo/workflows/gatus-health.yaml` — `lab probe` from the mini's
-runner reads Gatus's `/health` on the Pi (`url` in `health/ritten.json`)
-at 11/26/41/56 past the hour and pages if it isn't `UP`. Gatus's Pushover alerts cannot report Gatus being down, and the
-deploy workflow is a convergent no-op that stays green regardless, so
-without this a dead status page looks exactly like a page you haven't
-opened.
+Grafana, on the mini. Gatus declares its metrics endpoint (`metrics:` in
+`compose/component.yaml`), so the Pi's collector scrapes it, and
+`component-unanswering` pages when a declared endpoint has not answered for
+five minutes while its collector runs. Gatus's Pushover alerts cannot
+report Gatus being down, and the deploy workflow is a convergent no-op
+that stays green regardless, so without this a dead status page looks
+exactly like a page you haven't opened.
 
 Gatus watches the mini back (`config/lab.yaml`, every two minutes): two
 machines watching each other rather than one watching itself. The mini
-down turns the whole `lab` group red in two minutes; the Pi down turns
-`gatus-health` red within fifteen. A runner that has stopped polling
+down turns the whole `lab` group red in two minutes; the Pi down sets off
+Grafana's `node-silent` within fifteen. A runner that has stopped polling
 (`config/runners.yaml`) turns its own light red in six: Forgejo reports
 a runner `offline` a minute after its last poll, and a dead runner is
 otherwise silence — its scheduled workflows simply stop being run, and
@@ -167,8 +168,7 @@ It lives on the Pi, and everything the move changed is in files:
   the deploy refreshes it from the checkout every time.
 - `caddy.caddyfile` — upstream is the Pi's MagicDNS name; Docker Desktop's
   resolver follows macOS's, so the caddy container resolves it (verified).
-- `.forgejo/workflows/gatus-compose.yaml` deploys on push; `gatus-health.yaml`
-  probes the Pi by its MagicDNS name.
+- `.forgejo/workflows/gatus-compose.yaml` deploys on push.
 
 ## Operational notes
 

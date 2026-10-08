@@ -8,15 +8,17 @@ public class ReloadCaddyTests
 {
     private readonly IDocker _docker = Substitute.For<IDocker>();
 
+    private static readonly CaddyInstance Caddy = new("caddy", "/etc/caddy/lab/caddy/Caddyfile");
+
     private ReloadCaddy Step(bool dryRun = false) =>
-        new(new CaddyInstance("caddy", "/etc/caddy/lab/caddy/Caddyfile"), _docker, new WorkflowJob("caddy", "renew-certs", dryRun, AutoApprove: false), Substitute.For<IWorkflowLog>());
+        new(_docker, new WorkflowJob("caddy", "renew-certs", dryRun, AutoApprove: false), Substitute.For<IWorkflowLog>());
 
     [Fact]
     public async Task Run_ForcesTheReloadWhenCaddyIsRunning()
     {
         _docker.Inspect("caddy", Arg.Any<CancellationToken>()).Returns(new ContainerState("caddy:2", Running: true));
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Caddy, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         await _docker.Received().Exec(
@@ -32,7 +34,7 @@ public class ReloadCaddyTests
         // reads the files then.
         _docker.Inspect("caddy", Arg.Any<CancellationToken>()).Returns((ContainerState?)null);
 
-        var result = await Step().Run(TestContext.Current.CancellationToken);
+        var result = await Step().Run(Caddy, TestContext.Current.CancellationToken);
 
         result.IsFailure.ShouldBeFalse();
         await _docker.DidNotReceive().Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>());
@@ -43,7 +45,7 @@ public class ReloadCaddyTests
     {
         _docker.Inspect("caddy", Arg.Any<CancellationToken>()).Returns(new ContainerState("caddy:2", Running: false));
 
-        await Step().Run(TestContext.Current.CancellationToken);
+        await Step().Run(Caddy, TestContext.Current.CancellationToken);
 
         await _docker.DidNotReceive().Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>());
     }
@@ -53,7 +55,7 @@ public class ReloadCaddyTests
     {
         _docker.Inspect("caddy", Arg.Any<CancellationToken>()).Returns(new ContainerState("caddy:2", Running: true));
 
-        await Step(dryRun: true).Run(TestContext.Current.CancellationToken);
+        await Step(dryRun: true).Run(Caddy, TestContext.Current.CancellationToken);
 
         await _docker.DidNotReceive().Exec(Arg.Any<ContainerExec>(), Arg.Any<CancellationToken>());
     }

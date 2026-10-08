@@ -10,14 +10,14 @@ namespace Wolfe.Lab.Application.Workflows.Backup;
 /// what has to be quiet while it is taken, and what a restore must bring back. The restic service
 /// owns the repositories; this component owns what goes into them.
 /// </remarks>
-public sealed class BackupWorkflow : IWorkflow
+public sealed class BackupWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "backup";
+    public override string Name => "backup";
 
     /// <inheritdoc />
-    public string Label => "backup";
+    public override string Label => "backup";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new BackupJob(), new RestoreJob(), new DrillJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new BackupJob(), new RestoreJob(), new DrillJob()];
 }

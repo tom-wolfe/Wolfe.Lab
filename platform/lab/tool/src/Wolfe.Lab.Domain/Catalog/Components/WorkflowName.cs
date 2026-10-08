@@ -9,7 +9,7 @@ namespace Wolfe.Lab.Domain.Catalog.Components;
 [Instance("Garage", "garage", "Garage's service of its compose stack, and its node's place in the cluster layout.")]
 [Instance("Agent", "agent", "A host process under launchd or systemd.")]
 [Instance("Ollama", "ollama", "A model that can be used by the Ollama server.")]
-[Instance("ForgejoRunners", "forgejo-runners", "A Forgejo Actions runner, registered by the lab.")]
+[Instance("ForgejoRunner", "forgejo-runner", "A Forgejo Actions runner, registered by the lab.")]
 [Instance("Obsidian", "obsidian", "An Obsidian vault, pushed to its git repository.")]
 [Instance("Restic", "restic", "A restic repository: retention, verification, the offsite copy.")]
 [Instance("Tofu", "tofu", "An OpenTofu root.")]
@@ -24,12 +24,12 @@ public readonly partial struct WorkflowName : IClosedSet<WorkflowName>
 {
     /// <inheritdoc />
     public static IReadOnlyList<WorkflowName> All =>
-        [Docker, DotNetService, Garage, Agent, Ollama, ForgejoRunners, Obsidian, Restic, Tofu, CaddyCertificates, Image, DotNetTool, Chezmoi, Backup, CaddyRoutes, Heartbeat];
+        [Docker, DotNetService, Garage, Agent, Ollama, ForgejoRunner, Obsidian, Restic, Tofu, CaddyCertificates, Image, DotNetTool, Chezmoi, Backup, CaddyRoutes, Heartbeat];
 
     /// <summary>
     /// True when this workflow runs the component as a process (a container or an agent).
     /// </summary>
-    public bool IsHost => this == Docker || this == DotNetService || this == Garage || this == Agent || this == ForgejoRunners;
+    public bool IsHost => this == Docker || this == DotNetService || this == Garage || this == Agent || this == ForgejoRunner;
 
     private static Validation Validate(string input) =>
         All.Any(workflow => workflow.Value == input)

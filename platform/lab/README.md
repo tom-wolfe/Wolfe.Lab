@@ -8,8 +8,10 @@ it can be typed, rehearsed and tested.
 
 ## How a component opts in
 
-A directory the CLI serves carries a `ritten.json` naming its workflow
-— `"workflow": "docker"` — plus that workflow's options. That directory
+A directory the CLI serves declares components, and the workflow they
+run — `workflow: docker` — is the one `lab` runs there. A workflow whose
+options are not declared yet still reads them from a `ritten.json`
+beside them, which names the workflow too. That directory
 is a *component*: a service is the folder that groups its
 components (`media/sonarr/compose/`, `media/sonarr/backup/`, `platform/forgejo/tofu/`,
 `platform/forgejo/runners/`), and never carries a declaration of its own. Run
@@ -32,9 +34,8 @@ that used to live in chezmoi — placed on the nodes they run on, and
 deployed to each by its own runner, which runs `lab deploy` on the node it converges). Two services with the same shape share a
 workflow and differ only in what they declare. What only one service does
 is a component of its own with a workflow of its own — `network/caddy/certs`,
-`network/caddy/routes`, `platform/forgejo/runners`,
-`monitoring/gatus/health` — named for the service and the thing, so a `ritten.json`
-reads as what it is. Nothing is shared *across* workflows: a step two
+`network/caddy/routes`, `platform/forgejo/runners` — named for the
+service and the thing, so a directory reads as what it is. Nothing is shared *across* workflows: a step two
 workflows need belongs to a domain module under `Clients/`, and each
 workflow lists it for itself.
 
@@ -251,8 +252,8 @@ service has not got. References stay names, found through
 `ServiceCatalog.FindService` and `Service.FindComponent`. A catalog is valid from
 empty and stays so. The reader only chooses an order a valid catalog can
 be built in — a service after the services it depends on, a component
-after what it is part of or depends on. While a component has a
-`ritten.json` as well, the directory's components must declare the
+after what it is part of or depends on. Where a directory has a
+`ritten.json` as well, its components must declare the
 workflow it names — `workflow: docker` beside a `"workflow": "docker"` —
 but for a part of one (`partOf`), which names its own.
 The CLI's own tests hold the whole repository's declarations, a service's
@@ -344,8 +345,8 @@ open for as long as the agent runs. chezmoi installs logrotate on the
 Macs, and the Pi's OS ships it; nothing else runs it. A rehearsal is
 logrotate's own debug run, from the run's scratch.
 
-`runsOn`, `agent` and `program` are required of every agent component;
-its `ritten.json` names only its workflow. A model server is one such
+`runsOn`, `agent` and `program` are required of every agent component,
+and it has no `ritten.json`. A model server is one such
 agent, placed on its one node (`runsOn: [mini]`).
 
 A component the `ollama` workflow operates is a model, declared by what
@@ -579,13 +580,13 @@ None of the numbers are in code. **`appsettings.json`**, shipped beside
 the CLI in the tool, holds how the CLI behaves and where it reaches out
 to — each wait's `Limit` and `Interval` under its client's section
 (`Garage:Answering`, `Ollama:Serving`, `Launchd:Unloading`), each HTTP
-client's `HttpStandardResilienceOptions` (`Packages:Http`, `Gatus:Http`),
+client's `HttpStandardResilienceOptions` (`Packages:Http`),
 the services it calls (`Alerts:Endpoint`, `Heartbeat:Endpoint`,
 `Packages:Releases` and `Packages:Api`) and the vault's service account
 (`OnePassword:ServiceAccountTokenFile`) — where a component's
-`ritten.json` holds what the component is, including a fact another
-component defines and it needs, such as the container and Caddyfile path
-of the caddy it reloads (`caddy`). What stays in code is the contract the
+declaration holds what the component is, and what it is part of: Caddy's
+certificate and routes are `partOf: proxy`, so their jobs reload that
+Caddy, from the Caddyfile its deployment carries. What stays in code is the contract the
 repository is written against — `secrets.env`, `lab-tools.json`, the
 `.lab-volume` sentinel — where a setting would only be a way for a node
 to disagree with the repository. Environment

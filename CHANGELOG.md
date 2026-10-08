@@ -4,9 +4,27 @@ All notable changes to the lab are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); entries are dated
 rather than versioned — the lab is continuous, not released.
 
+## 2026-10-09
+
+### Added
+
+- **Grafana pages for a component that stops answering.** `component-unanswering`: a declared metrics endpoint unscraped for five minutes while its collector runs. It watches Gatus in place of the `gatus-health` probe, which is gone.
+
 ## 2026-10-08
 
+### Fixed
+
+- **Caddy's routes deploy again.** The catalog check held a declaration to the workflow's label, so `caddy-routes` failed once it was declared.
+
 ### Changed
+
+- **The remaining workflows can be declared.** Chezmoi's profiles, the CI image, Caddy's certificate and routes, a vault each and the runners read their component, and `ritten.json` until they have one.
+
+- **`forgejo-runners` is `forgejo-runner`.**
+
+- **Caddy's certificate and routes reload the Caddy they are part of** (`partOf: proxy`), from the Caddyfile its deployment carries, at `/lab/<unit>/Caddyfile`.
+
+- **A directory's components name its workflow.** A job whose settings are all declared runs without a `ritten.json`.
 
 - **Garage declares its layout.** `layout:` on its server component; `platform/garage/layout` and its workflow are gone.
 
@@ -42,6 +60,8 @@ rather than versioned — the lab is continuous, not released.
 - **The `agents` workflow is `agent`.** Declarations and `ritten.json` name it so; `agents` is no longer read.
 
 ### Removed
+
+- **The `gatus-health` workflow.** Grafana, which scrapes Gatus, watches it instead.
 
 - **Immich's Takeout import is gone.** A one-off migration, not something the lab runs; it is in the history.
 

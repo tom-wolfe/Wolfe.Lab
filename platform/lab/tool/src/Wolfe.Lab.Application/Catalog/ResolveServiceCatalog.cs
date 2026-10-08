@@ -11,7 +11,7 @@ namespace Wolfe.Lab.Application.Catalog;
 /// Resolves and verifies the component's catalog definition against the rest of the lab.
 /// </summary>
 [Step("resolve service catalog", StepKind.Check)]
-internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, WorkflowJob job, IWorkflowLog log)
+internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, SelectedWorkflow selected, IWorkflowLog log)
 {
     public async Task<StepResult<ServiceCatalog>> Run(CancellationToken ct = default)
     {
@@ -21,7 +21,8 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
         }
 
         var directory = fileSystem.ProjectRoot;
-        if (!(await Check(git, repository, directory, job.Workflow, ct)).TryGetValue(out var catalog, out var errors))
+        // The workflow's name, as a declaration writes it: its label is how a run prints it.
+        if (!(await Check(git, repository, directory, selected.Workflow.Name, ct)).TryGetValue(out var catalog, out var errors))
         {
             return StepResult.Failed(errors);
         }
@@ -39,7 +40,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
     /// <param name="git">What lists the checkout's files.</param>
     /// <param name="root">The checkout's root.</param>
     /// <param name="directory">The directory the workflow runs in.</param>
-    /// <param name="workflow">The workflow its <c>ritten.json</c> names, which is running this check.</param>
+    /// <param name="workflow">The workflow running this check: the one its <c>ritten.json</c> names, or its components declare.</param>
     /// <param name="ct">A token to monitor for cancellation.</param>
     internal static async Task<Result<ServiceCatalog>> Check(IGit git, IDirectory root, IDirectory directory, string workflow, CancellationToken ct = default)
     {
@@ -54,7 +55,7 @@ internal sealed class ResolveServiceCatalog(IGit git, IFileSystem fileSystem, Wo
             return catalog;
         }
 
-        // While ritten.json names the directory's workflow too, each component must declare it; a
+        // Where a ritten.json names the directory's workflow too, each component must declare it; a
         // part of another — anything partOf one — names its own.
         var others = catalog.DeploymentUnitAt(placement)?.Value?.Components
             .Where(component => component.PartOf is null && component.Workflow.Value != workflow)

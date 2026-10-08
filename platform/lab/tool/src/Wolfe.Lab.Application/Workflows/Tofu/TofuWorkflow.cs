@@ -5,14 +5,14 @@ namespace Wolfe.Lab.Application.Workflows.Tofu;
 /// <summary>
 /// A root module: planned on the pull request, applied on the merge.
 /// </summary>
-public sealed class TofuWorkflow : IWorkflow
+public sealed class TofuWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "tofu";
+    public override string Name => "tofu";
 
     /// <inheritdoc />
-    public string Label => "tofu";
+    public override string Label => "tofu";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new CheckJob(), new DeployJob()];
 }

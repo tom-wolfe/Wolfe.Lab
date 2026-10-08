@@ -15,12 +15,12 @@ namespace Wolfe.Lab.Application.Caddy;
 /// reload and picks the files up at its first start, which is the bootstrap order.
 /// </remarks>
 [Step("reload caddy", StepKind.Publish)]
-internal sealed class ReloadCaddy(CaddyInstance caddy, IDocker docker, WorkflowJob job, IWorkflowLog log)
+internal sealed class ReloadCaddy(IDocker docker, WorkflowJob job, IWorkflowLog log)
 {
 
-    public async Task<StepResult> Run(CancellationToken ct = default)
+    public async Task<StepResult> Run(CaddyInstance caddy, CancellationToken ct = default)
     {
-        if (!await IsRunning(ct))
+        if (!await IsRunning(caddy, ct))
         {
             log.Status($"{caddy.Container} is not running; nothing to reload.");
             return StepResult.Successful;
@@ -39,5 +39,5 @@ internal sealed class ReloadCaddy(CaddyInstance caddy, IDocker docker, WorkflowJ
     }
 
     // No such container is never started, or removed: either way, nothing to reload.
-    private async Task<bool> IsRunning(CancellationToken ct) => (await docker.Inspect(caddy.Container, ct))?.Running == true;
+    private async Task<bool> IsRunning(CaddyInstance caddy, CancellationToken ct) => (await docker.Inspect(caddy.Container, ct))?.Running == true;
 }

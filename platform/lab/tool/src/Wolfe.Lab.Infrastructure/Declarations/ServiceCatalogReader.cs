@@ -9,14 +9,20 @@ using Wolfe.Lab.Domain.Catalog;
 using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
+using Wolfe.Lab.Domain.Catalog.Components.Caddy;
+using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Forgejo;
 using Wolfe.Lab.Domain.Catalog.Components.Garage;
+using Wolfe.Lab.Domain.Catalog.Components.Images;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
+using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
 using Wolfe.Lab.Domain.Catalog.Components.Restic;
 using Wolfe.Lab.Domain.Catalog.Facets.Heartbeats;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
+using Wolfe.Lab.Domain.Git;
 using Wolfe.Lab.Domain.Network;
 using Wolfe.Lab.Domain.Packages;
 using Wolfe.Lab.Domain.Paths;
@@ -235,6 +241,11 @@ public static partial class ServiceCatalogReader
             ResticDocument restic => Restic(source, name, restic, errors),
             AgentDocument agent => Agent(source, name, agent, errors),
             DockerDocument docker => Docker(source, name, docker, errors),
+            ChezmoiDocument chezmoi => Chezmoi(source, name, chezmoi, errors),
+            ImageDocument image => Image(source, name, image, errors),
+            CaddyCertificatesDocument certificates => CaddyCertificates(source, name, certificates, errors),
+            ObsidianDocument vault => Obsidian(source, name, vault, errors),
+            ForgejoRunnerDocument runners => Widen(ForgejoRunnerComponent.Create(source, name, runners.Kind, runners.Vault, runners.Repository, runners.Image), _ => { }),
             _ => Component.Create(source, name, document.Kind, document.Workflow)
         };
 
@@ -363,6 +374,93 @@ public static partial class ServiceCatalogReader
             Supersedes = document.Supersedes ?? []
         };
         return Widen(AgentComponent.Create(source, name, document.Kind, runsOn, process), _ => { });
+    }
+
+    // The machines' profiles, each a profile's name.
+    private static Result<Component>? Chezmoi(DocumentSource source, ComponentName name, ChezmoiDocument document, List<Error> errors)
+    {
+        var profiles = new List<ChezmoiProfile>();
+        foreach (var (written, index) in document.Profiles.Select((written, index) => (written, index)))
+        {
+            var profile = ChezmoiProfile.TryFrom(written);
+            if (profile.IsSuccess)
+            {
+                profiles.Add(profile.ValueObject);
+            }
+            else
+            {
+                errors.Add(new FieldError($"profiles.{index}", DeclarationErrors.Schema(profile.Error.ErrorMessage)));
+            }
+        }
+
+        return errors.Count > 0 ? null : Widen(ChezmoiComponent.Create(source, name, document.Kind, profiles), _ => { });
+    }
+
+    // An image: where it is pushed, and what it is built from.
+    private static Result<Component>? Image(DocumentSource source, ComponentName name, ImageDocument document, List<Error> errors)
+    {
+        var tag = ImageTag.TryFrom(document.Tag);
+        if (!tag.IsSuccess)
+        {
+            errors.Add(new FieldError("tag", DeclarationErrors.Schema(tag.Error.ErrorMessage)));
+            return null;
+        }
+
+        return Widen(ImageComponent.Create(source, name, document.Kind, tag.ValueObject), created =>
+        {
+            created.Context = document.Context ?? created.Context;
+            created.Dockerfile = document.Dockerfile ?? created.Dockerfile;
+        });
+    }
+
+    // A certificate: what it covers, and what issues it.
+    private static Result<Component>? CaddyCertificates(DocumentSource source, ComponentName name, CaddyCertificatesDocument document, List<Error> errors)
+    {
+        var written = document.Issuer;
+        var store = Value("issuer.store", HostPath.TryFrom(written.Store), errors);
+        var environment = new Dictionary<string, SecretReference>(StringComparer.Ordinal);
+        foreach (var (variable, reference) in written.Environment ?? [])
+        {
+            if (Value($"issuer.environment.{variable}", SecretReference.TryFrom(reference), errors) is { } secret)
+            {
+                environment[variable] = secret;
+            }
+        }
+
+        if (errors.Count > 0 || store is null)
+        {
+            return null;
+        }
+
+        var issuer = new CertificateIssuer(written.Image, written.Email, written.Dns, store.Value) { Environment = environment, PropagationWait = written.PropagationWait };
+        return Widen(CaddyCertificatesComponent.Create(source, name, document.Kind, document.Domains, issuer), _ => { });
+    }
+
+    // A vault: where it is checked out, where it is pushed, and as whom.
+    private static Result<Component>? Obsidian(DocumentSource source, ComponentName name, ObsidianDocument document, List<Error> errors)
+    {
+        var path = Value("path", HostPath.TryFrom(document.Path), errors);
+        var repository = Value("repository", RepositoryUrl.TryFrom(document.Repository), errors);
+        var username = Value("push.username", GitUsername.TryFrom(document.Push.Username), errors);
+        var token = Value("push.token", SecretReference.TryFrom(document.Push.Token), errors);
+        if (path is not { } at || repository is not { } url || username is not { } user || token is not { } secret)
+        {
+            return null;
+        }
+
+        return Widen(ObsidianComponent.Create(source, name, document.Kind, at, url, new PushCredential(user, secret)), created => created.Exclude = document.Exclude ?? []);
+    }
+
+    // A value as the domain reads it, or null and the problem at its field.
+    private static T? Value<T>(string field, Vogen.ValueObjectOrError<T> read, List<Error> errors) where T : struct
+    {
+        if (read.IsSuccess)
+        {
+            return read.ValueObject;
+        }
+
+        errors.Add(new FieldError(field, DeclarationErrors.Schema(read.Error.ErrorMessage)));
+        return null;
     }
 
     // A compose service: the service it runs as, and how it reports.

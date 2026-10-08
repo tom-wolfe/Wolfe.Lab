@@ -6,14 +6,14 @@ namespace Wolfe.Lab.Application.Workflows.Obsidian;
 /// <summary>
 /// Mirrors the Obsidian vaults into git: <c>"workflow": "obsidian"</c>.
 /// </summary>
-public sealed class ObsidianWorkflow : IWorkflow
+public sealed class ObsidianWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "obsidian";
+    public override string Name => "obsidian";
 
     /// <inheritdoc />
-    public string Label => "obsidian";
+    public override string Label => "obsidian";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new SyncJob()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new SyncJob()];
 }

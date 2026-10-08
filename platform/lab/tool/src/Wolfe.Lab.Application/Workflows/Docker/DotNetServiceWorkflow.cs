@@ -1,6 +1,6 @@
 
+using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Workflows.Docker.Jobs;
-using Wolfe.Lab.Application.Workflows.Docker.Models;
 
 namespace Wolfe.Lab.Application.Workflows.Docker;
 
@@ -12,14 +12,14 @@ namespace Wolfe.Lab.Application.Workflows.Docker;
 /// <c>docker</c> workflow runs, because building an image and converging a stack does not
 /// become a different act when the image came from source in the same directory.
 /// </remarks>
-public sealed class DotNetServiceWorkflow : IWorkflow
+public sealed class DotNetServiceWorkflow : LabWorkflow
 {
     /// <inheritdoc />
-    public string Name => "dotnet-service";
+    public override string Name => "dotnet-service";
 
     /// <inheritdoc />
-    public string Label => "dotnet-service";
+    public override string Label => "dotnet-service";
 
     /// <inheritdoc />
-    public IReadOnlyList<IJob> Jobs { get; } = [new DotNetCheckJob(), new DeployJob<DotNetServiceOptions>()];
+    public override IReadOnlyList<IJob> Jobs { get; } = [new DotNetCheckJob(), new DeployJob<DeclaredSettings>()];
 }

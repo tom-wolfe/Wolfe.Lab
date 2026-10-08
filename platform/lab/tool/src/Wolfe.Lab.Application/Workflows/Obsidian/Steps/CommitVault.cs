@@ -7,7 +7,7 @@ namespace Wolfe.Lab.Application.Workflows.Obsidian.Steps;
 /// Records what the sync pass changed as one commit.
 /// </summary>
 [Step("commit vault", StepKind.Work)]
-internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog log)
+internal sealed class CommitVault(IGit git, IWorkflowLog log)
 {
     internal const string Message = "Sync from Obsidian";
 
@@ -20,7 +20,7 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
         }
 
         // Written before anything is counted, so an excluded path never shows up as a change.
-        await WriteExcludes(vault.Directory.GetDirectory(".git"), cancellationToken);
+        await WriteExcludes(vault, cancellationToken);
 
         switch (await repository.GetRemoteUrl("origin", cancellationToken))
         {
@@ -29,9 +29,9 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
                 break;
             case var url when url != vault.Repository.Value:
                 // A push to the wrong place creates a repository there (Forgejo's push-to-create),
-                // so a checkout whose remote drifted from ritten.json stops here, with the fix.
+                // so a checkout whose remote drifted from its declaration stops here, with the fix.
                 return new Error(
-                    $"{vault.Directory.AbsolutePath} pushes to {url}, but ritten.json says {vault.Repository.Value}. " +
+                    $"{vault.Directory.AbsolutePath} pushes to {url}, but its declaration says {vault.Repository.Value}. " +
                     $"Re-point it: git -C {vault.Directory.AbsolutePath} remote set-url origin {vault.Repository.Value}");
         }
 
@@ -52,9 +52,9 @@ internal sealed class CommitVault(IGit git, VaultExcludes excludes, IWorkflowLog
     /// <c>.git/info/exclude</c> rather than a <c>.gitignore</c>: the list is the lab's, and a
     /// file inside the vault would sync to every device.
     /// </summary>
-    private Task WriteExcludes(IDirectory dotGit, CancellationToken cancellationToken)
+    private static Task WriteExcludes(Vault vault, CancellationToken cancellationToken)
     {
-        var lines = excludes.Patterns.Prepend("# Written by `lab sync` from personal/obsidian/vaults/ritten.json; edits here are overwritten.");
-        return dotGit.GetDirectory("info").GetFile("exclude").WriteAllText(string.Join('\n', lines) + '\n', cancellationToken: cancellationToken);
+        var lines = vault.Excludes.Prepend("# Written by `lab sync` from the vault's declaration; edits here are overwritten.");
+        return vault.Directory.GetDirectory(".git").GetDirectory("info").GetFile("exclude").WriteAllText(string.Join('\n', lines) + '\n', cancellationToken: cancellationToken);
     }
 }

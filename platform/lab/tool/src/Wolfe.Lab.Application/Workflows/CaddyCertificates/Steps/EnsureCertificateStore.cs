@@ -6,9 +6,9 @@ namespace Wolfe.Lab.Application.Workflows.CaddyCertificates.Steps;
 /// Makes sure lego has somewhere to keep its account, key and certificates.
 /// </summary>
 [Step("ensure certificate store", StepKind.Work)]
-internal sealed class EnsureCertificateStore(CertificateRequest request, WorkflowJob job, IWorkflowLog log)
+internal sealed class EnsureCertificateStore(WorkflowJob job, IWorkflowLog log)
 {
-    public StepResult Run()
+    public StepResult Run(CertificateRequest request)
     {
         if (request.Store.Exists)
         {

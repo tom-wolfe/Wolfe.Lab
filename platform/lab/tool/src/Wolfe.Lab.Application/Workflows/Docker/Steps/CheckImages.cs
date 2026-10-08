@@ -6,11 +6,11 @@ namespace Wolfe.Lab.Application.Workflows.Docker.Steps;
 /// Fails an image whose Dockerfile is missing, or whose tag would push to Docker Hub.
 /// </summary>
 [Step("check images", StepKind.Check)]
-internal sealed class CheckImages(ComponentImages component, IFileSystem fileSystem, IWorkflowLog log)
+internal sealed class CheckImages(IFileSystem fileSystem, IWorkflowLog log)
 {
     internal const string Dockerfile = "Dockerfile";
 
-    public StepResult Run()
+    public StepResult Run(ComponentImages component)
     {
         List<string> problems = [];
         foreach (var image in component.Images)
