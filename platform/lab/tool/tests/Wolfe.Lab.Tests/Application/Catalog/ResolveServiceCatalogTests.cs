@@ -74,7 +74,7 @@ public class ResolveServiceCatalogTests : IDisposable
     public async Task Check_LeavesAPartToNameItsOwnWorkflow()
     {
         Declare("personal/immich/compose/component.yaml",
-            "name: server\nkind: app\nworkflow: docker\nservice: server\n---\nname: snapshots\nkind: repository\nworkflow: restic\npartOf: server\n");
+            "name: server\nkind: app\nworkflow: docker\nservice: server\n---\nname: snapshots\nkind: repository\nworkflow: tofu\npartOf: server\n");
 
         (await Check("personal/immich/compose", "docker")).IsSuccess.ShouldBeTrue();
     }
@@ -84,9 +84,9 @@ public class ResolveServiceCatalogTests : IDisposable
     public async Task Check_FailsOnAProblemAnywhereInTheCatalog()
     {
         Declare("personal/immich/compose/component.yaml", "name: server\nkind: app\nworkflow: docker\nservice: server\n");
-        Declare("personal/immich/backup/component.yaml", "name: backup\nkind: storage\nworkflow: restic\nvolumes: [/Volumes/Data2]\n");
+        Declare("personal/immich/backup/component.yaml", "name: backup\nkind: storage\nworkflow: tofu\nvolumes: [/Volumes/Data2]\n");
 
-        (await Errors("personal/immich/compose", "docker")).ShouldHaveSingleItem().ShouldContain("'volumes' is not something a restic component declares");
+        (await Errors("personal/immich/compose", "docker")).ShouldHaveSingleItem().ShouldContain("'volumes' is not something a tofu component declares");
     }
 
     [Fact]

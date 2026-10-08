@@ -11,7 +11,7 @@ rather than versioned — the lab is continuous, not released.
 - **Restic's settings and the heartbeat ping are declared.** Their `ritten.json` now names only the workflow.
 
 - **The repositories declare their retention.** With the verify sample and the offsite heartbeat;
-  any component may declare a `heartbeat`, and `ritten.json` still says them until it does.
+  any component may declare a `heartbeat`, and `ritten.json` no longer says either.
 
 - **Ollama's servers are only agents.** A `workflow: ollama` declaration is a model; a server declared as one is refused.
 

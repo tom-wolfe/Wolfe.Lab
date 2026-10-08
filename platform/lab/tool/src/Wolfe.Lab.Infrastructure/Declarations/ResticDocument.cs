@@ -8,8 +8,8 @@ namespace Wolfe.Lab.Infrastructure.Declarations;
 [AdditionalProperties(false)]
 internal sealed record ResticDocument : ComponentDocument
 {
-    [Description("What the nightly prune keeps, of both repositories alike.")]
-    public RetentionDocument? Retention { get; init; }
+    [Required, Description("What the nightly prune keeps, of both repositories alike.")]
+    public RetentionDocument Retention { get; init; } = new();
 
     [Description("How the weekly check reads the offsite copy back.")]
     public VerifyDocument? Verify { get; init; }

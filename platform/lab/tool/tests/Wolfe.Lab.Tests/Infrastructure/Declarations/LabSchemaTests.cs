@@ -72,7 +72,7 @@ public class LabSchemaTests
 
     // Kind and workflow are independent: any usage, operated by any workflow.
     [Theory]
-    [InlineData("name: broker\nkind: queue\nworkflow: restic\n")]
+    [InlineData("name: broker\nkind: queue\nworkflow: tofu\n")]
     [InlineData("name: cache\nkind: cache\nworkflow: docker\nservice: redis\n")]
     public void Judge_TakesAnyKindWithAnyWorkflow(string yaml) =>
         Judge(yaml).ShouldBeEmpty();

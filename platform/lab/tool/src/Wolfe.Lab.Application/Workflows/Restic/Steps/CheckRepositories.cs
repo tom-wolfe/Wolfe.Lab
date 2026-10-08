@@ -15,7 +15,7 @@ internal sealed class CheckRepositories(IRestic restic, IWorkflowLog log)
         await restic.Check(local, readDataSubset: null, ct);
         log.Status($"{local.Location} checks out.");
         await restic.Check(offsite.Repository, repositories.VerifySample, ct);
-        log.Status($"{offsite.Repository.Location} checks out, {repositories.VerifySample?.Value}% of its data read back.");
+        log.Status($"{offsite.Repository.Location} checks out, {repositories.VerifySample.Value}% of its data read back.");
         return StepResult.Successful;
     }
 }

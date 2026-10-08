@@ -4,7 +4,6 @@ using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Restic;
 using Wolfe.Lab.Application.Volumes;
-using Wolfe.Lab.Application.Workflows.Restic.Models;
 using Wolfe.Lab.Application.Workflows.Restic.Steps;
 using Wolfe.Lab.Infrastructure.Heartbeat;
 
@@ -37,7 +36,7 @@ internal sealed class OffsiteJob : ResticJob
     public override JobKind Kind => JobKind.Work;
 
 
-    protected override void Configure(IWorkflowBuilder builder, ResticOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
         builder.AddHeartbeat();

@@ -192,7 +192,7 @@ public class ServiceCatalogReaderTests : IDisposable
             ---
             name: database
             kind: database
-            workflow: restic
+            workflow: tofu
             metrics: { port: 8081 }
             """);
 
@@ -200,7 +200,7 @@ public class ServiceCatalogReaderTests : IDisposable
         (await Errors()).ShouldBe([
             "personal/immich/compose/component.yaml#1:6: logs: 'stdout' is not a way logs are delivered (otlp).",
             "personal/immich/compose/component.yaml#1:7: metrics.port: 70000 should be at most 65535",
-            "personal/immich/compose/component.yaml#2:12: metrics: 'metrics' is not something a restic component declares."
+            "personal/immich/compose/component.yaml#2:12: metrics: 'metrics' is not something a tofu component declares."
         ]);
 
         Declare("personal/immich/compose/component.yaml", """
@@ -226,7 +226,7 @@ public class ServiceCatalogReaderTests : IDisposable
         Declare("personal/immich/compose/component.yaml", """
             name: database
             kind: database
-            workflow: restic
+            workflow: tofu
             partOf: postgres
             ---
             name: postgres

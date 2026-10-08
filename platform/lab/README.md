@@ -429,8 +429,7 @@ heartbeat: { check: lab-restic-offsite, key: op://Wolfe.Lab/healthchecks-ping-ke
 ```
 
 The offsite copy pings it after a green run, and the lab's own heartbeat
-(`monitoring/heartbeat/ping`) every fifteen minutes. Until a component
-declares these, its `ritten.json` still says them.
+(`monitoring/heartbeat/ping`) every fifteen minutes.
 
 A component the `tofu` workflow operates is a root module, and declares
 nothing beyond what every component does: each is its service's

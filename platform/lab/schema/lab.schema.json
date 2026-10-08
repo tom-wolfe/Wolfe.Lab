@@ -1347,10 +1347,8 @@
             "description": "The healthchecks.io check it pings when its work is done: the dead man's switch that pages when it stops."
           },
           "retention": {
-            "type": [
-              "null",
-              "object"
-            ],
+            "description": "What the nightly prune keeps, of both repositories alike.",
+            "type": "object",
             "properties": {
               "daily": {
                 "type": "integer",
@@ -1384,8 +1382,7 @@
               "weekly",
               "monthly"
             ],
-            "additionalProperties": false,
-            "description": "What the nightly prune keeps, of both repositories alike."
+            "additionalProperties": false
           },
           "verify": {
             "type": [
@@ -1409,7 +1406,8 @@
         "required": [
           "kind",
           "workflow",
-          "name"
+          "name",
+          "retention"
         ],
         "additionalProperties": false
       }
