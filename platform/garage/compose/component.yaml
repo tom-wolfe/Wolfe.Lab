@@ -1,8 +1,11 @@
 # yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
 name: server
 kind: storage
-workflow: docker
+workflow: garage
 service: garage
 description: "Garage itself."
 metrics:
   port: 3903
+layout:
+  zone: home
+  capacity: 500G
