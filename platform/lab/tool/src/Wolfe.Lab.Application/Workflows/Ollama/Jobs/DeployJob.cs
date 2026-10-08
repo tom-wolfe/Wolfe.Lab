@@ -1,8 +1,10 @@
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
+using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
 using Wolfe.Lab.Application.Workflows.Ollama.Steps;
 using Wolfe.Lab.Infrastructure.Ollama;
+using Wolfe.Lab.Infrastructure.Packages;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Jobs;
 
@@ -20,6 +22,8 @@ internal sealed class DeployJob : LabJob<DeclaredSettings>
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
         Step.FromType<ResolveServerPlan>(),
+        Step.FromType<ResolveServerAgent>(),
+        Step.FromType<InstallAgentPackages>(),
         Step.FromType<AwaitServer>(),
         Step.FromType<ResolveModels>(),
         Step.FromType<GateApproval>(),
@@ -32,6 +36,6 @@ internal sealed class DeployJob : LabJob<DeclaredSettings>
     protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
-        builder.AddOllama();
+        builder.AddOllama().AddPackages();
     }
 }
