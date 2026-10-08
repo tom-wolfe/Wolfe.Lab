@@ -6,7 +6,7 @@ workflow: caddy-certificates
 description: "The wildcard certificate, issued and renewed by lego over a DNS challenge."
 domains: ["*.twolfe.dev"]
 issuer:
-  image: goacme/lego:v5.4.0
+  image: goacme/lego:v5.5.2
   email: tom@twolfe.dev
   dns: netlify
   store: ~/Docker/caddy/lego
