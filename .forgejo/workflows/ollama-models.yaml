@@ -1,0 +1,39 @@
+name: ollama models
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths: [ai/ollama/**, .forgejo/workflows/ollama-models.yaml]
+  workflow_dispatch:
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        use: [interactive, background, embedding]
+    runs-on: docker
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - working-directory: ai/ollama/${{ matrix.use }}
+        run: lab check
+
+  deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        node: [MacMini, MacStudio]
+        use: [interactive, background, embedding]
+    runs-on: ${{ matrix.node }}
+    timeout-minutes: 60
+    concurrency:
+      group: ${{ matrix.node }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - working-directory: ai/ollama/${{ matrix.use }}
+        run: lab deploy --auto-approve

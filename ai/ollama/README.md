@@ -1,7 +1,8 @@
 # ollama
 
-The lab's model endpoint: one host process on the mini, behind the front
-door at `ai.twolfe.dev`.
+The lab's model endpoint: a host process on the mini and another on the
+Studio, behind the front door at `ai.twolfe.dev`, and the models they
+serve, declared by what each is used for.
 
 ## Why this service has no compose file
 
@@ -11,10 +12,9 @@ work. The model server is therefore the one thing in the lab that has to
 be a host process, and this service is the first of a second kind: a service
 whose stack is a supervised agent rather than a container.
 
-What that means concretely — `ritten.json` declares an `agents` section
-instead of naming a compose file, `lab deploy` renders it to a launchd
-unit and bootstraps it, and there is nothing to install into an install
-directory because nothing on the node reads from there. The declaration
+What that means concretely — each server, `mini/` and `studio/`, is an
+`agent` component rather than a compose stack: `lab deploy` renders it to
+a launchd unit and bootstraps it. The declaration
 is platform-neutral, so when the primary node stops being a Mac this
 service does not change; only which renderer the CLI registers does.
 
@@ -38,8 +38,8 @@ is tailnet-only; and the LAN is the house's own.
 If that stops being acceptable, the move is to bind the mini's Tailscale
 address instead of `0.0.0.0`. Containers reach it by egressing through
 the host, so caddy still works, and the LAN stops being able to. The cost
-is a machine-specific address in `ritten.json` and an endpoint that dies
-with the tailnet.
+is a machine-specific address in the server's declaration and an endpoint
+that dies with the tailnet.
 
 ## What depends on it, and how it degrades
 
@@ -59,23 +59,19 @@ rule one level up: the Studio may serve, but nothing may depend on it.
 
 ## The Studio
 
-A second component, `studio/`, the same `ollama` shape on the Studio's
-runner (`ollama-studio.yaml`): the agent, `dev.twolfe.ollama`, and the
-models it holds. The route asks it first — `lb_policy first`, health
-checked every ten seconds — and falls through to the mini the moment it
-does not answer, which is every evening the Studio sleeps. A request
-that lands in the gap before the check notices is retried on the mini
-(`lb_try_duration`). Callers see one endpoint whichever machine served.
+A second server, `studio/`, the same agent on the Studio's runner
+(`ollama-studio.yaml`): `dev.twolfe.ollama`, serving what the Studio can
+run. The route asks it first — `lb_policy first`, health checked every ten
+seconds — and falls through to the mini the moment it does not answer,
+which is every evening the Studio sleeps. A request that lands in the gap
+before the check notices is retried on the mini (`lb_try_duration`).
+Callers see one endpoint whichever machine served.
 
-**The Studio holds every model the mini does, and more.** While the Studio
-is awake every request goes to it, so a model only the mini held would be
-"not found" exactly when the Studio is on. So `studio/ritten.json` pulls
-the mini's list, plus what only the Studio can run — today `qwen3:30b-a3b`
-and its non-thinking twin: mixtures of experts, about 18 GB resident each
-but only ~3B parameters active per token, so much better than the mini's 8B
-at a fraction of a dense model's compute. That is the budget a job has on somebody's workstation, as
-is `OLLAMA_NUM_PARALLEL=1`: one request at a time. Models unload after
-ollama's five idle minutes.
+It runs `qwen3.6:35b-a3b`, a mixture of experts: about 24 GB resident, but
+only ~3B parameters active per token, so much better than the mini's 9B at
+a fraction of a dense model's compute. That is the budget a job has on
+somebody's workstation, as is `OLLAMA_NUM_PARALLEL=1`: one request at a
+time. Models unload after ollama's five idle minutes.
 
 What it does not need: the mini's drive, and so the mini's file-access
 grant. Its store is the default `~/.ollama/models` on the internal disk.
@@ -85,54 +81,78 @@ cost (above), and servers reach it on 11434 alone
 off is its normal state, and the check that pages is the front door's,
 which the mini keeps up.
 
-## Roles
+## Uses
 
-Callers ask for a **role**, not a model: `lab/background`, `lab/interactive`,
-`lab/embedding`. Each server's `ritten.json` declares which of its pulled
-models fills each role, and a deploy points the `lab/<role>` alias at it
-(`ollama cp`: a manifest, no extra disk). A caller then gets the best model
-of whichever machine answered — the Studio's by day, the mini's while it
-sleeps — without knowing which, and without a fallback of its own.
+Callers ask for a **use**, not a model: `lab/interactive`, `lab/background`,
+`lab/embedding`. Each is a component of its own, in its own directory, saying
+what it is for and what each server runs for it — a default model and
+context, and a server's own where it differs:
 
-| Role | For | Studio | Mini |
+```yaml
+# interactive/component.yaml
+name: interactive
+kind: model
+workflow: ollama
+model: "qwen3.6:35b-a3b"
+context: 16384
+servedBy:
+  studio: {}
+  mini: { model: "qwen3.5:9b", context: 8192 }
+```
+
+A deploy makes `lab/<use>` on each server from that server's model, with its
+context (`ollama create`: a manifest that shares the weights, no extra disk),
+so a caller gets the best model of whichever machine answered — the Studio's
+by day, the mini's while it sleeps — without knowing which, and without a
+fallback of its own.
+
+| Use | For | Studio | Mini |
 |---|---|---|---|
-| `background` | Unattended jobs: the mail scanner | `qwen3:30b-a3b` | `qwen3:8b` |
-| `interactive` | A person waiting: Paperless's suggestions and chat | `qwen3:30b-a3b-instruct-2507-q4_K_M` | `qwen3:8b` |
-| `embedding` | Vectors for search: Paperless's index | `embeddinggemma:300m` | `embeddinggemma:300m` |
+| `interactive` | A person waiting: Paperless's suggestions and chat, Grafana's summaries | `qwen3.6:35b-a3b`, 16k | `qwen3.5:9b`, 8k |
+| `background` | Unattended jobs: the mail scanner | `qwen3.6:35b-a3b`, 16k | `qwen3.5:9b`, 8k |
+| `embedding` | Vectors for search: Paperless's index | `embeddinggemma:300m`, 2k | `embeddinggemma:300m`, 2k |
 
-On the Studio, `interactive` is the instruct release of `background`'s
-model: the same weights without the thinking, which spent 30–60 seconds
-of every Paperless suggestion before the first useful token. Unattended
-jobs keep the thinking; nobody waits for them. Both are resident only
-while in use, but a morning that runs both holds about 37 GB. The
-Obsidian front end (ROADMAP #10) may pick a bigger interactive
-model; that is the moment to weigh its memory against the desk.
+**Whether a model thinks is the caller's to say, not the use's.** Both Qwen
+models think by default and stop when a request says so: Paperless asks
+over the OpenAI-compatible `/v1` with `reasoning_effort: none`
+(`personal/paperless/README.md`, "AI"), and Grafana's summaries think. So
+one model serves both `interactive` and `background`, where it once took a
+thinking model and its instruct twin, 37 GB on a morning that ran both.
 
-The `check` job holds two rules, reading both components' files so a pull
-request that changes either is caught:
+**The context is the use's, per server**, because Ollama's OpenAI endpoint
+takes none from the caller: a request over `/v1` gets the model's own, which
+on the Studio would otherwise be whatever the machine's memory allows. A use
+that wants a long window — the vault, one day — is a use of its own with
+its own context, on the same model. Two uses of one model with different
+contexts are two runners in memory, so a server's should share one where it
+can, as the mini's do.
 
-- **Every server declares every role.** A role only the Studio declared
-  would be "not found" every evening, where the point is that it degrades
-  to the mini's best. There is no strict, Studio-only role.
-- **A role marked `identical` names the same model everywhere.** That is
-  `embedding`: vectors from two models are not comparable, and an index
-  built at night on the mini and searched by day on the Studio would
-  return nonsense without failing. Changing the embedding model means
-  every consumer rebuilds its index.
+The catalog holds the rules, so a check catches them on the pull request:
 
-A deploy also removes the alias of a role no longer declared, so a caller
+- **Every server serves every use.** A use only the Studio served would be
+  "not found" every evening, where the point is that it degrades to the
+  mini's best.
+- **Every server has a model for it**: its own, or the default.
+
+`embedding` names its model once, as the default, and no server overrides
+it, because vectors from two models are not comparable: an index built at
+night on the mini and searched by day on the Studio would return nonsense
+without failing. Nothing but that declaration holds it so, and changing the
+embedding model means every consumer rebuilds its index.
+
+A deploy also retires the name of a use no longer declared, so a caller
 asking for it hears "not found" rather than whatever it used to mean.
 Pulled models are never removed.
 
 ## Models
 
-They live on Data2, not where ollama would put them. The mini has a
+The mini's live on Data2, not where ollama would put them. The mini has a
 256 GB internal disk with about 60 GB free, and a single useful model is
 4–10 GB of that — so the default `~/.ollama/models` would put the lab one
 careless `ollama pull` away from a full boot drive, which macOS handles
-badly. `OLLAMA_MODELS` points at `/Volumes/Data2/ollama/models` and the
-service declares the volume, so `lab deploy` refuses to run while the
-drive is unmounted rather than converging onto a shadow path.
+badly. The server's `OLLAMA_MODELS` points at `/Volumes/Data2/ollama/models`
+and it requires the volume, so its deploy refuses to run while the drive is
+unmounted rather than converging onto a shadow path.
 
 They are not backed up: a model is a re-pullable artefact, not state.
 
@@ -148,17 +168,19 @@ than theoretically, launchd's `StartOnMount` is the fix.
 The model is left to unload when idle, which is ollama's default. That
 costs a cold load on the first request after a quiet spell — seconds to
 tens of seconds — which is the thing to change first if the scanner feels
-slow. `OLLAMA_KEEP_ALIVE=-1` in the `environment` block pins it resident
+slow. `OLLAMA_KEEP_ALIVE=-1` in a server's `environment` pins it resident
 at the cost of holding the RAM.
 
-Which model fills a role is this service's decision; which role to ask
+Which model serves a use is this service's decision; which use to ask
 for is the caller's.
 
 ## Order of operations
 
-The deploy installs the pinned release itself (`package` in each
-component's `ritten.json`; platform/lab/README.md, "Packages and tools") before
-it converges the server, and puts it first on the job's path, so the
-`ollama pull` and `ollama cp` the job runs are the server's own version.
-Nothing needs to land before it.
-
+Each server deploys as an agent, installing its pinned release
+(`package`; platform/lab/README.md, "Packages and tools") before it
+converges the unit. The uses deploy on their own (`ollama-models.yaml`),
+on every node a server runs on, and again whenever anything under
+`ai/ollama/` changes: each installs its node's server's release, puts it
+first on the job's path — so the `ollama pull` and `ollama create` it runs
+are the server's own version — and waits for the server to answer before
+it pulls. Nothing needs to land before it.

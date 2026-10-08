@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: background
+kind: model
+workflow: ollama
+description: "Unattended jobs: nobody waits, so it thinks."
+model: "qwen3.6:35b-a3b"
+context: 16384
+servedBy:
+  studio: {}
+  mini:
+    model: "qwen3.5:9b"
+    context: 8192

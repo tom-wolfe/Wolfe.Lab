@@ -92,7 +92,7 @@ Reading them would send a great many invitations for events long past.
    only as dates becomes an all-day event covering check-out day.
 3. **Prose**, to `lab/background` at `ai.twolfe.dev` — the Studio's
    model while it is awake, the mini's otherwise (`ai/ollama/README.md`,
-   "Roles") — for the same kinds of entry: appointments, journeys and
+   "Uses") — for the same kinds of entry: appointments, journeys and
    stays. Only what the first two could not answer reaches here. Every
    such email is read by a model: with none available the watcher stops
    short of it, and resumes from it when one answers — the health check goes red after 15 minutes stuck,
