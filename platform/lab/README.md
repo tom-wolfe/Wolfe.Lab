@@ -335,8 +335,8 @@ on every node alike, declared to the collector by the deploy, which
 retires any targets its agents left under an earlier name. A deploy on a
 node the component is not placed on has nothing to do.
 
-An agent's log is kept to a size by `lab rotate`, a job of the agent and
-ollama workflows: logrotate, as the lab's user, with the component's own
+An agent's log is kept to a size by `lab rotate`, a job of the agent
+workflow: logrotate, as the lab's user, with the component's own
 configuration and state under `{lab.root}/.logrotate`, rotating past 10 MB
 and keeping five compressed generations. It copies a log and truncates it
 in place rather than moving it, because launchd and systemd hold the file
@@ -345,11 +345,34 @@ Macs, and the Pi's OS ships it; nothing else runs it. A rehearsal is
 logrotate's own debug run, from the run's scratch.
 
 `runsOn`, `agent` and `program` are required of every agent component;
-its `ritten.json` names only its workflow. An `ollama` component
-declares its agent the same way, required of it too, placed on its one
-node (`runsOn: [mini]`), while its models and roles stay in its
-`ritten.json`. Its deploy holds `models.store` to the agent's
-`OLLAMA_MODELS`.
+its `ritten.json` names only its workflow. A model server is one such
+agent, placed on its one node (`runsOn: [mini]`).
+
+A component the `ollama` workflow operates is a model, declared by what
+it is used for, in a directory of its own: `interactive`, `background`,
+`embedding`. Each server of its service serves it, under the name callers
+ask for, `lab/<name>`, with the model and context it runs: the model's
+defaults, or the server's own.
+
+```yaml
+name: interactive
+kind: model
+workflow: ollama
+model: "qwen3.6:35b-a3b"     # every server, unless one says otherwise
+context: 16384               # tokens; the model's own when none says
+servedBy:
+  studio: {}
+  mini: { model: "qwen3.5:9b", context: 8192 }
+```
+
+The catalog refuses a server with no model for a use, a server that is
+not one of the service's agents, and a use some of the service's servers
+do not serve: a use only the Studio answered would be "not found" every
+evening, where it should fall back to the mini's best. A deploy, on each
+node, waits for that node's server, pulls what it runs and makes each
+use's name from its model with its context (`ollama create`: a manifest
+sharing the weights). It retires the name of a use no longer declared,
+so a caller asking for it hears "not found".
 
 Any component may say which external drives it needs, by mount point:
 

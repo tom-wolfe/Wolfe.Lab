@@ -4,6 +4,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
@@ -393,13 +394,73 @@ public class ServiceCatalogReaderTests : IDisposable
         component.Agent.Name.Value.ShouldBe("ollama");
     }
 
-    [Fact]
-    public async Task Read_RefusesAnOllamaComponentThatDeclaresNoAgent()
+    // The service's two servers, each an agent placed on its node.
+    private void Servers()
     {
+        Declare("platform/nodes.yaml", Nodes);
         Declare("ai/ollama/service.yaml", Ollama);
-        Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\n");
+        Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: agent\nrunsOn: [mini]\nagent: ollama\nprogram: \"{package}/ollama\"\n");
+        Declare("ai/ollama/pi/component.yaml", "name: pi\nkind: model\nworkflow: agent\nrunsOn: [pi]\nagent: ollama\nprogram: /usr/bin/ollama\n");
+    }
 
-        (await Errors()).ShouldBe(["ai/ollama/mini/component.yaml:2: Required properties [\"runsOn\",\"agent\",\"program\"] are not present"]);
+    [Fact]
+    public async Task Read_TakesAModelByItsUse_EachServerItsDefaultsOrItsOwn()
+    {
+        Servers();
+        Declare("ai/ollama/interactive/component.yaml", """
+            name: interactive
+            kind: model
+            workflow: ollama
+            model: "qwen3.6:35b-a3b"
+            context: 16384
+            servedBy:
+              mini: { model: "qwen3.5:9b", context: 8192 }
+              pi: {}
+            """);
+
+        var model = (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.OfType<ModelComponent>().ShouldHaveSingleItem();
+
+        model.Alias.ShouldBe("lab/interactive");
+        (model.ModelOn(ComponentName.From("mini")), model.ContextOn(ComponentName.From("mini"))).ShouldBe((ModelTag.From("qwen3.5:9b"), ContextLength.From(8192)));
+        (model.ModelOn(ComponentName.From("pi")), model.ContextOn(ComponentName.From("pi"))).ShouldBe((ModelTag.From("qwen3.6:35b-a3b"), ContextLength.From(16384)));
+    }
+
+    [Fact]
+    public async Task Read_RefusesAServerWithNoModelForAUse()
+    {
+        Servers();
+        Declare("ai/ollama/interactive/component.yaml", "name: interactive\nkind: model\nworkflow: ollama\nservedBy: { mini: { model: \"qwen3.5:9b\" }, pi: {} }\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("servedBy.pi: 'pi' has no model for it");
+    }
+
+    [Fact]
+    public async Task Read_RefusesAModelSomeServersDoNotServe()
+    {
+        Servers();
+        Declare("ai/ollama/interactive/component.yaml", "name: interactive\nkind: model\nworkflow: ollama\nmodel: \"qwen3.5:9b\"\nservedBy: { mini: {}, pi: {} }\n");
+        Declare("ai/ollama/embedding/component.yaml", "name: embedding\nkind: model\nworkflow: ollama\nmodel: \"embeddinggemma:300m\"\nservedBy: { mini: {} }\n");
+
+        (await Errors()).ShouldHaveSingleItem().ShouldContain("is not served by pi");
+    }
+
+    [Fact]
+    public async Task Read_RefusesAModelServedByWhatIsNoServer()
+    {
+        Servers();
+        Declare("ai/ollama/interactive/component.yaml", "name: interactive\nkind: model\nworkflow: ollama\nmodel: \"qwen3.5:9b\"\nservedBy: { mini: {}, pi: {}, studio: {} }\n");
+
+        (await Errors()).ShouldContain(error => error.Contains("'studio' is not one of its service's servers"));
+    }
+
+    [Fact]
+    public async Task Read_StillTakesAServerDeclaredAsOllama_AsTheAgentItIs()
+    {
+        Declare("platform/nodes.yaml", Nodes);
+        Declare("ai/ollama/service.yaml", Ollama);
+        Declare("ai/ollama/mini/component.yaml", "name: mini\nkind: model\nworkflow: ollama\nrunsOn: [mini]\nagent: ollama\nprogram: \"{package}/ollama\"\n");
+
+        (await Read()).Value.ShouldNotBeNull().Services.ShouldHaveSingleItem().Components.ShouldHaveSingleItem().ShouldBeOfType<AgentComponent>();
     }
 
     [Fact]

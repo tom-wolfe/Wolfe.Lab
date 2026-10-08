@@ -16,9 +16,9 @@ public class Component : IEquatable<Component>
     /// <summary>
     /// Creates a new component.
     /// </summary>
-    public static Result<Component> Create(DocumentSource source, ComponentName name, ComponentKind kind, WorkflowName workflow, ComponentName? partOf, IReadOnlyList<ComponentName> dependsOn)
+    public static Result<Component> Create(DocumentSource source, ComponentName name, ComponentKind kind, WorkflowName workflow)
     {
-        var errors = Validate(source, name, partOf, dependsOn, out var directory);
+        var errors = Validate(source, out var directory);
         if (errors.Count != 0)
         {
             return errors;
@@ -30,13 +30,12 @@ public class Component : IEquatable<Component>
             Directory = directory,
             Name = name,
             Kind = kind,
-            Workflow = workflow,
-            PartOf = partOf,
-            DependsOn = dependsOn
+            Workflow = workflow
         };
     }
 
-    private protected static List<Error> Validate(DocumentSource source, ComponentName name, ComponentName? partOf, IReadOnlyList<ComponentName> dependsOn, out RepositoryPath directory)
+    // Where its file sits: in its service's directory, or a directory of its own within it.
+    private protected static List<Error> Validate(DocumentSource source, out RepositoryPath directory)
     {
         var problems = new List<Error>();
         var file = source.File;
@@ -48,16 +47,6 @@ public class Component : IEquatable<Component>
         {
             directory = file;
             problems.Add(ComponentErrors.OutOfPlace);
-        }
-
-        if (partOf == name)
-        {
-            problems.Add(ComponentErrors.PartOfItself(name));
-        }
-
-        if (dependsOn.Contains(name))
-        {
-            problems.Add(ComponentErrors.DependsOnItself(name));
         }
 
         return [.. problems.Select(Error (problem) => CatalogError.In(source, problem))];
@@ -115,7 +104,7 @@ public class Component : IEquatable<Component>
     /// <summary>
     /// The components of its own service it needs, by name (<see cref="Services.Service.FindComponent"/>).
     /// </summary>
-    public IReadOnlyList<ComponentName> DependsOn { get; init; } = [];
+    public IReadOnlyList<ComponentName> DependsOn { get; set; } = [];
 
     /// <summary>
     /// The external drives the component relies on.
@@ -135,7 +124,7 @@ public class Component : IEquatable<Component>
     /// <summary>
     /// The sibling it lives inside, if any, by name (<see cref="Services.Service.FindComponent"/>).
     /// </summary>
-    public ComponentName? PartOf { get; init; }
+    public ComponentName? PartOf { get; set; }
 
     /// <summary>
     /// Gets the first The nearest component (this one included), that the lab runs.

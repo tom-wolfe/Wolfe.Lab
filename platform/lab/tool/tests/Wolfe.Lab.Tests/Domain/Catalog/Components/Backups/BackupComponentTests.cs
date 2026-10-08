@@ -9,24 +9,28 @@ public class BackupComponentTests
 {
     private static readonly DocumentSource Source = new(RepositoryPath.From("media/sonarr/backup/component.yaml"));
 
-    private static Result<BackupComponent> Create(string[] paths, string[]? excludes = null, string[]? verify = null, bool warm = false, string? partOf = "server") =>
-        BackupComponent.Create(Source, ComponentName.From("config"), ComponentKind.Storage, partOf is null ? null : ComponentName.From(partOf), [],
-            [.. paths.Select(HostPath.From)], [.. (excludes ?? []).Select(HostPath.From)], [.. (verify ?? []).Select(HostPath.From)], warm);
+    private static Result<BackupComponent> Create(params string[] paths) =>
+        BackupComponent.Create(Source, ComponentName.From("config"), ComponentKind.Storage, [.. paths.Select(HostPath.From)]);
 
-    private static IReadOnlyList<(string? Field, Error Problem)> Problems(Result<BackupComponent> result) =>
+    // A backup of paths, given what else the test says, added beside Sonarr's server.
+    private static Result<Component> Add(string[] paths, string[]? excludes = null, string[]? verify = null, bool warm = false, string? partOf = "server") =>
+        Catalogs.Add(Catalogs.Of("media/sonarr/compose", Catalogs.Docker("server", "sonarr")).Services.Single(), Source,
+            Catalogs.Backup("config", partOf, paths) with { Backup = new Catalogs.Snapshot(paths, excludes, verify, warm) });
+
+    private static IReadOnlyList<(string? Field, Error Problem)> Problems<T>(Result<T> result) where T : class =>
         [.. result.Errors.ShouldNotBeNull().Cast<CatalogError>().Select(error => (error.Field, error.Problem))];
 
     [Fact]
     public void Create_IsOperatedByTheBackupWorkflow() =>
-        Create(["/Users/lab/Docker/sonarr/config"]).Value.ShouldNotBeNull().Workflow.ShouldBe(WorkflowName.Backup);
+        Create("/Users/lab/Docker/sonarr/config").Value.ShouldNotBeNull().Workflow.ShouldBe(WorkflowName.Backup);
 
     [Fact]
     public void Create_RefusesNothingToSnapshot() =>
-        Problems(Create([])).ShouldBe([("paths", BackupErrors.NothingToSnapshot)]);
+        Problems(Create()).ShouldBe([("paths", BackupErrors.NothingToSnapshot)]);
 
     [Fact]
-    public void Create_RefusesWhatIsLeftOutOrVerifiedOutsideThePaths() =>
-        Problems(Create(["/Users/lab/Docker/sonarr/config"], excludes: ["/Users/lab/Docker/sonarr/config/logs", "/Users/lab/Docker/sonarr/configs"],
+    public void Add_RefusesWhatIsLeftOutOrVerifiedOutsideThePaths() =>
+        Problems(Add(["/Users/lab/Docker/sonarr/config"], excludes: ["/Users/lab/Docker/sonarr/config/logs", "/Users/lab/Docker/sonarr/configs"],
                 verify: ["/Users/lab/Docker/radarr/config/radarr.db"]))
             .ShouldBe([
                 ("excludes.1", BackupErrors.OutsideThePaths(HostPath.From("/Users/lab/Docker/sonarr/configs"))),
@@ -34,8 +38,8 @@ public class BackupComponentTests
             ]);
 
     [Fact]
-    public void Create_RefusesAWarmBackupOfNothing() =>
-        Problems(Create(["/Volumes/Data2/files"], warm: true, partOf: null)).ShouldBe([("warm", BackupErrors.WarmOfNothing)]);
+    public void Add_RefusesAWarmBackupOfNothing() =>
+        Problems(Add(["/Volumes/Data2/files"], warm: true, partOf: null)).ShouldBe([("warm", BackupErrors.WarmOfNothing)]);
 
     [Fact]
     public void Stops_WhatItIsPartOf_UnlessWarm()

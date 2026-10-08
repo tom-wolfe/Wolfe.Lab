@@ -45,13 +45,13 @@ public class ComponentTests
     [InlineData("personal/component.yaml")]
     [InlineData("personal/immich/compose/deep/component.yaml")]
     public void Create_RefusesADeclarationOutOfAnyServicesPlace(string file) =>
-        Component.Create(new DocumentSource(RepositoryPath.From(file)), ComponentName.From("server"), ComponentKind.App, WorkflowName.Restic, null, [])
+        Component.Create(new DocumentSource(RepositoryPath.From(file)), ComponentName.From("server"), ComponentKind.App, WorkflowName.Restic)
             .Errors.ShouldNotBeNull().ShouldHaveSingleItem().Message.ShouldContain("in a directory of its own within it");
 
     [Fact]
-    public void Create_RefusesOneThatIsPartOfOrDependsOnItself() =>
-        Component.Create(new DocumentSource(RepositoryPath.From("personal/immich/compose/component.yaml")), ComponentName.From("loop"),
-                ComponentKind.App, WorkflowName.Restic, ComponentName.From("loop"), [ComponentName.From("loop")])
+    public void Add_RefusesOneThatIsPartOfOrDependsOnItself() =>
+        Catalogs.Add(Catalogs.AddService(new ServiceCatalog(), "personal/immich").Value.ShouldNotBeNull(), new DocumentSource(RepositoryPath.From("personal/immich/compose/component.yaml")),
+                Catalogs.Definition("loop", ComponentKind.App, WorkflowName.Restic, partOf: "loop") with { DependsOn = ["loop"] })
             .Errors.ShouldNotBeNull().Select(error => error.Message).ShouldBe([
                 "personal/immich/compose/component.yaml: 'loop' is part of itself.",
                 "personal/immich/compose/component.yaml: 'loop' depends on itself."

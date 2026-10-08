@@ -3,6 +3,7 @@ using Wolfe.Lab.Domain.Catalog.Components;
 using Wolfe.Lab.Domain.Catalog.Components.Agents;
 using Wolfe.Lab.Domain.Catalog.Components.Backups;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
+using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Facets.Telemetry;
 using Wolfe.Lab.Domain.Catalog.Nodes;
 using Wolfe.Lab.Domain.Catalog.Services;
@@ -31,7 +32,20 @@ internal static class Catalogs
         IReadOnlyList<MetricsEndpoint>? Metrics = null,
         DeploymentTarget? RunsOn = null,
         AgentProcess? Agent = null,
-        Snapshot? Backup = null);
+        Snapshot? Backup = null,
+        Use? Serving = null);
+
+    /// <summary>
+    /// What a test says a model serves, makes a declaration a model component: its defaults, and
+    /// each server with what it runs otherwise.
+    /// </summary>
+    internal sealed record Use(string? Model, int? Context, (string Server, string? Model, int? Context)[] ServedBy);
+
+    /// <summary>
+    /// A model used for <paramref name="name"/>, running <paramref name="model"/> on each of <paramref name="servers"/>.
+    /// </summary>
+    public static Declaration Model(string name, string model, params string[] servers) =>
+        new(name, ComponentKind.Model, WorkflowName.Ollama, Serving: new Use(model, null, [.. servers.Select(server => (server, (string?)null, (int?)null))]));
 
     /// <summary>
     /// What a test says a backup snapshots, makes a declaration a backup component.
@@ -113,30 +127,37 @@ internal static class Catalogs
     public static Result<Component> Add(Service service, DocumentSource source, Declaration declaration)
     {
         var name = ComponentName.From(declaration.Name);
-        var partOf = declaration.PartOf is { } whole ? ComponentName.From(whole) : (ComponentName?)null;
-        IReadOnlyList<ComponentName> dependsOn = [.. (declaration.DependsOn ?? []).Select(ComponentName.From)];
-        if (declaration.Backup is { } snapshot)
-        {
-            var backup = BackupComponent.Create(source, name, declaration.Kind, partOf, dependsOn, [.. snapshot.Paths.Select(HostPath.From)],
-                [.. (snapshot.Excludes ?? []).Select(HostPath.From)], [.. (snapshot.Verify ?? []).Select(HostPath.From)], snapshot.Warm);
-            return backup.Value is { } backupComponent ? service.Add<Component>(backupComponent) : new Result<Component>(backup.Errors ?? []);
-        }
-
-        if (declaration is { RunsOn: { } runsOn, Agent: { } agent })
-        {
-            var placed = AgentComponent.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn, runsOn, agent);
-            return placed.Value is { } agentComponent ? service.Add<Component>(agentComponent) : new Result<Component>(placed.Errors ?? []);
-        }
-
         var created = declaration switch
         {
-            { ComposeService: { } built, Workflow: var workflow } when workflow == WorkflowName.DotNetService =>
-                Created(DotNetServiceComponent.Create(source, name, declaration.Kind, partOf, dependsOn, ComposeServiceName.From(built)), declaration),
+            { Serving: { } use } => Made(ModelComponent.Create(source, name, declaration.Kind,
+                use.ServedBy.ToDictionary(server => ComponentName.From(server.Server),
+                    server => new ModelServing(server.Model is { } own ? ModelTag.From(own) : null, server.Context is { } tokens ? ContextLength.From(tokens) : null))), model =>
+            {
+                model.Model = use.Model is { } runs ? ModelTag.From(runs) : null;
+                model.Context = use.Context is { } tokens ? ContextLength.From(tokens) : null;
+            }),
+            { Backup: { } snapshot } => Made(BackupComponent.Create(source, name, declaration.Kind, [.. snapshot.Paths.Select(HostPath.From)]), backup =>
+            {
+                backup.Excludes = [.. (snapshot.Excludes ?? []).Select(HostPath.From)];
+                backup.Verify = [.. (snapshot.Verify ?? []).Select(HostPath.From)];
+                backup.Warm = snapshot.Warm;
+            }),
+            { RunsOn: { } runsOn, Agent: { } agent } => Made(AgentComponent.Create(source, name, declaration.Kind, declaration.Workflow, runsOn, agent), _ => { }),
+            { ComposeService: { } built } when declaration.Workflow == WorkflowName.DotNetService =>
+                Made(DotNetServiceComponent.Create(source, name, declaration.Kind, ComposeServiceName.From(built)), docker => Reports(docker, declaration)),
             { ComposeService: { } composeService } =>
-                Created(DockerComponent.Create(source, name, declaration.Kind, partOf, dependsOn, ComposeServiceName.From(composeService)), declaration),
-            _ => Wolfe.Lab.Domain.Catalog.Components.Component.Create(source, name, declaration.Kind, declaration.Workflow, partOf, dependsOn)
+                Made(DockerComponent.Create(source, name, declaration.Kind, ComposeServiceName.From(composeService)), docker => Reports(docker, declaration)),
+            _ => Wolfe.Lab.Domain.Catalog.Components.Component.Create(source, name, declaration.Kind, declaration.Workflow)
         };
-        return created.Value is { } component ? service.Add(component) : created;
+
+        if (created.Value is not { } component)
+        {
+            return created;
+        }
+
+        component.PartOf = declaration.PartOf is { } whole ? ComponentName.From(whole) : null;
+        component.DependsOn = [.. (declaration.DependsOn ?? []).Select(ComponentName.From)];
+        return service.Add(component);
     }
 
     /// <summary>
@@ -149,18 +170,24 @@ internal static class Catalogs
         return service.Value is { } created ? catalog.Add(created) : service;
     }
 
-    // A Docker component made, with its logs and metrics as the test says, as a component: a
-    // Result of the derived type is not one of its base.
-    private static Result<Component> Created<T>(Result<T> made, Declaration declaration) where T : DockerComponent
+    // A component made and given what the test declares beyond what it is made with, as a
+    // component: a Result of the derived type is not one of its base.
+    private static Result<Component> Made<T>(Result<T> made, Action<T> declares) where T : Component
     {
         if (made.Value is not { } component)
         {
             return new Result<Component>(made.Errors ?? []);
         }
 
+        declares(component);
+        return component;
+    }
+
+    // A Docker component's logs and metrics, as the test says.
+    private static void Reports(DockerComponent component, Declaration declaration)
+    {
         component.Logs = declaration.Logs;
         component.Metrics = declaration.Metrics ?? [];
-        return component;
     }
 
     /// <summary>

@@ -16,9 +16,9 @@ public sealed class DotNetServiceComponent : DockerComponent
     /// <summary>
     /// Creates a new .NET service component.
     /// </summary>
-    public static new Result<DotNetServiceComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, ComponentName? partOf, IReadOnlyList<ComponentName> dependsOn, ComposeServiceName composeService)
+    public static new Result<DotNetServiceComponent> Create(DocumentSource source, ComponentName name, ComponentKind kind, ComposeServiceName composeService)
     {
-        var errors = Validate(source, name, partOf, dependsOn, out var directory);
+        var errors = Validate(source, out var directory);
         if (errors.Count != 0)
         {
             return errors;
@@ -31,8 +31,6 @@ public sealed class DotNetServiceComponent : DockerComponent
             Name = name,
             Kind = kind,
             Workflow = WorkflowName.DotNetService,
-            PartOf = partOf,
-            DependsOn = dependsOn,
             ComposeService = composeService
         };
     }

@@ -1,65 +1,37 @@
-using Microsoft.Extensions.DependencyInjection;
-using Wolfe.Lab.Application.Agents;
 using Wolfe.Lab.Application.Catalog;
 using Wolfe.Lab.Application.Gates;
-using Wolfe.Lab.Application.Packages;
 using Wolfe.Lab.Application.Releases;
-using Wolfe.Lab.Application.Volumes;
-using Wolfe.Lab.Application.Workflows.Ollama.Models;
 using Wolfe.Lab.Application.Workflows.Ollama.Steps;
-using Wolfe.Lab.Infrastructure.Agents;
 using Wolfe.Lab.Infrastructure.Ollama;
-using Wolfe.Lab.Infrastructure.Packages;
-using Wolfe.Lab.Infrastructure.Releases;
 
 namespace Wolfe.Lab.Application.Workflows.Ollama.Jobs;
 
 /// <summary>
-/// Converges the model server and what it holds.
+/// Deploys Ollama models to a node.
 /// </summary>
-internal sealed class DeployJob : LabJob<OllamaOptions>
+internal sealed class DeployJob : LabJob<DeclaredSettings>
 {
     public override string Name => "deploy";
 
-    public override string Description => "Converges the model server's agent, pulls the models the service declares and points its roles at them.";
+    public override string Description => "Pulls the models this node's server serves and points each use's name at its model.";
 
     public override IReadOnlyList<Step> Steps { get; } =
     [
-        Step.FromType<CheckRoles>(),
         Step.FromType<ResolveServiceCatalog>(),
         Step.FromType<ResolveDeploymentUnit>(),
-        Step.FromType<ResolveAgentDeclarations>(),
-        Step.FromType<CheckModelStore>(),
-        Step.FromType<InstallAgentPackages>(),
-        Step.FromType<ResolveAgents>(),
-        Step.FromType<CheckVolumes>(),
-        Step.FromType<GateApproval>(),
-        Step.FromType<EnsureModelStore>(),
-        Step.FromType<InstallDeployment>(),
-        Step.FromType<ConvergeAgents>(),
-        Step.FromType<DeclareAgentLogs>(),
+        Step.FromType<ResolveServerPlan>(),
         Step.FromType<AwaitServer>(),
         Step.FromType<ResolveModels>(),
+        Step.FromType<GateApproval>(),
         Step.FromType<PullModels>(),
-        Step.FromType<PointRoles>()
+        Step.FromType<PointUses>()
     ];
 
     public override JobKind Kind => JobKind.Deploy;
 
-    protected override void ValidateSettings(SettingsValidator<OllamaOptions> options) => options
-        .Require(s => s.Models.Store is not null, "'models.store' not set in ritten.json.");
-
-    protected override void Configure(IWorkflowBuilder builder, OllamaOptions options)
+    protected override void Configure(IWorkflowBuilder builder, DeclaredSettings options)
     {
         base.Configure(builder, options);
-        builder.AddPackages().AddAgents().AddOllama().AddInstaller();
-        builder.Services.AddSingleton(new ModelPlan([.. options.Models.Pull]));
-        builder.Services.AddSingleton(RolePlan.From(options.Models.Roles));
-        builder.Services.AddSingleton(new DeclaredRoles(options.Models));
-
-        if (options.Models.Store is { } store)
-        {
-            builder.Services.AddSingleton(new ModelStore(store.Directory));
-        }
+        builder.AddOllama();
     }
 }
