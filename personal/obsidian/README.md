@@ -2,10 +2,11 @@
 
 The vaults — `Main` and `Dungeons & Dragons` — live in Obsidian Sync.
 The mini keeps a headless copy of each under `~/Obsidian/<name>` and
-turns it into git history on Forgejo. `ritten.json` declares the
-vaults, where each pushes, what git leaves out and how the push
-authenticates; `lab sync --vault <name>` (the CLI in `platform/lab/`) runs one
-pass: sync, commit what changed, push what Forgejo lacks. One workflow
+turns it into git history on Forgejo. Each vault is a component of its
+own, `main/` and `dnd/`, whose `component.yaml` declares where it is
+checked out, where it pushes, what git leaves out and how the push
+authenticates; `lab sync` from its directory (the CLI in `platform/lab/`)
+runs one pass: sync, commit what changed, push what Forgejo lacks. One workflow
 per vault, because each has its own rhythm: `main` every ten minutes;
 `dnd` daily, which makes a game night one commit.
 
@@ -31,7 +32,7 @@ arrives.
 ## What's committed
 
 Everything Obsidian Sync delivers: notes, attachments and `.obsidian/`.
-The `exclude` list in `ritten.json` is written into each checkout's
+Each vault's `exclude` list is written into its checkout's
 `.git/info/exclude` on every pass, so nothing lab-owned lives inside
 the vault where it would sync to every device. It holds `.DS_Store`,
 Obsidian's `.trash/`, and the client's `.sync.lock`.
@@ -46,5 +47,5 @@ URL, the checkout or the process list.
 
 The repositories are declared in `platform/forgejo/tofu/vaults.tf` —
 private, git only, `prevent_destroy`. Adding a vault is one entry
-there, one in `ritten.json`, one workflow, and the bootstrap in
-`RUNBOOK.md`.
+there, a directory with its `component.yaml`, one workflow, and the
+bootstrap in `RUNBOOK.md`.

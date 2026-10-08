@@ -14,7 +14,7 @@ This service deliberately owns ONLY the shared edge concerns:
   Tailscale address, plus `lab.twolfe.dev` for the door itself, which is what a service CNAMEs to when it wants a name of its own.
 - the wildcard certificate — ONE cert for `*.twolfe.dev` —
   obtained and renewed OUTSIDE caddy by the `certs/` component
-  (`lab renew`, declared in its `ritten.json`): lego solves DNS-01
+  (`lab renew`, declared in its `component.yaml`): lego solves DNS-01
   against Netlify nightly and reloads caddy when the cert changes;
 - the routes — every component's `caddy.caddyfile`, gathered by the
   `routes/` component into a release of its own that the Caddyfile
@@ -122,15 +122,14 @@ rewrites the configuration.
   happened: the container was recreated a minute before a re-issued cert
   landed). Now such a name just fails its handshake until the renewal
   runs and force-reloads.
-- `docker exec caddy caddy validate --config /etc/caddy/lab/caddy-proxy/Caddyfile`
+- `docker exec caddy caddy validate --config /lab/caddy-proxy/Caddyfile`
   checks config (including all snippets) without touching the running
-  instance. That path — the Caddyfile through the repo mount, not a
-  file bind at `/etc/caddy/Caddyfile` — is deliberate: a single-file bind
-  follows an inode, git replaces files by rename, and the first edit
-  after container creation left caddy holding a deleted file
-  (compose.yaml has the story). The same trap applies to any single
-  file bound into any container.
-- The repo mount is read-only and safe: the repo contains `op://`
+  instance. That path is the Caddyfile through the install root, which
+  caddy mounts as a directory at `/lab` like every container that reads
+  deployments: a single-file bind follows an inode, and an install
+  replaces a changed file by rename, so a bound file would leave caddy
+  holding the deleted one.
+- The install mount is read-only and safe: deployments carry `op://`
   references, never secret material.
 - Headless pulls of uncached images (a bumped caddy or lego pin, through
   the runner) work because of the null credential helper the headless

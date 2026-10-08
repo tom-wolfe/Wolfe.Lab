@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: dnd
+kind: backup
+workflow: obsidian
+description: "The Dungeons & Dragons vault."
+path: ~/Obsidian/dnd
+repository: http://macmini.local:3000/Obsidian/Wolfe.Dnd.git
+push:
+  username: tom-wolfe
+  token: op://Wolfe.Lab/forgejo-obsidian-token/credential
+exclude: [.DS_Store, .trash/, .obsidian/.sync.lock]

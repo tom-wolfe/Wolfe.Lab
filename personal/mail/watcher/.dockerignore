@@ -2,7 +2,6 @@
 # compose file, its secrets and the build outputs are not the application.
 compose.yaml
 secrets.env
-ritten.json
 **/bin
 **/obj
 artifacts

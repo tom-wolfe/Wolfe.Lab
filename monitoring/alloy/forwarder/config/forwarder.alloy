@@ -2,7 +2,7 @@
 // what the node gathers, labelled with the node (node.alloy), forwarded to the
 // gateway in Grafana's service (monitoring/grafana/gateway) over the tailnet —
 // never through caddy, so a broken front door cannot hide the evidence of its
-// own failure. The gateway's address is the agent's (LAB_GATEWAY, in ritten.json).
+// own failure. The gateway's address is the agent's (LAB_GATEWAY, in its component.yaml).
 
 import.file "node" {
 	filename = sys.env("LAB_ROOT") + "/alloy-forwarder/config/node.alloy"

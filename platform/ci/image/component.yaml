@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: image
+kind: package
+workflow: image
+description: "The CI image, built by kaniko on the merge."
+tag: code.twolfe.dev/tom-wolfe/ci
+context: ../../..
+dockerfile: platform/ci/image/Dockerfile

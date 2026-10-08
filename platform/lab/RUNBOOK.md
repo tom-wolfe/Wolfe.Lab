@@ -11,9 +11,9 @@ CLI chezmoi installs on the nodes and the Studio — the version the runners
 run:
 
 ```sh
-cd personal/obsidian/vaults
-lab sync --vault main --dry-run
-lab sync --vault main
+cd personal/obsidian/main
+lab sync --dry-run
+lab sync
 lab --help
 ```
 

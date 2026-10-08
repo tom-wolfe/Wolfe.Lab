@@ -65,7 +65,7 @@ Its output, both streams:
 
 ## Change how it runs
 
-Edit `ritten.json` and push. The deploy job rewrites the unit and
+Edit `component.yaml` and push. The deploy job rewrites the unit and
 restarts the agent only if the rendered unit actually changed, so a
 re-run that changes nothing is a no-op.
 

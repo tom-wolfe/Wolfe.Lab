@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: chezmoi
+displayName: chezmoi
+description: "The machine plane: dotfiles, packages and node services, applied by chezmoi."
+links:
+  - { title: README, type: docs, path: README.md }

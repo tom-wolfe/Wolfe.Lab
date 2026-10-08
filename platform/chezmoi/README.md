@@ -40,8 +40,8 @@ each profile gets:
   new profile in the prompt's list, an entry there if it is a node, and
   a block in each file it should get.
 
-**Seeing it.** `lab check` from `platform/chezmoi/` renders the whole source for
-every profile in `ritten.json`, on any machine, vault stubbed, lists what
+**Seeing it.** `lab check` from `platform/chezmoi/profiles/` renders the whole
+source for every profile its `component.yaml` lists, on any machine, vault stubbed, lists what
 each machine would get (`--verbose`) and shellchecks the rendered scripts.
 The chezmoi workflow runs it on each pull request, so a template that only
 breaks on the Pi fails before the merge.

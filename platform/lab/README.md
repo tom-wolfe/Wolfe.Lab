@@ -9,16 +9,16 @@ it can be typed, rehearsed and tested.
 ## How a component opts in
 
 A directory the CLI serves declares components, and the workflow they
-run — `workflow: docker` — is the one `lab` runs there. A workflow whose
-options are not declared yet still reads them from a `ritten.json`
-beside them, which names the workflow too. That directory
+run — `workflow: docker` — is the one `lab` runs there. Only the CLI's
+own directory (`tool/`, a `dotnet-tool`) still reads its options from a
+`ritten.json`, which names the workflow too. That directory
 is a *component*: a service is the folder that groups its
 components (`media/sonarr/compose/`, `media/sonarr/backup/`, `platform/forgejo/tofu/`,
 `platform/forgejo/runners/`), and never carries a declaration of its own. Run
 from a component's directory, `lab` offers exactly that workflow's jobs
 as commands, each option of which is a job argument the job declared. A
 workflow is a class here: its jobs, each job's ordered steps, and the
-options shape its `ritten.json` must satisfy, judged before anything
+document shape its components are written in, judged before anything
 runs. Steps hand each other typed values (a `DeploymentUnit`, say) rather than
 sharing state, and reach outside the working directory only through a
 client that has a dry-run twin, so `--dry-run` rehearses any job
@@ -114,7 +114,7 @@ there: a compose stack its compose file and config, an agent its
 arguments' files (`{lab.root}/alloy-forwarder/config/forwarder.alloy`).
 Nothing else is published, and nothing declares where to: the deployment's
 name says. The install is a mirror, so what the deployment no longer has
-is deleted from it; `ritten.json` and the run's own output stay behind.
+is deleted from it; the run's own output stays behind.
 The run's report has an **Install** section: where it went, the files that
 changed (`+` added, `~` changed, `-` deleted) folded beneath it, and any
 restart that followed — a rehearsal reports the same as what it would do.
@@ -201,7 +201,7 @@ A declaration names them as `{lab.root}` and `{lab.data}`.
 
 ### Declarations
 
-The lab is moving from `ritten.json` to describing itself in YAML files
+The lab describes itself in YAML files
 of its own (ROADMAP.md #14): a `kind: service` document in each service's
 directory — its catalog entry — and a document per component, a logical
 part of the service: `kind:` saying what it is used for and `workflow:`
@@ -461,7 +461,7 @@ references between them are the only direction a dependency can point:
   files through `IDirectory` and `IFile` (`HostPath.Directory`); what
   reads a disk, a process or the network directly is here.
 - `Wolfe.Lab.Application` — what the lab does:
-  - `Workflows/<name>/` — one per `"workflow"` a `ritten.json` can name,
+  - `Workflows/<name>/` — one per `workflow:` a component can declare,
     the folder named for the workflow (`CaddyRoutes/` for
     `caddy-routes`): the workflow class, its options record under
     `Models/`, and the jobs and steps only it lists under `Jobs/` and
@@ -481,7 +481,7 @@ neither, and no workflow knows another. The agent (#6) will be a fifth
 project beside the CLI, over the domain and the infrastructure.
 
 A bound shape is an *options* type, whichever file it comes from — a
-workflow's `ritten.json` (`ResticOptions`) or a client's section of
+workflow's `ritten.json` (`DotNetToolOptions`, the last) or a client's section of
 `appsettings.json` (`HealthchecksOptions`) — as it is in
 `Microsoft.Extensions.Options`; `WorkflowSettings`, `SettingsValidator`
 and `ValidateSettings` are Ritten's names, not the lab's. Production code

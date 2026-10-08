@@ -611,12 +611,15 @@ and each fact moves once.
    `release`, `volumes` (as `requiresVolumes`), `artifacts` and `images`.
 7. Every remaining `ritten.json` a declaration, a workflow at a time,
    each in a document shape of its own; Ollama's models as components;
-   `layout:` on Garage's component.
+   `layout:` on Garage's component. *Done 2026-10-09, but for the CLI's
+   own `dotnet-tool`, whose project and feed Ritten reads before any step
+   can read the catalog.*
 8. `ritten.json` gone: every lab job takes its component from the
    catalog (`RequiresProject => false`). A job whose settings are all
    declared needs none, and its directory is recognised by the workflow
-   its components declare: the files that name only a workflow go,
-   and the rest with step 7.
+   its components declare. Every `ritten.json` but `tool/`'s is gone; what
+   remains is the cleanup release that drops the `ritten.json` fallbacks
+   step 7's workflows kept for the change-over.
 
 What was here and lands with the agent instead: placement for every
 component (#6's step 4), the state workflows and the backup plan (#6),

@@ -15,7 +15,7 @@ reasons are in `README.md`.
    one means updating the variable and re-applying.
 3. **First certificate**: `lab renew` from `network/caddy/certs/` on the mini (or
    the `caddy certs` workflow); it reads the Netlify token its
-   `ritten.json` names, for the DNS-01 challenge.
+   `component.yaml` names, for the DNS-01 challenge.
    Caddy loads the cert from files and cannot START without them —
    setup.sh encodes this ordering.
 4. **First deploy**: run the `caddy compose` workflow, then `caddy routes` (or
@@ -122,6 +122,6 @@ re-run of the `caddy routes` workflow.
 
 ## Upgrading
 
-Caddy: bump the `image:` pin in `compose/compose.yaml`, redeploy. lego: bump
-`image` in `certs/ritten.json`, and check the lego release
-notes — a major bump can change the CLI (v4→v5 did).
+Caddy: bump the `image:` pin in `compose/compose.yaml`, redeploy. lego: Renovate
+moves the issuer's `image` in `certs/component.yaml`; check the lego
+release notes before merging — a major bump can change the CLI (v4→v5 did).
