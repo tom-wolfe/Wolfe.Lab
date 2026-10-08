@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: tailscale
+displayName: Tailscale
+description: "The lab's overlay network, between every node."
+links:
+  - { title: README, type: docs, path: README.md }
+  - { title: Runbook, type: runbook, path: RUNBOOK.md }
