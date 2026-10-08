@@ -369,7 +369,9 @@ The catalog refuses a server with no model for a use, a server that is
 not one of the service's agents, and a use some of the service's servers
 do not serve: a use only the Studio answered would be "not found" every
 evening, where it should fall back to the mini's best. A deploy, on each
-node, waits for that node's server, pulls what it runs and makes each
+node, installs that node's server's pinned release and runs its commands
+with it, as the server's own deploy does, so a node needs no other
+`ollama`. It waits for the server, pulls what it runs and makes each
 use's name from its model with its context (`ollama create`: a manifest
 sharing the weights). It retires the name of a use no longer declared,
 so a caller asking for it hears "not found".
