@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: ping
+kind: backend
+workflow: heartbeat
+description: "Proof the scheduler is alive: a ping every fifteen minutes from the mini's runner."
+heartbeat:
+  check: lab-chezmoi-update # Named `chezmoi` due to legacy technical debt reasons. This needs to be renamed.
+  key: op://Wolfe.Lab/healthchecks-ping-key/credential

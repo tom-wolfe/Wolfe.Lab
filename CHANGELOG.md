@@ -8,6 +8,8 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Restic's settings and the heartbeat ping are declared.** Their `ritten.json` now names only the workflow.
+
 - **The repositories declare their retention.** With the verify sample and the offsite heartbeat;
   any component may declare a `heartbeat`, and `ritten.json` still says them until it does.
 
