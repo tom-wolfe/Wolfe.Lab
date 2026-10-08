@@ -581,7 +581,7 @@ None of the numbers are in code. **`appsettings.json`**, shipped beside
 the CLI in the tool, holds how the CLI behaves and where it reaches out
 to — each wait's `Limit` and `Interval` under its client's section
 (`Garage:Answering`, `Ollama:Serving`, `Launchd:Unloading`), each HTTP
-client's `HttpStandardResilienceOptions` (`Packages:Http`, `Gatus:Http`),
+client's `HttpStandardResilienceOptions` (`Packages:Http`),
 the services it calls (`Alerts:Endpoint`, `Heartbeat:Endpoint`,
 `Packages:Releases` and `Packages:Api`) and the vault's service account
 (`OnePassword:ServiceAccountTokenFile`) — where a component's

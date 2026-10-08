@@ -10,7 +10,6 @@ using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Components.Forgejo;
 using Wolfe.Lab.Domain.Catalog.Components.Garage;
-using Wolfe.Lab.Domain.Catalog.Components.Gatus;
 using Wolfe.Lab.Domain.Catalog.Components.Images;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
@@ -667,11 +666,6 @@ public class ServiceCatalogReaderTests : IDisposable
 
         (await Errors()).ShouldHaveSingleItem().ShouldContain("tag: 'lab/ci' names no registry host");
     }
-
-    [Fact]
-    public async Task Read_TakesGatusHealthsEndpoint() =>
-        (await Only("monitoring/gatus", "monitoring/gatus/health/component.yaml", "name: health\nkind: backend\nworkflow: gatus-health\nurl: http://pi:8280/health\n"))
-            .ShouldBeOfType<GatusHealthComponent>().Url.ShouldBe(ServiceUrl.From("http://pi:8280/health"));
 
     [Fact]
     public async Task Read_TakesACertificateItsIssuerAndTheCaddyItReloads()

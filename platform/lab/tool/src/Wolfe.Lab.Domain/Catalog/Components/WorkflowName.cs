@@ -19,13 +19,12 @@ namespace Wolfe.Lab.Domain.Catalog.Components;
 [Instance("Chezmoi", "chezmoi", "A node's profile, applied by chezmoi.")]
 [Instance("Heartbeat", "heartbeat", "A dead man's switch: one ping, on a schedule.")]
 [Instance("Backup", "backup", "A component's state, snapshotted into restic.")]
-[Instance("GatusHealth", "gatus-health", "Gatus, asked on a schedule whether it is up.")]
 [Instance("CaddyRoutes", "caddy-routes", "Every service's routes, gathered for the front door.")]
 public readonly partial struct WorkflowName : IClosedSet<WorkflowName>
 {
     /// <inheritdoc />
     public static IReadOnlyList<WorkflowName> All =>
-        [Docker, DotNetService, Garage, Agent, Ollama, ForgejoRunner, Obsidian, Restic, Tofu, CaddyCertificates, Image, DotNetTool, Chezmoi, Backup, CaddyRoutes, Heartbeat, GatusHealth];
+        [Docker, DotNetService, Garage, Agent, Ollama, ForgejoRunner, Obsidian, Restic, Tofu, CaddyCertificates, Image, DotNetTool, Chezmoi, Backup, CaddyRoutes, Heartbeat];
 
     /// <summary>
     /// True when this workflow runs the component as a process (a container or an agent).

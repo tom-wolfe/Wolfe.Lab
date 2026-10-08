@@ -12,7 +12,9 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
-- **The remaining workflows can be declared.** Chezmoi's profiles, the CI image, Gatus's health, Caddy's certificate and routes, a vault each and the runners read their component, and `ritten.json` until they have one.
+- **The remaining workflows can be declared.** Chezmoi's profiles, the CI image, Caddy's certificate and routes, a vault each and the runners read their component, and `ritten.json` until they have one.
+
+- **`forgejo-runners` is `forgejo-runner`.**
 
 - **A directory's components name its workflow.** A job whose settings are all declared runs without a `ritten.json`.
 
@@ -50,6 +52,8 @@ rather than versioned — the lab is continuous, not released.
 - **The `agents` workflow is `agent`.** Declarations and `ritten.json` name it so; `agents` is no longer read.
 
 ### Removed
+
+- **The `gatus-health` workflow.** Grafana, which scrapes Gatus, watches it instead.
 
 - **Immich's Takeout import is gone.** A one-off migration, not something the lab runs; it is in the history.
 

@@ -14,7 +14,6 @@ using Wolfe.Lab.Domain.Catalog.Components.Chezmoi;
 using Wolfe.Lab.Domain.Catalog.Components.Compose;
 using Wolfe.Lab.Domain.Catalog.Components.Forgejo;
 using Wolfe.Lab.Domain.Catalog.Components.Garage;
-using Wolfe.Lab.Domain.Catalog.Components.Gatus;
 using Wolfe.Lab.Domain.Catalog.Components.Images;
 using Wolfe.Lab.Domain.Catalog.Components.Models;
 using Wolfe.Lab.Domain.Catalog.Components.Obsidian;
@@ -245,7 +244,6 @@ public static partial class ServiceCatalogReader
             DockerDocument docker => Docker(source, name, docker, errors),
             ChezmoiDocument chezmoi => Chezmoi(source, name, chezmoi, errors),
             ImageDocument image => Image(source, name, image, errors),
-            GatusHealthDocument health => GatusHealth(source, name, health, errors),
             CaddyCertificatesDocument certificates => CaddyCertificates(source, name, certificates, errors),
             CaddyRoutesDocument routes => CaddyRoutes(source, name, routes, errors),
             ObsidianDocument vault => Obsidian(source, name, vault, errors),
@@ -415,19 +413,6 @@ public static partial class ServiceCatalogReader
             created.Context = document.Context ?? created.Context;
             created.Dockerfile = document.Dockerfile ?? created.Dockerfile;
         });
-    }
-
-    // Gatus's health: the endpoint the probe asks.
-    private static Result<Component>? GatusHealth(DocumentSource source, ComponentName name, GatusHealthDocument document, List<Error> errors)
-    {
-        var url = ServiceUrl.TryFrom(document.Url);
-        if (!url.IsSuccess)
-        {
-            errors.Add(new FieldError("url", DeclarationErrors.Schema(url.Error.ErrorMessage)));
-            return null;
-        }
-
-        return Widen(GatusHealthComponent.Create(source, name, document.Kind, url.ValueObject), _ => { });
     }
 
     // A certificate: what it covers, what issues it, and the Caddy that serves it.

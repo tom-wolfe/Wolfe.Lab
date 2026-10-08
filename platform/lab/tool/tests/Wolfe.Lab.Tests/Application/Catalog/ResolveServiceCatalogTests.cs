@@ -67,14 +67,6 @@ public class ResolveServiceCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task Check_RefusesAComponentInADirectoryWhoseWorkflowOperatesNone()
-    {
-        Declare("personal/immich/health/component.yaml", "name: server\nkind: app\nworkflow: docker\nservice: server\n");
-
-        (await Errors("personal/immich/health", "gatus-health")).ShouldHaveSingleItem().ShouldContain("declares the docker workflow, but its directory's ritten.json runs gatus-health.");
-    }
-
-    [Fact]
     public async Task Check_LeavesAPartToNameItsOwnWorkflow()
     {
         Declare("personal/immich/compose/component.yaml",
