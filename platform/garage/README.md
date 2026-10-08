@@ -45,7 +45,7 @@ Garage — the chicken that lays every other project's egg. Its own state is
 deliberately **local and disposable**: run once, harvest the outputs, delete
 the state.
 
-The root carries a `ritten.json` like every other, so `lab check` and
+The root declares its component like every other, so `lab check` and
 `lab deploy` run from it; it has no workflow, because its state is local
 and disposable and a plan on a runner would have nothing to read.
 

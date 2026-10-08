@@ -69,7 +69,7 @@ expected and stops on its own.
    with `.obsidian/` in it, and `nvm-run ob sync-status --path
    ~/Obsidian/main` reports the new location, `mirror-remote`, and
    the config categories. A pass can be rehearsed by hand from a
-   checkout on the mini: `cd personal/obsidian/vaults && lab sync --vault main
+   checkout on the mini: `cd personal/obsidian/main && lab sync
    --dry-run`. An empty `.obsidian/` in the commit means the
    other devices publish no configuration — their "Vault configuration"
    toggles in Obsidian's Sync settings decide that.
@@ -80,10 +80,11 @@ expected and stops on its own.
 ## Adding a vault
 
 1. `ob sync-list-remote` for its ID; add `"<name>" = "Obsidian vault: …"`
-   to `locals.vaults` in `platform/forgejo/tofu/vaults.tf`, and the vault's
-   `path` and `repository` under `vaults` in `ritten.json`.
+   to `locals.vaults` in `platform/forgejo/tofu/vaults.tf`, and a directory
+   `personal/obsidian/<name>/` whose `component.yaml` copies `dnd/`'s with
+   the vault's `name`, `path` and `repository`.
 2. Copy `.forgejo/workflows/obsidian-dnd.yaml` to `obsidian-<name>.yaml`,
-   change the vault name, the concurrency group and the alert title,
+   change the working directory, the concurrency group and the alert title,
    and give it the schedule the vault deserves.
 3. Merge, then steps 4–6 above for the new vault.
 

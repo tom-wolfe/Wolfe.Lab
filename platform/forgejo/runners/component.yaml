@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: runners
+kind: runner
+workflow: forgejo-runner
+description: "Each node's Actions runners, registered with Forgejo."
+vault: Wolfe.Lab
+repository: tom-wolfe/Wolfe.Lab
+image: node:22-bookworm

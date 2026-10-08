@@ -12,8 +12,8 @@ each monitored machine).
 | --- | --- |
 | Hub container | `.forgejo/workflows/beszel-compose.yaml` on every push that touches `compose/` (the mini's host runner); first bring-up via `setup.sh` |
 | Hub state (`~/Docker/beszel/data`) | nightly cold backup, `beszel-backup.yaml` (below) |
-| Agent binary | each node's `package` in `agent/ritten.json`: the release the deploy installs, pinned to the hub's version (platform/lab/README.md, "Packages and tools"); Renovate moves both as one |
-| Agent supervision and config | the `agent/` component: `agent/ritten.json` declares each node's agent — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
+| Agent binary | the agent's `package` in `agent/component.yaml`: the release the deploy installs on every node, pinned to the hub's version (platform/lab/README.md, "Packages and tools"); Renovate moves both as one |
+| Agent supervision and config | the `agent/` component: `agent/component.yaml` declares the agent every node runs (`runsOn: all`) — environment, vault references, log — and `.forgejo/workflows/beszel-agent.yaml` runs `lab deploy --node <node>` on every node's own runner, rendering a launchd agent on the Macs and a systemd user unit on the Pi (`dev.twolfe.beszel-agent`) |
 | Hub liveness | Gatus, from the Pi (`monitoring/gatus/compose/config/lab.yaml`) |
 | Route (`beszel.twolfe.dev`) | `caddy.caddyfile`, imported by the front door |
 | Systems | **the hub's UI.** Not tofu — see "The configuration that isn't code" |
@@ -49,12 +49,12 @@ installs the pinned release before it converges the unit.
 
 The agent dials **out** to the hub over a WebSocket; nothing ever connects
 in. Two values make that work, both vault references in
-`agent/ritten.json`, resolved into the agent's unit at deploy — which is
+`agent/component.yaml`, resolved into the agent's unit at deploy — which is
 why the unit is written for its owner alone:
 
 - `TOKEN` — a *universal* registration token from the hub's
   `/settings/tokens`. Universal means the same value enrols any number of
-  agents, so adding a server is a node in `agent/ritten.json`, not a new
+  agents, so adding a server is a node in `platform/nodes.yaml`, not a new
   secret per machine.
 - `KEY` — the hub's **public** key, which is how the agent decides the
   thing answering is really our hub.
@@ -195,13 +195,13 @@ The stop is not optional: PocketBase runs SQLite in WAL mode, and copying
 that live can capture a database file without the `-wal` that completes it.
 A few seconds of downtime costs a gap in one metrics series.
 
-The agent has nothing to back up — its configuration is `agent/ritten.json`,
+The agent has nothing to back up — its configuration is `agent/component.yaml`,
 and 1Password holds the two values it references. Its fingerprint, in
 `~/.config/beszel/fingerprint`, is regenerated and re-enrolled if lost.
 
 ## The Pi
 
-The second host shape, declared beside the mini's in `agent/ritten.json`:
+The second host shape, the same declaration as the mini's, filled in from the Pi's node:
 `HUB_URL` is the mini's MagicDNS name rather than `localhost`, no
 `EXTRA_FILESYSTEMS` (the drives are the mini's), and `DOCKER_HOST` is the
 Pi's own socket. The binary is a pinned release fetched by chezmoi into

@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: profiles
+kind: machine
+workflow: chezmoi
+description: "Every machine's profile, rendered and shellchecked before a node applies it."
+profiles: [macbook, macstudio, work-macbook, macmini-node, pi-node]

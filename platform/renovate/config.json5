@@ -34,11 +34,11 @@
   customManagers: [
     {
       // What the lab installs from GitHub releases (platform/lab/README.md,
-      // "Packages and tools"): a package in a ritten.json, and every tool in
-      // .config/lab-tools.json. Only the version is pinned —
-      // the checksum is read from the release — so this is all that moves.
+      // "Packages and tools"): every tool in .config/lab-tools.json. Only the
+      // version is pinned — the checksum is read from the release — so this is
+      // all that moves.
       customType: "regex",
-      managerFilePatterns: ["/(^|/)ritten\\.json$/", "/^\\.config/lab-tools\\.json$/"],
+      managerFilePatterns: ["/^\\.config/lab-tools\\.json$/"],
       matchStrings: [
         "\"github\":\\s*\"(?<depName>[^\"]+)\",\\s*\"version\":\\s*\"(?<currentValue>[^\"]+)\"",
       ],
@@ -56,6 +56,13 @@
       ],
       datasourceTemplate: "github-releases",
       extractVersionTemplate: "^v?(?<version>.+)$",
+    },
+    {
+      // lego, as the certificate declares the image that issues it.
+      customType: "regex",
+      managerFilePatterns: ["/^network/caddy/certs/component\\.yaml$/"],
+      matchStrings: ["\\n\\s+image:\\s*\"?(?<depName>[^:\"\\s]+):(?<currentValue>[^\"\\s]+)\"?"],
+      datasourceTemplate: "docker",
     },
     {
       // Grafana's plugins, pinned where the container installs them.

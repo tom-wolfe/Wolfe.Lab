@@ -67,7 +67,7 @@ Current stable tags: https://github.com/linuxserver/docker-sonarr/releases
 ## Backup and restore
 
 The nightly backup workflow snapshots `~/Docker/sonarr/config`
-via the shared pipeline (`lab backup` from `media/sonarr/backup`, whose `ritten.json` declares what):
+via the shared pipeline (`lab backup` from `media/sonarr/backup`, whose `component.yaml` declares what):
 stops the container, `restic backup`, starts it. Excluded: `Backups/`
 (Sonarr's own zips — restic is the backup), `MediaCover/` (artwork
 TVDB re-serves), logs. Restore is the generic recipe in

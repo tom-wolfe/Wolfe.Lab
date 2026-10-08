@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../platform/lab/schema/lab.schema.json
+kind: service
+name: ci
+displayName: CI
+description: "The image every containerised job runs in."

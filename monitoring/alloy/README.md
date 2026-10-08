@@ -8,7 +8,7 @@ the telemetry stores — a container of Grafana's service
 
 | Concern            | Handled by                                                                                                                                                    |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Binary             | the agent's `package` in `forwarder/ritten.json`, per node: the release the deploy installs, pinned (platform/lab/README.md, "Packages and tools")            |
+| Binary             | the agent's `package` in `forwarder/component.yaml`: the release the deploy installs on every node, pinned (platform/lab/README.md, "Packages and tools")     |
 | Process            | `forwarder/`, the `agent` workflow: a launchd unit on a Mac, a systemd user unit on the Pi, `.forgejo/workflows/alloy-agent.yaml`                             |
 | Config             | `forwarder/config/`, installed with the forwarder to `${LAB_ROOT}/alloy-forwarder`; a change restarts every node's agent (platform/lab/README.md, "Installs") |
 | Gateway            | `monitoring/grafana/gateway`: a compose stack of its own, `config/gateway.alloy`                                                                              |
@@ -59,7 +59,7 @@ where anything came from.
 
 The node's identity is the agent's — `LAB_HOST`, `LAB_ROLE`, `LAB_ROOT`
 for where the targets are, `LAB_GATEWAY`, and `DOCKER_HOST` where the
-Docker socket is not the standard one, all in `forwarder/ritten.json` —
+Docker socket is not the standard one, all in `forwarder/component.yaml` —
 so one config serves every node.
 
 ## What every node does

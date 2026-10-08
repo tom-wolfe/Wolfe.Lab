@@ -48,7 +48,7 @@ route.
 categories, and BT_backup/ (.torrent files + fastresume); the parts
 configured in the UI rather than declared here. Mount-guarded,
 integrity-guarded — the shared `lab backup` pipeline, with this
-service's paths declared in `ritten.json`; retention and the
+service's paths declared in `backup/component.yaml`; retention and the
 offsite copy belong to `restic-offsite.yaml` (`platform/restic/README.md`).
 `gluetun/` is deliberately excluded: a disposable server-list cache.
 

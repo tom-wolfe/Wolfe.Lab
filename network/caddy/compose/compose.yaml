@@ -16,13 +16,16 @@ services:
         "caddy",
         "run",
         "--config",
-        "/etc/caddy/lab/caddy-proxy/Caddyfile",
+        "/lab/caddy-proxy/Caddyfile",
         "--adapter",
         "caddyfile",
       ]
 
     volumes:
-      - ..:/etc/caddy/lab:ro
+      # The install root, as a directory: every container that reads deployments
+      # mounts it at /lab, so a deployment's files are /lab/<service>-<head>/ and
+      # the lab finds this Caddyfile by its unit.
+      - ..:/lab:ro
 
       # The wildcard certificate, written by the certs component (lego
       # state lives in ~/Docker/caddy/lego — that's the ACME account and

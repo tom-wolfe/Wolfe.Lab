@@ -29,8 +29,8 @@ as `platform/garage/tofu` — run once, harvest the outputs, store them.
    enrolled it keeps working without it, so a stale vaulted token only
    bites when you enrol a new machine or wipe `~/.cache/beszel`. That's
    also why persistence matters — the laptops enrol months from now.
-4. **Declare the node**: an entry under `nodes` in `agent/ritten.json`,
-   with its `package` asset for the node's platform.
+4. **Declare the node** in `platform/nodes.yaml`: the agent runs on every
+   node (`runsOn: all`), and its `package` asset follows the node's platform.
 5. **Start the agent**: run the **beszel agent** workflow, or on the node
    `cd monitoring/beszel/agent && lab deploy --node <node>`. It installs the
    pinned binary, resolves the token and key from the vault into the
@@ -44,8 +44,8 @@ as `platform/garage/tofu` — run once, harvest the outputs, store them.
 
 One version, for the hub and every agent — they speak a versioned protocol
 and are only tested as a pair. It is written in two places, the hub's
-`image:` in `compose/compose.yaml` and each node's `package` in
-`agent/ritten.json`, and Renovate moves them in one pull request (the
+`image:` in `compose/compose.yaml` and the agent's `package` in
+`agent/component.yaml`, and Renovate moves them in one pull request (the
 `beszel` group). The merge redeploys both: the new package is a new
 directory, so each agent's unit changes and it restarts on the new
 binary.

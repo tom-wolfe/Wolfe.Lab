@@ -1,7 +1,0 @@
-{
-  "workflow": "caddy-routes",
-  "caddy": {
-    "container": "caddy",
-    "caddyfile": "/etc/caddy/lab/caddy-proxy/Caddyfile"
-  }
-}

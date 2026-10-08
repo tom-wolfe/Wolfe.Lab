@@ -10,6 +10,16 @@ rather than versioned — the lab is continuous, not released.
 
 - **Grafana pages for a component that stops answering.** `component-unanswering`: a declared metrics endpoint unscraped for five minutes while its collector runs. It watches Gatus in place of the `gatus-health` probe, which is gone.
 
+### Changed
+
+- **Every component is declared; `ritten.json` is gone.** Chezmoi's profiles, the CI image, Caddy's certificate and routes, the vaults and the runners have their `component.yaml`, and only the CLI's own `tool/ritten.json` remains.
+
+- **A vault per directory.** `personal/obsidian/main` and `dnd`, each a component; `lab sync` takes no `--vault`.
+
+- **Caddy mounts the install root at `/lab`.** Its certificate and routes are `partOf: proxy`, and reload it from `/lab/caddy-proxy/Caddyfile`.
+
+- **Renovate moves lego.** Its image is the certificate's `issuer.image`.
+
 ## 2026-10-08
 
 ### Fixed
