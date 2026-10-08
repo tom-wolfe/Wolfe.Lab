@@ -12,7 +12,7 @@ public class PercentageTests
         var value = Percentage.From(10);
 
         // Act
-        var result = value.ToString(CultureInfo.InvariantCulture);
+        var result = value.ToString();
 
         // Assert
         result.ShouldBe("10%");
