@@ -403,7 +403,7 @@ The first sets, each a starting point rather than a closed argument:
 |-----------------------------------------------------------------|--------------------------|-----------------------------------------------------------------------------|
 | `docker`, `dotnet-service`                                      | as it is                 | a component per compose service; `dotnet-service` builds its image first    |
 | `agent`                                                         | as it is                 | Ollama's servers too, once their models are components of their own (below) |
-| `ollama`                                                        | the models'              | a model is a component, served by one or more Ollama agents                 |
+| `ollama`                                                        | the models'              | a model is a component, by its use, served by Ollama agents                 |
 | `forgejo-runners`                                               | as it is                 | declarative, so the agent can bootstrap a new node's runner                 |
 | `obsidian`                                                      | as it is                 | a component per vault                                                       |
 | `restic`                                                        | as it is                 | where backups go: retention, verification, the offsite copy                 |
@@ -418,45 +418,39 @@ There are no jobs: what looked like one is a declarative kind (a runner,
 a certificate, a repository), a facet of something else, or an operation
 rather than a component.
 
-**Decided: a model is a component, served by Ollama agents.** An
-Ollama server is an agent like any other (`agent`), and what it serves
-is declared beside it, a component per model, linked to the servers it
-is pulled on as an agent is to its nodes. The `ollama` workflow operates
-the models: it waits for each server, pulls what it serves and points its
-role names at it. A role differs by server on purpose — the Studio's
-`interactive` is a 30B model, the mini's an 8B one, and the endpoint
-degrades from one to the other — so the link carries the roles a model
-answers to on each server:
+**Decided: a model is a component, declared by its use, served by Ollama
+agents.** An Ollama server is an agent like any other (`agent`), and a
+model is declared by what it is for — `interactive`, `background`,
+`embedding` — in a directory of its own, so everything about a use is one
+file. It names a default model and context, and each server that serves
+it, with that server's own where it differs: the Studio's `interactive` is
+a 35B mixture of experts, the mini's a 9B, and the endpoint degrades from
+one to the other. The `ollama` workflow operates them: on each node with a
+server it installs the server's release, waits for it, pulls what it runs
+and makes `lab/<use>` from it with its context.
 
 ```yaml
-# ai/ollama/models/component.yaml
-name: qwen3-8b
+# ai/ollama/interactive/component.yaml
+name: interactive
 kind: model
 workflow: ollama
-model: qwen3:8b
+model: "qwen3.6:35b-a3b"
+context: 16384
 servedBy:
-  mini: [background, interactive]
-  studio: []                        # pulled there; the Studio's roles are the 30Bs'
----
-name: embedding
-kind: model
-workflow: ollama
-model: embeddinggemma:300m
-servedBy: { mini: [embedding], studio: [embedding] }
+  studio: {}
+  mini: { model: "qwen3.5:9b", context: 8192 }
 ```
 
-- **`identical` goes.** A role one model serves on several servers is the
-  same model by construction; a role two models serve on two servers is a
-  different model on each, as `interactive` is meant to be.
-- **The roles' rules are the catalog's**, checked as a model is added: a
-  server answers each role once, and every role a hybrid answers, a
-  server answers too, so nothing is "not found" while the Studio sleeps.
+- **`servedBy` names agent components**, the service's servers, never nodes:
+  a server's `runsOn` already says where it is.
+- **`identical` goes.** `embedding` names its model once, as the default,
+  and no server overrides it.
+- **The rules are the catalog's**: every server serves every use, and has a
+  model for it, so nothing is "not found" while the Studio sleeps.
 - **The store and its drive are the server's.** `OLLAMA_MODELS` is its
   agent's, and the mini's `/Volumes/Data2` its `requiresVolumes`.
-
-**Undecided:** whether `servedBy` names agent components or nodes — the
-same until one node runs two Ollamas. Until the agent (#6), the models
-deploy with their servers, as they do today.
+- **Thinking is the caller's to turn off**, so one model serves a use that
+  thinks and one that does not. *Done 2026-10-08.*
 
 **Decided: per-node differences are facts of the node, not copies of
 the component.** Tested on the hardest case, Alloy — one package on three
@@ -1233,7 +1227,7 @@ and the index can be a nightly job on the mini like everything else
 scheduled. `lab/interactive` is the Studio's model while it is on — a
 person is waiting, so a question may use most of the machine for as
 long as it takes — and the mini's while it sleeps: worse answers, not
-none (`ai/ollama/README.md`, "Roles"). Paperless already runs the same
+none (`ai/ollama/README.md`, "Uses"). Paperless already runs the same
 shape over its documents, a nightly embedding index behind a chat
 (`personal/paperless/README.md`, "AI"); worth learning from before building.
 

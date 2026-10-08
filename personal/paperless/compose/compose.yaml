@@ -19,10 +19,12 @@ services:
       PAPERLESS_CONSUMER_POLLING_INTERVAL: "30"
 
       PAPERLESS_AI_ENABLED: "true"
-      PAPERLESS_AI_LLM_BACKEND: ollama
-      PAPERLESS_AI_LLM_ENDPOINT: https://ai.twolfe.dev
+      PAPERLESS_AI_LLM_BACKEND: openai-like
+      PAPERLESS_AI_LLM_ENDPOINT: https://ai.twolfe.dev/v1
       PAPERLESS_AI_LLM_MODEL: lab/interactive
+      PAPERLESS_AI_LLM_EXTRA_PARAMS: '{"reasoning_effort": "none"}'
       PAPERLESS_AI_LLM_EMBEDDING_BACKEND: ollama
+      PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT: https://ai.twolfe.dev
       PAPERLESS_AI_LLM_EMBEDDING_MODEL: lab/embedding
 
       PAPERLESS_SECRET_KEY:
@@ -32,7 +34,6 @@ services:
     volumes:
       - /Users/tomwolfe/Docker/paperless/data:/usr/src/paperless/data
       - /Volumes/Data2/paperless/media:/usr/src/paperless/media
-      # Drop a file here and it is consumed; the exporter writes here.
       - /Volumes/Data2/paperless/consume:/usr/src/paperless/consume
       - /Volumes/Data2/paperless/export:/usr/src/paperless/export
 

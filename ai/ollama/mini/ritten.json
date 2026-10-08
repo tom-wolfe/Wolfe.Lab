@@ -1,22 +1,3 @@
 {
-  "workflow": "ollama",
-  "models": {
-    "store": "/Volumes/Data2/ollama/models",
-    "pull": [
-      "qwen3:8b",
-      "embeddinggemma:300m"
-    ],
-    "roles": {
-      "background": {
-        "model": "qwen3:8b"
-      },
-      "interactive": {
-        "model": "qwen3:8b"
-      },
-      "embedding": {
-        "model": "embeddinggemma:300m",
-        "identical": true
-      }
-    }
-  }
+  "workflow": "agent"
 }

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../platform/lab/schema/lab.schema.json
+name: embedding
+kind: model
+workflow: ollama
+description: "Vectors for search: Paperless's index. Changing the model means every consumer rebuilds its index."
+model: "embeddinggemma:300m"
+context: 2048
+servedBy:
+  studio: {}
+  mini: {}

@@ -110,10 +110,19 @@ Paperless's optional AI features, against the lab's own model endpoint
   both of the above in similar documents already filed. It lives in
   `data/`, so the backup holds it.
 
-It asks for roles, not models (`ai/ollama/README.md`, "Roles"):
+It asks for uses, not models (`ai/ollama/README.md`, "Uses"):
 `lab/interactive`, because everything here is a person waiting, and
 `lab/embedding`. By day that is the Studio's model, overnight the
 mini's; with neither, suggestions and chat fail and nothing else does.
+
+**Its model does not think.** Thinking spent 30–60 seconds of every
+suggestion before the first useful token, so Paperless asks it not to:
+`PAPERLESS_AI_LLM_EXTRA_PARAMS` sends `reasoning_effort: none` with every
+request. That only works over Ollama's OpenAI-compatible endpoint — on the
+ollama backend Paperless passes extra params as the model's options, where
+`think` is not read — so the chat runs as `openai-like` against
+`https://ai.twolfe.dev/v1`. The embeddings stay on the ollama backend, with
+an endpoint of their own: they would otherwise take the chat's `/v1`.
 
 **All of it is configured in `compose.yaml`.** The UI's Application
 Configuration has the same settings, and a value saved there silently

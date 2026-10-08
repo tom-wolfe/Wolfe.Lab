@@ -8,6 +8,14 @@ rather than versioned — the lab is continuous, not released.
 
 ### Changed
 
+- **Models are declared by their use.** `ai/ollama/interactive`, `background` and `embedding`, each with a
+  model and context per server; the servers are agents, and `ollama-models.yaml` deploys the uses.
+
+- **Qwen 3.6 on the Studio, 3.5 on the mini.** `qwen3.6:35b-a3b` serves both `interactive` and `background`
+  on the Studio, `qwen3.5:9b` on the mini.
+
+- **Paperless's suggestions don't think.** It asks over `/v1` with `reasoning_effort: none`.
+
 - **Models are declared by their use.** A `workflow: ollama` component per use, with a model and context
   per server; Ollama's servers are agents.
 

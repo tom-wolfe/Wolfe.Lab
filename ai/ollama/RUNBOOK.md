@@ -19,16 +19,18 @@ The grant is recorded for the binary, so the agent gets it too:
 200 means it is serving. A hang means the prompt was not approved, or was
 approved for a different binary than the agent runs.
 
-## Change which models the node holds
+## Change which model serves a use
 
-Models are declared, not pulled by hand: the `models.pull` list in
-`ritten.json` is what the node should have, and `lab deploy` fetches
-whatever is missing. Add or remove a line and push.
+Models are declared, not pulled by hand: each use's `component.yaml`
+(`interactive/`, `background/`, `embedding/`) names its default `model`
+and `context`, and any server's own under `servedBy`. Change it and push:
+the models workflow pulls what is missing on each node and remakes
+`lab/<use>` from it. A new use is a new directory, served by every server.
 
-A model must name its tag — `qwen3:8b`, never `qwen3` — so the version
+A model must name its tag — `qwen3.5:9b`, never `qwen3.5` — so the version
 the lab runs is the version it declared.
 
-Removing a line does NOT delete the model. The deploy reports anything on
+Changing a model does NOT delete the old one. The deploy reports anything on
 the node it did not ask for and leaves it alone; several gigabytes that
 somebody pulled on purpose is not something a config file should silently
 bin. To reclaim the space, at the desk:
