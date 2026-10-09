@@ -10,6 +10,8 @@ rather than versioned — the lab is continuous, not released.
 
 - **Grafana pages for a component that stops answering.** `component-unanswering`: a declared metrics endpoint unscraped for five minutes while its collector runs. It watches Gatus in place of the `gatus-health` probe, which is gone.
 
+- **Added OpenJDK to chezmoi.** Installed on all homebrew machines.
+
 ### Changed
 
 - **No workflow reads `ritten.json` but `dotnet-tool`.** Chezmoi, the image check, Caddy's certificate and routes, the vaults and the runners take their component from the deployment unit; `lab sync` has no `--vault`.
